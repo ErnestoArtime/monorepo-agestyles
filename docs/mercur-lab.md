@@ -52,6 +52,8 @@ Resultados comprobados con tres cuentas de Sole Society:
 
 La prueba verificó el saldo tras cada intento y rechazó el identificador de una tienda ajena. Los cambios de rol y la revocación surtieron efecto con la sesión ya abierta. Las cuentas de personal y el artículo de la prueba son desechables. El script retira sus accesos a la tienda y elimina el artículo.
 
+Verificado de nuevo el 16/11/2026: el gestor pudo actualizar existencias, pero no listar pedidos/ofertas/miembros, borrar artículos ni cambiar roles; el perfil de solo lectura no pudo actualizar ni borrar. Tras cambiarlo a solo lectura y después revocar la membresía, las restricciones se aplicaron usando la sesión ya abierta.
+
 ## Cuenta de comprador e historial
 
 La app ahora permite crear una cuenta, iniciar y cerrar sesión, asociar el carrito de invitado al comprador autenticado y consultar compras agrupadas con sus pedidos por tienda. Las compras de invitado existentes no se vinculan automáticamente a una cuenta; las compras futuras deben realizarse con la sesión iniciada para aparecer en el historial.
