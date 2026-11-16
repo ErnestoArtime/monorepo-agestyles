@@ -4,6 +4,7 @@ import { PaymentStep } from '@/components/checkout/payment-step';
 import { ShippingStep } from '@/components/checkout/shipping-step';
 import { Colors } from '@/constants/theme';
 import { useCart } from '@/context/cart-context';
+import { useCustomer } from '@/context/customer-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { sdk } from '@/lib/sdk';
 import type { HttpTypes } from '@medusajs/types';
@@ -18,6 +19,7 @@ export default function CheckoutScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { cart, refreshCart, clearCart } = useCart();
+  const { customer } = useCustomer();
 
   const [currentStep, setCurrentStep] = useState<CheckoutStep>('delivery');
   const [loading, setLoading] = useState(false);
@@ -89,6 +91,16 @@ export default function CheckoutScreen() {
       setCurrentStep('delivery');
     }
   }, [cart]);
+
+  useEffect(() => {
+    if (!customer) return;
+    setEmail((current) => current || customer.email);
+    setShippingAddress((current) => ({
+      ...current,
+      firstName: current.firstName || customer.first_name || '',
+      lastName: current.lastName || customer.last_name || '',
+    }));
+  }, [customer]);
 
   const fetchShippingOptions = useCallback(async () => {
     if (!cart) return;

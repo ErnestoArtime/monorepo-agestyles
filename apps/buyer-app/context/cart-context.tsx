@@ -12,6 +12,7 @@ interface CartContextType {
   updateItemQuantity: (itemId: string, quantity: number) => Promise<void>;
   removeItem: (itemId: string) => Promise<void>;
   refreshCart: () => Promise<void>;
+  transferCart: () => Promise<string>;
   clearCart: () => Promise<void>;
   loading: boolean;
   error: string | null;
@@ -176,6 +177,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const transferCart = useCallback(async () => {
+    let currentCart = cart;
+    if (!currentCart) currentCart = await loadCart();
+    if (!currentCart) throw new Error("Could not load cart");
+
+    const { cart: transferredCart } = await sdk.store.cart.transferCart(currentCart.id);
+    setCart(transferredCart);
+    return transferredCart.id;
+  }, [cart, loadCart]);
+
   const clearCart = async () => {
     setCart(null);
     await AsyncStorage.removeItem(CART_STORAGE_KEY);
@@ -199,6 +210,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         updateItemQuantity,
         removeItem,
         refreshCart,
+        transferCart,
         clearCart,
         loading,
         error,

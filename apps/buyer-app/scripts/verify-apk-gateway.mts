@@ -61,8 +61,14 @@ const result = await completeCart(buyer.client, cart.id)
 assert.equal(result.type, "order_group", JSON.stringify(result))
 assert.equal(result.order_group.orders.length, 2)
 
-for (const path of ["/admin/products", "/vendor/orders", "/auth/member/emailpass", "/store/customers/me"]) {
+for (const path of ["/admin/products", "/vendor/orders", "/auth/member/emailpass"]) {
   const response = await fetch(baseUrl + path)
   assert.equal(response.status, 404, path)
+}
+for (const path of ["/store/customers/me", "/store/order-groups"]) {
+  const response = await fetch(baseUrl + path, {
+    headers: { "x-publishable-api-key": publishableKey },
+  })
+  assert.equal(response.status, 401, path)
 }
 console.log(`APK gateway: checkout produced ${result.order_group.orders.length} seller orders (${result.order_group.id})`)

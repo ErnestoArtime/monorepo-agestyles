@@ -17,7 +17,7 @@
     "lab:app": "pnpm --filter @agestyles/buyer-app start",
     "lab:web:build": "pnpm --filter @agestyles/buyer-app exec expo export --platform web",
     "lab:web:serve": "python3 -m http.server 18081 --bind 127.0.0.1 --directory apps/buyer-app/dist",
-    "typecheck": "nx run-many --target=typecheck --projects=@agestyles/api-client,@agestyles/buyer-app,@agestyles/commerce-api"
+    "typecheck": "nx run-many --target=typecheck --projects=@agestyles/domain,@agestyles/api-client,@agestyles/buyer-app,@agestyles/commerce-api"
   },
   "devDependencies": {
     "nx": "24.0.6",

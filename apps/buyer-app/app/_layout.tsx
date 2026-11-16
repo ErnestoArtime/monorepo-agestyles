@@ -1,21 +1,20 @@
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
 import { CartProvider } from '@/context/cart-context';
+import { CustomerProvider } from '@/context/customer-context';
 import { RegionProvider } from '@/context/region-context';
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <ThemeProvider value={DefaultTheme}>
         <RegionProvider>
           <CartProvider>
+            <CustomerProvider>
             <Stack screenOptions={{ headerShown: false }}>
               <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
               <Stack.Screen
@@ -38,7 +37,8 @@ export default function RootLayout() {
                 }}
               />
             </Stack>
-            <StatusBar style="auto" />
+            <StatusBar style="dark" />
+            </CustomerProvider>
           </CartProvider>
         </RegionProvider>
       </ThemeProvider>

@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@agestyles/domain": "workspace:*",
     "@medusajs/js-sdk": "2.22.3",
     "@medusajs/types": "2.22.3"
   }

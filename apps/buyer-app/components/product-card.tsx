@@ -29,7 +29,7 @@ export const ProductCard = React.memo(function ProductCard({ product }: ProductC
 
   return (
     <TouchableOpacity
-      style={[styles.card, { backgroundColor: colors.background }]}
+      style={[styles.card, { backgroundColor: colors.cardBackground }]}
       onPress={() => router.push({
         pathname: `/(home)/product/${product.id}` as any,
         params: { title: product.title }
@@ -37,7 +37,7 @@ export const ProductCard = React.memo(function ProductCard({ product }: ProductC
       activeOpacity={0.7}
     >
       <Image
-        source={{ uri: thumbnail || "https://via.placeholder.com/200" }}
+        source={thumbnail ? { uri: thumbnail } : undefined}
         style={[styles.image, { backgroundColor: colors.imagePlaceholder }]}
         contentFit="cover"
       />
@@ -61,26 +61,23 @@ export const ProductCard = React.memo(function ProductCard({ product }: ProductC
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    margin: 8,
+    margin: 6,
     overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderRadius: 6,
   },
   image: {
     width: "100%",
-    height: 180,
-    borderRadius: 8,
+    height: 190,
+    borderRadius: 4,
   },
   content: {
-    padding: 12,
+    paddingHorizontal: 4,
+    paddingVertical: 12,
   },
   title: {
     fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 12,
+    fontWeight: "500",
+    marginBottom: 8,
   },
   priceRow: {
     flexDirection: "row",
@@ -90,7 +87,7 @@ const styles = StyleSheet.create({
   },
   price: {
     fontSize: 14,
-    fontWeight: "400",
+    fontWeight: "600",
     flex: 1,
   },
 });

@@ -29,9 +29,8 @@ export function Button({
   const isPrimary = variant === "primary";
   const isDisabled = disabled || loading;
   
-  // Primary button: white background with dark text in dark mode, tint background with white text in light mode
-  const primaryBgColor = colorScheme === 'dark' ? '#fff' : colors.tint;
-  const primaryTextColor = colorScheme === 'dark' ? '#000' : '#fff';
+  const primaryBgColor = colors.tint;
+  const primaryTextColor = '#FFFFFF';
 
   return (
     <TouchableOpacity
@@ -62,17 +61,17 @@ export function Button({
 
 const styles = StyleSheet.create({
   button: {
-    paddingVertical: 14,
+    paddingVertical: 15,
     paddingHorizontal: 24,
-    borderRadius: 8,
+    borderRadius: 5,
     alignItems: "center",
     justifyContent: "center",
     minHeight: 48,
   },
   secondaryButton: {
-    backgroundColor: "transparent",
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: "#D8D8D2",
   },
   text: {
     fontSize: 16,

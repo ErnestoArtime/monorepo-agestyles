@@ -1,5 +1,6 @@
 import { Loading } from '@/components/loading';
 import { ProductCard } from '@/components/product-card';
+import { AndroidAppLink } from '@/components/android-app-link';
 import { Colors } from '@/constants/theme';
 import { useRegion } from '@/context/region-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -75,6 +76,11 @@ export default function HomeScreen() {
         removeClippedSubviews={true}
         ListHeaderComponent={
           <View style={styles.header}>
+            <View style={styles.betaNotice}>
+              <Text style={styles.betaLabel}>BETA PÚBLICA</Text>
+              <Text style={styles.betaCopy}>El catálogo y los pedidos todavía usan datos de prueba.</Text>
+            </View>
+            <AndroidAppLink />
             <Image
               source={{ uri: 'https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?w=800' }}
               style={[styles.banner, { backgroundColor: colors.imagePlaceholder }]}
@@ -118,6 +124,25 @@ const styles = StyleSheet.create({
   },
   header: {
     width: '100%',
+  },
+  betaNotice: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: '#F0F0EC',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  betaLabel: {
+    color: '#171717',
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+  },
+  betaCopy: {
+    flex: 1,
+    color: '#555550',
+    fontSize: 11,
   },
   banner: {
     width: '100%',

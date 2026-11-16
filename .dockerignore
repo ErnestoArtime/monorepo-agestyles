@@ -1,0 +1,13 @@
+.git
+.github
+references
+node_modules
+**/node_modules
+**/dist
+**/.expo
+**/android/.gradle
+**/.env
+**/.env.*
+**/*.keystore
+**/*.jks
+**/build

@@ -52,6 +52,12 @@ Resultados comprobados con tres cuentas de Sole Society:
 
 La prueba verificó el saldo tras cada intento y rechazó el identificador de una tienda ajena. Los cambios de rol y la revocación surtieron efecto con la sesión ya abierta. Las cuentas de personal y el artículo de la prueba son desechables. El script retira sus accesos a la tienda y elimina el artículo.
 
+## Cuenta de comprador e historial
+
+La app ahora permite crear una cuenta, iniciar y cerrar sesión, asociar el carrito de invitado al comprador autenticado y consultar compras agrupadas con sus pedidos por tienda. Las compras de invitado existentes no se vinculan automáticamente a una cuenta; las compras futuras deben realizarse con la sesión iniciada para aparecer en el historial.
+
+El gateway del APK admite únicamente el registro/inicio de sesión de compradores, la consulta del cliente autenticado, la asociación de un carrito y la lectura de grupos de compra. Limita a diez por minuto los intentos de acceso por dirección IP. Para que una APK nueva use estas rutas, reinicia el proceso del gateway y recompila la app. La APK ya distribuida no incorpora estas pantallas.
+
 ## Android mediante USB
 
 Con la API en ejecución, arranca Metro en el VPS. El puerto escucha en la interfaz local:

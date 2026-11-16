@@ -1,0 +1,12 @@
+{
+  "name": "@agestyles/domain",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./buyer-orders": "./src/buyer-orders.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}

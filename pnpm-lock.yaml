@@ -159,12 +159,17 @@ importers:
 
   packages/api-client:
     dependencies:
+      '@agestyles/domain':
+        specifier: workspace:*
+        version: link:../domain
       '@medusajs/js-sdk':
         specifier: 2.22.3
         version: 2.22.3
       '@medusajs/types':
         specifier: 2.22.3
         version: 2.22.3(express@4.22.3)(ioredis@5.11.1)(vite@7.3.8(@types/node@26.6.6)(jiti@1.21.7)(lightningcss@1.33.0)(terser@5.51.2)(yaml@2.9.0))
+
+  packages/domain: {}
 
 packages:
 

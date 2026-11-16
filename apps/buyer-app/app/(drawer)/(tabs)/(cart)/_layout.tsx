@@ -22,6 +22,9 @@ export default function CartStackLayout() {
         name="index"
         options={{
           title: 'Cart',
+          headerStyle: { backgroundColor: '#FFFFFF' },
+          headerTintColor: colors.text,
+          headerShadowVisible: false,
           headerLeft: () => (
             <TouchableOpacity
               onPress={() => navigation.dispatch(DrawerActions.openDrawer())}

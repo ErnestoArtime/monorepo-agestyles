@@ -5,6 +5,7 @@ import React from 'react';
 import { TouchableOpacity } from 'react-native';
 
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { BrandLockup } from '@/components/brand-lockup';
 import { Colors } from '@/constants/theme';
 
 export default function HomeStackLayout() {
@@ -21,7 +22,10 @@ export default function HomeStackLayout() {
       <Stack.Screen 
         name="index"
         options={{
-          title: 'Medusa Store',
+          headerTitle: () => <BrandLockup />,
+          headerStyle: { backgroundColor: '#FFFFFF' },
+          headerTintColor: colors.text,
+          headerShadowVisible: false,
           headerLeft: () => (
             <TouchableOpacity
               onPress={() => navigation.dispatch(DrawerActions.openDrawer())}

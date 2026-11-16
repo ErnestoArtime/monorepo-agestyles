@@ -1,0 +1,63 @@
+name: agestyles-buyer-web
+
+services:
+  commerce-api:
+    build:
+      context: ../..
+      dockerfile: apps/commerce-api/Dockerfile.public
+      secrets:
+        - source: commerce_api_env
+          target: lab_env
+    image: agestyles/commerce-api:buyer-preview
+    container_name: agestyles-buyer-api
+    network_mode: host
+    env_file:
+      - ../../apps/commerce-api/.env
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - fetch('http://127.0.0.1:19080/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
+
+  buyer-gateway:
+    image: node:24-bookworm-slim
+    container_name: agestyles-buyer-gateway
+    network_mode: host
+    working_dir: /app
+    command: ["node", "/app/buyer-lab-gateway.mjs"]
+    volumes:
+      - ../../tools/scripts/buyer-lab-gateway.mjs:/app/buyer-lab-gateway.mjs:ro
+    depends_on:
+      commerce-api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  buyer-web:
+    build:
+      context: ../..
+      dockerfile: apps/buyer-app/Dockerfile.web
+      args:
+        EXPO_PUBLIC_MEDUSA_URL: ${BUYER_WEB_MEDUSA_URL:?Set BUYER_WEB_MEDUSA_URL to the public HTTPS gateway URL}
+        EXPO_PUBLIC_MEDUSA_PUBLISHABLE_API_KEY: ${BUYER_WEB_MEDUSA_PUBLISHABLE_API_KEY:?Set BUYER_WEB_MEDUSA_PUBLISHABLE_API_KEY}
+        EXPO_PUBLIC_ANDROID_APK_URL: ${BUYER_WEB_ANDROID_APK_URL:-}
+    image: agestyles/buyer-web:local
+    container_name: agestyles-buyer-web
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:18083:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/healthz || exit 1"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+secrets:
+  commerce_api_env:
+    file: ../../apps/commerce-api/.env

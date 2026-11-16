@@ -6,6 +6,7 @@ loadEnv(process.env.NODE_ENV || "development", process.cwd())
 
 const { DATABASE_URL, REDIS_URL, JWT_SECRET, COOKIE_SECRET } = process.env
 const localOrigins = "http://localhost:18081,http://127.0.0.1:18081"
+const buyerOrigins = `${localOrigins},https://tienda.eav-labs.com`
 
 if (
   !DATABASE_URL?.match(/^postgres(?:ql)?:\/\/agestyles_lab:[a-f0-9]+@127\.0\.0\.1:15472\/agestyles_mercur_lab$/) ||
@@ -21,10 +22,10 @@ module.exports = withMercur({
     databaseUrl: DATABASE_URL,
     redisUrl: REDIS_URL,
     http: {
-      storeCors: localOrigins,
+      storeCors: buyerOrigins,
       adminCors: localOrigins,
       vendorCors: localOrigins,
-      authCors: localOrigins,
+      authCors: buyerOrigins,
       jwtSecret: JWT_SECRET,
       cookieSecret: COOKIE_SECRET,
     },

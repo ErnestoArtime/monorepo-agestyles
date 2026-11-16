@@ -1,33 +1,7 @@
 import type { StoreClient } from "./transport"
+import type { BuyerOrderGroup, BuyerOrderGroupDetail } from "@agestyles/domain/buyer-orders"
 
-export type BuyerOrderGroup = {
-  id: string
-  display_id: number | null
-  created_at: string
-  seller_count: number
-  total: number
-  orders: {
-    id: string
-    display_id: number
-    currency_code: string
-    status: string
-    fulfillment_status?: string
-    payment_status?: string
-    total: number
-    seller?: { id: string; name: string } | null
-  }[]
-}
-
-export type BuyerOrderGroupDetail = Omit<BuyerOrderGroup, "orders"> & {
-  orders: (BuyerOrderGroup["orders"][number] & {
-    items: {
-      id: string
-      title: string
-      quantity: number
-      total: number
-    }[]
-  })[]
-}
+export type { BuyerOrderGroup, BuyerOrderGroupDetail } from "@agestyles/domain/buyer-orders"
 
 type BuyerOrderGroupList = {
   order_groups: BuyerOrderGroup[]

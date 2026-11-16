@@ -2,7 +2,7 @@
 
 Monorepo Nx y TypeScript. `apps/commerce-api` contiene la prueba de Mercur y `apps/buyer-app` adapta el ejemplo Expo al marketplace. `packages/api-client` reúne las llamadas de catálogo, carrito y checkout para reutilizarlas en otras aplicaciones.
 
-El cliente también contiene las consultas de historial y detalle de compras agrupadas. Mercur exige una sesión de comprador y filtra por la cuenta autenticada. La pantalla de historial y el inicio de sesión están pendientes. Las compras de invitado del APK de prueba se siguen confirmando al terminar el checkout.
+El cliente también contiene registro e inicio de sesión, asociación del carrito de invitado e historial de compras agrupadas por vendedor. Las compras hechas sin iniciar sesión no se vinculan automáticamente a una cuenta.
 
 ## Preparar el entorno local
 
@@ -16,6 +16,8 @@ corepack pnpm typecheck
 Los comandos del laboratorio están centralizados en la raíz. `corepack pnpm lab:up` crea un entorno privado si hace falta y arranca PostgreSQL y Redis. Después ejecuta `corepack pnpm lab:migrate`, `corepack pnpm lab:seed` y `corepack pnpm lab:buyer`. Arranca la API con `corepack pnpm lab:api` y Expo con `corepack pnpm lab:app`. `corepack pnpm lab:down` detiene los contenedores. Los procesos de API y Expo se detienen con Ctrl+C en sus terminales.
 
 `lab:web:build` genera la app web y `lab:web:serve` la publica solo en `127.0.0.1:18081`. El laboratorio completo, la compra de prueba y los permisos por tienda están descritos en [docs/mercur-lab.md](docs/mercur-lab.md).
+
+La app compradora también se publica como sitio estático en [tienda.eav-labs.com](https://tienda.eav-labs.com). Consulta [web compradora en el VPS](docs/buyer-web-vps.md) para el contenedor, el API/gateway del laboratorio y el proceso de actualización.
 
 ## Referencias móviles
 
