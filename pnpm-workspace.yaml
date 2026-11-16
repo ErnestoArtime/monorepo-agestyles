@@ -1,0 +1,19 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+
+onlyBuiltDependencies:
+  - '@swc/core'
+  - esbuild
+  - nx
+
+publicHoistPattern:
+  - ts-node
+
+overrides:
+  '@opentelemetry/api': '1.9.1'
+
+packageExtensions:
+  '@mercurjs/core@2.4.1':
+    dependencies:
+      http-proxy-middleware: '3.0.7'

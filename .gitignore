@@ -1,0 +1,13 @@
+node_modules/
+.nx/
+dist/
+.next/
+.expo/
+.medusa/
+/apps/buyer-app/android/
+/references/
+coverage/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example

@@ -1,0 +1,17 @@
+{
+  "name": "@agestyles/api-client",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./store": "./src/store.ts",
+    "./buyer-orders": "./src/buyer-orders.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@medusajs/js-sdk": "2.22.3",
+    "@medusajs/types": "2.22.3"
+  }
+}

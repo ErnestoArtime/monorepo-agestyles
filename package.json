@@ -1,0 +1,26 @@
+{
+  "name": "monorepo-agestyles",
+  "private": true,
+  "packageManager": "pnpm@10.34.9",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "lab:init": "node tools/scripts/mercur-lab-env.mjs api",
+    "lab:up": "pnpm run lab:init && docker compose --env-file apps/commerce-api/.env -f infra/compose/mercur-lab.yaml up -d --wait",
+    "lab:down": "docker compose --env-file apps/commerce-api/.env -f infra/compose/mercur-lab.yaml stop",
+    "lab:logs": "docker compose --env-file apps/commerce-api/.env -f infra/compose/mercur-lab.yaml logs --tail=100",
+    "lab:migrate": "pnpm --filter @agestyles/commerce-api migrate",
+    "lab:seed": "pnpm --filter @agestyles/commerce-api seed",
+    "lab:buyer": "node tools/scripts/mercur-lab-env.mjs buyer",
+    "lab:api": "pnpm --filter @agestyles/commerce-api start",
+    "lab:app": "pnpm --filter @agestyles/buyer-app start",
+    "lab:web:build": "pnpm --filter @agestyles/buyer-app exec expo export --platform web",
+    "lab:web:serve": "python3 -m http.server 18081 --bind 127.0.0.1 --directory apps/buyer-app/dist",
+    "typecheck": "nx run-many --target=typecheck --projects=@agestyles/api-client,@agestyles/buyer-app,@agestyles/commerce-api"
+  },
+  "devDependencies": {
+    "nx": "24.0.6",
+    "typescript": "5.9.3"
+  }
+}
