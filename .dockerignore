@@ -4,6 +4,8 @@ references
 node_modules
 **/node_modules
 **/dist
+**/.next
+**/.next/cache
 **/.expo
 **/android/.gradle
 **/.env

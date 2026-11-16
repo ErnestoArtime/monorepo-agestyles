@@ -32,3 +32,6 @@ jobs:
 
       - name: Type-check the API, application, and shared client
         run: pnpm typecheck
+
+      - name: Build the SEO storefront
+        run: pnpm --filter @agestyles/storefront-web build

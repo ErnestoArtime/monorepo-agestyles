@@ -1,5 +1,5 @@
 import { Colors } from '@/constants/theme';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@agestyles/icons';
 import React from 'react';
 import { Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -11,7 +11,7 @@ export function AndroidAppLink() {
   return (
     <View style={styles.container}>
       <View style={styles.message}>
-        <Ionicons name="phone-portrait-outline" size={20} color={Colors.light.text} />
+        <Icon name="phone" size={20} color={Colors.light.text} />
         <View style={styles.messageText}>
           <Text style={styles.label}>Lleva AgeStyles contigo</Text>
           <Text style={styles.caption}>APK de prueba para Android</Text>
@@ -23,7 +23,7 @@ export function AndroidAppLink() {
         onPress={() => void Linking.openURL(apkUrl)}
         style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}>
         <Text style={styles.buttonText}>Descargar app Android</Text>
-        <Ionicons name="arrow-down-outline" size={16} color="#FFFFFF" />
+        <Icon name="arrowDown" size={16} color="#FFFFFF" />
       </Pressable>
     </View>
   );

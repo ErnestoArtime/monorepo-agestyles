@@ -1,6 +1,6 @@
 # Web compradora en el VPS
 
-La web pública de clientes es la misma app Expo de `apps/buyer-app`, exportada como sitio estático. Conserva catálogo, carrito, cuenta, checkout e historial. La beta pública muestra un aviso de que los productos y pedidos son de prueba. Por ahora el enlace de Android dirige al APK de laboratorio publicado en descargas.
+La web pública de clientes es la misma app Expo de `apps/buyer-app`, exportada como sitio estático. Conserva catálogo, carrito, cuenta, checkout e historial. La beta pública muestra un aviso de que los productos y pedidos son de prueba. Por ahora el enlace de Android dirige al APK de laboratorio publicado en descargas. Los iconos vienen de `@agestyles/icons` y se exportan como SVG; no dependen de fuentes externas.
 
 La beta está publicada en [https://tienda.eav-labs.com](https://tienda.eav-labs.com). El servicio web, el API y el gateway se ejecutan con reinicio automático en el VPS; sus puertos de origen solo escuchan en loopback.
 
@@ -24,9 +24,19 @@ docker compose --env-file .env.buyer-web -f infra/compose/buyer-web.yaml up -d -
 curl -fsS http://127.0.0.1:18083/healthz
 ```
 
-La página servida localmente debe responder en `http://127.0.0.1:18083/`. La API y el gateway usan los datos del laboratorio de PostgreSQL/Redis, así que esta web es una beta pública de prueba.
+Para actualizar la beta desde el monorepo, genera primero el sitio estático con la configuración de `.env.buyer-web` y despliega la imagen Nginx ya exportada:
+
+```sh
+corepack pnpm lab:web:build:public
+docker compose -f infra/compose/buyer-web.yaml up -d --build buyer-web
+curl -fsS http://127.0.0.1:18083/healthz
+```
+
+La imagen Nginx contiene solo la exportación terminada; las dependencias de Expo no se instalan ni compilan dentro de Docker. La página servida localmente debe responder en `http://127.0.0.1:18083/`. La API y el gateway usan los datos del laboratorio de PostgreSQL/Redis, así que esta web es una beta pública de prueba.
 
 ## Antes de abrirla a clientes
+
+El gateway permite y reenvía las cabeceras Store API `x-publishable-api-key`, `authorization` y `x-medusa-locale`. La respuesta al preflight CORS admite estas cabeceras para el origen `https://tienda.eav-labs.com`.
 
 El laboratorio actual utiliza datos de prueba y no debe presentarse como tienda de producción. Antes de anunciar ventas, hay que migrar a una API de producción y sustituir el APK de laboratorio. El túnel y DNS para la beta pública se documentan por separado del entorno comercial.
 

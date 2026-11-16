@@ -3,8 +3,7 @@ import { Tabs } from 'expo-router';
 import React from 'react';
 
 import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@agestyles/icons';
 import { Colors } from '@/constants/theme';
 import { useCart } from '@/context/cart-context';
 
@@ -42,16 +41,16 @@ export default function TabLayout() {
       <Tabs.Screen
         name="(home)"
         options={{
-          title: 'AgeStyles',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: 'Catálogo',
+          tabBarIcon: ({ color, focused }) => <Icon name="home" size={24} strokeWidth={focused ? 2.2 : 1.8} color={color} />,
           headerShown: false, // Let the home stack manage its own headers
         }}
       />
       <Tabs.Screen
         name="(cart)"
         options={{
-          title: 'Cart',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="cart.fill" color={color} />,
+          title: 'Carrito',
+          tabBarIcon: ({ color, focused }) => <Icon name="shoppingCart" size={24} strokeWidth={focused ? 2.2 : 1.8} color={color} />,
           tabBarBadge: itemCount > 0 ? itemCount : undefined,
           tabBarBadgeStyle: {
             backgroundColor: Colors[colorScheme ?? 'light'].tint,
@@ -62,8 +61,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="account"
         options={{
-          title: 'Account',
-          tabBarIcon: ({ color }) => <Ionicons size={25} name="person-outline" color={color} />,
+          title: 'Cuenta',
+          tabBarIcon: ({ color, focused }) => <Icon name="user" size={24} strokeWidth={focused ? 2.2 : 1.8} color={color} />,
           headerShown: false,
         }}
       />

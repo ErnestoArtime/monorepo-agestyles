@@ -94,6 +94,7 @@ agestyles-platform/
 │   └── ai-worker/                 # Fase posterior
 ├── packages/
 │   ├── api-client/                # SDK generado / adaptadores Store+Vendor+Admin
+│   ├── icons/                     # Biblioteca única Lucide, resuelta para web y React Native
 │   ├── domain/                    # DTOs, reglas y tipos neutrales a la plataforma
 │   ├── auth/                      # identidad, sesión, actor y permisos
 │   ├── config/                    # flags/entorno, sin secretos en cliente

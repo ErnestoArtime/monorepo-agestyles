@@ -1,41 +1,31 @@
-// Fallback for using MaterialIcons on Android and web.
+import { Icon, type IconName } from "@agestyles/icons"
+import { View, type StyleProp, type ViewStyle } from "react-native"
 
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { SymbolWeight, SymbolViewProps } from 'expo-symbols';
-import { ComponentProps } from 'react';
-import { OpaqueColorValue, type StyleProp, type TextStyle } from 'react-native';
+const iconAliases: Record<string, IconName> = {
+  "house.fill": "home",
+  "paperplane.fill": "send",
+  "chevron.left.forwardslash.chevron.right": "code",
+  "chevron.right": "chevronRight",
+  "chevron.down": "chevronDown",
+  "line.3.horizontal": "menu",
+  "cart.fill": "shoppingCart",
+  "creditcard": "creditCard",
+  "phone-portrait-outline": "phone",
+  "arrow-down-outline": "arrowDown",
+  "trash": "trash",
+}
 
-type IconMapping = Record<SymbolViewProps['name'], ComponentProps<typeof MaterialIcons>['name']>;
-type IconSymbolName = keyof typeof MAPPING;
-
-/**
- * Add your SF Symbols to Material Icons mappings here.
- * - see Material Icons in the [Icons Directory](https://icons.expo.fyi).
- * - see SF Symbols in the [SF Symbols](https://developer.apple.com/sf-symbols/) app.
- */
-const MAPPING = {
-  'house.fill': 'home',
-  'paperplane.fill': 'send',
-  'chevron.left.forwardslash.chevron.right': 'code',
-  'chevron.right': 'chevron-right',
-} as IconMapping;
-
-/**
- * An icon component that uses native SF Symbols on iOS, and Material Icons on Android and web.
- * This ensures a consistent look across platforms, and optimal resource usage.
- * Icon `name`s are based on SF Symbols and require manual mapping to Material Icons.
- */
 export function IconSymbol({
   name,
   size = 24,
   color,
   style,
 }: {
-  name: IconSymbolName;
-  size?: number;
-  color: string | OpaqueColorValue;
-  style?: StyleProp<TextStyle>;
-  weight?: SymbolWeight;
+  name: string
+  size?: number
+  color: string | number
+  style?: StyleProp<ViewStyle>
+  weight?: string
 }) {
-  return <MaterialIcons color={color} size={size} name={MAPPING[name]} style={style} />;
+  return <View style={style}><Icon name={iconAliases[name] || "help"} size={size} color={typeof color === "string" ? color : "#171717"} /></View>
 }

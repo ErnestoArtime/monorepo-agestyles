@@ -40,12 +40,8 @@ services:
 
   buyer-web:
     build:
-      context: ../..
-      dockerfile: apps/buyer-app/Dockerfile.web
-      args:
-        EXPO_PUBLIC_MEDUSA_URL: ${BUYER_WEB_MEDUSA_URL:?Set BUYER_WEB_MEDUSA_URL to the public HTTPS gateway URL}
-        EXPO_PUBLIC_MEDUSA_PUBLISHABLE_API_KEY: ${BUYER_WEB_MEDUSA_PUBLISHABLE_API_KEY:?Set BUYER_WEB_MEDUSA_PUBLISHABLE_API_KEY}
-        EXPO_PUBLIC_ANDROID_APK_URL: ${BUYER_WEB_ANDROID_APK_URL:-}
+      context: ../../apps/buyer-app
+      dockerfile: Dockerfile.web-runtime
     image: agestyles/buyer-web:local
     container_name: agestyles-buyer-web
     restart: unless-stopped

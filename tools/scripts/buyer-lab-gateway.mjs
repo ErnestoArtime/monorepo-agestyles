@@ -55,7 +55,7 @@ createServer({ requestTimeout: 30_000, headersTimeout: 10_000 }, (incoming, outg
   const corsHeaders = typeof origin === "string" ? {
     "access-control-allow-origin": origin,
     "access-control-allow-methods": `${matchingRule[0].split(" ").join(", ")}, OPTIONS`,
-    "access-control-allow-headers": "authorization, content-type, x-publishable-api-key",
+    "access-control-allow-headers": "authorization, content-type, x-medusa-locale, x-publishable-api-key",
     "access-control-max-age": "600",
     vary: "Origin",
   } : {}
@@ -90,7 +90,7 @@ createServer({ requestTimeout: 30_000, headersTimeout: 10_000 }, (incoming, outg
   }
 
   const headers = Object.fromEntries(
-    ["accept", "content-type", "content-length", "x-publishable-api-key", "authorization", "user-agent"]
+    ["accept", "content-type", "content-length", "x-medusa-locale", "x-publishable-api-key", "authorization", "user-agent"]
       .filter((name) => incoming.headers[name] !== undefined)
       .map((name) => [name, incoming.headers[name]]),
   )

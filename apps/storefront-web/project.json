@@ -1,0 +1,12 @@
+{
+  "name": "@agestyles/storefront-web",
+  "sourceRoot": "apps/storefront-web/src",
+  "projectType": "application",
+  "targets": {
+    "dev": { "command": "pnpm --filter @agestyles/storefront-web dev" },
+    "build": { "command": "pnpm --filter @agestyles/storefront-web build" },
+    "start": { "command": "pnpm --filter @agestyles/storefront-web start" },
+    "typecheck": { "command": "pnpm --filter @agestyles/storefront-web typecheck" }
+  },
+  "tags": ["scope:storefront", "type:application"]
+}

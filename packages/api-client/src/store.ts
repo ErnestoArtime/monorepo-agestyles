@@ -29,17 +29,42 @@ export type StoreProductQuery = {
   limit?: number
   offset?: number
   query?: string
+  handle?: string
 }
 
-export function listStoreProducts(client: StoreClient, { regionId, limit = 20, offset = 0, query }: StoreProductQuery) {
+export function listStoreProducts(client: StoreClient, { regionId, limit = 20, offset = 0, query, handle }: StoreProductQuery) {
   return client.fetch<StoreProductList>("/store/products", {
     query: {
       region_id: regionId,
       limit,
       offset,
       ...(query ? { q: query } : {}),
+      ...(handle ? { handle } : {}),
       fields: "*variants.calculated_price,+variants.inventory_quantity",
     },
+  })
+}
+
+export type StoreOffer = {
+  id: string
+  seller_id: string
+  product_id: string
+  variant_id: string
+  seller?: { id: string; name: string }
+  product_variant?: { id: string; title: string; sku?: string | null }
+  prices?: Array<{ currency_code: string; amount: number }>
+}
+
+export type StoreOfferList = {
+  offers: StoreOffer[]
+  count: number
+  limit: number
+  offset: number
+}
+
+export function listStoreOffers(client: StoreClient, { productId, limit = 100 }: { productId?: string; limit?: number } = {}) {
+  return client.fetch<StoreOfferList>("/store/offers", {
+    query: { ...(productId ? { product_id: productId } : {}), limit },
   })
 }
 

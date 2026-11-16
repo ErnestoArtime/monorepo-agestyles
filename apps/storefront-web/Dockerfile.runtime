@@ -1,0 +1,11 @@
+FROM node:24-bookworm-slim
+WORKDIR /workspace
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+COPY .next/standalone ./
+COPY .next/static ./apps/storefront-web/.next/static
+COPY public ./apps/storefront-web/public
+EXPOSE 3000
+CMD ["node", "apps/storefront-web/server.js"]

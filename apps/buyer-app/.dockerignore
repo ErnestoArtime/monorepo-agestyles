@@ -1,0 +1,7 @@
+node_modules
+.expo
+android
+.env*
+!.env.example
+coverage
+*.tsbuildinfo

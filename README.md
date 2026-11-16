@@ -2,6 +2,8 @@
 
 Monorepo Nx y TypeScript. `apps/commerce-api` contiene la prueba de Mercur y `apps/buyer-app` adapta el ejemplo Expo al marketplace. `packages/api-client` reúne las llamadas de catálogo, carrito y checkout para reutilizarlas en otras aplicaciones.
 
+`apps/storefront-web` es la nueva tienda indexable Next.js. `packages/icons` es la fuente única de iconos para todas las apps web y nativas: las aplicaciones deben importar desde `@agestyles/icons`, que presenta el mismo sistema Lucide con SVG en web y React Native SVG en Android/iOS. Consulta [el sistema visual](docs/design-system.md).
+
 El cliente también contiene registro e inicio de sesión, asociación del carrito de invitado e historial de compras agrupadas por vendedor. Las compras hechas sin iniciar sesión no se vinculan automáticamente a una cuenta.
 
 ## Preparar el entorno local
@@ -18,6 +20,8 @@ Los comandos del laboratorio están centralizados en la raíz. `corepack pnpm la
 `lab:web:build` genera la app web y `lab:web:serve` la publica solo en `127.0.0.1:18081`. El laboratorio completo, la compra de prueba y los permisos por tienda están descritos en [docs/mercur-lab.md](docs/mercur-lab.md).
 
 La app compradora también se publica como sitio estático en [tienda.eav-labs.com](https://tienda.eav-labs.com). Consulta [web compradora en el VPS](docs/buyer-web-vps.md) para el contenedor, el API/gateway del laboratorio y el proceso de actualización.
+
+La página Next.js para descubrir productos y comparar ofertas por vendedor se configura en [storefront-web](apps/storefront-web/PRODUCT.md). Su preparación de publicación está documentada en [storefront-web en el VPS](docs/storefront-web-vps.md).
 
 ## Referencias móviles
 
