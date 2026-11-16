@@ -1,6 +1,7 @@
 import { Loading } from '@/components/loading';
 import { ProductCard } from '@/components/product-card';
 import { AndroidAppLink } from '@/components/android-app-link';
+import { listStoreProducts } from '@agestyles/api-client/store';
 import { Colors } from '@/constants/theme';
 import { useRegion } from '@/context/region-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -21,13 +22,18 @@ export default function HomeScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchProducts = useCallback(async () => {
+    if (!selectedRegion) {
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
       
-      const { products: fetchedProducts } = await sdk.store.product.list({
-        region_id: selectedRegion?.id,
-        fields: '*variants.calculated_price,+variants.inventory_quantity',
+      const { products: fetchedProducts } = await listStoreProducts(sdk.client, {
+        regionId: selectedRegion.id,
       });
       
       setProducts(fetchedProducts);

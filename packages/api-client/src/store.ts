@@ -17,6 +17,32 @@ export type SellerShippingOption = HttpTypes.StoreCartShippingOption & {
 
 export type ShippingOptions = Record<string, SellerShippingOption[]>
 
+export type StoreProductList = {
+  products: HttpTypes.StoreProduct[]
+  count: number
+  limit: number
+  offset: number
+}
+
+export type StoreProductQuery = {
+  regionId: string
+  limit?: number
+  offset?: number
+  query?: string
+}
+
+export function listStoreProducts(client: StoreClient, { regionId, limit = 20, offset = 0, query }: StoreProductQuery) {
+  return client.fetch<StoreProductList>("/store/products", {
+    query: {
+      region_id: regionId,
+      limit,
+      offset,
+      ...(query ? { q: query } : {}),
+      fields: "*variants.calculated_price,+variants.inventory_quantity",
+    },
+  })
+}
+
 export function listOffers(client: StoreClient, regionId: string, variantId?: string) {
   return client.fetch<{ offers: Offer[] }>("/store/offers", {
     query: {
