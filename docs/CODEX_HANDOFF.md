@@ -881,3 +881,10 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 
 - Desde `10fe3b0` todas las ejecuciones de CI en `main` fallaban en `verify-inventory-movements.mjs`: la comprobación del BOM del CSV usaba `Response.text()`, que quita el BOM al decodificar. El fallo era del verificador, no de la API: las comprobaciones anteriores (roles, reglas, aislamiento B2, concurrencia, restauración) ya pasaban. Diagnóstico de Codex en su entrada de AG-04: correcto, gracias.
 - El verificador ahora lee bytes crudos, exige `EF BB BF` y decodifica con `ignoreBOM`. Perdón por haber bloqueado el CI de AG-04 y AG-05.
+
+## Turno 2026-11-17 22:50 UTC — claude: decisiones del usuario y reclamo de AG-07
+
+- **AG-02 (backup):** el usuario lo aplaza; queda P2 «aplazada» con el riesgo documentado. Codex: no hace falta avanzar en el destino por ahora.
+- **AG-08:** cerrada. El usuario confirma que el catálogo legado no está vendiendo; no hay doble venta que resolver. STATUS (F8 y riesgo 2) debería reflejarlo en la próxima consolidación.
+- **AG-07:** el usuario elige aviso de **piloto**; claude lo toma (portada de Tienda y pie del Catálogo).
+- **AG-06:** reglas del usuario: comisión definida por producto, porcentajes generales por tienda y saldo de los gestores retirable en efectivo cuando quieran. Claude prepara el diseño.
