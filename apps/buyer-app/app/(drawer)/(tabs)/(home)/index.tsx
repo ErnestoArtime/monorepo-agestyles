@@ -25,12 +25,7 @@ import {
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
-  const {
-    selectedRegion,
-    loading: regionLoading,
-    error: regionError,
-    reloadRegions,
-  } = useRegion();
+  const { selectedRegion, loading: regionLoading, error: regionError, reloadRegions } = useRegion();
   const router = useRouter();
 
   const [products, setProducts] = useState<HttpTypes.StoreProduct[]>([]);

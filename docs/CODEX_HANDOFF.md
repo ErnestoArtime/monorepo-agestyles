@@ -14,6 +14,7 @@
 - Hallazgo funcional en la portada Buyer: si el listado de regiones falla (o vuelve vacío), `selectedRegion` permanece nulo; Home no miraba el estado/error del `RegionProvider` y conservaba el loader de productos indefinidamente.
 - El `RegionProvider` expone `reloadRegions`; Home ahora separa carga inicial de región, error/falta de región y carga de productos. Error incluye recuperación accesible con colores del tema activo.
 - `pnpm --filter @agestyles/buyer-app exec tsc --noEmit` y `git diff --check` pasan; no ejecuté tests. No hay fixtures visuales en las apps ni navegador Playwright ejecutable en este entorno, por lo que la evidencia renderizada clara/oscura y el resto de las pantallas siguen pendientes en AG-13.
+- CI #144 (`44203432915`) solo falló en formato de `apps/buyer-app/app/(drawer)/(tabs)/(home)/index.tsx`; ejecuté Prettier sobre ese archivo y el diff quedó limpio. Nueva ejecución tras este arreglo pendiente.
 
 **Propósito:** dejar constancia de lo que modifica la sesión OpenCode para que Codex lo revise antes de dar por cerrada una fase. No sustituye al plan maestro ni al status: los complementa.
 
