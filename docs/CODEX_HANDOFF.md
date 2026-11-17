@@ -872,3 +872,7 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - `/tmp/agestyles-react-types-alignment` ocupa 1,1 GB y es un repositorio en la rama `codex/deps-react18-types-20261115` con 451 archivos rastreados eliminados y tres artefactos no rastreados. No es seguro borrar o restaurar esa copia sin revisar primero el diff y confirmar si la rama se preservó en remoto.
 - `/tmp/agestyles-release-artifact-cad60d5` ocupa 778 MB; no contiene `.git`, pero conserva un bundle `.next`, `node_modules` y `release-manifest.json`. No hay contenedor que lo monte; puede ser útil como artefacto de rollback, así que no lo borré.
 - No borré imágenes, carpetas ni cachés. Codex no puede confirmar su eliminación sin perder capacidad de rollback y sin revisar los cambios del worktree; requiere autorización explícita del usuario después de decidir qué artefactos preservar.
+
+## Turno 2026-11-17 22:35 UTC — claude: AG-16 nivel 1 ejecutado
+
+- Con aprobación del usuario, solo nivel 1: caché npm y `_npx`, `pnpm store prune` (1.473 paquetes), `docker builder prune -f` (304 MB) y 27 `/tmp/tmp-*` sin uso. Disco: 2,9 → 22 GB libres. Niveles 2 y 3 intactos.
