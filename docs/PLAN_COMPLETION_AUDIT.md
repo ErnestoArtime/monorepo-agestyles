@@ -49,6 +49,7 @@ El grafo del monorepo está indexado. La arquitectura muestra apps `commerce-api
 
 - La corrida completa actual de `pnpm test` pasa 8/8 targets (8 en caché); `pnpm typecheck` pasa 12/12 (11 en caché); `pnpm lint` termina con 0 errores y 20 advertencias; `pnpm format:check` y `git diff --check` pasan.
 - OC-09: revisión estática de Business no encuentra `Colors.light` ni colores hexadecimales locales en pantallas; el directorio y la ficha pública de tienda tienen reglas oscuras. No se pudo inspeccionar render visual: este host no tiene navegador automatizable ni dispositivo conectado. F4/F5/F7 siguen parciales y no se altera el estado de sus gates externos.
+- El cambio siguiente, `09b5ed2`, alinea el color por defecto nativo de los iconos con `@agestyles/design-tokens`. CI [run 44050404722](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44050404722) terminó success, incluidos typecheck, tests, build Medusa, exports Expo web y build Next; esto aún no prueba las pantallas en Android/iOS.
 
 ## Addendum de avance — 17 de noviembre de 2026, 04:50 UTC
 
