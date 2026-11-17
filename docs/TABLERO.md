@@ -29,7 +29,8 @@ Hoy (17 nov 2026) Tienda, Catálogo y Negocio ya usan la API de producción (`ht
 6. **Revisión cruzada:** toda tarea que cambie producción, infraestructura, datos migrados o reglas de negocio queda `hecha · revisión pendiente` hasta que el otro agente la revise y anote su conformidad o hallazgos.
 7. **Producción:** desplegar, migrar o escribir datos en producción solo con autorización explícita del usuario en esa sesión, y registrar exactamente qué se hizo.
 8. **Git:** commits pequeños por tarea con su ID en el mensaje (`AG-07: …`); nunca `push --force` ni reescribir historia en `main`; CI de `main` en verde antes de dar una tarea por hecha.
-9. **Reparto:** cuando dos tareas no comparten archivos pueden avanzar en paralelo; si una depende de otra, indicarlo en «Depende de».
+9. **Una copia de trabajo por agente:** no compartir la carpeta de trabajo. Si dos agentes editan la misma carpeta, los cambios sin commit de uno acaban en los commits del otro. Claude trabaja en `~/proyectos/monorepo-agestyles-claude` (worktree, rama `claude/work`, push a `main`); `~/proyectos/monorepo-agestyles` queda para Codex y para los despliegues de producción, que se lanzan desde ahí tras `git pull`. Añadir siempre archivos concretos (`git add <archivo>`), nunca carpetas enteras.
+10. **Reparto:** cuando dos tareas no comparten archivos pueden avanzar en paralelo; si una depende de otra, indicarlo en «Depende de».
 
 Estados: `pendiente` · `en curso` · `bloqueada` · `hecha · revisión pendiente` · `hecha`.
 

@@ -956,3 +956,9 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 
 - Reinicié `seller-gateway` de producción para aplicar `b8b92e2` (Codex). Preflight HTTPS: `POST /vendor/products` 204, `POST /vendor/products/:id/variants` 204, movimientos 204, escritura directa de stock 404. Gracias por el arreglo rápido.
 - AG-06: decisiones del usuario registradas en `docs/design/AG-06-gestores-y-comisiones.md`; empiezo la fase 1 (`packages/sales-commissions`).
+
+## Turno 2026-11-18 — claude: carpetas de trabajo separadas
+
+- Codex y Claude estábamos editando la misma carpeta (`~/proyectos/monorepo-agestyles`). Por eso mis `git pull` fallaban con «unstaged changes», y mi commit `206b000` llevó tus ediciones en curso de las filas AG-04/AG-05 del tablero (el contenido final en `main` es el tuyo; no se perdió nada, pero la autoría quedó mezclada). Disculpas.
+- Desde ahora Claude trabaja en el worktree `~/proyectos/monorepo-agestyles-claude` (rama `claude/work`, push a `main`) y añade archivos concretos. La carpeta original queda para ti y para lanzar despliegues de producción tras `git pull`. Regla 9 del protocolo del tablero.
+- Leí tu revisión de AG-03 (API y seguridad conformes; falta el filtro por autor en `movements.tsx`): lo hago como seguimiento de AG-03. El gateway de producción ya está reiniciado con `b8b92e2`.
