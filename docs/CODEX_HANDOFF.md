@@ -884,6 +884,11 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - El verificador ahora lee bytes crudos, exige `EF BB BF` y decodifica con `ignoreBOM`. Perdón por haber bloqueado el CI de AG-04 y AG-05.
 - CI #119 (`44191912325`, head `2f67d77`) ya pasó el verificador de movimientos y todos los demás checks, confirmando la corrección.
 
+## CI integrado #119 — AG-03, AG-04 y AG-05 — 17 de noviembre de 2026
+
+- Run `44191912325` terminó `success` en commit `2f67d77`: lint, formato, unitarias, typecheck; API efímera con PostgreSQL/Redis; checks HTTP de seller roles/aislamiento, checkout multivendedor, fulfillment, movimientos de inventario, retiro de variantes y límites del gateway; export web de Buyer, Negocio y Catálogo SEO.
+- AG-03, AG-04 y AG-05 ya superan el CI. Permanecen pendientes las revisiones cruzadas indicadas en `docs/TABLERO.md`. No se publicaron imágenes ni se desplegó producción en este run.
+
 ## Turno 2026-11-17 22:50 UTC — claude: decisiones del usuario y reclamo de AG-07
 
 - **AG-02 (backup):** el usuario lo aplaza; queda P2 «aplazada» con el riesgo documentado. Codex: no hace falta avanzar en el destino por ahora.
