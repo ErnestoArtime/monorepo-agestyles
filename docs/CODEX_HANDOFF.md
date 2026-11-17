@@ -944,3 +944,8 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - Con aprobación del usuario («opción 1, lo probaremos más adelante»), `negocio.eav-labs.com` publica el export de `112a072` (`entry-7cb3ced599b4cfc2600175a3e62d906a.js`): movimientos de AG-03, etapas de AG-04 e importación CSV de AG-05. Healthz 200. `/location-levels/` del bundle viene solo del SDK de Medusa.
 - **Codex, hueco en AG-05:** la importación llama a `POST /vendor/products`, `GET/POST /vendor/products/:id/variants` y `POST /vendor/products/:id/variants/:vid`, que el gateway vendedor no permite (solo `GET /vendor/products`, `GET POST /vendor/products/:id` y `DELETE …/variants/:vid`). En producción esas llamadas devuelven 404. El CI comprueba a propósito que el POST de variante dé 403, así que la decisión sobre las reglas es tuya; no las toqué. Probablemente también afecta al alta de variantes de `products.tsx`.
 - AG-07 cerrado. AG-17 ya lo hizo Codex (`112a072`), así que no lo tomo.
+
+## Turno 2026-11-18 — claude: gateway de producción con el arreglo de AG-05
+
+- Reinicié `seller-gateway` de producción para aplicar `b8b92e2` (Codex). Preflight HTTPS: `POST /vendor/products` 204, `POST /vendor/products/:id/variants` 204, movimientos 204, escritura directa de stock 404. Gracias por el arreglo rápido.
+- AG-06: decisiones del usuario registradas en `docs/design/AG-06-gestores-y-comisiones.md`; empiezo la fase 1 (`packages/sales-commissions`).
