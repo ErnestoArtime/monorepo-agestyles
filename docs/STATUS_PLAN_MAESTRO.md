@@ -128,5 +128,5 @@ El checkout fuente presenta cambios sin seguimiento en `.codex/`, `scripts/__pyc
 
 - El login de negocio ahora autentica `member` y luego intenta autenticar `customer` con las mismas credenciales, escribiendo cada JWT en su almacenamiento de actor independiente. El buyer SDK se comparte entre el flujo de login y el modo Comprar; no se conserva la contraseña. Si el actor buyer no está vinculado/no autentica, el login de negocio continúa.
 - El test sintético del coordinador cubre éxito de ambos actores y fallos independientes. Test del paquete y typecheck de Business/`features-buyer` pasan; ESLint dirigido, Prettier y `git diff --check` pasan.
-- Aún no es aceptación end-to-end: falta comprobar una identidad enlazada desde la interfaz, volver de comprador a negocio, refresh, revocación y logout de un actor/todos. No se llamó API ni DB. Estas modificaciones siguen locales, pendientes de commit/CI.
-- El CI del commit documental `5b4e745` terminó `success` (run `44028059472`); este resultado no cubre los cambios F5 locales.
+- Commit `598c7da` publicó la implementación en `main`; GitHub Actions run [44029135950](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44029135950) terminó `success` con lint, formato, tests, typecheck y tres builds web.
+- Aún no es aceptación end-to-end: falta comprobar una identidad enlazada desde la interfaz, volver de comprador a negocio, refresh, revocación y logout de un actor/todos. No se llamó API ni DB, y esta versión aún no se ha publicado en las webs públicas.
