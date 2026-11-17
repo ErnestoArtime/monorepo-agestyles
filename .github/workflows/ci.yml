@@ -46,21 +46,42 @@ jobs:
       - name: Type-check the API, application, and shared client
         run: pnpm typecheck
 
-      - name: Build isolated Medusa server
-        shell: bash
+      - name: Create disposable container build configuration
+        id: api-build-env
         run: |
           set -euo pipefail
+          umask 077
+          env_file="$(mktemp)"
           db_password="$(openssl rand -hex 24)"
           jwt_secret="$(openssl rand -hex 32)"
           cookie_secret="$(openssl rand -hex 32)"
-          export DATABASE_URL="postgres://agestyles_lab:${db_password}@127.0.0.1:15472/agestyles_mercur_lab"
-          export REDIS_URL="redis://127.0.0.1:16392"
-          export JWT_SECRET="${jwt_secret}"
-          export COOKIE_SECRET="${cookie_secret}"
-          echo "::add-mask::${DATABASE_URL}"
-          echo "::add-mask::${JWT_SECRET}"
-          echo "::add-mask::${COOKIE_SECRET}"
-          pnpm --filter @agestyles/commerce-api build
+          {
+            printf 'DATABASE_URL=postgres://agestyles_lab:%s@127.0.0.1:15472/agestyles_mercur_lab\n' "${db_password}"
+            printf 'REDIS_URL=redis://127.0.0.1:16392\n'
+            printf 'JWT_SECRET=%s\n' "${jwt_secret}"
+            printf 'COOKIE_SECRET=%s\n' "${cookie_secret}"
+          } > "${env_file}"
+          echo "path=${env_file}" >> "${GITHUB_OUTPUT}"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Commerce API runtime image without publishing
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./apps/commerce-api/Dockerfile.public
+          push: false
+          tags: agestyles/commerce-api:ci
+          secret-files: |
+            lab_env=${{ steps.api-build-env.outputs.path }}
+
+      - name: Remove disposable container build configuration
+        if: always()
+        env:
+          ENV_FILE: ${{ steps.api-build-env.outputs.path }}
+        run: |
+          if [[ -n "${ENV_FILE}" ]]; then rm -f -- "${ENV_FILE}"; fi
 
       - name: Export buyer app for web
         env:
