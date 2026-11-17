@@ -688,3 +688,37 @@ Los verificadores de CI protegidos para PostgreSQL/Redis desechables cubren fulf
 ## F5 — CI de preparación y permisos de fulfillment — 17 de noviembre de 2026
 
 El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Types.NOT_ALLOWED` respondía 400, así que la ruta ahora usa `FORBIDDEN` para devolver 403 a roles sin `orders:edit`. El formato y el typecheck local de Commerce API pasan. CI [run 44101193002](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44101193002) terminó success: permisos de seller, checkout mixto, creación de fulfillment en pedido A2, rechazo de ubicación B2, repetición, gestor de inventario y solo lectura se ejecutaron contra PostgreSQL/Redis efímeros; exports Buyer/Business y build del storefront también pasaron. Los verificadores exigen `AGESTYLES_CI_DISPOSABLE=true`; no tocaron el laboratorio compartido. No se publicó imagen ni se desplegó.
+
+## Avance local de localización y F6 — 17 de noviembre de 2026, 15:15 UTC
+
+- Buyer/Business convierten errores API y enums visibles en español; Storefront ajusta etiquetas de reserva. También se corrigieron la pestaña de inventario, los nombres del seed de envío y el fallback de métodos de pago. `AGENTS.md` establece español para las interfaces. La proyección de catálogo normaliza algunos nombres conocidos y conserva sus valores originales en metadata.
+- Se prepararon `tools/migration/export-public-supabase-catalog.mjs` (lectura acotada con clave anon, allowlist, conteo fijo, salida privada fuera del repo) e `import-catalog-bundle-to-medusa.mjs` (dry-run por defecto; apply loopback con guardas; drafts idempotentes, sin sellers/precios/stock/bytes de medios). Se documentaron comandos y límites.
+- Se añadió provider S3 opcional de Medusa y perfil MinIO con volumen persistente y puertos loopback; el proveedor local sigue por defecto. No se arrancó el perfil. Hace falta configurar el origin HTTPS antes de exponer medios; pasos en `docs/runbooks/minio-media-lab.md`.
+- La revisión de Supabase quedó limitada a catálogo público y agregados, sin usuarios/pedidos/datos personales: 33 productos, 31 imágenes, 5 categorías, 14 subcategorías, cero tiendas/comercios/variantes comerciales. El export/import real no se ejecutó; faltan backup cifrado + restore, almacenamiento de imágenes y mapeos de seller/moneda/stock.
+- No se ejecutaron pruebas ni builds en este avance. `git diff --check` pasó. El árbol sigue local y sin commit sobre `main` `5a9d56e`; el host tiene 2.8 GiB libres (99 % usado). No publicar ni limpiar recursos antes de revisar capacidad y gates.
+
+## Revisión de español y exportación del catálogo — 17 de noviembre de 2026
+
+- Búsqueda acotada de etiquetas inglesas en Buyer, Business y Storefront: no encontró texto inglés renderizado en las coincidencias inspeccionadas; sí aparecieron mensajes `console.error` internos en inglés, que no se muestran a clientes. Esto no sustituye una revisión visual completa de pantallas ni del contenido que se cargue dinámicamente.
+- Buyer no contiene configuración de Supabase; el repositorio histórico sí. El exportador primero falló porque seleccionaba `products.category_slug`, campo que no existe en el esquema vivo. Se corrigió para leer `products.category` y generar la proyección real privada descrita abajo. No hizo escrituras en Supabase.
+- No se hicieron pruebas/builds adicionales. `git diff --check` pasó después de consolidar la nota.
+
+## Funcionalidad Buyer: favoritos — 17 de noviembre de 2026
+
+- Buyer ahora tiene una pestaña `Favoritos`, guarda IDs de productos en AsyncStorage y permite marcarlos/quitar la marca en las tarjetas. La lista recupera los productos visibles de la región seleccionada; se adapta a claro/oscuro y reutiliza `@agestyles/icons`.
+- Los favoritos son locales a este dispositivo; la sincronización de cuenta queda pendiente. No se ejecutaron tests ni builds. La única comprobación ejecutada fue `git diff --check`.
+
+## F6 — proyección real del catálogo y dry-run — 17 de noviembre de 2026
+
+- Se usó `/home/ernesto/proyectos/Agestyles-Catalogo/.env.local`; no se imprimieron valores. Después de corregir el alias de categoría en el exportador, este leyó únicamente categorías, subcategorías, productos publicados y metadatos/bytes públicos de imágenes para calcular hashes. Se creó el bundle privado `/home/ernesto/.local/share/agestyles-migrations/catalog-2026-11-17` con permisos 700 para el directorio y 600 para sus archivos.
+- Exportación: 33 productos, 5 categorías, 14 subcategorías, 31 imágenes; 33 variantes derivadas de las opciones; 116 registros de staging y conteos concordantes. Los bytes de imagen solo se descargaron temporalmente para calcular hashes; `image_bytes_written=0`.
+- Dry-run del importador: bundle válido, cero escrituras, 33 productos sin seller y sin stock mapeados; política de productos globales `draft`, categorías inactivas, sin precios efectivos ni carga de medios. PostgreSQL y Redis están healthy con `docker compose --env-file apps/commerce-api/.env -f infra/compose/mercur-lab.yaml ps`; `http://127.0.0.1:19081/health` devolvió 200. No se hizo `--apply` porque no hay JWT Admin disponible para el API loopback.
+- No hubo llamadas de escritura a Supabase, importación a Medusa, tests ni builds. La aplicación posterior requiere decidir mapeos comerciales y medios; el bundle contiene datos de catálogo público y permanece fuera de Git.
+
+## Dirección de migración — destino final, no más iteraciones de laboratorio
+
+- El usuario pidió cargar los productos donde vivirán finalmente. Se confirmó en `docs/storefront-web-vps.md` que `catalogo.eav-labs.com` usa hoy `MEDUSA_BACKEND_URL=https://descargas.eav-labs.com/agestyles-lab`; no existe una API de producción separada en la configuración del repo/runtime inspeccionado.
+- Los 33 productos legacy tienen `store_id=null`; el origen no tiene tiendas ni variantes comerciales. No se puede publicar una oferta/comprabilidad sin resolver vendedor y stock. No se ejecutará el importador loopback de laboratorio como atajo a una carga final.
+- El usuario confirmó que quiere una tienda oficial AgeStyles para esos productos. De los datos de origen, 19 saldos corresponden a variantes pero no hay ubicación/tienda asociada; falta confirmar o crear la ubicación oficial al provisionar el destino final.
+- Se amplió el exportador con `--media-directory`: guarda los archivos públicos por SHA-256, en una carpeta nueva con modo 700 y archivos 600, con tope de 25 MiB por imagen y 100 MiB por corte. Bundle y media actuales: `/home/ernesto/.local/share/agestyles-migrations/catalog-2026-11-17-with-media` y `/home/ernesto/.local/share/agestyles-migrations/catalog-media-2026-11-17`.
+- Resultado de la ejecución real: 31 imágenes/2,123,500 bytes, hashes calculados contra los nombres de archivo 31/31; nuevo bundle con 116 registros y dry-run válido. No se hizo importación ni despliegue.
