@@ -1,6 +1,6 @@
 # Auditoría de cumplimiento del plan maestro AgeStyles 2.0
 
-**Corte:** 17 de noviembre de 2026, 05:29 UTC
+**Corte:** 17 de noviembre de 2026, 05:32 UTC
 **Alcance:** contraste de `AGESTYLES_2_0_PLAN_MAESTRO.md`, `STATUS_PLAN_MAESTRO.md`, `MATRIZ_REUTILIZACION.md`, `CODEX_HANDOFF.md` y el grafo de código del monorepo.
 **Conclusión:** el plan sigue en ejecución; ninguna de las fases F0–F8 puede marcarse completa con la evidencia disponible. F9 está correctamente diferida. El laboratorio de marketplace y varias verticales están avanzadas, pero siguen pendientes gates de datos, validación en dispositivos, QA, despliegue y cutover.
 
@@ -64,8 +64,9 @@ El grafo del monorepo está indexado. La arquitectura muestra apps `commerce-api
 - La publicación tiene workflow manual por SHA y overrides Compose separados, validados mediante `docker compose config`. No se ha publicado el código local: remoto `main` sigue en `636a774`, los tres contenedores web usan imágenes antiguas y no se ejecutó Actions, pull o despliegue.
 - Límite operativo sin cambios: 3.5 GiB libres en el único disco. Sigue pendiente un destino externo cifrado; no se ejecutó prune, backup, restore, ETL ni cutover.
 
-## Addendum de publicación — 17 de noviembre de 2026, 05:29 UTC
+## Addendum de publicación — 17 de noviembre de 2026, 05:32 UTC
 
 - Se subieron a `main` los cambios de temas (`162fbf4`), el lockfile corregido (`192122d`) y la localización española de rutas Buyer (`202eff8`). El CI completo de `192122d` y `202eff8` terminó success.
 - El pipeline CI de `202eff8` pasó lint, formato, tests, typecheck, exports web Buyer/Business y build SEO Next. Esto no equivale a imágenes runtime publicadas ni a deploy.
 - En esta comprobación, las webs públicas todavía usan imágenes anteriores. El siguiente paso del runbook requiere ejecutar `Publish frontend images` para un commit de `main` con CI exitoso y desplegar el tag inmutable por servicio.
+- En `202eff8` terminaron success todos los gates, incluidos los builds Buyer/Business/storefront. Un preflight público del comprador respondió 204 con `x-medusa-locale` y `x-publishable-api-key` permitidos; `store/regions` y `store/products?limit=1` respondieron 200 con la configuración de la app. Esto demuestra disponibilidad del gateway, no que el bundle web anterior cargue/renderice correctamente.

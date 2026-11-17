@@ -1,6 +1,6 @@
 # Estado de ejecución del plan maestro AgeStyles 2.0
 
-**Corte de auditoría:** 17 de noviembre de 2026, 05:29 UTC
+**Corte de auditoría:** 17 de noviembre de 2026, 05:32 UTC
 
 **Documento rector:** [AGESTYLES_2_0_PLAN_MAESTRO.md](./AGESTYLES_2_0_PLAN_MAESTRO.md)
 
@@ -87,8 +87,9 @@ El checkout fuente presenta cambios sin seguimiento en `.codex/`, `scripts/__pyc
 - El workflow manual `.github/workflows/publish-frontends.yml` y el runbook `docs/runbooks/manual-frontend-publish.md` ya están preparados. El workflow no se ha ejecutado: los cambios siguen locales, GitHub `main` conserva `636a774`, y buyer, business y catálogo continúan con imágenes anteriores. No hubo pull, deploy ni cambios DNS.
 - Se mantiene el límite de capacidad: 3.5 GiB libres en el único disco del host. No se ejecutaron builds grandes ni limpieza de Docker. F0/F1/F4/F6/F7/F8 siguen abiertas según sus gates previos.
 
-## Actualización de publicación — 17 de noviembre de 2026, 05:29 UTC
+## Actualización de publicación — 17 de noviembre de 2026, 05:32 UTC
 
 - Los cambios de tema y pipeline están en `main` desde `162fbf4`; la corrección del lockfile está en `192122d`. El CI de `192122d` finalizó success, incluyendo lint, formato, 5/5 tests, 12/12 typechecks, export de Buyer/Business y build del storefront.
 - `202eff8` añade textos en español a catálogo, carrito, ficha y confirmación de compra. Su typecheck dirigido, ESLint y Prettier pasaron; el CI remoto terminó success con lint, formato, tests, typecheck y las tres compilaciones web.
 - El repo ya tiene los últimos cambios de código, pero las webs públicas siguen en las imágenes anteriores. El workflow de imágenes está preparado y es manual; aún no se ha ejecutado ni desplegado.
+- En `202eff8` la verificación de CI terminó success. Prueba de solo lectura contra el gateway público del comprador: preflight desde `tienda.eav-labs.com` devuelve 204 y permite `x-medusa-locale`/`x-publishable-api-key`; `store/regions` y `store/products?limit=1` devuelven 200 usando la configuración local de la app. Esto acota el bloqueo previo de CORS en el gateway actual, pero no valida el bundle web desplegado ni la renderización de la app.
