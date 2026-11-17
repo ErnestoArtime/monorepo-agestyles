@@ -8,7 +8,7 @@
     ]
   },
   "scripts": {
-    "build:workspace-modules": "pnpm --filter @agestyles/quotations build && pnpm --filter @agestyles/catalog-pim build && pnpm --filter @agestyles/manual-payments build",
+    "build:workspace-modules": "pnpm --filter @agestyles/quotations build && pnpm --filter @agestyles/catalog-pim build && pnpm --filter @agestyles/manual-payments build && pnpm --filter @agestyles/inventory-movements build",
     "build": "pnpm build:workspace-modules && medusa build",
     "typecheck": "pnpm build:workspace-modules && tsc --noEmit",
     "test": "node --test test/*.test.mjs",
@@ -18,8 +18,9 @@
     "verify:order-quote-expiry": "node --env-file=../../apps/commerce-api/.env --env-file=../../apps/buyer-app/.env.local scripts/verify-order-quote-expiry.mjs"
   },
   "dependencies": {
-    "@agestyles/domain": "workspace:*",
     "@agestyles/catalog-pim": "workspace:*",
+    "@agestyles/domain": "workspace:*",
+    "@agestyles/inventory-movements": "workspace:*",
     "@agestyles/manual-payments": "workspace:*",
     "@medusajs/admin-sdk": "2.22.3",
     "@medusajs/cli": "2.22.3",

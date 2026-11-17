@@ -23,6 +23,8 @@ type BusinessContextValue = {
   logout: () => Promise<void>;
   selectSeller: (seller: Seller) => Promise<void>;
   request: <T>(path: string, method?: string, body?: unknown) => Promise<T>;
+  /** Non-JSON downloads (CSV exports) for the selected seller. */
+  requestText: (path: string, accept?: string) => Promise<string>;
   reloadSellers: () => Promise<void>;
 };
 
@@ -65,6 +67,18 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
           headers: seller ? { "x-seller-id": seller.id } : {},
         }),
       );
+    },
+    [seller],
+  );
+
+  const requestText = useCallback(
+    async (path: string, accept = "text/csv") => {
+      if (!seller) throw new Error("Selecciona una tienda para continuar.");
+      // Without an application/json accept header the SDK returns the raw Response.
+      const response: Response = await sdk.client.fetch(path, {
+        headers: { "x-seller-id": seller.id, accept },
+      });
+      return response.text();
     },
     [seller],
   );
@@ -169,6 +183,7 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
       logout,
       selectSeller,
       request,
+      requestText,
       reloadSellers,
     }),
     [
@@ -182,6 +197,7 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
       logout,
       selectSeller,
       request,
+      requestText,
       reloadSellers,
     ],
   );

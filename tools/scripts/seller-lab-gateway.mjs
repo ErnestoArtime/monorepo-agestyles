@@ -48,7 +48,10 @@ const rules = [
   ["POST", /^\/vendor\/agestyles\/orders\/order_[a-z0-9_-]+\/fulfillments$/i],
   ["GET POST", /^\/vendor\/products\/[a-z0-9_-]+$/i],
   ["DELETE", /^\/vendor\/products\/[a-z0-9_-]+\/variants\/[a-z0-9_-]+$/i],
-  ["POST", /^\/vendor\/inventory-items\/[a-z0-9_-]+\/location-levels\/[a-z0-9_-]+$/i],
+  // Stock changes go through the movement history (AG-03); the direct
+  // location-level write is not exposed so nothing bypasses the history.
+  ["GET POST", /^\/vendor\/agestyles\/inventory-movements$/],
+  ["GET", /^\/vendor\/agestyles\/inventory-movements\/export$/],
   ["GET POST", /^\/vendor\/sellers\/sel_[a-z0-9]+\/members$/i],
   ["POST DELETE", /^\/vendor\/sellers\/sel_[a-z0-9]+\/members\/[a-z0-9_-]+$/i],
 ];

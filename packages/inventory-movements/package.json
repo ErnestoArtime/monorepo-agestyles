@@ -1,0 +1,32 @@
+{
+  "name": "@agestyles/inventory-movements",
+  "version": "0.0.0",
+  "private": true,
+  "description": "AgeStyles inventory movement history module for Medusa v2: every stock change with type, reason, actor and before/after quantities",
+  "keywords": [
+    "agestyles",
+    "medusa-module",
+    "inventory"
+  ],
+  "medusaModule": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./rules": {
+      "types": "./dist/rules.d.ts",
+      "default": "./dist/rules.js"
+    }
+  },
+  "peerDependencies": {
+    "@medusajs/framework": "2.22.3"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "node test/inventory-movements.test.ts"
+  }
+}

@@ -224,6 +224,13 @@ jobs:
           AGESTYLES_LAB_SEEDED_PASSWORD: ci_lab_password_0123456789
         run: node apps/commerce-api/scripts/verify-fulfillment-permissions.mjs
 
+      - name: Verify inventory movements over HTTP on disposable data
+        env:
+          EXPO_PUBLIC_MEDUSA_URL: http://127.0.0.1:19081
+          AGESTYLES_CI_DISPOSABLE: "true"
+          AGESTYLES_LAB_SEEDED_PASSWORD: ci_lab_password_0123456789
+        run: node apps/commerce-api/scripts/verify-inventory-movements.mjs
+
       - name: Verify variant removal permissions over HTTP on disposable data
         env:
           EXPO_PUBLIC_MEDUSA_URL: http://127.0.0.1:19081
@@ -273,6 +280,19 @@ jobs:
             --request OPTIONS http://127.0.0.1:19183/agestyles-seller/vendor/orders/order_ci_1/fulfillments \
             --header 'Origin: https://negocio.eav-labs.com' \
             --header 'Access-Control-Request-Method: POST')"
+          movements_status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            --request OPTIONS http://127.0.0.1:19183/agestyles-seller/vendor/agestyles/inventory-movements \
+            --header 'Origin: https://negocio.eav-labs.com' \
+            --header 'Access-Control-Request-Method: POST')"
+          direct_level_status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            --request OPTIONS http://127.0.0.1:19183/agestyles-seller/vendor/inventory-items/iitem_ci_1/location-levels/sloc_ci_1 \
+            --header 'Origin: https://negocio.eav-labs.com' \
+            --header 'Access-Control-Request-Method: POST')"
+          if [[ "${movements_status}" != "204" || "${direct_level_status}" != "404" ]]; then
+            echo "Expected inventory movement preflight 204 and direct stock-level write 404; got ${movements_status}/${direct_level_status}." >&2
+            cat /tmp/agestyles-seller-gateway-ci.log
+            exit 1
+          fi
           if [[ "${fulfillment_status}" != "204" || "${locations_status}" != "204" || "${upstream_fulfillment_status}" != "404" ]]; then
             echo "Expected custom fulfillment/location preflights 204 and blocked upstream fulfillment route 404; got ${fulfillment_status}/${locations_status}/${upstream_fulfillment_status}." >&2
             cat /tmp/agestyles-seller-gateway-ci.log

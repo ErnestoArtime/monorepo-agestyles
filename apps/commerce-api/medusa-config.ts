@@ -126,6 +126,7 @@ module.exports = withMercur({
     { resolve: "../../packages/quotations" },
     { resolve: "../../packages/catalog-pim" },
     { resolve: "../../packages/manual-payments" },
+    { resolve: "../../packages/inventory-movements" },
     { resolve: "@mercurjs/core/modules/admin-ui", options: { disable: true } },
     { resolve: "@mercurjs/core/modules/vendor-ui", options: { disable: true } },
     { resolve: "@medusajs/medusa/cache-redis", options: { redisUrl: REDIS_URL } },
