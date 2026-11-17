@@ -795,14 +795,14 @@ export default async function seedDemoData({ container }: ExecArgs) {
         seller_id: seller.id,
         shipping_options: [
           {
-            name: "Standard Shipping",
+            name: "Envío estándar",
             price_type: "flat",
             provider_id: "manual_manual",
             service_zone_id: serviceZoneId,
             shipping_profile_id: shippingProfileId,
             type: {
-              label: "Standard",
-              description: "Ship in 2-3 days.",
+              label: "Estándar",
+              description: "Entrega en 2–3 días.",
               code: "standard",
             },
             prices: [
@@ -816,14 +816,14 @@ export default async function seedDemoData({ container }: ExecArgs) {
             ],
           },
           {
-            name: "Express Shipping",
+            name: "Envío exprés",
             price_type: "flat",
             provider_id: "manual_manual",
             service_zone_id: serviceZoneId,
             shipping_profile_id: shippingProfileId,
             type: {
-              label: "Express",
-              description: "Ship in 24 hours.",
+              label: "Exprés",
+              description: "Entrega en 24 horas.",
               code: "express",
             },
             prices: [

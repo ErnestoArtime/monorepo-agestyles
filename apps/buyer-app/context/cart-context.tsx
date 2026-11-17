@@ -1,9 +1,15 @@
 import { createBuyerCartFeature } from "@agestyles/features-buyer/cart";
 import { sdk } from "@/lib/sdk";
-import { FetchError } from "@medusajs/js-sdk";
 import type { HttpTypes } from "@medusajs/types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import React, { createContext, ReactNode, useCallback, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import { useRegion } from "./region-context";
 
 interface CartContextType {
@@ -39,8 +45,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const currentCart = await cartFeature.loadOrCreate(selectedRegion.id);
       setCart(currentCart);
       return currentCart;
-    } catch (err) {
-      setError(`Failed to load cart: ${err instanceof FetchError ? err.message : String(err)}`);
+    } catch {
+      setError("No se pudo cargar el carrito. Inténtalo de nuevo.");
       return null;
     } finally {
       setLoading(false);
@@ -49,7 +55,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // Load cart on mount
   useEffect(() => {
-    loadCart()
+    loadCart();
   }, [loadCart]);
 
   // Update cart's region when selected region changes
@@ -63,8 +69,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setLoading(true);
         const updatedCart = await cartFeature.updateRegion(cart.id, selectedRegion.id);
         setCart(updatedCart);
-      } catch (err) {
-        setError(`Failed to update cart region: ${err instanceof FetchError ? err.message : String(err)}`);
+      } catch {
+        setError("No se pudo actualizar la región de entrega. Inténtalo de nuevo.");
       } finally {
         setLoading(false);
       }
@@ -76,7 +82,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addToCart = async (offerId: string, quantity: number) => {
     let currentCart = cart;
-    
+
     if (!currentCart) {
       currentCart = await loadCart();
       if (!currentCart) throw new Error("Could not create cart");
@@ -89,7 +95,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const updatedCart = await cartFeature.addOffer(currentCart.id, offerId, quantity);
       setCart(updatedCart);
     } catch (err) {
-      setError(`Failed to add item to cart: ${err instanceof FetchError ? err.message : String(err)}`);
+      setError("No se pudo añadir el producto al carrito. Inténtalo de nuevo.");
       throw err;
     } finally {
       setLoading(false);
@@ -106,7 +112,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const updatedCart = await cartFeature.updateItemQuantity(cart.id, itemId, quantity);
       setCart(updatedCart);
     } catch (err) {
-      setError(`Failed to update quantity: ${err instanceof FetchError ? err.message : String(err)}`);
+      setError("No se pudo actualizar la cantidad. Inténtalo de nuevo.");
       throw err;
     } finally {
       setLoading(false);
@@ -123,7 +129,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const updatedCart = await cartFeature.removeItem(cart.id, itemId);
       setCart(updatedCart);
     } catch (err) {
-      setError(`Failed to remove item: ${err instanceof FetchError ? err.message : String(err)}`);
+      setError("No se pudo quitar el producto del carrito. Inténtalo de nuevo.");
       throw err;
     } finally {
       setLoading(false);
@@ -136,8 +142,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     try {
       const updatedCart = await cartFeature.refresh(cart.id);
       setCart(updatedCart);
-    } catch (err) {
-      setError(`Failed to refresh cart: ${err instanceof FetchError ? err.message : String(err)}`);
+    } catch {
+      setError("No se pudo actualizar el carrito. Inténtalo de nuevo.");
     }
   };
 
@@ -183,4 +189,3 @@ export function useCart() {
   }
   return context;
 }
-

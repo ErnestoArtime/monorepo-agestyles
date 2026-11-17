@@ -13,11 +13,8 @@ export default function MoreScreen() {
   async function switchTo(item: Seller) {
     try {
       await selectSeller(item);
-    } catch (cause) {
-      Alert.alert(
-        "No se pudo cambiar de tienda",
-        cause instanceof Error ? cause.message : "Vuelve a intentarlo.",
-      );
+    } catch {
+      Alert.alert("No se pudo cambiar de tienda", "Vuelve a intentarlo.");
     }
   }
   async function signOut() {

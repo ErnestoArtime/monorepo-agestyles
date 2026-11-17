@@ -17,15 +17,23 @@ export function getPaymentProviderInfo(providerId: string): PaymentProviderInfo 
     case "pp_system_default":
       return {
         icon: "creditCard",
-        title: "Manual Payment",
+        title: "Pago manual",
+      };
+    case "pp_stripe":
+    case "pp_stripe_stripe":
+      return {
+        icon: "creditCard",
+        title: "Tarjeta bancaria",
+      };
+    case "pp_paypal_paypal":
+      return {
+        icon: "creditCard",
+        title: "PayPal",
       };
     default:
       return {
         icon: "creditCard",
-        title: providerId
-          .replace("pp_", "")
-          .replace(/_/g, " ")
-          .replace(/\b\w/g, (l) => l.toUpperCase()),
+        title: "Otro método de pago",
       };
   }
 }

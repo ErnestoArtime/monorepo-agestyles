@@ -206,7 +206,7 @@ export default function ProductDetailsScreen() {
           </Text>
           {!isInStock && (
             <View style={[styles.stockBadge, { backgroundColor: colors.error }]}>
-              <Text style={[styles.outOfStockText, { color: colors.onError }]}>Out of Stock</Text>
+              <Text style={[styles.outOfStockText, { color: colors.onError }]}>Agotado</Text>
             </View>
           )}
         </View>
@@ -258,7 +258,7 @@ export default function ProductDetailsScreen() {
 
         {!!offers.length && (
           <View style={styles.optionGroup}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Seller</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Vendedor</Text>
             {offers.map((offer) => (
               <TouchableOpacity
                 key={offer.id}
@@ -293,7 +293,7 @@ export default function ProductDetailsScreen() {
         )}
 
         <View style={styles.quantitySection}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Quantity</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Cantidad</Text>
           <View style={styles.quantityControls}>
             <TouchableOpacity
               style={[styles.quantityButton, { borderColor: colors.icon }]}

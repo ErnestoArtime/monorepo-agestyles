@@ -57,9 +57,9 @@ export function RegionSelector({ onRegionChange }: RegionSelectorProps) {
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={[styles.title, { color: colors.text }]}>Select Country</Text>
+      <Text style={[styles.title, { color: colors.text }]}>Selecciona un país</Text>
       {countries.length === 0 ? (
-        <Text style={[styles.emptyText, { color: colors.icon }]}>No countries available</Text>
+        <Text style={[styles.emptyText, { color: colors.icon }]}>No hay países disponibles</Text>
       ) : (
         countries.map((country) => {
           const isSelected = isCountrySelected(country);

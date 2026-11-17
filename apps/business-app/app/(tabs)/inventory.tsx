@@ -36,12 +36,8 @@ export default function InventoryScreen() {
         "/vendor/inventory-items?limit=50&fields=id,title,sku,location_levels.id,location_levels.location_id,location_levels.stocked_quantity,location_levels.location.name",
       );
       setItems(data?.inventory_items ?? []);
-    } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "No se pudo consultar el inventario de esta tienda.",
-      );
+    } catch {
+      setError("No se pudo consultar el inventario de esta tienda.");
     } finally {
       setLoading(false);
     }
@@ -66,10 +62,10 @@ export default function InventoryScreen() {
         "POST",
         { stocked_quantity: quantity },
       );
-      setNotice(`Stock actualizado: ${item.title ?? item.sku ?? "artículo"}.`);
+      setNotice(`Existencias actualizadas: ${item.title ?? item.sku ?? "artículo"}.`);
       await load();
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "No se pudo actualizar el stock.");
+    } catch {
+      setError("No se pudieron actualizar las existencias.");
     } finally {
       setSaving("");
     }
@@ -108,7 +104,7 @@ export default function InventoryScreen() {
                     {level.location?.name
                       ? ` · ${level.location.name}`
                       : !level.location_id
-                        ? " · Sin ubicación de stock"
+                        ? " · Sin almacén asignado"
                         : ""}
                   </Text>
                 </View>
@@ -119,7 +115,7 @@ export default function InventoryScreen() {
                       onPress={() => void adjust(item, level, -1)}
                       disabled={saving === item.id}
                       accessibilityRole="button"
-                      accessibilityLabel="Reducir stock"
+                      accessibilityLabel="Reducir existencias"
                       style={styles.adjustButton}
                     >
                       <Text style={styles.adjustText}>−</Text>
@@ -128,7 +124,7 @@ export default function InventoryScreen() {
                       onPress={() => void adjust(item, level, 1)}
                       disabled={saving === item.id}
                       accessibilityRole="button"
-                      accessibilityLabel="Aumentar stock"
+                      accessibilityLabel="Aumentar existencias"
                       style={styles.adjustButton}
                     >
                       <Text style={styles.adjustText}>+</Text>

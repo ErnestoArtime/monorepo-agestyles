@@ -4,6 +4,7 @@ import { Icon } from "@agestyles/icons";
 import { hasPermission, OperationList, Row, Section } from "../../components/operation-list";
 import { useBusiness } from "../../context/business-context";
 import { useBusinessTheme } from "../../hooks/use-business-theme";
+import { orderStatusLabel } from "../../lib/status-labels";
 
 type Order = {
   id: string;
@@ -70,12 +71,8 @@ export default function OrdersScreen() {
         "/vendor/orders?limit=50&fields=id,display_id,status,fulfillment_status,created_at,currency_code,total",
       );
       setItems(data?.orders ?? []);
-    } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "Tu rol no puede consultar los pedidos de esta tienda.",
-      );
+    } catch {
+      setError("Tu rol no puede consultar los pedidos de esta tienda.");
     } finally {
       setLoading(false);
     }
@@ -117,9 +114,9 @@ export default function OrdersScreen() {
       } else {
         setLocations([]);
       }
-    } catch (cause) {
+    } catch {
       setSelectedOrder(null);
-      setError(cause instanceof Error ? cause.message : "No se pudo abrir el pedido.");
+      setError("No se pudo abrir el pedido.");
     } finally {
       setDetailLoading(false);
     }
@@ -140,8 +137,8 @@ export default function OrdersScreen() {
       );
       setSelectedOrder(null);
       await load();
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "No se pudo preparar el pedido.");
+    } catch {
+      setError("No se pudo preparar el pedido.");
     } finally {
       setFulfilling(false);
     }
@@ -167,7 +164,9 @@ export default function OrdersScreen() {
             <Row
               key={item.id}
               title={`Pedido ${item.display_id ?? item.id.slice(-6)}`}
-              detail={`${item.status ?? "Pendiente"} · ${item.created_at ? new Date(item.created_at).toLocaleDateString() : ""}`}
+              detail={`${orderStatusLabel(item.status)} · ${
+                item.created_at ? new Date(item.created_at).toLocaleDateString("es-ES") : ""
+              }`}
               trailing={
                 item.total != null
                   ? `${item.currency_code?.toUpperCase() ?? ""} ${item.total}`
@@ -226,9 +225,7 @@ export default function OrdersScreen() {
                   </Pressable>
                 ))
               ) : (
-                <Text style={styles.muted}>
-                  Esta tienda no tiene ubicaciones de stock habilitadas.
-                </Text>
+                <Text style={styles.muted}>Esta tienda no tiene almacenes habilitados.</Text>
               )}
               <Pressable
                 onPress={() => void prepareOrder()}

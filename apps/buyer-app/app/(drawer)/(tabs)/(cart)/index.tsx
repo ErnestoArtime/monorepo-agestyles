@@ -19,7 +19,7 @@ export default function CartScreen() {
   const isEmpty = !cart?.items || cart.items.length === 0;
 
   if (loading && !cart) {
-    return <Loading message="Loading cart..." />;
+    return <Loading message="Cargando carrito..." />;
   }
 
   if (isEmpty) {
@@ -72,7 +72,7 @@ export default function CartScreen() {
           </View>
           {cart.tax_total !== undefined && cart.tax_total > 0 && (
             <View style={styles.totalRow}>
-              <Text style={[styles.totalLabel, { color: colors.text }]}>Tax</Text>
+              <Text style={[styles.totalLabel, { color: colors.text }]}>Impuestos</Text>
               <Text style={[styles.totalValue, { color: colors.text }]}>
                 {formatPrice(cart.tax_total, cart.currency_code)}
               </Text>
@@ -80,7 +80,7 @@ export default function CartScreen() {
           )}
           {cart.shipping_total !== undefined && cart.shipping_total > 0 && (
             <View style={styles.totalRow}>
-              <Text style={[styles.totalLabel, { color: colors.text }]}>Shipping</Text>
+              <Text style={[styles.totalLabel, { color: colors.text }]}>Envío</Text>
               <Text style={[styles.totalValue, { color: colors.text }]}>
                 {formatPrice(cart.shipping_total, cart.currency_code)}
               </Text>

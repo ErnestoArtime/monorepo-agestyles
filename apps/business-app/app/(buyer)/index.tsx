@@ -93,8 +93,8 @@ export default function BuyerModeScreen() {
         }),
       );
       setOffers(Object.fromEntries(productOffers));
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "No se pudo cargar la tienda.");
+    } catch {
+      setError("No se pudo cargar la tienda.");
     } finally {
       setLoading(false);
     }
@@ -111,8 +111,8 @@ export default function BuyerModeScreen() {
       const result = await buyer.login(email.trim(), password);
       setCustomer(result.customer);
       await load(query);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "No se pudo iniciar sesión de comprador.");
+    } catch {
+      setError("No se pudo iniciar sesión de comprador.");
     } finally {
       setBusy(false);
     }
@@ -126,8 +126,8 @@ export default function BuyerModeScreen() {
         setCustomer(null);
         setQuote(null);
       });
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "No se pudo cerrar la sesión de cliente.");
+    } catch {
+      setError("No se pudo cerrar la sesión de cliente.");
     } finally {
       setBusy(false);
     }
@@ -141,8 +141,8 @@ export default function BuyerModeScreen() {
       const updated = await buyerCart.addOffer(cart.id, offerId, 1);
       setCart(updated);
       setQuote(null);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "No se pudo añadir la oferta.");
+    } catch {
+      setError("No se pudo añadir la oferta.");
     } finally {
       setBusy(false);
     }
@@ -163,8 +163,8 @@ export default function BuyerModeScreen() {
         .join("|");
       const result = await buyerQuotes.create(cart.id, `business-buyer-${cart.id}-${intentKey}`);
       setQuote(result.quote);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "No se pudo solicitar la cotización.");
+    } catch {
+      setError("No se pudo solicitar la cotización.");
     } finally {
       setBusy(false);
     }
@@ -181,9 +181,9 @@ export default function BuyerModeScreen() {
         setCart((await buyerCart.clear(region?.id)) as BuyerCart);
         setQuote(null);
       } else if ("quote" in result) setQuote(result.quote);
-      else setError(`La cotización no se puede aceptar: ${result.status}.`);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "No se pudo confirmar la compra.");
+      else setError("La cotización todavía no se puede aceptar.");
+    } catch {
+      setError("No se pudo confirmar la compra.");
     } finally {
       setBusy(false);
     }

@@ -43,7 +43,7 @@ export function PaymentStep({
             <Loading />
           ) : paymentProviders.length === 0 ? (
             <Text style={[styles.emptyText, { color: colors.icon }]}>
-              No payment providers available
+              No hay métodos de pago disponibles
             </Text>
           ) : (
             paymentProviders.map((provider) => {

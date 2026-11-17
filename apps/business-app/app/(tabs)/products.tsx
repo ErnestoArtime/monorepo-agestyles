@@ -4,6 +4,7 @@ import { Icon } from "@agestyles/icons";
 import { useBusiness } from "../../context/business-context";
 import { hasPermission, OperationList, Row, Section } from "../../components/operation-list";
 import { useBusinessTheme } from "../../hooks/use-business-theme";
+import { productStatusLabel } from "../../lib/status-labels";
 import {
   canAddDefaultVariant,
   deriveVariantAxes,
@@ -69,10 +70,8 @@ export default function ProductsScreen() {
         "/vendor/products?limit=50&fields=id,title,description,status,variants.id,variants.title,variants.sku",
       );
       setItems(data?.products ?? []);
-    } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "No se pudo consultar el catálogo de esta tienda.",
-      );
+    } catch {
+      setError("No se pudo consultar el catálogo de esta tienda.");
     } finally {
       setLoading(false);
     }
@@ -129,10 +128,8 @@ export default function ProductsScreen() {
           : "La solicitud de cambios se envió para revisión.",
       );
       cancelEdit();
-    } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "No se pudo enviar el producto a revisión.",
-      );
+    } catch {
+      setError("No se pudo enviar el producto a revisión.");
     } finally {
       setSaving(false);
     }
@@ -183,10 +180,8 @@ export default function ProductsScreen() {
         "Cambios de la variante enviados a AgeStyles para revisión. La ficha actual no cambia hasta su aprobación.",
       );
       cancelVariantEdit();
-    } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "No se pudo enviar la variante a revisión.",
-      );
+    } catch {
+      setError("No se pudo enviar la variante a revisión.");
     } finally {
       setSavingVariantId(null);
     }
@@ -217,13 +212,7 @@ export default function ProductsScreen() {
                     : "La solicitud para retirar la variante se envió para revisión.",
                 );
               })
-              .catch((cause) =>
-                setError(
-                  cause instanceof Error
-                    ? cause.message
-                    : "No se pudo solicitar el retiro de la variante.",
-                ),
-              )
+              .catch((cause) => setError("No se pudo solicitar el retiro de la variante."))
               .finally(() => setDeletingVariantId(null));
           },
         },
@@ -256,12 +245,8 @@ export default function ProductsScreen() {
       setNewVariantTitle("");
       setNewVariantSku("");
       setAddingVariantProductId(item.id);
-    } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "No se pudieron consultar las opciones del producto.",
-      );
+    } catch {
+      setError("No se pudieron consultar las opciones del producto.");
     } finally {
       setLoadingVariantOptionsFor(null);
     }
@@ -308,10 +293,8 @@ export default function ProductsScreen() {
         "Variante enviada a revisión. Se creará sin inventario asignado; la ficha actual no cambia hasta su aprobación.",
       );
       cancelAddVariant();
-    } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "No se pudo enviar la variante a revisión.",
-      );
+    } catch {
+      setError("No se pudo enviar la variante a revisión.");
     } finally {
       setSavingNewVariantFor(null);
     }
@@ -341,7 +324,7 @@ export default function ProductsScreen() {
             <View key={item.id} style={styles.product}>
               <Row
                 title={item.title ?? "Producto sin título"}
-                detail={`${item.variants?.length ?? 0} variantes · ${item.status ?? "Sin estado"}`}
+                detail={`${item.variants?.length ?? 0} variantes · ${productStatusLabel(item.status)}`}
                 action={canEdit ? () => beginEdit(item) : undefined}
               />
               {item.variants?.length ? (

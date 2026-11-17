@@ -33,3 +33,7 @@ The default rule is: **do not modify Medusa or Mercur core while a supported ext
 ## Shared light and dark themes
 
 Every AgeStyles interface must support light and dark themes using `@agestyles/design-tokens` as its canonical palette. Expo applications follow `useColorScheme()`/the device preference; web applications follow `prefers-color-scheme` unless a persisted user preference is explicitly implemented. Use semantic foreground/background pairs such as `onAction`, `onSuccess`, and `onError`; do not hardcode `Colors.light` or duplicate base hex colors in components. Validate WCAG AA contrast and include empty, error, selected, focused, and loading states in theme reviews. See `docs/design-system.md` for implementation guidance.
+
+## Spanish user-facing copy
+
+Spanish is the default language for customer, seller, and administration interfaces across web and mobile. Write labels, navigation, empty/loading/error states, accessibility labels, dates, and status names in natural Spanish (`es-ES` formatting unless a locale setting is available). Map API enums and errors to Spanish labels/messages; do not display raw backend error text or unknown enum values. Preserve proper names, trademarks, and product titles; translate descriptive catalog content when its meaning is clear, and do not invent product claims. Keep internal code identifiers, protocol fields, and logs in their established technical language.

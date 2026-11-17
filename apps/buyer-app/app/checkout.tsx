@@ -122,7 +122,7 @@ export default function CheckoutScreen() {
       setShippingOptions(shipping_options);
     } catch (err) {
       console.error("Failed to fetch shipping options:", err);
-      Alert.alert("Error", "No se pudieron cargar las opciones de envío");
+      Alert.alert("Aviso", "No se pudieron cargar las opciones de envío");
     } finally {
       setLoading(false);
     }
@@ -139,7 +139,7 @@ export default function CheckoutScreen() {
       setPaymentProviders(payment_providers || []);
     } catch (err) {
       console.error("Failed to fetch payment providers:", err);
-      Alert.alert("Error", "No se pudieron cargar los métodos de pago");
+      Alert.alert("Aviso", "No se pudieron cargar los métodos de pago");
     } finally {
       setLoading(false);
     }
@@ -165,7 +165,7 @@ export default function CheckoutScreen() {
       !shippingAddress.countryCode ||
       !shippingAddress.phone
     ) {
-      Alert.alert("Error", "Completa todos los campos de la dirección de envío");
+      Alert.alert("Aviso", "Completa todos los campos de la dirección de envío");
       return;
     }
 
@@ -180,7 +180,7 @@ export default function CheckoutScreen() {
         !billingAddress.countryCode ||
         !billingAddress.phone
       ) {
-        Alert.alert("Error", "Completa todos los campos de la dirección de facturación");
+        Alert.alert("Aviso", "Completa todos los campos de la dirección de facturación");
         return;
       }
     }
@@ -221,7 +221,7 @@ export default function CheckoutScreen() {
       setCurrentStep("shipping");
     } catch (err) {
       console.error("Failed to update cart:", err);
-      Alert.alert("Error", "No se pudo guardar la información de entrega");
+      Alert.alert("Aviso", "No se pudo guardar la información de entrega");
     } finally {
       setLoading(false);
     }
@@ -236,7 +236,7 @@ export default function CheckoutScreen() {
 
   const handleShippingNext = async () => {
     if (!shippingComplete || !cart) {
-      Alert.alert("Error", "Selecciona un envío para cada vendedor");
+      Alert.alert("Aviso", "Selecciona un envío para cada vendedor");
       return;
     }
 
@@ -251,7 +251,7 @@ export default function CheckoutScreen() {
       setCurrentStep("payment");
     } catch (err) {
       console.error("Failed to add shipping method:", err);
-      Alert.alert("Error", "No se pudo guardar el método de envío");
+      Alert.alert("Aviso", "No se pudo guardar el método de envío");
     } finally {
       setLoading(false);
     }
@@ -259,7 +259,7 @@ export default function CheckoutScreen() {
 
   const handlePlaceOrder = async () => {
     if (!selectedPaymentProvider || !cart) {
-      Alert.alert("Error", "Selecciona un método de pago");
+      Alert.alert("Aviso", "Selecciona un método de pago");
       return;
     }
 
@@ -273,7 +273,10 @@ export default function CheckoutScreen() {
 
       const result = await completeCart(sdk.client, cart.id);
       if (result.type !== "order_group") {
-        Alert.alert("Error", result.error.message);
+        Alert.alert(
+          "Aviso",
+          "No se pudo completar el pedido. Revisa los datos e inténtalo de nuevo.",
+        );
         return;
       }
 
@@ -287,7 +290,10 @@ export default function CheckoutScreen() {
       await clearCart();
     } catch (err: any) {
       console.error("Failed to complete order:", err);
-      Alert.alert("Error", err?.message || "No se pudo completar el pedido");
+      Alert.alert(
+        "Aviso",
+        "No se pudo completar el pedido. Revisa los datos e inténtalo de nuevo.",
+      );
     } finally {
       setLoading(false);
     }

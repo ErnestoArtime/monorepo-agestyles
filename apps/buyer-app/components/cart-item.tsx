@@ -53,13 +53,13 @@ export const CartItem = React.memo(function CartItem({
               hitSlop={8}
               onPress={() => onUpdateQuantity(Math.max(1, item.quantity - 1))}
               accessibilityRole="button"
-              accessibilityLabel={`Remove one ${item.product_title || item.title}`}
+              accessibilityLabel={`Quitar una unidad de ${item.product_title || item.title}`}
             >
               <Icon name="minus" size={20} color={colors.text} />
             </TouchableOpacity>
             <Text
               style={[styles.quantity, { color: colors.text }]}
-              accessibilityLabel={`Quantity: ${item.quantity}`}
+              accessibilityLabel={`Cantidad: ${item.quantity}`}
             >
               {item.quantity}
             </Text>
@@ -68,7 +68,7 @@ export const CartItem = React.memo(function CartItem({
               hitSlop={8}
               onPress={() => onUpdateQuantity(item.quantity + 1)}
               accessibilityRole="button"
-              accessibilityLabel={`Add one ${item.product_title || item.title}`}
+              accessibilityLabel={`Añadir una unidad de ${item.product_title || item.title}`}
             >
               <Icon name="plus" size={20} color={colors.text} />
             </TouchableOpacity>
@@ -78,7 +78,7 @@ export const CartItem = React.memo(function CartItem({
             style={styles.removeButton}
             hitSlop={8}
             accessibilityRole="button"
-            accessibilityLabel={`Remove ${item.product_title || item.title} from cart`}
+            accessibilityLabel={`Quitar ${item.product_title || item.title} del carrito`}
           >
             <IconSymbol size={20} name="trash" color={colors.text} />
           </TouchableOpacity>

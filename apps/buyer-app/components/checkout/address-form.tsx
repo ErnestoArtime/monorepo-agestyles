@@ -59,7 +59,7 @@ export function AddressForm({
       selectedCountry.name ||
       selectedCountry.iso_2 ||
       selectedCountry.id
-    : "Select Country";
+    : "Seleccionar país";
 
   const handleDone = () => {
     onCountryCodeChange(tempCountryCode);

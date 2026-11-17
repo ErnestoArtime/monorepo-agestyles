@@ -8,11 +8,10 @@ import { useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 
 function signInError(error: unknown) {
-  const message =
-    error instanceof Error ? error.message : "Por favor, verifica tus datos e inténtalo de nuevo";
+  const message = error instanceof Error ? error.message : "";
   return /unauthorized|invalid.*(email|password|credential)/i.test(message)
-    ? "Ese email y contraseña no coinciden Check them and try again."
-    : message;
+    ? "El correo y la contraseña no coinciden. Inténtalo de nuevo."
+    : "No se pudo iniciar sesión. Revisa tus datos e inténtalo de nuevo.";
 }
 
 export default function LoginScreen() {
@@ -27,7 +26,7 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     const normalizedEmail = email.trim().toLowerCase();
     if (!normalizedEmail || !password) {
-      setError("Enter your email and password.");
+      setError("Introduce tu correo electrónico y tu contraseña.");
       return;
     }
 
@@ -58,10 +57,10 @@ export default function LoginScreen() {
 
         <View style={styles.form}>
           <FormField
-            label="Email"
+            label="Correo electrónico"
             value={email}
             onChangeText={setEmail}
-            placeholder="you@example.com"
+            placeholder="nombre@ejemplo.com"
             keyboardType="email-address"
             autoCapitalize="none"
             autoComplete="email"
@@ -69,10 +68,10 @@ export default function LoginScreen() {
             returnKeyType="next"
           />
           <FormField
-            label="Password"
+            label="Contraseña"
             value={password}
             onChangeText={setPassword}
-            placeholder="Enter your password"
+            placeholder="Introduce tu contraseña"
             secureTextEntry
             autoCapitalize="none"
             autoComplete="current-password"

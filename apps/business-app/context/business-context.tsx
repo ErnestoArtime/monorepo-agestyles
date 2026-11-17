@@ -105,7 +105,7 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
     } catch (cause) {
       setSeller(null);
       setMember(null);
-      setError(cause instanceof Error ? cause.message : "No se pudo abrir esta tienda.");
+      setError("No se pudo abrir esta tienda.");
       throw cause;
     } finally {
       setLoading(false);
@@ -132,7 +132,7 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
         setReady(true);
         if (choices.length === 1) await selectSeller(choices[0]);
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : "No se pudo iniciar sesión.");
+        setError("No se pudo iniciar sesión.");
         throw cause;
       } finally {
         setLoading(false);

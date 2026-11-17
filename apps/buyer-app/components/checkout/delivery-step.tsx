@@ -98,7 +98,7 @@ export function DeliveryStep({
 
           <TextInput
             style={[styles.input, { color: colors.text, borderColor: colors.icon + "30" }]}
-            placeholder="Email"
+            placeholder="Correo electrónico"
             placeholderTextColor={colors.icon}
             value={email}
             onChangeText={onEmailChange}

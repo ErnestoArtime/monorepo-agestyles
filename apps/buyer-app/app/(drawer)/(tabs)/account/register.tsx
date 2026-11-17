@@ -8,12 +8,11 @@ import { useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 
 function registrationError(error: unknown) {
-  const message =
-    error instanceof Error ? error.message : "Por favor, verifica tus datos e inténtalo de nuevo.";
+  const message = error instanceof Error ? error.message : "";
   if (/identity.*already exists|already.*registered|email.*already/i.test(message)) {
-    return "Ya existe una cuenta con este email. Inicia sesión en su lugar.";
+    return "Ya existe una cuenta con este correo electrónico. Inicia sesión en su lugar.";
   }
-  return message;
+  return "No se pudo crear la cuenta. Revisa los datos e inténtalo de nuevo.";
 }
 
 export default function RegisterScreen() {
@@ -30,7 +29,9 @@ export default function RegisterScreen() {
   const handleRegister = async () => {
     const normalizedEmail = email.trim().toLowerCase();
     if (!firstName.trim() || !lastName.trim() || !normalizedEmail || password.length < 8) {
-      setError("Ingresa tu nombre, un email válido y una contraseña de al menos 8 caracteres.");
+      setError(
+        "Ingresa tu nombre, un correo electrónico válido y una contraseña de al menos 8 caracteres.",
+      );
       return;
     }
 
@@ -82,10 +83,10 @@ export default function RegisterScreen() {
             returnKeyType="next"
           />
           <FormField
-            label="Email"
+            label="Correo electrónico"
             value={email}
             onChangeText={setEmail}
-            placeholder="you@example.com"
+            placeholder="nombre@ejemplo.com"
             keyboardType="email-address"
             autoCapitalize="none"
             autoComplete="email"
@@ -93,7 +94,7 @@ export default function RegisterScreen() {
             returnKeyType="next"
           />
           <FormField
-            label="Password"
+            label="Contraseña"
             value={password}
             onChangeText={setPassword}
             placeholder="Al menos 8 caracteres"

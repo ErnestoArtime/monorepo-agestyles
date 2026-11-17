@@ -105,7 +105,7 @@ export default function HomeScreen() {
         >
           <Icon name="refresh" size={28} color={colors.tint} />
           <Text style={[styles.stateTitle, { color: colors.text }]}>
-            The catalog is taking a moment
+            El catálogo está tardando un poco más de lo habitual
           </Text>
           <Text style={[styles.errorText, { color: colors.icon }]}>{error}</Text>
           <TouchableOpacity
@@ -136,25 +136,25 @@ export default function HomeScreen() {
             <View style={[styles.betaNotice, { backgroundColor: colors.surfaceMuted }]}>
               <Icon name="help" size={16} color={colors.tint} />
               <Text style={[styles.betaCopy, { color: colors.text }]}>
-                The catalog and orders still use test data.
+                El catálogo y los pedidos todavía usan datos de prueba.
               </Text>
             </View>
             <View style={[styles.hero, { backgroundColor: colors.tint }]}>
               <View style={styles.heroCopy}>
                 <Text style={[styles.heroTitle, { color: colors.onTint }]}>
-                  What you want.{"\n"}More options.
+                  Lo que buscas.{"\n"}Más opciones.
                 </Text>
                 <Text style={[styles.heroDescription, { color: colors.onTint }]}>
-                  Discover products and compare offers from different stores.
+                  Descubre productos y compara ofertas de distintas tiendas.
                 </Text>
                 <Text style={[styles.heroLink, { color: colors.onTint }]}>
-                  Explore the catalog <Icon name="arrowRight" size={14} color={colors.onTint} />
+                  Explora el catálogo <Icon name="arrowRight" size={14} color={colors.onTint} />
                 </Text>
               </View>
               {products[0]?.thumbnail ? (
                 <TouchableOpacity
                   accessibilityRole="button"
-                  accessibilityLabel={"View " + products[0].title}
+                  accessibilityLabel={"Ver " + products[0].title}
                   onPress={() =>
                     router.push({
                       pathname: "/(drawer)/(tabs)/(home)/product/[id]",
@@ -240,7 +240,7 @@ export default function HomeScreen() {
                   : "Descubre algo especial"}
               </Text>
               <Text style={[styles.resultCount, { color: colors.icon }]}>
-                {visibleProducts.length} products
+                {visibleProducts.length} {visibleProducts.length === 1 ? "producto" : "productos"}
               </Text>
             </View>
           </View>

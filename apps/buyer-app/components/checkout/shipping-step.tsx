@@ -49,7 +49,7 @@ export function ShippingStep({
             Object.entries(shippingOptions).map(([sellerId, options]) => (
               <View key={sellerId} accessibilityRole="radiogroup">
                 <Text style={[styles.optionTitle, { color: colors.text }]}>
-                  {options[0]?.seller?.name || "Seller"}
+                  {options[0]?.seller?.name || "Vendedor"}
                 </Text>
                 {options.map((option) => {
                   const selected = selectedShipping[sellerId] === option.id;

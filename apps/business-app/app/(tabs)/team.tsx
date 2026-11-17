@@ -68,10 +68,8 @@ export default function TeamScreen() {
         `${membersPath}?limit=50&fields=id,is_owner,role_id,member.id,member.email,member.first_name,member.last_name`,
       );
       setMembers(result.seller_members ?? []);
-    } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "No se pudo cargar el equipo de la tienda.",
-      );
+    } catch {
+      setError("No se pudo cargar el equipo de la tienda.");
     } finally {
       setLoading(false);
     }
@@ -95,8 +93,8 @@ export default function TeamScreen() {
       setEmail("");
       setNotice("La invitación se creó correctamente.");
       await loadMembers();
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "No se pudo invitar a la persona.");
+    } catch {
+      setError("No se pudo invitar a la persona.");
     } finally {
       setSaving(false);
     }
@@ -112,8 +110,8 @@ export default function TeamScreen() {
       setRolePicker(null);
       setNotice(`Permisos actualizados para ${memberName(target)}.`);
       await loadMembers();
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "No se pudo cambiar el rol.");
+    } catch {
+      setError("No se pudo cambiar el rol.");
     } finally {
       setSaving(false);
     }
@@ -138,9 +136,7 @@ export default function TeamScreen() {
                 setNotice(`Se revocó el acceso de ${memberName(target)}.`);
                 await loadMembers();
               })
-              .catch((cause) =>
-                setError(cause instanceof Error ? cause.message : "No se pudo revocar el acceso."),
-              )
+              .catch((cause) => setError("No se pudo revocar el acceso."))
               .finally(() => setSaving(false));
           },
         },

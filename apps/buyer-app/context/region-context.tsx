@@ -28,14 +28,14 @@ export function RegionProvider({ children }: { children: ReactNode }) {
     try {
       setLoading(true);
       setError(null);
-      
+
       const { regions: fetchedRegions } = await sdk.store.region.list();
       setRegions(fetchedRegions);
 
       // Load saved region and country or use first region's first country
       const savedRegionId = await AsyncStorage.getItem(REGION_STORAGE_KEY);
       const savedCountryCode = await AsyncStorage.getItem(COUNTRY_STORAGE_KEY);
-      
+
       const regionToSelect = savedRegionId
         ? fetchedRegions.find((r) => r.id === savedRegionId) || fetchedRegions[0]
         : fetchedRegions[0];
@@ -43,21 +43,22 @@ export function RegionProvider({ children }: { children: ReactNode }) {
       if (regionToSelect) {
         setSelectedRegionState(regionToSelect);
         await AsyncStorage.setItem(REGION_STORAGE_KEY, regionToSelect.id);
-        
+
         // Set country code - use saved one if it exists in the region, otherwise use first country
-        const countryCodeToSelect = savedCountryCode && 
-          regionToSelect.countries?.some(c => (c.iso_2 || c.id) === savedCountryCode)
-          ? savedCountryCode
-          : regionToSelect.countries?.[0]?.iso_2 || regionToSelect.countries?.[0]?.id || null;
-        
+        const countryCodeToSelect =
+          savedCountryCode &&
+          regionToSelect.countries?.some((c) => (c.iso_2 || c.id) === savedCountryCode)
+            ? savedCountryCode
+            : regionToSelect.countries?.[0]?.iso_2 || regionToSelect.countries?.[0]?.id || null;
+
         setSelectedCountryCode(countryCodeToSelect);
         if (countryCodeToSelect) {
           await AsyncStorage.setItem(COUNTRY_STORAGE_KEY, countryCodeToSelect);
         }
       }
     } catch (err) {
-      console.error("Failed to load regions:", err);
-      setError("Failed to load regions. Please try again.");
+      console.error("No se pudieron cargar las regiones:", err);
+      setError("No se pudieron cargar las regiones. Inténtalo de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -98,4 +99,3 @@ export function useRegion() {
   }
   return context;
 }
-

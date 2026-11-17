@@ -14,7 +14,7 @@ const icons: Record<string, IconName> = {
 const labels: Record<string, string> = {
   index: "Resumen",
   products: "Productos",
-  inventory: "Stock",
+  inventory: "Inventario",
   orders: "Pedidos",
   more: "Más",
 };

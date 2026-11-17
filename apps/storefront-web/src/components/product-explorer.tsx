@@ -129,7 +129,7 @@ export function ProductExplorer({
                   {index < 2 && <span className="product-tag">DESTACADO</span>}
                 </Link>
                 <div className="product-meta">
-                  <span>{product.categories?.[0]?.name || "AGESTYLES SELECTION"}</span>
+                  <span>{product.categories?.[0]?.name || "SELECCIÓN AGESTYLES"}</span>
                   <span aria-hidden="true">
                     <Icon name="arrowUpRight" size={12} />
                   </span>

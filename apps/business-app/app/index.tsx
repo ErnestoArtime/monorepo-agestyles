@@ -31,18 +31,16 @@ export default function EntryScreen() {
     setLocalError("");
     try {
       await login(email.trim(), password);
-    } catch (cause) {
-      setLocalError(
-        cause instanceof Error ? cause.message : "Revisa tus datos e inténtalo de nuevo.",
-      );
+    } catch {
+      setLocalError("Revisa tus datos e inténtalo de nuevo.");
     }
   }
   async function onSelect(choice: Seller) {
     setLocalError("");
     try {
       await selectSeller(choice);
-    } catch (cause) {
-      setLocalError(cause instanceof Error ? cause.message : "No se pudo abrir esta tienda.");
+    } catch {
+      setLocalError("No se pudo abrir esta tienda.");
     }
   }
 
