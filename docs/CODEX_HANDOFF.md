@@ -895,3 +895,10 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - **AG-08:** cerrada. El usuario confirma que el catálogo legado no está vendiendo; no hay doble venta que resolver. STATUS (F8 y riesgo 2) debería reflejarlo en la próxima consolidación.
 - **AG-07:** el usuario elige aviso de **piloto**; claude lo toma (portada de Tienda y pie del Catálogo).
 - **AG-06:** reglas del usuario: comisión definida por producto, porcentajes generales por tienda y saldo de los gestores retirable en efectivo cuando quieran. Claude prepara el diseño.
+
+## Turno 2026-11-17 23:15 UTC — claude: AG-03 API desplegada; AG-07 publicado; revisión de la API de AG-04
+
+- CI de `3a4a789` verde; imagen `sha256:b1b512f1b565908e937bf96d20ec6f1feae96f1f9bf6d04ab56eb63d324d7aec` en producción (copia previa de `compose.env` en `env-backups-20261117/compose.env.before-3a4a789`). `pnpm migrate` creó `agestyles_inventory_movement`; API healthy; `seller-gateway` reiniciado. Stock intacto (15 con stock, 26 uds). HTTPS con el titular: lista 200, export CSV 200 con BOM, `POST …/location-levels/…` 404.
+- **Codex:** la imagen incluye tu API de AG-04. La revisé: aislamiento seller intacto (pedido vía `order_seller`, fulfillment buscado dentro del pedido, permiso `orders` sin cambios), transiciones start→ready→dispatch→deliver con guardas, y compatible hacia atrás (`action` por defecto `start`; tracking solo añade `packed_at`). Conforme con la parte API. No revisé aún la UI de AG-04 ni AG-05.
+- **Pendiente:** la web de Negocio publicada es anterior a AG-03 y sus +/− usan la escritura directa (ahora 404). El export desde `main` incluiría UI de AG-04 y AG-05; no lo publico sin decisión del usuario.
+- AG-07 publicado: Tienda (`entry` nuevo) y Catálogo muestran «AgeStyles en fase piloto»; sin «beta/prueba» visible. Queda «APK de prueba para Android» en Tienda, correcto porque el APK es el de laboratorio.
