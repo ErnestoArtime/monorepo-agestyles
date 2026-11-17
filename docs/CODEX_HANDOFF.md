@@ -632,3 +632,11 @@ El commit `3444eef` está en `main`; CI [run 44067825900](https://github.com/Ern
 Preflight CORS desde `https://tienda.eav-labs.com` a `store/regions`: HTTP 204, origen permitido exacto y headers `x-publishable-api-key,x-medusa-locale`. GET de regiones con clave publicable: 200/1; GET de productos para esa región: 200/12 recibidos. Las 12 miniaturas declaradas respondieron HEAD 200. La clave se usó en memoria y no se imprimió. Esto verifica gateway y API pública, no el render interactivo ni el checkout en navegador/dispositivo.
 
 La inspección visual OC-09 sigue pendiente: no hay navegador de automatización disponible, `adb devices -l` no lista dispositivos y quedan 3.1 GiB libres, por debajo del umbral de 8 GiB para instalar/crear un emulador. CI sí confirmó que las exportaciones web compilan; eso no sustituye la revisión clara/oscura en rutas completas ni TalkBack.
+
+## F1/F5 — Comprobación defensiva de identidad de membresía — 17 de noviembre de 2026, 11:27 UTC
+
+`SellerPermissionsService` ahora valida que la fila retornada coincida en `id`, `member_id` y `seller_id` con el actor y la tienda seleccionada antes de conceder cualquier permiso. La prueba nueva simula que el servicio ignora filtros y devuelve una membresía owner/admin de otra tienda, otro usuario o con otro ID; los tres casos quedan sin permisos. API tests 8/8, typecheck dirigido de Commerce API PASS, ESLint/Prettier dirigidos y `git diff --check` PASS. Es una defensa adicional de la política; no sustituye las pruebas BOLA sobre rutas HTTP, base de datos y revocación.
+
+## F0/F6 — Estado de esquema vivo y migración de medios — 17 de noviembre de 2026, 11:27 UTC
+
+Consulta de metadatos de solo lectura a `Agestyles-Catalogo`: 80 migraciones aplicadas, última `20261116061921_merchant_order_line_fulfillment`. Se revisó el archivo fuente pendiente `20261116120000_merchant_product_media.sql`: define RPCs autenticadas para adjuntar/quitar/seleccionar imágenes de borradores merchant, pero no exporta productos ni migra medios históricos. No se aplicó la migración ni se leyeron filas de negocio. El checkout fuente ya tenía cambios no relacionados sin seguimiento; se dejaron intactos.

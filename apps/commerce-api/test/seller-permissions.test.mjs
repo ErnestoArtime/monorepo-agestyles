@@ -24,12 +24,13 @@ function makeActor(overrides = {}) {
   };
 }
 
-function makeService(memberships = []) {
+function makeService(memberships = [], { ignoreFilters = false } = {}) {
   const calls = [];
   const service = new SellerPermissionsService({
     seller: {
       async listSellerMembers(filters) {
         calls.push(filters);
+        if (ignoreFilters) return memberships;
         return memberships.filter(
           (membership) =>
             membership.id === filters.id &&
@@ -182,4 +183,21 @@ test("invalid actors, unknown roles, and a changed store ID receive no permissio
       seller_id: "seller_a1",
     },
   ]);
+});
+
+test("a membership result for another member, store, or membership ID grants no rights", async () => {
+  const actor = makeActor({ actor_id: "mem_manager", seller_member_id: "sm_manager_a1" });
+  const mismatchedMemberships = [
+    { id: "sm_other_a1", member_id: "mem_manager", seller_id: "seller_a1" },
+    { id: "sm_manager_a1", member_id: "mem_other", seller_id: "seller_a1" },
+    { id: "sm_manager_a1", member_id: "mem_manager", seller_id: "seller_b1" },
+  ];
+
+  for (const membership of mismatchedMemberships) {
+    const { service } = makeService(
+      [{ ...membership, is_owner: true, role_id: SellerRole.SELLER_ADMINISTRATION }],
+      { ignoreFilters: true },
+    );
+    assert.deepEqual(await service.resolvePermissions(actor, catalog), {});
+  }
 });

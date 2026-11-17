@@ -162,3 +162,9 @@ El commit `8923f88` añade cobertura para el feature compartido de carrito: carr
 Preflight público desde la tienda compradora: HTTP 204, allow-origin coincide exactamente con `https://tienda.eav-labs.com`, headers permitidas `x-publishable-api-key,x-medusa-locale`; regiones HTTP 200/1, productos HTTP 200/12 usando la región retornada y miniaturas declaradas 12/12 HTTP 200. La clave publicable no se guardó ni se imprimió. Esto descarta en este corte un fallo de CORS, listado de catálogo o disponibilidad HTTP de miniaturas en el gateway; no prueba que la app visualice la respuesta ni que el checkout UI funcione.
 
 OC-09: queda pendiente la inspección visual completa de temas claro/oscuro y TalkBack. No se detectó un navegador de automatización ni dispositivo Android conectado; el host dispone de 3.1 GiB, por debajo del mínimo documentado de 8 GiB para crear un AVD. Los exports/builds web en CI son satisfactorios, pero no verifican render ni interacción visual.
+
+## Revalidación de identidad seller y esquema fuente — 17 de noviembre de 2026, 11:27 UTC
+
+El resolver de permisos seller valida explícitamente la identidad completa de la membresía retornada (membership/member/seller IDs). Pruebas sintéticas adversariales cubren la respuesta de un owner/admin ajeno en cada uno de esos tres campos; `commerce-api test` 8/8, typecheck y checks dirigidos de lint/formato pasan. Esto aporta defensa local, sin cerrar BOLA por HTTP/DB.
+
+El proyecto fuente continúa con 80 migraciones aplicadas hasta `20261116061921`. La migración de repositorio `20261116120000_merchant_product_media.sql` está pendiente y define funciones para imágenes de borradores merchant; no es una migración de los productos/media legados. Se dejó sin aplicar, en línea con el gate de backup/restore. No se leyeron filas comerciales.

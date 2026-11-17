@@ -60,3 +60,7 @@ La consulta agregada de una sola sentencia del 17 nov 2026 (09:11 UTC) confirmó
 - No se han ejecutado backup cifrado/restauración, exportación, preflight con datos reales ni importación.
 
 Hasta cerrar esos puntos, no hay base segura para insertar productos reales ni publicarlos. El proyector y conciliador sintético son preparación local, no un exportador de Supabase. El siguiente paso de implementación es ampliar el contrato de proyección únicamente después de aprobar el esquema vivo y las decisiones de seller/moneda/stock/medios; el importador a Medusa seguirá fuera de alcance hasta demostrar backup y restore.
+
+## Revisión posterior del esquema vivo — 17 de noviembre de 2026, 11:27 UTC
+
+La lista de migraciones del proyecto `Agestyles-Catalogo` confirma 80 aplicadas, con última `20261116061921_merchant_order_line_fulfillment`. La migración de origen `20261116120000_merchant_product_media.sql` no está aplicada. Su SQL agrega funciones autenticadas para adjuntar, quitar y seleccionar imágenes de productos merchant en borrador; no modifica el conjunto de productos históricos ni exporta objetos de Storage. Por tanto no debe tratarse como requisito del importador de catálogo. No se aplicó, no se alteró el checkout fuente y la carpeta fuente ya tenía cambios no relacionados sin seguimiento.
