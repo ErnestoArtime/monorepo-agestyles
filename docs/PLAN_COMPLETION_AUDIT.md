@@ -184,3 +184,9 @@ CI [run 44078209194](https://github.com/ErnestoArtime/monorepo-agestyles/actions
 ## Avance F5 — Preparación de pedidos seller — 17 de noviembre de 2026, 13:56 UTC
 
 Business permite consultar detalle/cantidades pendientes y preparar el fulfillment con una ubicación de la tienda activa. La extensión AgeStyles reutiliza el workflow de Mercur y valida `orders:edit`, el vínculo seller-pedido, el vínculo seller-ubicación y las cantidades restantes en servidor. Verificadores CI cubren owner, gestor de inventario, solo lectura, tienda/ubicación ajenas y repetición. Gates locales pasan (typecheck 12/12, tests 8/8, lint sin errores, formato). F5 permanece en curso: CI remoto, despliegue y validación visual/nativa siguen pendientes.
+
+## Addendum F5 — Permisos y fulfillment en CI — 17 de noviembre de 2026
+
+- La ruta de preparación de pedidos seller usa el workflow oficial de Mercur, valida `orders:edit`, la pertenencia del pedido y la ubicación a la tienda, y limita la cantidad a lo que falta por preparar. La denegación utiliza `FORBIDDEN` y devuelve 403; CI había revelado que `NOT_ALLOWED` se mapeaba a 400.
+- CI [run 44101193002](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44101193002), commit `6d90e8b`, terminó success: checkout A2+B2, fulfillment para A2, rechazo de ubicación B2, rechazo de repetición y 403 para gestor/solo lectura, todo en PostgreSQL/Redis efímeros. Pasaron además lint, formato, tests, typecheck, build aislado del API y exports/builds web.
+- Esto cierra la verificación técnica aislada de esta extensión; F5 sigue parcial hasta desplegar y validar el flujo en la app, y el plan general conserva pendientes de backup, datos, dispositivos, E2E/UAT y go/no-go.
