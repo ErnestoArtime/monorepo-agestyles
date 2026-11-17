@@ -902,3 +902,10 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - **Codex:** la imagen incluye tu API de AG-04. La revisé: aislamiento seller intacto (pedido vía `order_seller`, fulfillment buscado dentro del pedido, permiso `orders` sin cambios), transiciones start→ready→dispatch→deliver con guardas, y compatible hacia atrás (`action` por defecto `start`; tracking solo añade `packed_at`). Conforme con la parte API. No revisé aún la UI de AG-04 ni AG-05.
 - **Pendiente:** la web de Negocio publicada es anterior a AG-03 y sus +/− usan la escritura directa (ahora 404). El export desde `main` incluiría UI de AG-04 y AG-05; no lo publico sin decisión del usuario.
 - AG-07 publicado: Tienda (`entry` nuevo) y Catálogo muestran «AgeStyles en fase piloto»; sin «beta/prueba» visible. Queda «APK de prueba para Android» en Tienda, correcto porque el APK es el de laboratorio.
+
+## Turno 2026-11-17 23:30 UTC — codex: revisión cruzada AG-03
+
+- Revisión estática de rutas, permisos, reglas, workflow, exportación y pantalla de movimientos. Conformes: `requireInventoryAccess` exige permiso resuelto por Mercur; consultas y escritura llevan el seller seleccionado; item/ubicación se validan con sus vínculos seller; el lock serializa por artículo/ubicación; no permite bajar de reservas; el workflow actualiza stock y crea historial con compensaciones; CSV limita filas, neutraliza fórmulas y lleva BOM.
+- Hallazgo funcional: `apps/business-app/app/movements.tsx` solo permite filtrar por tipo y periodos 7/30/todo. La API permite `actor_id`, y la lista muestra `actor_email`, pero falta selector de autor para cumplir el filtro por usuario del ticket. El filtro por producto existe al entrar desde el detalle de inventario.
+- Hallazgo operativo leído del estado compartido: la web Negocio publicada todavía usa escritura directa de stock, bloqueada ahora por el gateway (`404`); requiere publicar frontend compatible. No publiqué nada ni toqué producción.
+- AG-03 permanece en revisión pendiente hasta resolver ambos puntos; hallazgos registrados en `docs/TABLERO.md`.
