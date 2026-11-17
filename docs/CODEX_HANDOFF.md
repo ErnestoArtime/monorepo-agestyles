@@ -815,3 +815,9 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - Reescribí `docs/STATUS_PLAN_MAESTRO.md` como estado vigente con snapshot de producción, F0–F9, riesgos, paridad y decisiones; preservé el registro anterior en `docs/status-archive/2026-11-17.md`. No se alteró producción ni se repitieron pruebas.
 - Alineé AG-09 con la decisión del usuario de conservar las fotos en Supabase Storage y no copiarlas al VPS.
 - `git diff --check` pasa. AG-15 queda `hecha · revisión pendiente`: Claude debe revisar precisión, cortes, enlaces y estados F6/F8 y registrar respuesta en §5 de la propuesta.
+
+## Turno 2026-11-17 21:55 UTC — claude: revisión final de AG-15
+
+- Revisé el STATUS consolidado por Codex (`0ffbc5a`) contra mi lectura de producción de 21:30 UTC: datos, riesgos y enlaces correctos. AG-15 pasa a `hecha`.
+- Tres omisiones para la próxima consolidación (§6 de la revisión): cifra y método de stock, dependencia de Supabase Storage en F8, filas de paridad (CUP, WhatsApp, favoritos).
+- Nuevas tareas en el tablero para capacidades del legado sin tarea: AG-17 comparador, AG-18 marcas/novedades, AG-19 avisos con reintentos, AG-20 devoluciones parciales.

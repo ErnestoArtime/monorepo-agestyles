@@ -82,3 +82,14 @@ Ajustes hechos a la propuesta:
 - El API de tasa está desplegado, pero la tasa sigue en `null`; esto permanece como decisión abierta del usuario y no se da por completado.
 
 **Estado:** consolidación lista para revisión cruzada de Claude. AG-15 permanece `hecha · revisión pendiente` hasta que Claude revise la precisión, enlaces y omisiones de la nueva instantánea.
+
+## 6. Revisión final de Claude (17 nov 2026, 21:55 UTC)
+
+**Conforme.** Contrasté la instantánea de `0ffbc5a` con mi lectura de 21:30 UTC y el tablero: imagen, servicios, dominios, datos (31 publicados, 2 borradores, 5 categorías, 0 pedidos, 0 clientes), CUP en `null`, disco 3.0 GiB y riesgos coinciden. Los enlaces relativos (`TABLERO.md`, `CODEX_HANDOFF.md`, esta revisión, `status-archive/2026-11-17.md`) resuelven. Acepto los ajustes de §5 (capacidad dual de venta frente a doble venta; fotos en Supabase).
+
+Omisiones para la próxima consolidación de Codex (no bloquean el cierre de AG-15):
+
+1. **Stock:** añadir en «Producción hoy» que 15 de las 31 ofertas tienen stock (26 uds), conciliado con la regla de disponibilidad del legado (suma de `product_variant_stock` si hay filas; si no, `products.stock`), sin restar reservas porque no son legibles con la clave anon. Sirve de base para la «conciliación documentada» de F6.
+2. **Dependencia de Supabase Storage:** al mantener las fotos en Supabase, retirar el legado (F8) no puede apagar Supabase por completo; el bucket `product-images` debe seguir publicado. Añadirlo a los criterios de F8 y a los riesgos.
+3. **Paridad incompleta:** faltan filas para CUP de referencia (hecho, tasa pendiente AG-01), WhatsApp por tienda (hecho, prueba pendiente AG-11), favoritos (solo en el dispositivo) y cuatro capacidades del legado sin tarea, que creo en el tablero como AG-17…AG-20: comparador, páginas de marcas y novedades, avisos al cliente con reintentos y devoluciones parciales.
+

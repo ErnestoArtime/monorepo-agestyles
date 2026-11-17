@@ -36,7 +36,7 @@ Estados: `pendiente` · `en curso` · `bloqueada` · `hecha · revisión pendien
 | ID | Tarea | Responsable | Estado | Siguiente paso |
 |---|---|---|---|---|
 | AG-01 | Desplegar la API con la tasa CUP y fijar la tasa | claude | en curso (17 nov, 21:40 UTC) | API desplegada (`9b16175`, `sha256:c3235c65…`); `/store/agestyles/exchange-rate` responde `null`. Falta fijar la tasa (decide: usuario: valor de elTOQUE o token de su API). |
-| AG-15 | Revisión conjunta del estado del plan: contrastar `STATUS_PLAN_MAESTRO.md` con el plan maestro, tablero, commits y evidencias actuales; proponer correcciones y criterios de cierre | codex; revisión de claude | hecha · revisión pendiente (17 nov 2026) | Codex consolidó snapshot y archivó notas previas en `STATUS_PLAN_MAESTRO.md` / `status-archive/2026-11-17.md`. Claude: revisar ahora el cambio, especialmente estados F6/F8, la nota de cero pedidos, fechas corregidas y enlaces/evidencias; registrar conformidad u observaciones en §5 de `reviews/2026-11-17-status-plan-maestro.md`. |
+| AG-15 | Revisión conjunta del estado del plan: contrastar `STATUS_PLAN_MAESTRO.md` con el plan maestro, tablero, commits y evidencias actuales; proponer correcciones y criterios de cierre | codex; revisión de claude | hecha (17 nov 2026, 21:55 UTC) | Consolidado por codex (`0ffbc5a`) y revisado por claude: conforme, con 3 omisiones para la próxima consolidación (§6 de la [revisión](./reviews/2026-11-17-status-plan-maestro.md)). |
 
 ## Pendientes (por prioridad)
 
@@ -55,6 +55,10 @@ Estados: `pendiente` · `en curso` · `bloqueada` · `hecha · revisión pendien
 | AG-13 | P1 | Inspección visual clara/oscura de Buyer, Business y Catálogo (antes OC-09) | codex | — | Gates locales ya pasan. |
 | AG-14 | P1 | Builds nativos Android/iOS y TalkBack | codex | Espacio en disco y dispositivos | — |
 | AG-16 | P0 | Disco del VPS al 99 % (3.0 GiB libres): plan de limpieza revisado de imágenes y builds sin uso | sin asignar | Revisión (decide: usuario) | Bloquea builds y despliegues. No borrar nada sin revisión. |
+| AG-17 | P2 | Comparador de productos (el legado tenía `/comparar`) en Catálogo y Tienda | sin asignar | — | Existe `/store/catalog-comparison` en la API; falta la pantalla. |
+| AG-18 | P2 | Páginas de marcas y de novedades (legado: `/marcas/[marca]`, `/novedades`) | sin asignar | — | 14 marcas en el origen; las marcas no se migraron como entidad. |
+| AG-19 | P1 | Avisos al cliente con reintentos (outbox) y bandeja «Mis pedidos» | sin asignar | AG-04 | El legado tenía outbox transaccional y supervisión. |
+| AG-20 | P2 | Devoluciones parciales desde Negocio y Tienda | sin asignar | AG-11 | Medusa las soporta; faltan pantallas y permisos. |
 
 ## Revisión cruzada pendiente
 
