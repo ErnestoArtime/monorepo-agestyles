@@ -138,8 +138,8 @@ jobs:
             exit 1
           fi
           tracking_status="$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:19081/store/orders/order_ci_synthetic/tracking)"
-          if [[ "${tracking_status}" != "401" ]]; then
-            echo "Expected anonymous order-tracking request to return HTTP 401; got ${tracking_status}." >&2
+          if [[ "${tracking_status}" != "400" ]]; then
+            echo "Expected order-tracking request without a publishable key to be rejected with HTTP 400; got ${tracking_status}." >&2
             docker logs agestyles-commerce-api-ci
             exit 1
           fi
