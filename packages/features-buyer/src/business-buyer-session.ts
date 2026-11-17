@@ -40,6 +40,9 @@ export async function loginBusinessAndBuyerActors(
     throw new Error("El acceso de negocio requiere un paso adicional que aún no está disponible.");
   }
 
+  // Remove a previous customer's token before pairing this business identity with a buyer actor.
+  await buyerSdk.auth.logout();
+
   try {
     const buyerToken = await buyerSdk.auth.login("customer", "emailpass", { email, password });
     if (typeof buyerToken !== "string") {

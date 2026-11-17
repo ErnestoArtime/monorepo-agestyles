@@ -34,10 +34,12 @@ import {
 
 {
   const calls: [string, string, { email: string; password: string }][] = [];
+  const events: string[] = [];
   const credentials = { email: "person@example.test", password: "synthetic-password" };
   const businessSdk = {
     auth: {
       async login(actor: "member", provider: string, input: typeof credentials) {
+        events.push("member-login");
         calls.push([actor, provider, input]);
         return "member-token";
       },
@@ -46,10 +48,13 @@ import {
   const buyerSdk = {
     auth: {
       async login(actor: "customer", provider: string, input: typeof credentials) {
+        events.push("customer-login");
         calls.push([actor, provider, input]);
         return "customer-token";
       },
-      async logout() {},
+      async logout() {
+        events.push("customer-logout");
+      },
     },
     store: {
       customer: {
@@ -72,6 +77,7 @@ import {
     ["member", "emailpass", credentials],
     ["customer", "emailpass", credentials],
   ]);
+  assert.deepEqual(events, ["member-login", "customer-logout", "customer-login"]);
 }
 
 {
