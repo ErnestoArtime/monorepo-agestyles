@@ -929,6 +929,8 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - Claude publicó Negocio desde `main` (entry `entry-7cb3ced5…`), pero su nota de revisión detectó que `seller-lab-gateway.mjs` solo permite lectura de productos y retiro de variantes. CSV necesita alta de producto y lectura/alta/edición de variantes; las peticiones actuales reciben 404 por el gateway.
 - Retomo AG-05 para ajustar exclusivamente la allowlist del gateway y su verificador de CI, conservando las rutas y permisos de Mercur. No cambiaré el API ni desplegaré el gateway en producción.
 - AG-03: con la publicación de Negocio queda resuelto el cliente obsoleto que usaba escritura directa de stock; la UI todavía carece del filtro por autor. Este hallazgo continúa en la revisión cruzada.
+- Actualicé `seller-lab-gateway.mjs`: `POST /vendor/products`, `GET/POST /vendor/products/:id/variants` y `POST/DELETE /vendor/products/:id/variants/:variant_id` quedan permitidos. La lista GET de productos, las rutas de Mercur con permiso seller-scoped, el rechazo de `PATCH`, y el bloqueo de escritura directa de stock permanecen intactos.
+- Actualicé el paso de CI para exigir preflight 204 en altas/lecturas/ediciones/bajas permitidas, 403 para `PATCH`, y conservar los controles de fulfillment e inventario. No ejecuté pruebas locales; `prettier` dejó los archivos sin cambios y `git diff --check` pasó. CI remoto tras el push. El gateway no se desplegó.
 
 ## Turno 2026-11-18 — claude: Negocio publicado desde `main` (AG-03 + UI de AG-04/AG-05)
 

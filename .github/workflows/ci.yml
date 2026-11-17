@@ -238,7 +238,7 @@ jobs:
           AGESTYLES_CI_DISPOSABLE: "true"
         run: node apps/commerce-api/scripts/verify-variant-removal.mjs
 
-      - name: Verify seller gateway only permits the variant-removal preflight
+      - name: Verify seller gateway product routes and blocked stock writes
         run: |
           set -euo pipefail
           node tools/scripts/seller-lab-gateway.mjs >/tmp/agestyles-seller-gateway-ci.log 2>&1 &
@@ -263,8 +263,24 @@ jobs:
             --request OPTIONS http://127.0.0.1:19183/agestyles-seller/vendor/products/prod_ci_1/variants/variant_ci_1 \
             --header 'Origin: https://negocio.eav-labs.com' \
             --header 'Access-Control-Request-Method: POST')"
-          if [[ "${delete_status}" != "204" || "${post_status}" != "403" ]]; then
-            echo "Expected variant DELETE preflight 204 and unsupported POST 403; got ${delete_status}/${post_status}." >&2
+          patch_status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            --request OPTIONS http://127.0.0.1:19183/agestyles-seller/vendor/products/prod_ci_1/variants/variant_ci_1 \
+            --header 'Origin: https://negocio.eav-labs.com' \
+            --header 'Access-Control-Request-Method: PATCH')"
+          create_product_status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            --request OPTIONS http://127.0.0.1:19183/agestyles-seller/vendor/products \
+            --header 'Origin: https://negocio.eav-labs.com' \
+            --header 'Access-Control-Request-Method: POST')"
+          variant_collection_get_status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            --request OPTIONS http://127.0.0.1:19183/agestyles-seller/vendor/products/prod_ci_1/variants \
+            --header 'Origin: https://negocio.eav-labs.com' \
+            --header 'Access-Control-Request-Method: GET')"
+          variant_collection_post_status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            --request OPTIONS http://127.0.0.1:19183/agestyles-seller/vendor/products/prod_ci_1/variants \
+            --header 'Origin: https://negocio.eav-labs.com' \
+            --header 'Access-Control-Request-Method: POST')"
+          if [[ "${delete_status}" != "204" || "${post_status}" != "204" || "${patch_status}" != "403" || "${create_product_status}" != "204" || "${variant_collection_get_status}" != "204" || "${variant_collection_post_status}" != "204" ]]; then
+            echo "Expected product/variant GET, POST, DELETE preflights 204 and unsupported PATCH 403; got create=${create_product_status}, variants=${variant_collection_get_status}/${variant_collection_post_status}, variant=${post_status}/${delete_status}/${patch_status}." >&2
             cat /tmp/agestyles-seller-gateway-ci.log
             exit 1
           fi
