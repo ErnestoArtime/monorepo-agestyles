@@ -79,7 +79,7 @@ export async function POST(req: SellerRequest, res: MedusaResponse) {
     req.permissions_enforced !== true ||
     (orderPermission !== "edit" && orderPermission !== "manage")
   ) {
-    throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "Order fulfillment is not allowed.");
+    throw new MedusaError(MedusaError.Types.FORBIDDEN, "Order fulfillment is not allowed.");
   }
 
   const body = parseBody(req.body);
