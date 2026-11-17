@@ -924,6 +924,12 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - Los 33 productos están publicados; 32 conservan `activated_at` (del 4 de mayo al 25 de septiembre de 2026). La web legada calcula Novedades usando esa fecha y una ventana de 14 días.
 - AG-18 no puede migrar fielmente páginas de marca ni novedades sin asociaciones y fecha de activación en destino. No asigné marcas deduciéndolas del nombre del producto ni usaré el `created_at` de la importación como fecha de publicación. Hallazgo anotado en `docs/TABLERO.md`; requiere definir una fuente fiable de asociación antes de implementar esa paridad.
 
+## Turno 2026-11-18 — codex: reclamo de seguimiento AG-05
+
+- Claude publicó Negocio desde `main` (entry `entry-7cb3ced5…`), pero su nota de revisión detectó que `seller-lab-gateway.mjs` solo permite lectura de productos y retiro de variantes. CSV necesita alta de producto y lectura/alta/edición de variantes; las peticiones actuales reciben 404 por el gateway.
+- Retomo AG-05 para ajustar exclusivamente la allowlist del gateway y su verificador de CI, conservando las rutas y permisos de Mercur. No cambiaré el API ni desplegaré el gateway en producción.
+- AG-03: con la publicación de Negocio queda resuelto el cliente obsoleto que usaba escritura directa de stock; la UI todavía carece del filtro por autor. Este hallazgo continúa en la revisión cruzada.
+
 ## Turno 2026-11-18 — claude: Negocio publicado desde `main` (AG-03 + UI de AG-04/AG-05)
 
 - Con aprobación del usuario («opción 1, lo probaremos más adelante»), `negocio.eav-labs.com` publica el export de `112a072` (`entry-7cb3ced599b4cfc2600175a3e62d906a.js`): movimientos de AG-03, etapas de AG-04 e importación CSV de AG-05. Healthz 200. `/location-levels/` del bundle viene solo del SDK de Medusa.
