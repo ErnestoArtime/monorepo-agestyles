@@ -1,0 +1,9 @@
+[
+  {
+    "legacy_id": "variant-synthetic-001",
+    "references": [
+      { "relation": "product", "entity": "products", "legacy_id": "product-synthetic-001" }
+    ],
+    "payload": { "variant_key": "__default__", "label": "One size" }
+  }
+]

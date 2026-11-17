@@ -27,6 +27,8 @@
     "lab:web:build:public": "node tools/scripts/build-buyer-web.mjs",
     "seller:web:build": "node --env-file=apps/business-app/.env.local tools/scripts/build-business-web.mjs",
     "lab:web:serve": "python3 -m http.server 18081 --bind 127.0.0.1 --directory apps/buyer-app/dist",
+    "migration:catalog:check": "node tools/migration/validate-stage-bundle.mjs --profile catalog-only",
+    "migration:test": "node --test tools/migration/test/validate-stage-bundle.test.mjs",
     "test": "nx run-many --target=test",
     "typecheck": "nx run-many --target=typecheck",
     "lint": "eslint .",

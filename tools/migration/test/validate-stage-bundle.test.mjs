@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url"
 import { validateStageBundle } from "../validate-stage-bundle.mjs"
 
 const fixture = fileURLToPath(new URL("../fixtures/synthetic-v1", import.meta.url))
+const catalogFixture = fileURLToPath(new URL("../fixtures/synthetic-catalog-v1", import.meta.url))
 
 async function withBundle(callback) {
   const directory = await mkdtemp(path.join(os.tmpdir(), "agestyles-stage-bundle-"))
@@ -58,6 +59,14 @@ test("accepts the synthetic staging interchange and reports only counts and hash
   assert.ok(summary.entities.every((entity) => /^[a-f0-9]{64}$/.test(entity.sha256)))
   assert.equal(JSON.stringify(summary).includes("Producto sintético"), false)
   assert.equal(JSON.stringify(summary).includes("product-syn-001"), false)
+})
+
+test("accepts the checked-in synthetic catalog-only bundle", async () => {
+  const summary = await validateStageBundle(catalogFixture, { profile: "catalog-only" })
+  assert.equal(summary.status, "valid")
+  assert.equal(summary.totals.entities, 4)
+  assert.equal(summary.totals.records, 4)
+  assert.equal(JSON.stringify(summary).includes("product-synthetic-001"), false)
 })
 
 test("catalog-only profile accepts a catalog bundle without sellers, offers, stock, or customer data", async () => {

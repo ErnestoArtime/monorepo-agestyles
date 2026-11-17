@@ -1,0 +1,35 @@
+{
+  "format": "agestyles.stage-interchange",
+  "schema_version": 1,
+  "schema_contract": "agestyles-stage-interchange-v1",
+  "bundle_mode": "dry-run-only",
+  "source": {
+    "export_id": "synthetic-catalog-export-001"
+  },
+  "datasets": [
+    {
+      "entity": "categories",
+      "file": "categories.json",
+      "record_count": 1,
+      "sha256": "61e9ab89026582665fbaf7a5592389163f1738c157e858c29bfac0c43537d9b7"
+    },
+    {
+      "entity": "media_objects",
+      "file": "media_objects.json",
+      "record_count": 1,
+      "sha256": "50145d7d57c4266d281de35196414d8994fecbbd8396ab99c5473e193ee6c740"
+    },
+    {
+      "entity": "products",
+      "file": "products.json",
+      "record_count": 1,
+      "sha256": "e99d6ef579ef4e625a660a6fbff2ffe3ca07a5e069050d7e6c340b09f6907ed5"
+    },
+    {
+      "entity": "variants",
+      "file": "variants.json",
+      "record_count": 1,
+      "sha256": "c5b6ef5cf179698d52f112eab584ac7ca88a52b9845c936dc6fa77a557b29543"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+[
+  {
+    "legacy_id": "product-synthetic-001",
+    "references": [
+      { "relation": "category", "entity": "categories", "legacy_id": "category-synthetic-001" },
+      { "relation": "media", "entity": "media_objects", "legacy_id": "media-synthetic-001" }
+    ],
+    "payload": {
+      "title": "Synthetic product",
+      "currency": "USD",
+      "publication_status": "published"
+    }
+  }
+]

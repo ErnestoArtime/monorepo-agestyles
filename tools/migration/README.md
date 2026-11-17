@@ -29,8 +29,8 @@ Cada archivo de entidad es un array de filas normalizadas con `legacy_id`, `refe
 
 ```sh
 node tools/migration/validate-stage-bundle.mjs tools/migration/fixtures/synthetic-v1
-node tools/migration/validate-stage-bundle.mjs --profile catalog-only <catalog-bundle-directory>
-node --test tools/migration/test/validate-stage-bundle.test.mjs
+corepack pnpm migration:catalog:check tools/migration/fixtures/synthetic-catalog-v1
+corepack pnpm migration:test
 ```
 
 El perfil `catalog-only` ignora el contenido de archivos para entidades fuera de alcance y devuelve únicamente los códigos/counts; no elimina archivos del bundle. El operador debe usar una carpeta privada y no entregar bundles con PII. Una exportación futura debe pasar por aprobación de esquema específica antes de transformar dinero/stock, escribir el mapa de IDs o conectar un importador a PostgreSQL. Este preflight no es respaldo ni evidencia de conciliación/restauración.
