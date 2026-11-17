@@ -9,9 +9,6 @@ services:
     environment:
       AGESTYLES_COMMERCE_ENV: production
       REDIS_URL: redis://127.0.0.1:16393
-      AGESTYLES_FILE_STORAGE_PROVIDER: s3
-      S3_ENDPOINT: http://127.0.0.1:19086
-      S3_BUCKET: agestyles-product-media
     command: ["pnpm", "exec", "medusa", "start", "--host", "127.0.0.1", "--port", "19085"]
     depends_on:
       postgres:
@@ -20,13 +17,20 @@ services:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:19085/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:19085/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
       interval: 15s
       timeout: 5s
       retries: 10
       start_period: 90s
 
   media-public:
+    profiles: ["local-media"]
     image: nginx:1.28.0-alpine
     network_mode: host
     volumes:
@@ -36,12 +40,19 @@ services:
     restart: unless-stopped
 
   media:
+    profiles: ["local-media"]
     image: quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z
     command: ["server", "/data"]
     environment:
-      MINIO_ROOT_USER: ${AGESTYLES_PRODUCTION_MINIO_USER:?Set a private MinIO administrator}
-      MINIO_ROOT_PASSWORD: ${AGESTYLES_PRODUCTION_MINIO_PASSWORD:?Set a private MinIO password}
+      MINIO_ROOT_USER: ${AGESTYLES_PRODUCTION_MINIO_USER:-}
+      MINIO_ROOT_PASSWORD: ${AGESTYLES_PRODUCTION_MINIO_PASSWORD:-}
       MINIO_BROWSER: "off"
+    entrypoint:
+      [
+        "/bin/sh",
+        "-ec",
+        'test -n "$$MINIO_ROOT_USER" && test -n "$$MINIO_ROOT_PASSWORD" && exec minio server /data',
+      ]
     ports:
       - "127.0.0.1:19086:9000"
     volumes:
