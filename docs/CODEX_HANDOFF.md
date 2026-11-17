@@ -611,3 +611,6 @@ HTTP GET sin escribir: catálogo, comprador y negocio responden 200; gateway buy
 ## F4 — Corrección previa a publicar Commerce API — 17 de noviembre de 2026
 
 Se resolvió el desajuste de puertos: `pnpm start`, ambos gateways, `EXPOSE`, el healthcheck de `buyer-web.yaml` y la verificación del runbook ahora coinciden en `19081`. Se añadió `apps/commerce-api/test/publish-config.test.mjs` que protege esta consistencia. API tests 7/7; `pnpm test` 8/8; typecheck 12/12; lint 0 errores/20 advertencias; formato y `git diff --check` PASS. `docker compose -f infra/compose/buyer-web.yaml config --services` muestra `commerce-api`, `buyer-gateway`, `buyer-web`. No se construyó ni publicó imagen; quedan 3.2 GiB libres y hay que preservar espacio para rollback. Tracking sigue en 404/`Cannot GET` hasta actualizar el runtime.
+
+
+CI de `ec0bd17` terminó `success`: [run 44066099747](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44066099747). Esto verifica gates y builds CI; no hubo dispatch de publicación ni despliegue VPS.

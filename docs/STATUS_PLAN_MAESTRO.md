@@ -208,3 +208,8 @@ Las cifras `17 imágenes`, `1 categoría`, `10 subcategorías`, `10 perfiles` y 
 ## Corrección del puerto de publicación API — 17 de noviembre de 2026, 10:34 UTC
 
 La API ejecuta en `127.0.0.1:19081`; los gateways buyer/seller ya reenviaban a ese puerto. Se corrigieron `EXPOSE`, healthcheck Compose y comando del runbook que todavía apuntaban a 19080. Una prueba sintética ahora exige que paquete, Dockerfile, Compose, ambos gateways y runbook compartan el mismo puerto. Commerce API test pasa 7/7, Nx test 8/8, typecheck 12/12, lint 0 errores/20 advertencias, formato PASS; `docker compose ... config --services` valida el Compose sin construir. La ruta tracking sigue devolviendo 404 en runtime porque la API actual no se ha actualizado. El host tiene 3.2 GiB libres y el runbook exige espacio para conservar rollback; no se publicó ni desplegó la imagen.
+
+
+## CI de la corrección de publicación API — 17 de noviembre de 2026, 10:37 UTC
+
+El commit `ec0bd17` (`fix: align commerce API publish port`) está en `main`; CI [run 44066099747](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44066099747) terminó success con lint, formato, tests, typecheck, build aislado de Medusa y exports web. La nueva prueba de configuración es parte de los tests de Commerce API. No se inició `Publish commerce API image` ni se actualizó el VPS. Su despliegue sigue sujeto a conservar la imagen anterior/rollback; con 3.2 GiB libres no se satisface aún ese prerequisito.

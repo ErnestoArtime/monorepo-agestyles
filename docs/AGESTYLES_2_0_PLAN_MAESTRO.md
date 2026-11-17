@@ -371,3 +371,6 @@ Actualización del 17 de noviembre de 2026, 10:03 UTC: el código del monorepo e
 
 
 **Revalidación — 17 de noviembre de 2026, 10:19 UTC:** `main` está sincronizada hasta `1bb366a`, cuyo CI finalizó success. El resolver de permisos seller tiene tests sintéticos por rol, pero F1/F5/F7 conservan pendientes de BOLA runtime, UI y UAT. El host tiene 3.2 GiB libres y no enumera Android; no iniciar builds/descargas. El plan sigue en ejecución y no se autoriza cutover.
+
+
+**Revalidación — 17 de noviembre de 2026, 10:37 UTC:** el commit `ec0bd17` corrigió el puerto del runbook/healthcheck a `19081` y añadió test de consistencia. CI terminó success ([run 44066099747](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44066099747)). La imagen aún no se publica ni despliega; F4 no cierra hasta que tracking responda desde el runtime y pase el ownership test con fixture limpio.

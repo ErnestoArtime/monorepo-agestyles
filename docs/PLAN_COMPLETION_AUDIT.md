@@ -143,3 +143,8 @@ Lecturas frescas: las portadas catálogo, tienda compradora y negocio respondier
 ## Preparación segura de la publicación API — 17 de noviembre de 2026
 
 Se corrigió el desajuste que hacía apuntar EXPOSE, healthcheck y verificación del runbook a `19080` cuando `pnpm start` y ambos gateways usan `19081`. Se agregó `publish-config.test.mjs` para mantener alineados esos cinco puntos. Localmente: API 7/7; Nx 8/8; typecheck 12/12; lint 0 errores/20 advertencias; formato y `docker compose config --services` correctos. No se ejecutó build/publicación GHCR ni se tocó el VPS: el runbook requiere margen suficiente para mantener imagen de rollback y hay 3.2 GiB disponibles. F4 sigue pendiente del despliegue y comprobación de tracking.
+
+
+## CI de la corrección de puerto — 17 de noviembre de 2026
+
+El commit `ec0bd17` está en `main` y su CI [44066099747](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44066099747) finalizó success. La corrección y test de consistencia pasan compilación/test remoto; esto no publica la imagen ni demuestra runtime/health en el host. El endpoint de tracking continúa no disponible en la imagen desplegada.
