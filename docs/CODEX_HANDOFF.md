@@ -449,3 +449,11 @@ Verificación local: typecheck de buyer-app, ESLint en cuatro archivos de códig
 **Bloqueo detectado para commitear:** `pnpm format:check` falla en 17 de los archivos tocados porque nunca siguieron el baseline de `.prettierrc.json` (punto y coma y comillas dobles); el storefront y varias pantallas usan otro estilo. No se reformatearon en masa: hace falta que Codex decida si se formatean esos archivos, se ajusta la configuración o se amplía `.prettierignore`. `FORMAT_BASE_REF` en CI solo evalúa lo commiteado, así que este árbol no altera el CI mientras no se commitee.
 
 **Siguen abiertas:** corazón decorativo de 19 px en tarjetas del storefront, `#FFFFFF` literal en `android-app-link`, divergencia del color nativo por defecto (`#171717` vs `currentColor`), rango 12–16 px para iconos en línea sin documentar y validación visual/TalkBack en dispositivo.
+
+---
+
+## Turno 2026-11-17 — prueba de contrato para tracking buyer
+
+Se añadió `apps/commerce-api/test/order-tracking-route.test.mjs` y el target `test` del paquete Commerce API. La prueba ejecuta el handler con `QUERY.graph` simulado y cubre autenticación 401, aislamiento de un pedido ajeno con 404 sin label, y respuesta del owner con shipments por línea. No usa base de datos.
+
+Verificación local: `pnpm test` 6/6, `pnpm typecheck` 12/12, lint 0 errores/20 warnings, Prettier y ESLint dirigido pasan. Nx infiere el target `test` del paquete. La ruta continúa pendiente de imagen/despliegue en el API; el verificador runtime sigue en pausa mientras haya fulfillment de fixture sin limpiar. CI de este cambio queda pendiente.

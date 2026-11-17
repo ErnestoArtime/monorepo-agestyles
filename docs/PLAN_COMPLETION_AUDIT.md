@@ -1,6 +1,6 @@
 # Auditoría de cumplimiento del plan maestro AgeStyles 2.0
 
-**Corte:** 17 de noviembre de 2026, 05:44 UTC
+**Corte:** 17 de noviembre de 2026, 05:55 UTC
 **Alcance:** contraste de `AGESTYLES_2_0_PLAN_MAESTRO.md`, `STATUS_PLAN_MAESTRO.md`, `MATRIZ_REUTILIZACION.md`, `CODEX_HANDOFF.md` y el grafo de código del monorepo.
 **Conclusión:** el plan sigue en ejecución; ninguna de las fases F0–F8 puede marcarse completa con la evidencia disponible. F9 está correctamente diferida. El laboratorio de marketplace y varias verticales están avanzadas, pero siguen pendientes gates de datos, validación en dispositivos, QA, despliegue y cutover.
 
@@ -87,3 +87,9 @@ El grafo del monorepo está indexado. La arquitectura muestra apps `commerce-api
 - El runbook contiene los valores públicos actuales de buyer (`descargas.eav-labs.com/agestyles-lab`), negocio (`descargas.eav-labs.com/agestyles-seller`), storefront (`catalogo.eav-labs.com`), buyer (`tienda.eav-labs.com`) y propietario GHCR (`ernestoartime`). La clave publicable se copiará directamente de la configuración local y no se incluirá en el documento.
 - Verificación pública con esa clave: preflight buyer 204, `store/regions` 200/1 y `store/products?limit=100` 200/12; preflight seller desde el dominio de negocio 204. Esto confirma los gateways, no la interfaz web ya desplegada.
 - El workflow de imágenes está activo pero no ejecutado; el conector de GitHub disponible no permite crear variables de Actions ni iniciar `workflow_dispatch`. Se solicitó al usuario configurar las variables y lanzar el workflow; el despliegue VPS queda pendiente de un tag GHCR resultante.
+
+## Addendum de seguimiento — 17 de noviembre de 2026, 05:55 UTC
+
+- F4/F7: la ruta de tracking tiene prueba de contrato ejecutable sin DB. Cubre actor anónimo (401 y sin consulta), ID no propio (404 sin etiqueta) y lectura del pedido propio (proyección por línea y label).
+- Localmente `pnpm test` pasa 6/6, typecheck 12/12, lint 0 errores/20 warnings; Prettier, ESLint dirigido y `git diff --check` pasan. El test fue agregado al objetivo Nx `test` del workspace.
+- Sigue faltando desplegar la ruta al API runtime y probar ownership sobre un fixture limpio. No se hizo escritura, consulta a DB, rebuild ni reinicio de servicio. El nuevo commit/Ci aún está pendiente.

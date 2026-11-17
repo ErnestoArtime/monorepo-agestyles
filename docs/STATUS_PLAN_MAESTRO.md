@@ -1,6 +1,6 @@
 # Estado de ejecución del plan maestro AgeStyles 2.0
 
-**Corte de auditoría:** 17 de noviembre de 2026, 05:44 UTC
+**Corte de auditoría:** 17 de noviembre de 2026, 05:55 UTC
 
 **Documento rector:** [AGESTYLES_2_0_PLAN_MAESTRO.md](./AGESTYLES_2_0_PLAN_MAESTRO.md)
 
@@ -110,3 +110,9 @@ El checkout fuente presenta cambios sin seguimiento en `.codex/`, `scripts/__pyc
 - El runbook ya tiene las URLs verificadas para gateways buyer/seller, web buyer, catálogo y propietario GHCR. Solo falta copiar el valor `pk_` publicable de la configuración local a la variable de GitHub Actions; no usar claves `sk_`, Admin o Vendor.
 - Una consulta pública desde el gateway remoto `https://descargas.eav-labs.com/agestyles-lab` con esa clave devuelve 1 región y 12 productos (HTTP 200). El preflight de negocio desde `negocio.eav-labs.com` también devuelve 204.
 - No se ha iniciado la publicación de imágenes. Los contenedores siguen con tags `agestyles/*:local`, anteriores a los cambios de `main`.
+
+## Actualización de seguimiento de pedidos — 17 de noviembre de 2026, 05:55 UTC
+
+- F4/F7: agregada prueba de contrato de la ruta `GET /store/orders/:id/tracking` con `QUERY.graph` en memoria. Comprueba anónimo→401 sin consultar el grafo, cliente ajeno→404 sin etiqueta, y dueño→tracking por línea; no accede a base de datos.
+- `corepack pnpm test` pasa 6/6, typecheck 12/12, lint 0 errores/20 advertencias, Prettier y ESLint de los archivos tocados pasan. Nx detecta el test nuevo de Commerce API.
+- El endpoint aún no está en la imagen del API desplegado; la nueva prueba no sustituye la validación runtime ni autoriza reintentar el verificador con fixtures contaminados. CI remoto de este cambio queda pendiente.

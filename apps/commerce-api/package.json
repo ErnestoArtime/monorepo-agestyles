@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "typecheck": "tsc --noEmit",
+    "test": "node test/order-tracking-route.test.mjs",
     "migrate": "medusa db:migrate",
     "start": "medusa start --host 127.0.0.1 --port 19081",
     "seed": "medusa exec ./src/scripts/seed.ts",
