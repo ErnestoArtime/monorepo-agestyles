@@ -1,13 +1,9 @@
 import Medusa from "@medusajs/js-sdk";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const MEDUSA_BACKEND_URL =
-  process.env.EXPO_PUBLIC_MEDUSA_URL ||
-  "http://127.0.0.1:19080";
+const MEDUSA_BACKEND_URL = process.env.EXPO_PUBLIC_MEDUSA_URL || "http://127.0.0.1:19081";
 
-const MEDUSA_PUBLISHABLE_API_KEY = 
-  process.env.EXPO_PUBLIC_MEDUSA_PUBLISHABLE_API_KEY ||
-  "";
+const MEDUSA_PUBLISHABLE_API_KEY = process.env.EXPO_PUBLIC_MEDUSA_PUBLISHABLE_API_KEY || "";
 
 export const sdk = new Medusa({
   baseUrl: MEDUSA_BACKEND_URL,
@@ -19,4 +15,3 @@ export const sdk = new Medusa({
   },
   publishableKey: MEDUSA_PUBLISHABLE_API_KEY,
 });
-

@@ -15,11 +15,11 @@ corepack pnpm lab:buyer
 corepack pnpm lab:api
 ```
 
-La API responde en `http://127.0.0.1:19080/health`. En otra terminal, arranca Expo con `corepack pnpm lab:app`. Para la versión web, usa `corepack pnpm lab:web:build` y `corepack pnpm lab:web:serve` en terminales separadas; queda disponible en `http://127.0.0.1:18081/`.
+La API responde en `http://127.0.0.1:19081/health`. En otra terminal, arranca Expo con `corepack pnpm lab:app`. Para la versión web, usa `corepack pnpm lab:web:build` y `corepack pnpm lab:web:serve` en terminales separadas; queda disponible en `http://127.0.0.1:18081/`.
 
 Las comprobaciones manuales existentes siguen en `apps/buyer-app/scripts` y `apps/commerce-api/scripts`; se ejecutan solo cuando se quiera crear datos de prueba.
 
-En el VPS puedes abrir la web desde tu equipo con reenvío SSH de los puertos 18081 y 19080. Usa `http://127.0.0.1:18081/` en el navegador. El catálogo demo tiene una región EUR. Selecciona dos productos, elige una oferta de un vendedor distinto en cada ficha, usa una dirección ficticia de España y selecciona un envío por tienda y pago manual.
+En el VPS puedes abrir la web desde tu equipo con reenvío SSH de los puertos 18081 y 19081. Usa `http://127.0.0.1:18081/` en el navegador. El catálogo demo tiene una región EUR. Selecciona dos productos, elige una oferta de un vendedor distinto en cada ficha, usa una dirección ficticia de España y selecciona un envío por tienda y pago manual.
 
 ## Verificación de carrito y permisos
 
@@ -71,7 +71,7 @@ CI=1 EXPO_NO_TELEMETRY=1 corepack pnpm --filter @agestyles/buyer-app android:lab
 Desde una computadora con acceso por SSH al VPS, ejecuta este comando sustituyendo el destino por tu servidor habitual. Deja la conexión abierta:
 
 ```sh
-ssh -N -L 18082:127.0.0.1:18082 -L 19080:127.0.0.1:19080 usuario@vps
+ssh -N -L 18082:127.0.0.1:18082 -L 19081:127.0.0.1:19081 usuario@vps
 ```
 
 Conecta el Android mediante USB, autoriza la depuración en el teléfono y usa [Android Platform Tools](https://developer.android.com/tools/releases/platform-tools) en otra terminal. `adb devices` debe indicar `device`:
@@ -79,7 +79,7 @@ Conecta el Android mediante USB, autoriza la depuración en el teléfono y usa [
 ```sh
 adb devices
 adb reverse tcp:18082 tcp:18082
-adb reverse tcp:19080 tcp:19080
+adb reverse tcp:19081 tcp:19081
 adb shell am start -a android.intent.action.VIEW -d exp://127.0.0.1:18082 host.exp.exponent
 ```
 

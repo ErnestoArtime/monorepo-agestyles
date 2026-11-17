@@ -9,7 +9,7 @@ App Expo para que los miembros operen las tiendas a las que pertenecen. Usa el A
 3. Generar la configuración privada del app con `corepack pnpm lab:business`.
 4. Iniciar Expo con `corepack pnpm lab:business-app`.
 
-La configuración local está en `.env.local` y no se sube a Git. El valor por defecto apunta a `127.0.0.1:19080`; un dispositivo Android físico requiere un origen accesible desde el dispositivo y permitido en CORS. No se debe insertar una clave de Admin API en esta app.
+La configuración local está en `.env.local` y no se sube a Git. El valor por defecto apunta al API del laboratorio en `127.0.0.1:19081`; un dispositivo Android físico requiere un origen accesible desde el dispositivo y permitido en CORS. No se debe insertar una clave de Admin API en esta app.
 
 ## Funciones disponibles
 

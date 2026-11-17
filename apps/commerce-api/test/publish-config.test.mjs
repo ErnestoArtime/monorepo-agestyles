@@ -16,12 +16,30 @@ test("Commerce API runtime, gateways, healthcheck, image and runbook use one por
   assert.ok(apiPortMatch, "Commerce API start script must declare its port");
   const apiPort = Number(apiPortMatch[1]);
 
-  const [dockerfile, compose, runbook, buyerGateway, sellerGateway] = await Promise.all([
+  const [
+    dockerfile,
+    compose,
+    runbook,
+    buyerGateway,
+    sellerGateway,
+    buyerSdk,
+    buyerVerifier,
+    businessContext,
+    businessBuyerActor,
+    buyerEnv,
+    businessEnv,
+  ] = await Promise.all([
     readRepositoryFile("apps/commerce-api/Dockerfile.public"),
     readRepositoryFile("infra/compose/buyer-web.yaml"),
     readRepositoryFile("docs/runbooks/manual-commerce-api-publish.md"),
     readRepositoryFile("tools/scripts/buyer-lab-gateway.mjs"),
     readRepositoryFile("tools/scripts/seller-lab-gateway.mjs"),
+    readRepositoryFile("apps/buyer-app/lib/sdk.ts"),
+    readRepositoryFile("apps/buyer-app/scripts/verify-marketplace.mts"),
+    readRepositoryFile("apps/business-app/context/business-context.tsx"),
+    readRepositoryFile("apps/business-app/context/buyer-actor.ts"),
+    readRepositoryFile("apps/buyer-app/.env.example"),
+    readRepositoryFile("apps/business-app/.env.example"),
   ]);
 
   assert.match(dockerfile, new RegExp(`^EXPOSE ${apiPort}$`, "m"));
@@ -32,5 +50,19 @@ test("Commerce API runtime, gateways, healthcheck, image and runbook use one por
     ["seller gateway", sellerGateway],
   ]) {
     assert.match(source, new RegExp(`port:\\s*${apiPort}\\b`), `${name} must target the API port`);
+  }
+  for (const [name, source] of [
+    ["buyer SDK", buyerSdk],
+    ["buyer integration verifier", buyerVerifier],
+    ["business member SDK", businessContext],
+    ["business buyer SDK", businessBuyerActor],
+    ["buyer environment example", buyerEnv],
+    ["business environment example", businessEnv],
+  ]) {
+    assert.match(
+      source,
+      new RegExp(`127\\.0\\.0\\.1:${apiPort}`),
+      `${name} must target the API port`,
+    );
   }
 });

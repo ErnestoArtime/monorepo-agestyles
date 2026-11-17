@@ -11,7 +11,7 @@ import {
 
 const baseUrl = process.env.EXPO_PUBLIC_MEDUSA_URL
 const publishableKey = process.env.EXPO_PUBLIC_MEDUSA_PUBLISHABLE_API_KEY
-assert.equal(baseUrl, "http://127.0.0.1:19080", "Use the isolated Mercur lab")
+assert.equal(baseUrl, "http://127.0.0.1:19081", "Use the isolated Mercur lab")
 assert(publishableKey?.startsWith("pk_"), "Set the lab publishable key")
 
 const auth = { type: "jwt", jwtTokenStorageMethod: "memory" } as const

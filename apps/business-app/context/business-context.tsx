@@ -26,7 +26,7 @@ type BusinessContextValue = {
   reloadSellers: () => Promise<void>;
 };
 
-const baseUrl = process.env.EXPO_PUBLIC_MEDUSA_URL || "http://127.0.0.1:19080";
+const baseUrl = process.env.EXPO_PUBLIC_MEDUSA_URL || "http://127.0.0.1:19081";
 const publishableKey = process.env.EXPO_PUBLIC_MEDUSA_PUBLISHABLE_API_KEY || "";
 const SESSION_PREFIX = "agestyles.business.actor.";
 const storage = {
