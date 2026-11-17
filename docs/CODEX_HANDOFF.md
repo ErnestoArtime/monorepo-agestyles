@@ -728,3 +728,11 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - Los cambios descritos como "sin commit sobre `5a9d56e`" quedaron en la rama `feat/espanol-favoritos-minio` sobre `main` `d8a710c`: localización (`1b3ae3f`), favoritos Buyer (`09b2204`), perfil MinIO del laboratorio (`cb5931c`) y esta documentación. No se ha fusionado en `main` ni publicado.
 - Antes del commit se aplicó Prettier a los archivos cambiados y se quitaron variables `catch` sin uso que dejó la traducción de errores. Resultados: `typecheck:quick` 11/11, `pnpm test` 8/8, `migration:test` 14/14, lint 0 errores/21 advertencias, `format:check` y `git diff --check` pasan. No se hizo build, export Expo ni revisión visual.
 - Runtime de producción observado con `docker ps`: `agestyles-commerce-production-postgres-1` y `-redis-1` healthy; no hay contenedor `commerce-api` de producción. Existen archivos privados de entorno en `~/.config/agestyles-commerce-production` (no se leyeron valores). No se verificó si la tienda oficial ya se creó en la base de producción. Disco: 7.3 GiB libres (97 %).
+
+## F6 — runtime de producción iniciado — 17 de noviembre de 2026, 20:30 UTC
+
+- La imagen configurada antes (`sha256:402524d3…`) no incluía `create-official-seller.ts`. Se cambió `AGESTYLES_PRODUCTION_IMAGE` en el `compose.env` privado a la imagen de `main` `a078cf4` (`ghcr.io/ernestoartime/agestyles-commerce-api@sha256:ad4b4e371334eb33c13c6c2195bb81fc2849dc6cf07988b32e95f8ae1ddede55`, run 44160480892).
+- La base `agestyles_commerce` estaba vacía (0 tablas). Se ejecutó `pnpm migrate` (209 tablas) y se arrancó `commerce-api` en `127.0.0.1:19085`; contenedor healthy y `/health` 200.
+- Tienda oficial creada con `create-official-seller.ts`: `sel_01M7NH1254S7Z1HZ7YQTJT39N7`, nombre AgeStyles, estado `open`, moneda `usd`, `external_id=agestyles-official`.
+- Dry-run del importador en modo producción con `catalog-supabase-links` y `AGESTYLES_PRODUCTION_REUSE_SOURCE_IMAGES=true`: bundle válido, 33 productos, 19 categorías, 33 variantes, 31 imágenes de origen, 0 escrituras.
+- Pendiente: crear el usuario admin de producción (`medusa user` con `admin.env`) y obtener el bearer token; después `--apply`. Siguen faltando región, ubicación de stock, ofertas/precios e inventario. Las webs públicas siguen apuntando al laboratorio.
