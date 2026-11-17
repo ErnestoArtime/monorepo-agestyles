@@ -601,3 +601,8 @@ Se añadió `apps/commerce-api/test/seller-permissions.test.mjs` al target `@age
 ## Infraestructura del host — 17 de noviembre de 2026, 10:19 UTC
 
 Lecturas actuales: disco de 193 GiB con 3.2 GiB disponibles, RAM total 11 GiB con 3.5 GiB disponibles y swap 2 GiB casi consumida. `adb devices -l` no enumera un teléfono/emulador Android. No iniciar builds nativos, descarga de imágenes ni limpieza de Docker con este margen.
+
+
+## Revalidación de rutas públicas — 17 de noviembre de 2026, 10:24 UTC
+
+HTTP GET sin escribir: catálogo, comprador y negocio responden 200; gateway buyer `store/regions` y `store/products?limit=1` responden 200, total agregado 12. El path de tracking sintético responde 404/`Cannot GET` tanto al API loopback `127.0.0.1:19081` como al gateway, sin customer auth; compatible con ruta fuente ausente de la imagen vigente. No se autenticó cuenta, ni se imprimió la publishable key. Las portadas 200 y el API no sustituyen el recorrido visual/checkout.
