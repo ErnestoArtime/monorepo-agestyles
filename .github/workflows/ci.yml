@@ -115,6 +115,34 @@ jobs:
             --env DATABASE_URL --env REDIS_URL --env JWT_SECRET --env COOKIE_SECRET \
             agestyles/commerce-api:ci pnpm migrate
 
+      - name: Seed disposable marketplace for seller permission checks
+        env:
+          DATABASE_URL: postgres://agestyles_lab:0123456789abcdef@127.0.0.1:15472/agestyles_mercur_lab
+          REDIS_URL: redis://127.0.0.1:16392
+          JWT_SECRET: ci_jwt_0123456789abcdef0123456789abcdef
+          COOKIE_SECRET: ci_cookie_0123456789abcdef0123456789abcdef
+          AGESTYLES_LAB_SEEDED_PASSWORD: ci_lab_password_0123456789
+        run: |
+          set -euo pipefail
+          docker run --rm --network host \
+            --env DATABASE_URL --env REDIS_URL --env JWT_SECRET --env COOKIE_SECRET \
+            --env AGESTYLES_LAB_SEEDED_PASSWORD \
+            agestyles/commerce-api:ci pnpm seed
+
+      - name: Export disposable publishable key for HTTP role checks
+        run: |
+          set -euo pipefail
+          key="$(docker run --rm --network host postgres:17-alpine \
+            psql 'postgres://agestyles_lab:0123456789abcdef@127.0.0.1:15472/agestyles_mercur_lab' \
+            --no-psqlrc --tuples-only --no-align \
+            --command "SELECT token FROM api_key WHERE type = 'publishable' AND revoked_at IS NULL ORDER BY created_at LIMIT 1")"
+          if [[ ! "${key}" =~ ^pk_[a-zA-Z0-9]+$ ]]; then
+            echo "Could not obtain a publishable key from the disposable seed." >&2
+            exit 1
+          fi
+          echo "::add-mask::${key}"
+          echo "EXPO_PUBLIC_MEDUSA_PUBLISHABLE_API_KEY=${key}" >> "${GITHUB_ENV}"
+
       - name: Start API and verify health and tracking authentication
         run: |
           set -euo pipefail
@@ -144,6 +172,42 @@ jobs:
             exit 1
           fi
           exit 0
+
+      - name: Create isolated multi-store role fixtures over HTTP
+        env:
+          EXPO_PUBLIC_MEDUSA_URL: http://127.0.0.1:19081
+          AGESTYLES_LAB_SEEDED_PASSWORD: ci_lab_password_0123456789
+        run: node tools/scripts/verify-multistore-memberships.mjs
+
+      - name: Approve synthetic CI seller accounts
+        env:
+          DATABASE_URL: postgres://agestyles_lab:0123456789abcdef@127.0.0.1:15472/agestyles_mercur_lab
+          REDIS_URL: redis://127.0.0.1:16392
+          JWT_SECRET: ci_jwt_0123456789abcdef0123456789abcdef
+          COOKIE_SECRET: ci_cookie_0123456789abcdef0123456789abcdef
+        run: |
+          docker run --rm --network host \
+            --env DATABASE_URL --env REDIS_URL --env JWT_SECRET --env COOKIE_SECRET \
+            agestyles/commerce-api:ci \
+            pnpm exec medusa exec ./src/scripts/approve-lab-sellers.ts
+
+      - name: Seed synthetic offers and inventory for seller role checks
+        env:
+          DATABASE_URL: postgres://agestyles_lab:0123456789abcdef@127.0.0.1:15472/agestyles_mercur_lab
+          REDIS_URL: redis://127.0.0.1:16392
+          JWT_SECRET: ci_jwt_0123456789abcdef0123456789abcdef
+          COOKIE_SECRET: ci_cookie_0123456789abcdef0123456789abcdef
+        run: |
+          docker run --rm --network host \
+            --env DATABASE_URL --env REDIS_URL --env JWT_SECRET --env COOKIE_SECRET \
+            agestyles/commerce-api:ci \
+            pnpm exec medusa exec ./src/scripts/seed-lab-multistore-offers.ts
+
+      - name: Verify seller roles and cross-store denials over HTTP
+        env:
+          EXPO_PUBLIC_MEDUSA_URL: http://127.0.0.1:19081
+          AGESTYLES_LAB_SEEDED_PASSWORD: ci_lab_password_0123456789
+        run: node apps/commerce-api/scripts/verify-seller-roles.mjs
 
       - name: Stop disposable Commerce API smoke test
         if: always()

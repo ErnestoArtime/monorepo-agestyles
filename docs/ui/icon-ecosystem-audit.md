@@ -148,3 +148,9 @@ El desajuste entre `.prettierrc.json` y el estilo real de las apps es deuda de O
 ## 8. Correcciones aplicadas después de la auditoría
 
 El 17 de noviembre de 2026 se corrigió el punto 1 sin añadir dependencias: alias e iconos de pago ahora están tipados, se quitaron los dos `as any` y los nombres inválidos ya no se convierten silenciosamente en `help`. Verificación local: `tsc --project apps/buyer-app/tsconfig.json --noEmit`, ESLint sobre los archivos de código tocados y Prettier completaron correctamente. Las brechas de accesibilidad y la validación en dispositivos listadas arriba siguen abiertas.
+
+## Cierre coordinado — 17 de noviembre de 2026
+
+La auditoría de adopción queda cerrada en su alcance estático. Las brechas enumeradas arriba son el inventario inicial, no defectos que sigan abiertos: las correcciones posteriores registradas en las secciones 8 y 9 cubren etiquetas y estados accesibles del carrito/pago, el glifo de error, alias y fallback tipados, tamaños/tokens, glifos del storefront, cobertura TypeScript del paquete, `transpilePackages` y el color nativo por tema. La paridad final documentada es 42/42.
+
+Los checks actuales del monorepo pasan: pruebas 8/8, typecheck 12/12, lint con 0 errores y 19 advertencias existentes, y `format:check` PASS (no había archivos versionados modificados que revisar en este corte). Esto no acredita renderizado visual ni anuncios de TalkBack. Siguen pendientes en OC-09 la inspección de pantallas completas en claro/oscuro y la validación en Android/iOS cuando haya navegador/dispositivo y capacidad disponibles.

@@ -16,3 +16,6 @@
 
 # pnpm owns the generated lockfile layout.
 pnpm-lock.yaml
+
+# Legacy demo seed has no consistent Prettier baseline; avoid reformatting its full dataset.
+apps/commerce-api/src/scripts/seed.ts

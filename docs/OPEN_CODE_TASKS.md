@@ -46,7 +46,7 @@ Comprobar toolchain (Node, Java, Android SDK, Gradle), configuración Expo y dis
 
 **Estado:** completada por Codex (17 nov 2026)
 **Prioridad:** P1
-**Resultado:** ESLint 9.39.2 con reglas base JS/TS y ajustes Expo/Next por app; Prettier `format:check` sobre archivos modificados con `FORMAT_BASE_REF` en CI. `pnpm lint` → 0 errores y 36 advertencias visibles; `pnpm format:check` → PASS. `.prettierignore` explica Markdown y lockfile generados; no se reformateó la base completa. El CI ejecuta ambos checks después de instalación congelada.
+**Resultado:** ESLint 9.39.2 con reglas base JS/TS y ajustes Expo/Next por app; Prettier `format:check` sobre archivos modificados con `FORMAT_BASE_REF` en CI. `pnpm lint` → 0 errores y 36 advertencias visibles; `pnpm format:check` → PASS. `.prettierignore` explica Markdown, lockfile y el seed histórico (sin baseline consistente) para no reformatear su dataset completo; ESLint y TypeScript siguen cubriendo ese seed. El CI ejecuta ambos checks después de instalación congelada.
 **Archivos permitidos:** configuración de raíz (`package.json`, `pnpm-lock.yaml`, `nx.json`, `.github/workflows/ci.yml`) y archivos de configuración nuevos para ESLint/Prettier. Si aparece una infracción, añadir una lista concreta de archivos; no reformatear toda la base.
 
 Definir una configuración mantenible para TypeScript/Expo/Next/Medusa y conectar checks reales a CI. Primero medir compatibilidad con los paquetes ya instalados y la cobertura que ofrecen las configuraciones oficiales de cada stack. No añadir comandos vacíos ni usar `nx format:check` sin un formatter instalado. Si lograr una única regla completa exige un cambio masivo o decisiones de estilo incompatibles, proponer una implantación por etapas con cobertura explícita.
@@ -55,9 +55,9 @@ Definir una configuración mantenible para TypeScript/Expo/Next/Medusa y conecta
 
 ### OC-05 — Auditoría de adopción del sistema compartido de iconos
 
-**Estado:** completada por OpenCode (17 nov 2026)
+**Estado:** completada por OpenCode y Codex (17 nov 2026)
 **Prioridad:** P1
-**Resultado:** [docs/ui/icon-ecosystem-audit.md](./ui/icon-ecosystem-audit.md). Paridad inicial 40/40 entre web y nativo y sin importaciones directas de otras librerías. Codex cerró la brecha de tipos/fallback sin instalar dependencias; el estado posterior de accesibilidad y glifos de texto está anotado en la auditoría y queda pendiente de cierre coordinado.
+**Resultado:** [docs/ui/icon-ecosystem-audit.md](./ui/icon-ecosystem-audit.md). El paquete compartido mantiene paridad web/nativo; los defectos de tipos, accesibilidad, glifos, tokens y cobertura propia identificados en la auditoría se corrigieron. La inspección visual y TalkBack en dispositivos siguen pendientes como parte de OC-09; no bloquean el cierre de esta auditoría estática.
 
 **Archivos permitidos:** `apps/**` (solo lectura), `packages/icons/**` (solo lectura), `docs/design-system.md` (solo lectura) y `docs/ui/icon-ecosystem-audit.md` (nuevo informe). No editar componentes ni dependencias.
 
@@ -112,7 +112,7 @@ Determinar si existe una diferencia entre la consulta de pedidos de Kickz y la o
 
 ### OC-09 — Cerrar temas claro/oscuro y gates del árbol de trabajo
 
-**Estado:** revisión estática y gates locales actualizados por Codex (17 nov 2026): 8/8 pruebas Nx, 12/12 typechecks, lint sin errores (20 advertencias), formato PASS. Los tres glifos de texto encontrados en selección/envío y regreso al modo negocio se sustituyeron por `@agestyles/icons`. Sigue pendiente la inspección visual clara/oscura en navegador/dispositivo. No requiere build ni publicación para continuar el desarrollo.
+**Estado:** revisión estática y gates locales actualizados por Codex (17 nov 2026): 8/8 pruebas Nx, 12/12 typechecks, lint sin errores (19 advertencias), formato PASS. Los glifos de texto de selección/envío y regreso al modo negocio se sustituyeron por `@agestyles/icons`. Sigue pendiente la inspección visual clara/oscura en navegador/dispositivo. No requiere build ni publicación para continuar el desarrollo.
 **Prioridad:** P0
 **Archivos permitidos:** cambios existentes de `apps/business-app/**`, `apps/buyer-app/app.json`, `apps/buyer-app/components/android-app-link.tsx` y `docs/design-system.md`. No reescribir los rediseños de Buyer, el CSS del storefront ni archivos de otro autor sin revisar su diff.
 

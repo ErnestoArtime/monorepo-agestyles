@@ -644,3 +644,15 @@ Consulta de metadatos de solo lectura a `Agestyles-Catalogo`: 80 migraciones apl
 ## F4 — Smoke de tracking en runtime aislado de CI — 17 de noviembre de 2026, 11:48 UTC
 
 El CI del commit `b224d23` [run 44078209194](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44078209194) terminó success. Además de `/health` HTTP 200, el contenedor migrado y ejecutado contra PostgreSQL/Redis desechables recibe `GET /store/orders/order_ci_synthetic/tracking` sin `x-publishable-api-key` y responde HTTP 400. La primera versión del check esperaba 401; el runtime mostró que la capa Store exige primero la clave publicable y se corrigió la expectativa. El test unitario de ruta cubre por separado handler sin sesión (401), pedido de otro customer (404), y proyección del dueño. Ninguno demuestra todavía que el endpoint exista en la imagen desplegada del VPS ni sustituye BOLA con autenticación real.
+
+## Revisión y cierre de tareas locales OpenCode — 17 de noviembre de 2026
+
+Se volvió a revisar la cola `docs/OPEN_CODE_TASKS.md`, su informe de iconos y el estado limpio del árbol. OC-01–OC-08 están completadas; OC-05 queda cerrada en su alcance de auditoría estática y sus correcciones. Se actualizaron sus estados y se añadió una aclaración final a `docs/ui/icon-ecosystem-audit.md` para separar hallazgos históricos ya corregidos de lo que todavía requiere dispositivo.
+
+OC-09 es la única tarea OpenCode que permanece abierta: inspección visual de rutas completas en tema claro/oscuro y prueba TalkBack/VoiceOver. No hay navegador instalado ni Android conectado; el disco tiene 3.1 GiB libres frente al umbral documentado de 8 GiB para emulador. No se inició build, descarga ni limpieza.
+
+Gates reejecutados en este corte: `corepack pnpm test` → 8/8; `corepack pnpm typecheck` → 12/12; `corepack pnpm lint` → 0 errores y 19 advertencias existentes; `corepack pnpm format:check` → PASS. El seed histórico se excluye del formato para evitar un reflujo masivo; sigue cubierto por ESLint y TypeScript. La inspección visual no se declara realizada.
+
+## F1/F5/F7 — Permisos seller por HTTP en CI desechable — 17 de noviembre de 2026
+
+Se amplió `.github/workflows/ci.yml` para poblar el PostgreSQL/Redis efímero con el seed de laboratorio, crear dos propietarios × dos tiendas, aprobar las tiendas sintéticas, preparar inventario/ofertas y ejecutar por HTTP la matriz existente de roles y denegaciones cruzadas. El seed admite `AGESTYLES_LAB_SEEDED_PASSWORD` con fallback sin cambios para desarrollo; la clave publicable se extrae de esa base efímera y se enmascara en Actions. Ninguna operación apunta al laboratorio compartido. Verificación local: tests Commerce API 8/8, typecheck del API PASS, ESLint dirigido PASS, sintaxis de los dos scripts de verificación PASS, Prettier del workflow y `format:check` PASS, `git diff --check` PASS. La ejecución completa solo ocurre en GitHub Actions y queda pendiente de CI remoto; no se declara todavía cobertura runtime lograda.
