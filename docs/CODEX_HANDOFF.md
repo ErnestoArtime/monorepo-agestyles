@@ -545,3 +545,13 @@ Se retiró el corazón decorativo de `product-explorer`: era parte del enlace de
 ## Tamaño mínimo de iconos de control — 17 de noviembre de 2026, 09:02 UTC
 
 Se subieron a 20 px los botones de cantidad del detalle Buyer y el chevron de selección/escudo informativo del acceso Business. `docs/design-system.md` ahora distingue controles (20–24 px), iconos en línea (12–16 px), adornos de campos (18–20 px) e ilustraciones/estados (hasta 28 px). Verificación local: `pnpm typecheck` 12/12, ESLint dirigido, Prettier dirigido y `git diff --check` PASS. CI del commit `ad53e29` [run 44051795148](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44051795148) terminó success, incluidos tests, typecheck, build Medusa, exports Buyer/Business y build Next. Sin render en dispositivo.
+
+## Revisión de pendientes OpenCode — 17 de noviembre de 2026
+
+La cola `docs/OPEN_CODE_TASKS.md` no tiene tareas de implementación OC-01–OC-08 abiertas; sus restricciones externas (no ejecutar probes destructivos, no restaurar datos, no compilar APK con poco espacio) se mantienen. OC-09 era la única tarea local pendiente.
+
+La revisión estática de apps encontró dos checks Unicode en el selector de región/envío del comprador y una flecha Unicode para volver desde modo comprador en Business. Se reemplazaron por `Icon` (`check`/`arrowLeft`) de `@agestyles/icons`; no se añadieron dependencias. No quedaron esos glifos en Buyer, Business ni Storefront. Prettier se limitó a `region-selector.tsx`.
+
+Gates actuales: `corepack pnpm test` → 8/8 targets (7 en caché); `corepack pnpm typecheck` → 12/12 (10 en caché); `corepack pnpm lint` → 0 errores, 20 advertencias preexistentes; `corepack pnpm format:check` → PASS; `git diff --check` → PASS. No se construyó APK ni se publicó.
+
+OC-09 continúa pendiente solo en su aceptación visual: recorrer rutas completas de Buyer, Business y Storefront en temas claro/oscuro en navegador/dispositivo, y validar Android/iOS donde aplique. El host no ofrece navegador automatizable ni dispositivo Android/iOS conectado; no se declara esa revisión completada.

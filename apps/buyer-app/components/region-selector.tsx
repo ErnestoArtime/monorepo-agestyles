@@ -1,6 +1,7 @@
 import { Colors } from "@/constants/theme";
 import { useRegion } from "@/context/region-context";
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Icon } from "@agestyles/icons";
 import type { HttpTypes } from "@medusajs/types";
 import React, { useMemo } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -24,7 +25,7 @@ export function RegionSelector({ onRegionChange }: RegionSelectorProps) {
   // Flatten countries from all regions
   const countries = useMemo(() => {
     const countryList: CountryWithRegion[] = [];
-    
+
     regions.forEach((region) => {
       if (region.countries) {
         region.countries.forEach((country) => {
@@ -32,12 +33,12 @@ export function RegionSelector({ onRegionChange }: RegionSelectorProps) {
             countryCode: country.iso_2 || country.id,
             countryName: country.display_name || country.name || country.iso_2 || country.id,
             region: region,
-            currencyCode: region.currency_code || '',
+            currencyCode: region.currency_code || "",
           });
         });
       }
     });
-    
+
     // Sort alphabetically by country name
     return countryList.sort((a, b) => a.countryName.localeCompare(b.countryName));
   }, [regions]);
@@ -48,21 +49,21 @@ export function RegionSelector({ onRegionChange }: RegionSelectorProps) {
   };
 
   const isCountrySelected = (countryWithRegion: CountryWithRegion) => {
-    return selectedRegion?.id === countryWithRegion.region.id && 
-           selectedCountryCode === countryWithRegion.countryCode;
+    return (
+      selectedRegion?.id === countryWithRegion.region.id &&
+      selectedCountryCode === countryWithRegion.countryCode
+    );
   };
 
   return (
     <ScrollView style={styles.container}>
       <Text style={[styles.title, { color: colors.text }]}>Select Country</Text>
       {countries.length === 0 ? (
-        <Text style={[styles.emptyText, { color: colors.icon }]}>
-          No countries available
-        </Text>
+        <Text style={[styles.emptyText, { color: colors.icon }]}>No countries available</Text>
       ) : (
         countries.map((country) => {
           const isSelected = isCountrySelected(country);
-          
+
           return (
             <TouchableOpacity
               key={`${country.region.id}-${country.countryCode}`}
@@ -91,9 +92,7 @@ export function RegionSelector({ onRegionChange }: RegionSelectorProps) {
                   {country.currencyCode.toUpperCase()}
                 </Text>
               </View>
-              {isSelected && (
-                <Text style={{ color: colors.tint, fontSize: 18 }}>✓</Text>
-              )}
+              {isSelected && <Icon name="check" size={18} color={colors.tint} />}
             </TouchableOpacity>
           );
         })
@@ -137,4 +136,3 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
 });
-

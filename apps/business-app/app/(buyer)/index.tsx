@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Icon } from "@agestyles/icons";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createBuyerCartFeature } from "../../../../packages/features-buyer/src/cart";
@@ -202,7 +203,10 @@ export default function BuyerModeScreen() {
       onRefresh={() => void load(query)}
     >
       <Pressable style={styles.back} onPress={() => void exitBuyerMode()}>
-        <Text style={styles.backText}>← Mi negocio</Text>
+        <View style={styles.backContent}>
+          <Icon name="arrowLeft" size={18} color={theme.text} />
+          <Text style={styles.backText}>Mi negocio</Text>
+        </View>
       </Pressable>
       {!customer ? (
         <Section title="Sesión de cliente">
@@ -356,6 +360,7 @@ function Action({
 const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
   StyleSheet.create({
     back: { alignSelf: "flex-start", marginBottom: 8, paddingVertical: 8 },
+    backContent: { flexDirection: "row", alignItems: "center", gap: 6 },
     backText: { color: theme.action, fontWeight: "600" },
     hint: { color: theme.muted, fontSize: 13, lineHeight: 19, padding: 14 },
     input: {

@@ -37,7 +37,7 @@ El perfil `catalog-only` del validador comprueba estructura, hashes, referencias
 
 ## Corte de esquema de referencia
 
-La lectura de metadatos del 17 nov 2026 confirmó en la fuente 33 productos, 17 imágenes, 14 marcas, 1 categoría, 10 subcategorías y 19 saldos en `product_variant_stock`. `product_commercial_variants`, `stores` y las tablas de comercios/membresías reportaron cero registros. La tabla `products` ya contiene `currency`, `publication_status`, `store_id`, `specifications`, `variant_options` y `catalog_family_version_id`; por tanto, el exportador debe leer las relaciones/columnas vivas y no asumir que solo existen los campos del baseline antiguo. Estos conteos son metadatos agregados, no una conciliación ni un compromiso de importar todas las filas.
+La consulta agregada de una sola sentencia del 17 nov 2026 (09:11 UTC) confirmó 33 productos, 31 imágenes, 14 marcas, 5 categorías, 14 subcategorías y 19 saldos en `product_variant_stock`; además, `attribute_definitions=3`, `product_attribute_values=21`, `catalog_units=16`, y las familias/versiones, catálogo de atributos/opciones y variantes comerciales tienen cero filas. `product_size_stock=0`; `stores`, `merchants` y membresías también están en cero. Las estimaciones del inventario de tablas diferían en imágenes, categorías, subcategorías y tablas pequeñas, por lo que estos conteos SQL las sustituyen. La tabla `products` ya contiene `currency`, `publication_status`, `store_id`, `specifications`, `variant_options` y `catalog_family_version_id`; el exportador debe leer relaciones/columnas vivas y no asumir que solo existen campos del baseline antiguo. Estos conteos son metadatos agregados, no una conciliación ni autorización para importar filas.
 
 ## Secuencia propuesta
 

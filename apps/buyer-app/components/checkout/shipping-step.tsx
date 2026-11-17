@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { formatPrice } from "@/lib/format-price";
+import { Icon } from "@agestyles/icons";
 import type { ShippingOptions } from "@agestyles/api-client/store";
 import React from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -79,7 +80,7 @@ export function ShippingStep({
                           {formatPrice(option.amount, currencyCode)}
                         </Text>
                       </View>
-                      {selected && <Text style={{ color: colors.tint, fontSize: 20 }}>✓</Text>}
+                      {selected && <Icon name="check" size={20} color={colors.tint} />}
                     </TouchableOpacity>
                   );
                 })}

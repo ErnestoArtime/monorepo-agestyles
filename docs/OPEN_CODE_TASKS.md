@@ -112,7 +112,7 @@ Determinar si existe una diferencia entre la consulta de pedidos de Kickz y la o
 
 ### OC-09 — Cerrar temas claro/oscuro y gates del árbol de trabajo
 
-**Estado:** comprobaciones locales cerradas por Codex (17 nov 2026); queda revisión visual clara/oscura en navegador/dispositivo. No requiere build ni publicación para continuar el desarrollo.
+**Estado:** revisión estática y gates locales actualizados por Codex (17 nov 2026): 8/8 pruebas Nx, 12/12 typechecks, lint sin errores (20 advertencias), formato PASS. Los tres glifos de texto encontrados en selección/envío y regreso al modo negocio se sustituyeron por `@agestyles/icons`. Sigue pendiente la inspección visual clara/oscura en navegador/dispositivo. No requiere build ni publicación para continuar el desarrollo.
 **Prioridad:** P0
 **Archivos permitidos:** cambios existentes de `apps/business-app/**`, `apps/buyer-app/app.json`, `apps/buyer-app/components/android-app-link.tsx` y `docs/design-system.md`. No reescribir los rediseños de Buyer, el CSS del storefront ni archivos de otro autor sin revisar su diff.
 

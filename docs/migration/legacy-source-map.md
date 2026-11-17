@@ -3,7 +3,7 @@
 **Tarea:** OC-01 de [docs/OPEN_CODE_TASKS.md](../OPEN_CODE_TASKS.md)
 **Corte:** 17 de noviembre de 2026
 **Fuente inspeccionada:** `/home/ernesto/proyectos/Agestyles-Catalogo`, rama `develop`, HEAD `cc0a810` (2026-11-16 16:22 +0100)
-**Método:** lectura de archivos SQL y de código, más lectura de metadatos de esquema/migraciones de Supabase el 17 nov 2026. **No** se leyó ninguna fila de producto, usuario u otro dato, dump, `auth.users`, objeto de Storage ni credencial. No se ejecutó migración alguna.
+**Método:** lectura de archivos SQL y de código, inventario de esquema/migraciones y consultas agregadas `COUNT(*)` de Supabase el 17 nov 2026. **No** se leyó ninguna fila de producto, usuario u otro dato, dump, `auth.users`, objeto de Storage ni credencial. No se ejecutó migración alguna.
 
 > **Estado del documento:** propuesta de mapeo revisable. Las columnas de destino son las que ofrecen Medusa 2.22.3 / Mercur 2.4.1 y el contrato intermedio `agestyles.stage-interchange` v1 (`tools/migration/`). Ninguna equivalencia está confirmada contra una base restaurada; las dudas se marcan como **pendiente**.
 
@@ -21,23 +21,25 @@ Consecuencias que el ETL debe asumir:
 1. El baseline reordena y endurece políticas; algunas columnas creadas ahí fueron sustituidas después (p. ej. `stores.owner_id` → `stores.merchant_id`). No sirve por sí solo para generar un importador.
 2. La migración `20261116120000_merchant_product_media.sql` **no está aplicada** y no crea tablas: solo añade tres RPC de alta/baja/imagen principal (`private.add_merchant_product_image`, `remove_merchant_product_image`, `set_merchant_product_primary_image`) y sus envoltorios `public.*`. Es un cambio de funciones, no de esquema de datos, pero sí altera la ruta de escritura de medios de vendedor.
 3. Antes de escribir ETL hace falta un `pg_dump --schema-only` autorizado de la base viva y contrastarlo con este mapa. **Pendiente bloqueante:** el corte de auditoría no lo tiene y este trabajo no podía producirlo (regla de no tocar la fuente).
-4. El metadato vivo confirma las tablas y columnas de catálogo resumidas abajo. Los conteos se obtuvieron del inventario de tablas, no de filas exportadas. No usar estos conteos como inventario importable: solo un corte consistente de exportación podrá hacerlo.
+4. El metadato vivo confirma las tablas y columnas de catálogo resumidas abajo. Los valores de `COUNT(*)` son conteos agregados exactos del snapshot SQL, no filas exportadas. La herramienta de inventario de tablas devolvió estimaciones distintas para varias tablas pequeñas; no usar esas estimaciones para conciliación ni estos conteos como inventario importable. Solo un corte consistente de exportación podrá hacerlo.
 
 ## 1.1 Verificación de metadatos de la base viva
 
-Proyecto `Agestyles-Catalogo` (`ittbtmwtooiqyprrcapi`), estado `ACTIVE_HEALTHY`, PostgreSQL 17.6.1.105. La lista viva de migraciones termina en `20261116061921_merchant_order_line_fulfillment`; el cambio posterior de medios continúa sin aplicar. Tablas relevantes y conteos agregados reportados por el catálogo de esquema:
+Proyecto `Agestyles-Catalogo` (`ittbtmwtooiqyprrcapi`), estado `ACTIVE_HEALTHY`, PostgreSQL 17.6.1.105. Revalidación a las 09:11 UTC: 80 migraciones aplicadas; la última es `20261116061921_merchant_order_line_fulfillment`; el cambio posterior de medios continúa sin aplicar. Los siguientes conteos se obtuvieron con una consulta agregada de una sola sentencia, sin devolver valores de filas:
 
 | Área | Tablas | Conteos agregados |
 |---|---|---:|
-| Taxonomía | `categories`, `subcategories`, `brands` | 1, 10, 14 |
-| Catálogo | `products`, `product_images` | 33, 17 |
+| Taxonomía | `categories`, `subcategories`, `brands` | 5, 14, 14 |
+| Catálogo | `products`, `product_images` | 33, 31 |
+| PIM | `attribute_definitions`, `product_attribute_values`, `catalog_family_definitions`, `catalog_family_versions`, `catalog_attribute_library`, `catalog_attribute_options`, `catalog_units` | 3, 21, 0, 0, 0, 0, 16 |
 | Inventario | `product_variant_stock`, `product_size_stock`, `inventory_movements` | 19, 0, 48 |
+| Históricos | `orders`, `order_items`, `profiles` | 7, 8, 14 |
 | Variantes comerciales | `product_commercial_variants` | 0 |
 | Tiendas y vendedores | `stores`, `merchants`, `merchant_memberships` | 0, 0, 0 |
 
 El esquema vivo de `products` confirma `currency` limitada a USD/CUP, `publication_status` limitado a `draft/published/archived`, `store_id` nullable, `specifications` JSON object, `variant_options` JSON array y `catalog_family_version_id` nullable. `product_images` guarda URL, orden e indicador principal; no contiene bytes ni hash del objeto. El stock por variante tiene clave primaria `(product_id, variant_key)` y saldo no negativo. Las tablas de catálogo enumeradas muestran RLS habilitado.
 
-La cifra anterior de 31 imágenes en el estado histórico era una medición anterior y queda corregida por el inventario actual de esquema: 17 registros de `product_images`. Los 33 productos actuales siguen siendo solo un conteo, no una autorización para exportarlos. No se inspeccionaron valores de columnas, nombres, IDs, URLs, perfiles ni pedidos.
+Una lectura anterior del endpoint de inventario de tablas devolvió estimaciones de `product_images=17`, `categories=1`, `subcategories=10`, `profiles=10` y `order_items=1`; las consultas `COUNT(*)` de una sentencia confirman 31, 5, 14, 14 y 8 respectivamente y sustituyen esos valores aproximados. Los 33 productos actuales siguen siendo solo un conteo, no una autorización para exportarlos. No se inspeccionaron valores de columnas, nombres, IDs, URLs, perfiles ni pedidos.
 
 ## 2. Convenciones
 
