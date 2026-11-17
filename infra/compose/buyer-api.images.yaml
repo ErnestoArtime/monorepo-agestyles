@@ -1,0 +1,3 @@
+services:
+  commerce-api:
+    image: ghcr.io/${AGESTYLES_GHCR_OWNER:?Set AGESTYLES_GHCR_OWNER to the lowercase GHCR owner}/agestyles-commerce-api:${AGESTYLES_IMAGE_TAG:?Set AGESTYLES_IMAGE_TAG to the published workflow tag}

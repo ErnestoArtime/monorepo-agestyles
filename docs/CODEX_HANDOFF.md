@@ -469,3 +469,9 @@ El commit `598c7da` está en `main`; GitHub Actions run [44029135950](https://gi
 ## Revisión del detalle de pedidos buyer — 17 de noviembre de 2026
 
 Se revisó el cambio local pendiente en `apps/buyer-app/app/(drawer)/(tabs)/account/orders/[id].tsx` y `apps/buyer-app/lib/status-labels.ts`. ESLint detectó que el helper puro llamado `useStatusLabel` se invocaba dentro de callbacks/condiciones como si fuera un hook; se renombró a `getStatusLabel`. El detalle usa además `PAYMENT_STATUS_LABELS` para el estado de pago. Verificación: typecheck de `@agestyles/buyer-app` PASS, ESLint dirigido sin errores, Prettier y `git diff --check` PASS. Esto es solo presentación del detalle; tracking en runtime aún depende de publicar la ruta del API y probarla con un fixture limpio.
+
+## Preparación del release manual de Commerce API — 17 de noviembre de 2026
+
+La ruta de tracking está en código fuente pero falta en el API runtime. Se añadió un workflow manual, separado del de frontends, para publicar `agestyles-commerce-api` en GHCR tras CI del mismo SHA. El build crea una configuración loopback con secretos aleatorios, los monta solo como secreto BuildKit y los elimina al final; no usa credenciales del servidor ni requiere el VPS para compilar. El override Compose cambia solo la imagen de `commerce-api`; el runbook define pull/up/health y rollback.
+
+Verificación realizada: Prettier y `git diff --check`; `docker compose config` confirma imagen, red host y healthcheck correctos con un tag sintético. No se construyó ni publicó la imagen, no se desplegó, y no se tocó API/DB. Antes del runtime test, publicar desde GitHub, revisar espacio de disco y actualizar solo ese servicio; mantener el fixture de tracking desechable según `docs/mobile/order-tracking-verification.md`.

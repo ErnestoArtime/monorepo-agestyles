@@ -1,0 +1,102 @@
+name: Publish commerce API image
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  packages: write
+
+concurrency:
+  group: publish-commerce-api
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out selected commit
+        uses: actions/checkout@v4
+
+      - name: Require successful CI on this exact main commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          response="$(curl --fail --silent --show-error \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?head_sha=${GITHUB_SHA}&per_page=50")"
+          successful_runs="$(jq --arg sha "${GITHUB_SHA}" '[.workflow_runs[] | select(.head_sha == $sha and .event == "push" and .head_branch == "main" and .status == "completed" and .conclusion == "success")] | length' <<<"${response}")"
+          if [[ "${successful_runs}" -lt 1 ]]; then
+            echo "No successful Monorepo checks run exists for this exact main commit." >&2
+            exit 1
+          fi
+
+      - name: Validate GHCR owner
+        env:
+          GHCR_OWNER: ${{ vars.AGESTYLES_GHCR_OWNER }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${GHCR_OWNER}" || ! "${GHCR_OWNER}" =~ ^[a-z0-9][a-z0-9-]*$ ]]; then
+            echo "Set AGESTYLES_GHCR_OWNER to the lowercase GHCR owner." >&2
+            exit 1
+          fi
+
+      - name: Create disposable build-time configuration
+        id: build-env
+        run: |
+          set -euo pipefail
+          umask 077
+          env_file="$(mktemp)"
+          db_password="$(openssl rand -hex 24)"
+          jwt_secret="$(openssl rand -hex 32)"
+          cookie_secret="$(openssl rand -hex 32)"
+          {
+            printf 'DATABASE_URL=postgres://agestyles_lab:%s@127.0.0.1:15472/agestyles_mercur_lab\n' "${db_password}"
+            printf 'REDIS_URL=redis://127.0.0.1:16392\n'
+            printf 'JWT_SECRET=%s\n' "${jwt_secret}"
+            printf 'COOKIE_SECRET=%s\n' "${cookie_secret}"
+          } > "${env_file}"
+          echo "path=${env_file}" >> "${GITHUB_OUTPUT}"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create unique SHA image tag
+        id: image-tag
+        run: |
+          tag="sha-${GITHUB_SHA}-run-${GITHUB_RUN_ID}-attempt-${GITHUB_RUN_ATTEMPT}"
+          echo "value=${tag}" >> "${GITHUB_OUTPUT}"
+          echo "Published API image tag: ${tag}" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Publish commerce API runtime image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./apps/commerce-api/Dockerfile.public
+          push: true
+          tags: ghcr.io/${{ vars.AGESTYLES_GHCR_OWNER }}/agestyles-commerce-api:${{ steps.image-tag.outputs.value }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.title=AgeStyles Commerce API
+          secret-files: |
+            lab_env=${{ steps.build-env.outputs.path }}
+
+      - name: Remove disposable build-time configuration
+        if: always()
+        env:
+          ENV_FILE: ${{ steps.build-env.outputs.path }}
+        run: |
+          if [[ -n "${ENV_FILE}" ]]; then rm -f -- "${ENV_FILE}"; fi

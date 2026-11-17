@@ -136,3 +136,9 @@ El checkout fuente presenta cambios sin seguimiento en `.codex/`, `scripts/__pyc
 - F4: revisión del cambio local de detalle de pedido encontró un error ESLint: `useStatusLabel` era una función pura y se llamaba en callback/condición como hook. Se cambió a `getStatusLabel`; los estados de pago usan `PAYMENT_STATUS_LABELS`.
 - F5: antes del login customer dual se limpia el token buyer anterior, para evitar conservar en el mismo dispositivo la cuenta de otra persona. El SDK Medusa usa `clearToken()` para borrar el token en el storage configurado; tests locales verifican el orden member-login → buyer-logout → customer-login.
 - Buyer typecheck PASS; ESLint dirigido sin errores; Prettier y `git diff --check` PASS. La mejora buyer sigue sin commit; CI del commit funcional `80df905` está ejecutándose. No se llamó al API ni a la DB y no se hizo despliegue.
+
+## Preparación de publicación de Commerce API — 17 de noviembre de 2026, 06:21 UTC
+
+- Se añadió `.github/workflows/publish-commerce-api.yml`: `workflow_dispatch` solo en `main`, exige CI exitoso para el mismo SHA, crea tags inmutables y publica `agestyles-commerce-api` a GHCR. La compilación recibe credenciales aleatorias efímeras como secreto BuildKit que se elimina al finalizar; no reutiliza `.env` del host ni conecta a servicios.
+- Se añadió `infra/compose/buyer-api.images.yaml` y `docs/runbooks/manual-commerce-api-publish.md` para descargar/recrear solo `commerce-api`, comprobar la versión/health y revertir al tag anterior o a `buyer-preview`.
+- Verificación estática: Prettier PASS; `docker compose config` resolvió la imagen `ghcr.io/ernestoartime/agestyles-commerce-api:sha-validation`, manteniendo `network_mode: host` y el healthcheck existente. No se ejecutó build de imagen, workflow, pull, despliegue ni escritura en API/DB. La publicación requiere que el dueño ejecute manualmente Actions y mantenga margen de disco en VPS.
