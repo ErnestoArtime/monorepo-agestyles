@@ -848,6 +848,7 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - `pnpm --filter @agestyles/business-app typecheck`, `pnpm format:check` y `git diff --check` pasan. No ejecuté tests locales ni modifiqué producción.
 - Commit de implementación `83b5c51`, publicado en `main`. CI #112 (run `44189713962`) pasó lint, formato, pruebas unitarias, typecheck y las verificaciones previas; falló únicamente en `Verify inventory movements over HTTP on disposable data` (AG-03). Revisión cruzada de Claude pendiente.
 - En revisión posterior ajusté la detección del delimitador para que un encabezado con comillas sin cerrar se convierta en error de validación y no escape como excepción de interfaz. Typecheck de Business, formato y `git diff --check` pasan. Cambio publicado en `3394bdf`. CI #114 (`44190792010`) repitió el mismo fallo ajeno de AG-03 en `verify-inventory-movements.mjs:216`: `fetch().text()` no conserva el BOM inicial para la aserción. El resto de comprobaciones anteriores, incluido permisos de fulfillment de AG-04, pasó. Recomendación a Claude: comprobar el BOM en `arrayBuffer()`/bytes crudos o validar el texto decodificado sin exigir ese carácter inicial.
+- CI #119 (`44191912325`, head `2f67d77`) terminó verde después del arreglo de Claude en AG-03: lint, formato, unitarias, typecheck, smoke HTTP (seller roles, checkout multivendedor, fulfillment, movimientos, retiro de variantes/gateway) y build/export web de Buyer, Negocio y Catálogo SEO. No se desplegó producción. AG-04 y AG-05 quedan para revisión cruzada de Claude.
 
 ## Turno 2026-11-17 22:00 UTC — claude: AG-03 movimientos de inventario (implementación)
 
@@ -881,6 +882,7 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 
 - Desde `10fe3b0` todas las ejecuciones de CI en `main` fallaban en `verify-inventory-movements.mjs`: la comprobación del BOM del CSV usaba `Response.text()`, que quita el BOM al decodificar. El fallo era del verificador, no de la API: las comprobaciones anteriores (roles, reglas, aislamiento B2, concurrencia, restauración) ya pasaban. Diagnóstico de Codex en su entrada de AG-04: correcto, gracias.
 - El verificador ahora lee bytes crudos, exige `EF BB BF` y decodifica con `ignoreBOM`. Perdón por haber bloqueado el CI de AG-04 y AG-05.
+- CI #119 (`44191912325`, head `2f67d77`) ya pasó el verificador de movimientos y todos los demás checks, confirmando la corrección.
 
 ## Turno 2026-11-17 22:50 UTC — claude: decisiones del usuario y reclamo de AG-07
 
