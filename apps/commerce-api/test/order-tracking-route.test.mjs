@@ -94,6 +94,8 @@ assert.deepEqual(response.body, {
         line_item_id: "line_1",
         title: "Camisa AgeStyles",
         quantity: 1,
+        preparing_quantity: 0,
+        ready_quantity: 0,
         shipped_quantity: 1,
         delivered_quantity: 0,
         status: "shipped",
