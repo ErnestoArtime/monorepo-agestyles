@@ -117,7 +117,10 @@ export async function POST(req: SellerRequest, res: MedusaResponse) {
     throw new MedusaError(MedusaError.Types.NOT_FOUND, `Order ${orderId} was not found.`);
   }
   if (!sellerLocations.length) {
-    throw new MedusaError(MedusaError.Types.NOT_FOUND, "The stock location was not found for this seller.");
+    throw new MedusaError(
+      MedusaError.Types.NOT_FOUND,
+      "The stock location was not found for this seller.",
+    );
   }
 
   const order = orders[0] as unknown as OrderProjection;
@@ -130,14 +133,18 @@ export async function POST(req: SellerRequest, res: MedusaResponse) {
     if (fulfillment.canceled_at) continue;
     for (const item of fulfillment.items ?? []) {
       if (item.line_item_id) {
-        fulfilled.set(item.line_item_id, (fulfilled.get(item.line_item_id) ?? 0) + Number(item.quantity));
+        fulfilled.set(
+          item.line_item_id,
+          (fulfilled.get(item.line_item_id) ?? 0) + Number(item.quantity),
+        );
       }
     }
   }
   const quantities = new Map(orderItems.map((item) => [item.id, Number(item.quantity)]));
   for (const requested of body.items) {
     const orderedQuantity = quantities.get(requested.id);
-    if (orderedQuantity === undefined) invalidData("A fulfillment item does not belong to this order.");
+    if (orderedQuantity === undefined)
+      invalidData("A fulfillment item does not belong to this order.");
     const orderItem = orderItems.find((item) => item.id === requested.id);
     if (orderItem?.requires_shipping === false) {
       invalidData("This order line does not require shipping.");
