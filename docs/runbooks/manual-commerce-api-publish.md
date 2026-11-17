@@ -32,7 +32,7 @@ Desde la raíz del monorepo en el VPS, ejecuta:
 docker compose --env-file .env.frontend-images -f infra/compose/buyer-web.yaml -f infra/compose/buyer-api.images.yaml pull commerce-api
 docker compose --env-file .env.frontend-images -f infra/compose/buyer-web.yaml -f infra/compose/buyer-api.images.yaml up -d --no-build commerce-api
 docker inspect --format '{{.Config.Image}} {{.State.Health.Status}}' agestyles-buyer-api
-curl -fsS http://127.0.0.1:19080/health
+curl -fsS http://127.0.0.1:19081/health
 ```
 
 Comprueba que el contenedor aparece con el tag esperado y estado `healthy`. Para confirmar que la ruta de tracking está registrada, envía una solicitud que incluya la clave publicable actual pero ninguna sesión de customer: debe devolver `401`; `404` en esa ruta indica que el runtime no cargó el endpoint. La prueba completa de ownership requiere un pedido limpio conocido y sesiones sintéticas de customer dueño/ajeno; no uses pedidos históricos ni crees fulfillments en la beta compartida.

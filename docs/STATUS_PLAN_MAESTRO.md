@@ -1,6 +1,6 @@
 # Estado de ejecución del plan maestro AgeStyles 2.0
 
-**Corte de auditoría:** 17 de noviembre de 2026, 10:24 UTC (actualización documental; datos operativos previos conservan su fecha de medición)
+**Corte de auditoría:** 17 de noviembre de 2026, 10:34 UTC (actualización documental; datos operativos previos conservan su fecha de medición)
 
 **Documento rector:** [AGESTYLES_2_0_PLAN_MAESTRO.md](./AGESTYLES_2_0_PLAN_MAESTRO.md)
 
@@ -203,3 +203,8 @@ Las cifras `17 imágenes`, `1 categoría`, `10 subcategorías`, `10 perfiles` y 
 - `https://catalogo.eav-labs.com/`, `https://tienda.eav-labs.com/` y `https://negocio.eav-labs.com/` respondieron HTTP 200. Esto verifica disponibilidad de portada, no el render ni las interacciones de compra.
 - El gateway comprador `https://descargas.eav-labs.com/agestyles-lab` respondió HTTP 200 para `store/regions` y `store/products?limit=1`; el catálogo reportó 12 productos y devolvió uno en la muestra. La publishable key se leyó desde `.env.local` en memoria y no se imprimió.
 - `GET /store/orders/order_synthetic/tracking` respondió 404 tanto en el API loopback `127.0.0.1:19081` como por el gateway, sin autenticación de cliente; el API desplegado devuelve `Cannot GET`, por lo que la ruta fuente aún no está en esa imagen. No se escribió información.
+
+
+## Corrección del puerto de publicación API — 17 de noviembre de 2026, 10:34 UTC
+
+La API ejecuta en `127.0.0.1:19081`; los gateways buyer/seller ya reenviaban a ese puerto. Se corrigieron `EXPOSE`, healthcheck Compose y comando del runbook que todavía apuntaban a 19080. Una prueba sintética ahora exige que paquete, Dockerfile, Compose, ambos gateways y runbook compartan el mismo puerto. Commerce API test pasa 7/7, Nx test 8/8, typecheck 12/12, lint 0 errores/20 advertencias, formato PASS; `docker compose ... config --services` valida el Compose sin construir. La ruta tracking sigue devolviendo 404 en runtime porque la API actual no se ha actualizado. El host tiene 3.2 GiB libres y el runbook exige espacio para conservar rollback; no se publicó ni desplegó la imagen.

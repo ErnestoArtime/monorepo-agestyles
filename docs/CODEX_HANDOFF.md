@@ -606,3 +606,8 @@ Lecturas actuales: disco de 193 GiB con 3.2 GiB disponibles, RAM total 11 GiB co
 ## Revalidación de rutas públicas — 17 de noviembre de 2026, 10:24 UTC
 
 HTTP GET sin escribir: catálogo, comprador y negocio responden 200; gateway buyer `store/regions` y `store/products?limit=1` responden 200, total agregado 12. El path de tracking sintético responde 404/`Cannot GET` tanto al API loopback `127.0.0.1:19081` como al gateway, sin customer auth; compatible con ruta fuente ausente de la imagen vigente. No se autenticó cuenta, ni se imprimió la publishable key. Las portadas 200 y el API no sustituyen el recorrido visual/checkout.
+
+
+## F4 — Corrección previa a publicar Commerce API — 17 de noviembre de 2026
+
+Se resolvió el desajuste de puertos: `pnpm start`, ambos gateways, `EXPOSE`, el healthcheck de `buyer-web.yaml` y la verificación del runbook ahora coinciden en `19081`. Se añadió `apps/commerce-api/test/publish-config.test.mjs` que protege esta consistencia. API tests 7/7; `pnpm test` 8/8; typecheck 12/12; lint 0 errores/20 advertencias; formato y `git diff --check` PASS. `docker compose -f infra/compose/buyer-web.yaml config --services` muestra `commerce-api`, `buyer-gateway`, `buyer-web`. No se construyó ni publicó imagen; quedan 3.2 GiB libres y hay que preservar espacio para rollback. Tracking sigue en 404/`Cannot GET` hasta actualizar el runtime.

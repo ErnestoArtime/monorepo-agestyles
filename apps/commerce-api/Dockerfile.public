@@ -9,5 +9,5 @@ WORKDIR /workspace/apps/commerce-api
 RUN --mount=type=secret,id=lab_env,required=true \
     set -a && . /run/secrets/lab_env && set +a && pnpm build
 
-EXPOSE 19080
+EXPOSE 19081
 CMD ["pnpm", "start"]

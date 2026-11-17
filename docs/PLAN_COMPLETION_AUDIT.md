@@ -138,3 +138,8 @@ El resolver `SellerPermissionsService` ahora tiene tests sintéticos ejecutados 
 ## Addendum de rutas públicas — 17 de noviembre de 2026, 10:24 UTC
 
 Lecturas frescas: las portadas catálogo, tienda compradora y negocio respondieron 200; el gateway buyer devolvió regiones 200 y productos 200 (`count=12`). La ruta `/store/orders/order_synthetic/tracking` devuelve 404/`Cannot GET` tanto desde loopback del API como desde el gateway, por lo que la ruta fuente sigue ausente de la imagen vigente. Los códigos 200 no demuestran que el render/checkout UI funcione. No se autenticó un customer ni se hicieron escrituras. CI de `a223c9b` terminó success [run 44063714270](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44063714270).
+
+
+## Preparación segura de la publicación API — 17 de noviembre de 2026
+
+Se corrigió el desajuste que hacía apuntar EXPOSE, healthcheck y verificación del runbook a `19080` cuando `pnpm start` y ambos gateways usan `19081`. Se agregó `publish-config.test.mjs` para mantener alineados esos cinco puntos. Localmente: API 7/7; Nx 8/8; typecheck 12/12; lint 0 errores/20 advertencias; formato y `docker compose config --services` correctos. No se ejecutó build/publicación GHCR ni se tocó el VPS: el runbook requiere margen suficiente para mantener imagen de rollback y hay 3.2 GiB disponibles. F4 sigue pendiente del despliegue y comprobación de tracking.
