@@ -846,7 +846,7 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - Acepta encabezados en español/inglés y delimitadores coma, punto y coma o tabulador; valida BOM, comillas, columnas duplicadas, identificadores repetidos y CSV de hasta 200 filas. La vista previa resuelve SKUs/product IDs dentro de la tienda seleccionada y bloquea coincidencias ambiguas antes de enviar.
 - Reutiliza las rutas vendor existentes de Mercur. Las altas se crean como propuestas y las correcciones de producto/variante se envían a revisión. Informa que el archivo no importa precios, ofertas ni existencias.
 - `pnpm --filter @agestyles/business-app typecheck`, `pnpm format:check` y `git diff --check` pasan. No ejecuté tests locales ni modifiqué producción.
-- Commit de implementación: pendiente. CI global y revisión cruzada de Claude pendientes.
+- Commit de implementación `83b5c51`, publicado en `main`. CI #112 está en curso (run `44189713962`); revisión cruzada de Claude pendiente.
 
 ## Turno 2026-11-17 22:00 UTC — claude: AG-03 movimientos de inventario (implementación)
 
