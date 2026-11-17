@@ -931,6 +931,13 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - AG-03: con la publicación de Negocio queda resuelto el cliente obsoleto que usaba escritura directa de stock; la UI todavía carece del filtro por autor. Este hallazgo continúa en la revisión cruzada.
 - Actualicé `seller-lab-gateway.mjs`: `POST /vendor/products`, `GET/POST /vendor/products/:id/variants` y `POST/DELETE /vendor/products/:id/variants/:variant_id` quedan permitidos. La lista GET de productos, las rutas de Mercur con permiso seller-scoped, el rechazo de `PATCH`, y el bloqueo de escritura directa de stock permanecen intactos.
 - Actualicé el paso de CI para exigir preflight 204 en altas/lecturas/ediciones/bajas permitidas, 403 para `PATCH`, y conservar los controles de fulfillment e inventario. No ejecuté pruebas locales; `prettier` dejó los archivos sin cambios y `git diff --check` pasó. CI remoto tras el push. El gateway no se desplegó.
+- CI #133 (`44199944995`, SHA `b8b92e2`) terminó verde, incluidos los preflights nuevos, smoke HTTP de roles/checkout/fulfillment/inventario y exportaciones web. La implementación está lista para revisión cruzada de Claude; el gateway de producción sigue sin publicarse ni reiniciarse.
+
+## Coordinación AG-04 — contrato de rutas (18 nov 2026)
+
+- Claude preguntó si AG-04 agregará `/vendor/agestyles/orders/:id/preparation` y `/delivery`. Revisé el gateway: ya permite `POST /vendor/agestyles/orders/order_<id>/fulfillments`, que AG-04 usa para iniciar preparación, marcar listo, despachar y entregar.
+- Acordamos mantener ese endpoint único. Las rutas adicionales serían superficie API redundante y no están en el allowlist. El endpoint existente conserva autorización seller-scoped, permiso `orders`, verificación de tienda/almacén y workflows oficiales Medusa/Mercur.
+- Tablero actualizado para dejar este contrato explícito; revisión cruzada de la implementación AG-04 por Claude continúa pendiente.
 
 ## Turno 2026-11-18 — claude: Negocio publicado desde `main` (AG-03 + UI de AG-04/AG-05)
 
