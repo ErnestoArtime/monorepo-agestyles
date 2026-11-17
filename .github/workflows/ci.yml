@@ -209,6 +209,13 @@ jobs:
           AGESTYLES_LAB_SEEDED_PASSWORD: ci_lab_password_0123456789
         run: node apps/commerce-api/scripts/verify-seller-roles.mjs
 
+      - name: Verify variant removal permissions over HTTP on disposable data
+        env:
+          EXPO_PUBLIC_MEDUSA_URL: http://127.0.0.1:19081
+          AGESTYLES_LAB_SEEDED_PASSWORD: ci_lab_password_0123456789
+          AGESTYLES_CI_DISPOSABLE: "true"
+        run: node apps/commerce-api/scripts/verify-variant-removal.mjs
+
       - name: Verify seller gateway only permits the variant-removal preflight
         run: |
           set -euo pipefail
