@@ -1,7 +1,26 @@
 [
   {
-    "legacy_id": "category-synthetic-001",
+    "legacy_id": "category:source-category-001",
     "references": [],
-    "payload": { "slug": "synthetic", "name": "Synthetic category" }
+    "payload": {
+      "slug": "synthetic-apparel",
+      "name": "Synthetic apparel",
+      "sort_order": 1
+    }
+  },
+  {
+    "legacy_id": "subcategory:source-subcategory-001",
+    "references": [
+      {
+        "relation": "parent_category",
+        "entity": "categories",
+        "legacy_id": "category:source-category-001"
+      }
+    ],
+    "payload": {
+      "slug": "synthetic-shirts",
+      "name": "Synthetic shirts",
+      "sort_order": 1
+    }
   }
 ]

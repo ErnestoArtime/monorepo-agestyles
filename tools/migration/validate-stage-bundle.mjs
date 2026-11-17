@@ -343,18 +343,25 @@ export async function validateStageBundle(directory, { profile = "full" } = {}) 
     products.forEach((row, recordIndex) => {
       const references = Array.isArray(row.references) ? row.references : []
       const payload = isObject(row.payload) ? row.payload : {}
-      if (
-        !references.some(
-          (reference) => reference?.relation === "category" && reference.entity === "categories",
-        )
-      ) {
-        issues.push(issue("product_category_reference_required", "products", recordIndex))
-      }
-      if (!new Set(["USD", "CUP"]).has(payload.currency)) {
+      if (payload.currency != null && !new Set(["USD", "CUP"]).has(payload.currency)) {
         issues.push(issue("product_currency_unsupported", "products", recordIndex))
+      }
+      if (
+        "legacy_currency" in payload &&
+        payload.legacy_currency !== null &&
+        typeof payload.legacy_currency !== "string"
+      ) {
+        issues.push(issue("product_legacy_currency_invalid", "products", recordIndex))
       }
       if (!new Set(["draft", "published", "archived"]).has(payload.publication_status)) {
         issues.push(issue("product_publication_status_unsupported", "products", recordIndex))
+      }
+      if (
+        "legacy_store_id" in payload &&
+        payload.legacy_store_id !== null &&
+        !isSafeIdentifier(payload.legacy_store_id)
+      ) {
+        issues.push(issue("product_legacy_store_id_invalid", "products", recordIndex))
       }
 
       const mediaReferences = references.filter((reference) => reference?.relation === "media")

@@ -136,6 +136,11 @@ function normalizeMedia(rows, products) {
 
 function normalizeCategories(categories, subcategories) {
   const bySlug = new Map()
+  const spanishCategoryNames = new Map([
+    ["Pantalon", "Pantalón"],
+    ["Pullovers", "Sudaderas"],
+    ["Shorts", "Pantalones cortos"],
+  ])
   const rows = categories.map((row) => {
     if (!object(row)) fail("invalid_category_projection")
     requireId(row.id, "invalid_category_id")
@@ -145,7 +150,12 @@ function normalizeCategories(categories, subcategories) {
     return {
       legacy_id: stableId("category", row.id),
       references: [],
-      payload: { slug: row.slug, name: String(row.name ?? ""), sort_order: row.sort_order ?? 0 },
+      payload: {
+        slug: row.slug,
+        name: spanishCategoryNames.get(String(row.name ?? "")) ?? String(row.name ?? ""),
+        legacy_name: String(row.name ?? ""),
+        sort_order: row.sort_order ?? 0,
+      },
     }
   })
 
@@ -160,7 +170,12 @@ function normalizeCategories(categories, subcategories) {
     rows.push({
       legacy_id: id,
       references: [{ relation: "parent_category", entity: "categories", legacy_id: parentId }],
-      payload: { slug: row.slug, name: String(row.name ?? ""), sort_order: row.sort_order ?? 0 },
+      payload: {
+        slug: row.slug,
+        name: spanishCategoryNames.get(String(row.name ?? "")) ?? String(row.name ?? ""),
+        legacy_name: String(row.name ?? ""),
+        sort_order: row.sort_order ?? 0,
+      },
     })
   }
   return { rows, bySlug, subcategoryById }
@@ -171,6 +186,14 @@ function normalizeProducts(products, categories, media) {
   const productRows = []
   const variantRows = []
   const mediaByProduct = new Map()
+  const spanishTitles = new Map([
+    ["Breaker doble AC 63A", "Interruptor automático doble AC 63 A"],
+    ["Breaker doble AC/DC 100A", "Interruptor automático doble AC/DC 100 A"],
+    ["Breaker doble AC/DC 32A", "Interruptor automático doble AC/DC 32 A"],
+    ["Shorts Deportivos", "Pantalones cortos deportivos"],
+    ["Tank Top Deportiva", "Camiseta de tirantes deportiva"],
+    ["Pullover Termico", "Suéter térmico"],
+  ])
   for (const item of media) {
     const existing = mediaByProduct.get(item.product_id) ?? []
     existing.push(item)
@@ -182,15 +205,27 @@ function normalizeProducts(products, categories, media) {
     const id = requireId(source.id, "invalid_product_id")
     if (productIds.has(id)) fail("duplicate_product_id")
     productIds.add(id)
-    const categoryId =
-      source.subcategory_id != null
-        ? categories.subcategoryById.get(String(source.subcategory_id))
-        : categories.bySlug.get(source.category_slug ?? source.category)
-    if (!categoryId) fail("product_category_unresolved")
-    const currency = String(source.currency ?? "").toUpperCase()
-    if (!CURRENCIES.has(currency)) fail("product_currency_unsupported")
+    let categoryId
+    if (source.subcategory_id != null) {
+      categoryId = categories.subcategoryById.get(String(source.subcategory_id))
+      if (!categoryId) fail("product_subcategory_unresolved")
+    } else {
+      const categorySlug = source.category_slug ?? source.category
+      if (categorySlug !== null && categorySlug !== undefined && categorySlug !== "") {
+        categoryId = categories.bySlug.get(categorySlug)
+        if (!categoryId) fail("product_category_unresolved")
+      }
+    }
+    const legacyCurrency = String(source.currency ?? "")
+      .trim()
+      .toUpperCase()
+    const currency = CURRENCIES.has(legacyCurrency) ? legacyCurrency : null
     const publicationStatus = source.publication_status ?? "draft"
     if (!PUBLICATION_STATES.has(publicationStatus)) fail("product_publication_status_unsupported")
+    const legacyStoreId =
+      source.store_id === null || source.store_id === undefined || source.store_id === ""
+        ? null
+        : stableId("store", source.store_id)
 
     const mediaRefs = (mediaByProduct.get(id) ?? []).sort(
       (a, b) => a.display_order - b.display_order,
@@ -203,7 +238,9 @@ function normalizeProducts(products, categories, media) {
       if (item.is_primary) primaryMediaCount += 1
     }
     if (primaryMediaCount > 1) fail("media_primary_duplicate")
-    const references = [{ relation: "category", entity: "categories", legacy_id: categoryId }]
+    const references = categoryId
+      ? [{ relation: "category", entity: "categories", legacy_id: categoryId }]
+      : []
     for (const item of mediaRefs) {
       references.push({
         relation: "media",
@@ -213,13 +250,17 @@ function normalizeProducts(products, categories, media) {
         is_primary: item.is_primary,
       })
     }
+    const legacyTitle = String(source.name ?? "")
     const payload = {
-      title: String(source.name ?? ""),
+      title: spanishTitles.get(legacyTitle) ?? legacyTitle,
+      legacy_title: legacyTitle,
       description: source.description == null ? "" : String(source.description),
       code: source.code == null ? null : String(source.code),
       price: source.price == null ? null : String(source.price),
       currency,
+      legacy_currency: legacyCurrency || null,
       publication_status: publicationStatus,
+      legacy_store_id: legacyStoreId,
       featured: source.featured === true,
       gender: source.gender ?? null,
       model: source.model ?? null,

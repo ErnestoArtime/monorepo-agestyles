@@ -1,21 +1,38 @@
 [
   {
-    "legacy_id": "product-synthetic-001",
+    "legacy_id": "product:source-product-001",
     "references": [
-      { "relation": "category", "entity": "categories", "legacy_id": "category-synthetic-001" },
+      {
+        "relation": "category",
+        "entity": "categories",
+        "legacy_id": "subcategory:source-subcategory-001"
+      },
       {
         "relation": "media",
         "entity": "media_objects",
-        "legacy_id": "media-synthetic-001",
+        "legacy_id": "media:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         "display_order": 0,
         "is_primary": true
       }
     ],
     "payload": {
-      "title": "Synthetic product",
+      "title": "Synthetic shirt",
+      "description": "Fixture data only",
+      "code": "000042",
+      "price": "25",
       "currency": "USD",
       "publication_status": "published",
-      "media_count": 1
+      "legacy_store_id": "store:synthetic-store-ignored",
+      "featured": false,
+      "gender": "unisex",
+      "model": "sample",
+      "legacy_brand_id": "source-brand-001",
+      "catalog_family_version_id": null,
+      "specifications": {
+        "fabric": "synthetic"
+      },
+      "media_count": 1,
+      "import_visibility": "draft_until_reconciled"
     }
   }
 ]

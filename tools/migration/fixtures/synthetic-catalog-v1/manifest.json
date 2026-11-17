@@ -4,32 +4,32 @@
   "schema_contract": "agestyles-stage-interchange-v1",
   "bundle_mode": "dry-run-only",
   "source": {
-    "export_id": "synthetic-catalog-export-001"
+    "export_id": "projection-synthetic-001"
   },
   "datasets": [
     {
       "entity": "categories",
       "file": "categories.json",
-      "record_count": 1,
-      "sha256": "61e9ab89026582665fbaf7a5592389163f1738c157e858c29bfac0c43537d9b7"
+      "record_count": 2,
+      "sha256": "e6d9012c98303703675aad7c561b45d6f7d9d44ac2b2aca77b7ee90c935ccd5a"
     },
     {
       "entity": "media_objects",
       "file": "media_objects.json",
       "record_count": 1,
-      "sha256": "50145d7d57c4266d281de35196414d8994fecbbd8396ab99c5473e193ee6c740"
+      "sha256": "ccfd7438dc81717a9138b2065852df5a6b4eca3e8fe1d7d8c7ac632eb55e333a"
     },
     {
       "entity": "products",
       "file": "products.json",
       "record_count": 1,
-      "sha256": "8e3027eaace796d23b064b6d7437e678ab31a0b55bc499fd3796d724f598c76f"
+      "sha256": "fc6096cd61451381a5c0eb0280a1118c4b24be0fac3fd81c2f5abf21ff9f1a37"
     },
     {
       "entity": "variants",
       "file": "variants.json",
       "record_count": 1,
-      "sha256": "c5b6ef5cf179698d52f112eab584ac7ca88a52b9845c936dc6fa77a557b29543"
+      "sha256": "d2209b6240f06d90c317010edcb29f7a499e13eaa6e4eddac1e5dbde03740dd3"
     }
   ]
 }
