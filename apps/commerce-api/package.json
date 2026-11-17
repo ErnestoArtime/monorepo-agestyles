@@ -2,6 +2,11 @@
   "name": "@agestyles/commerce-api",
   "version": "0.0.0",
   "private": true,
+  "nx": {
+    "implicitDependencies": [
+      "@agestyles/quotations"
+    ]
+  },
   "scripts": {
     "build:workspace-modules": "pnpm --filter @agestyles/quotations build && pnpm --filter @agestyles/catalog-pim build && pnpm --filter @agestyles/manual-payments build",
     "build": "pnpm build:workspace-modules && medusa build",
