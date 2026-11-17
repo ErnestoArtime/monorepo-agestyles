@@ -17,34 +17,8 @@ import {
   View,
 } from "react-native";
 
+import { getStatusLabel, PAYMENT_STATUS_LABELS } from "@/lib/status-labels";
 type ThemeColors = (typeof Colors)[keyof typeof Colors];
-
-const STATUS_LABELS: Record<string, string> = {
-  pending: "Pendiente",
-  completed: "Completada",
-  canceled: "Cancelada",
-  requires_action: "Requiere acción",
-  archived: "Archivada",
-  not_fulfilled: "Sin preparar",
-  partially_fulfilled: "Preparada parcialmente",
-  fulfilled: "Preparada",
-  partially_shipped: "Enviada parcialmente",
-  shipped: "Enviada",
-  partially_delivered: "Entregada parcialmente",
-  delivered: "Entregada",
-  not_paid: "Sin pagar",
-  awaiting: "Pendiente de pago",
-  authorized: "Autorizado",
-  partially_authorized: "Autorizado parcialmente",
-  captured: "Pagado",
-  partially_captured: "Pagado parcialmente",
-  refunded: "Reembolsado",
-  partially_refunded: "Reembolsado parcialmente",
-};
-
-function statusLabel(value: string) {
-  return STATUS_LABELS[value] ?? value.replaceAll("_", " ");
-}
 
 export default function PurchaseDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -145,8 +119,10 @@ export default function PurchaseDetailsScreen() {
             <Text style={[styles.muted, { color: colors.icon }]}>Orden #{order.display_id}</Text>
           </View>
           <Text style={[styles.status, { color: colors.icon }]}>
-            {statusLabel(order.fulfillment_status ?? order.status)}
-            {order.payment_status ? ` · ${statusLabel(order.payment_status)}` : ""}
+            {getStatusLabel(order.fulfillment_status ?? order.status)}
+            {order.payment_status
+              ? ` · ${getStatusLabel(order.payment_status, PAYMENT_STATUS_LABELS)}`
+              : ""}
           </Text>
           {order.items.map((item) => (
             <View key={item.id} style={styles.item}>
@@ -205,7 +181,7 @@ function TrackingLine({
   return (
     <View style={styles.trackingDetails}>
       <Text style={{ color: colors.icon, textTransform: "capitalize" }}>
-        {statusLabel(line.status)} · {line.shipped_quantity} de {line.quantity} enviados
+        {getStatusLabel(line.status)} · {line.shipped_quantity} de {line.quantity} enviados
       </Text>
       {shipments.map(({ number, url }, index) => {
         const safeUrl = url && /^https:\/\//i.test(url) ? url : null;

@@ -130,3 +130,9 @@ El checkout fuente presenta cambios sin seguimiento en `.codex/`, `scripts/__pyc
 - El test sintético del coordinador cubre éxito de ambos actores, limpieza buyer anterior y fallos independientes. Test del paquete y typecheck de Business/`features-buyer` pasan; ESLint dirigido, Prettier y `git diff --check` pasan.
 - Commit `598c7da` publicó la implementación en `main`; GitHub Actions run [44029135950](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44029135950) terminó `success` con lint, formato, tests, typecheck y tres builds web.
 - Aún no es aceptación end-to-end: falta comprobar una identidad enlazada desde la interfaz, volver de comprador a negocio, refresh, revocación y logout de un actor/todos. No se llamó API ni DB; el endurecimiento local está pendiente de commit/CI y esta versión aún no se ha publicado en las webs públicas.
+
+## Revisión de detalle buyer y token obsoleto — 17 de noviembre de 2026, 06:20 UTC
+
+- F4: revisión del cambio local de detalle de pedido encontró un error ESLint: `useStatusLabel` era una función pura y se llamaba en callback/condición como hook. Se cambió a `getStatusLabel`; los estados de pago usan `PAYMENT_STATUS_LABELS`.
+- F5: antes del login customer dual se limpia el token buyer anterior, para evitar conservar en el mismo dispositivo la cuenta de otra persona. El SDK Medusa usa `clearToken()` para borrar el token en el storage configurado; tests locales verifican el orden member-login → buyer-logout → customer-login.
+- Buyer typecheck PASS; ESLint dirigido sin errores; Prettier y `git diff --check` PASS. La mejora buyer sigue sin commit; CI del commit funcional `80df905` está ejecutándose. No se llamó al API ni a la DB y no se hizo despliegue.
