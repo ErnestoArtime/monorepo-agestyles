@@ -31,6 +31,7 @@
     "migration:catalog:project": "node tools/migration/project-catalog-projection.mjs",
     "migration:catalog:export": "node tools/migration/export-public-supabase-catalog.mjs",
     "migration:catalog:import": "node tools/migration/import-catalog-bundle-to-medusa.mjs",
+    "migration:catalog:offer-plan": "node tools/migration/build-official-offer-plan.mjs",
     "migration:test": "node --test tools/migration/test/validate-stage-bundle.test.mjs",
     "test": "nx run-many --target=test",
     "typecheck": "nx run-many --target=typecheck",
