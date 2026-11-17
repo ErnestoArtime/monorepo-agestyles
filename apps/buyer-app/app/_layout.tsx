@@ -8,6 +8,7 @@ import { useMemo } from "react";
 import { Colors } from "@/constants/theme";
 import { CartProvider } from "@/context/cart-context";
 import { CustomerProvider } from "@/context/customer-context";
+import { FavoritesProvider } from "@/context/favorites-context";
 import { RegionProvider } from "@/context/region-context";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
@@ -35,40 +36,42 @@ export default function RootLayout() {
       <ThemeProvider value={navigationTheme}>
         <RegionProvider>
           <CartProvider>
-            <CustomerProvider>
-              <Stack
-                screenOptions={{
-                  headerShown: false,
-                  headerStyle: { backgroundColor: colors.cardBackground },
-                  headerTintColor: colors.text,
-                  headerTitleStyle: { color: colors.text },
-                  headerShadowVisible: false,
-                  contentStyle: { backgroundColor: colors.background },
-                }}
-              >
-                <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
-                <Stack.Screen
-                  name="checkout"
-                  options={{
-                    headerShown: true,
-                    title: "Finalizar compra",
-                    presentation: "card",
-                    headerBackButtonDisplayMode: "minimal",
+            <FavoritesProvider>
+              <CustomerProvider>
+                <Stack
+                  screenOptions={{
+                    headerShown: false,
+                    headerStyle: { backgroundColor: colors.cardBackground },
+                    headerTintColor: colors.text,
+                    headerTitleStyle: { color: colors.text },
+                    headerShadowVisible: false,
+                    contentStyle: { backgroundColor: colors.background },
                   }}
-                />
-                <Stack.Screen
-                  name="order-confirmation/[id]"
-                  options={{
-                    headerShown: true,
-                    title: "Compra confirmada",
-                    headerLeft: () => null,
-                    gestureEnabled: false,
-                    headerBackVisible: false,
-                  }}
-                />
-              </Stack>
-              <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-            </CustomerProvider>
+                >
+                  <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
+                  <Stack.Screen
+                    name="checkout"
+                    options={{
+                      headerShown: true,
+                      title: "Finalizar compra",
+                      presentation: "card",
+                      headerBackButtonDisplayMode: "minimal",
+                    }}
+                  />
+                  <Stack.Screen
+                    name="order-confirmation/[id]"
+                    options={{
+                      headerShown: true,
+                      title: "Compra confirmada",
+                      headerLeft: () => null,
+                      gestureEnabled: false,
+                      headerBackVisible: false,
+                    }}
+                  />
+                </Stack>
+                <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+              </CustomerProvider>
+            </FavoritesProvider>
           </CartProvider>
         </RegionProvider>
       </ThemeProvider>

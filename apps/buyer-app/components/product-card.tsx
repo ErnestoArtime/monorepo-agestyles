@@ -2,6 +2,8 @@ import { Colors } from "@/constants/theme";
 import { useRegion } from "@/context/region-context";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { formatPrice } from "@/lib/format-price";
+import { useFavorites } from "@/context/favorites-context";
+import { Icon } from "@agestyles/icons";
 import type { HttpTypes } from "@medusajs/types";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
@@ -17,6 +19,7 @@ export const ProductCard = React.memo(function ProductCard({ product }: ProductC
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
   const { selectedRegion } = useRegion();
+  const { isFavorite, toggleFavorite, ready } = useFavorites();
 
   const thumbnail = product.thumbnail || product.images?.[0]?.url;
   const variant = product.variants?.[0];
@@ -28,41 +31,67 @@ export const ProductCard = React.memo(function ProductCard({ product }: ProductC
   const currencyCode = selectedRegion?.currency_code;
 
   return (
-    <TouchableOpacity
-      style={[styles.card, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}
-      accessibilityRole="button"
-      accessibilityLabel={`${product.title}, ${formatPrice(priceAmount, currencyCode)}`}
-      onPress={() =>
-        router.push({
-          pathname: `/(home)/product/${product.id}` as any,
-          params: { title: product.title },
-        })
-      }
-      activeOpacity={0.7}
-    >
-      <Image
-        source={thumbnail ? { uri: thumbnail } : undefined}
-        style={[styles.image, { backgroundColor: colors.imagePlaceholder }]}
-        contentFit="cover"
-      />
-      <View style={styles.content}>
-        <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
-          {product.title}
-        </Text>
-        <View style={styles.priceRow}>
-          <Text style={[styles.price, { color: colors.text }]}>
-            {formatPrice(priceAmount, currencyCode)}
+    <View style={styles.cardShell}>
+      <TouchableOpacity
+        style={[
+          styles.card,
+          { backgroundColor: colors.cardBackground, borderColor: colors.border },
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel={`${product.title}, ${formatPrice(priceAmount, currencyCode)}`}
+        onPress={() =>
+          router.push({
+            pathname: `/(home)/product/${product.id}` as any,
+            params: { title: product.title },
+          })
+        }
+        activeOpacity={0.7}
+      >
+        <Image
+          source={thumbnail ? { uri: thumbnail } : undefined}
+          style={[styles.image, { backgroundColor: colors.imagePlaceholder }]}
+          contentFit="cover"
+        />
+        <View style={styles.content}>
+          <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
+            {product.title}
           </Text>
+          <View style={styles.priceRow}>
+            <Text style={[styles.price, { color: colors.text }]}>
+              {formatPrice(priceAmount, currencyCode)}
+            </Text>
+          </View>
         </View>
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel={
+          isFavorite(product.id)
+            ? `Quitar ${product.title} de favoritos`
+            : `Guardar ${product.title} en favoritos`
+        }
+        accessibilityState={{ selected: isFavorite(product.id) }}
+        disabled={!ready}
+        onPress={() => void toggleFavorite(product.id).catch(() => undefined)}
+        style={[
+          styles.favoriteButton,
+          { backgroundColor: colors.cardBackground, borderColor: colors.border },
+        ]}
+      >
+        <Icon name="heart" size={19} color={isFavorite(product.id) ? colors.tint : colors.icon} />
+      </TouchableOpacity>
+    </View>
   );
 });
 
 const styles = StyleSheet.create({
-  card: {
+  cardShell: {
     flex: 1,
     margin: 5,
+    position: "relative",
+  },
+  card: {
+    flex: 1,
     overflow: "hidden",
     borderRadius: 14,
     borderWidth: StyleSheet.hairlineWidth,
@@ -90,5 +119,16 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
     flex: 1,
+  },
+  favoriteButton: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
