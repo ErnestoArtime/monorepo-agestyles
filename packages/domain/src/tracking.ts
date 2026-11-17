@@ -11,39 +11,39 @@
  */
 
 export type TrackingLabel = {
-  tracking_number: string
-  tracking_url?: string | null
-}
+  tracking_number: string;
+  tracking_url?: string | null;
+};
 
 export type TrackingFulfillmentItem = {
   /** Medusa order line this fulfillment item covers. */
-  line_item_id: string | null
-  quantity: number
-}
+  line_item_id: string | null;
+  quantity: number;
+};
 
 export type TrackingFulfillment = {
-  id: string
-  packed_at?: string | Date | null
-  shipped_at?: string | Date | null
-  delivered_at?: string | Date | null
-  canceled_at?: string | Date | null
-  items: TrackingFulfillmentItem[]
-  labels?: TrackingLabel[]
-}
+  id: string;
+  packed_at?: string | Date | null;
+  shipped_at?: string | Date | null;
+  delivered_at?: string | Date | null;
+  canceled_at?: string | Date | null;
+  items: TrackingFulfillmentItem[];
+  labels?: TrackingLabel[];
+};
 
 export type TrackingOrderItem = {
-  id: string
-  title: string
-  quantity: number
-}
+  id: string;
+  title: string;
+  quantity: number;
+};
 
 export type LineShipment = {
-  fulfillment_id: string
-  quantity: number
-  shipped_at: string | null
-  delivered_at: string | null
-  tracking: TrackingLabel[]
-}
+  fulfillment_id: string;
+  quantity: number;
+  shipped_at: string | null;
+  delivered_at: string | null;
+  tracking: TrackingLabel[];
+};
 
 export type LineTrackingStatus =
   | "not_fulfilled"
@@ -53,22 +53,22 @@ export type LineTrackingStatus =
   | "partially_shipped"
   | "shipped"
   | "delivered"
-  | "canceled"
+  | "canceled";
 
 export type LineTracking = {
-  line_item_id: string
-  title: string
-  quantity: number
-  preparing_quantity: number
-  ready_quantity: number
-  shipped_quantity: number
-  delivered_quantity: number
-  status: LineTrackingStatus
-  shipments: LineShipment[]
-}
+  line_item_id: string;
+  title: string;
+  quantity: number;
+  preparing_quantity: number;
+  ready_quantity: number;
+  shipped_quantity: number;
+  delivered_quantity: number;
+  status: LineTrackingStatus;
+  shipments: LineShipment[];
+};
 
 export type OrderTracking = {
-  order_id: string
+  order_id: string;
   status:
     | "not_fulfilled"
     | "preparing"
@@ -77,42 +77,42 @@ export type OrderTracking = {
     | "partially_shipped"
     | "shipped"
     | "delivered"
-    | "canceled"
-  lines: LineTracking[]
-}
+    | "canceled";
+  lines: LineTracking[];
+};
 
 export type TrackingOrder = {
-  id: string
-  items: TrackingOrderItem[]
-  fulfillments: TrackingFulfillment[]
-}
+  id: string;
+  items: TrackingOrderItem[];
+  fulfillments: TrackingFulfillment[];
+};
 
 function toIso(value: string | Date | null | undefined): string | null {
-  if (!value) return null
-  const date = value instanceof Date ? value : new Date(value)
-  return Number.isNaN(date.getTime()) ? null : date.toISOString()
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
 function normalizeLabels(labels: TrackingLabel[] | undefined): TrackingLabel[] {
-  const seen = new Set<string>()
-  const result: TrackingLabel[] = []
+  const seen = new Set<string>();
+  const result: TrackingLabel[] = [];
   for (const label of labels ?? []) {
-    const number = String(label.tracking_number ?? "").trim()
-    if (!number || seen.has(number)) continue
-    seen.add(number)
+    const number = String(label.tracking_number ?? "").trim();
+    if (!number || seen.has(number)) continue;
+    seen.add(number);
     result.push({
       tracking_number: number,
       tracking_url: label.tracking_url?.trim() || null,
-    })
+    });
   }
-  return result
+  return result;
 }
 
 function lineStatus(quantity: number, shipped: number, delivered: number): LineTrackingStatus {
-  if (delivered >= quantity && quantity > 0) return "delivered"
-  if (shipped >= quantity && quantity > 0) return "shipped"
-  if (shipped > 0) return "partially_shipped"
-  return "not_fulfilled"
+  if (delivered >= quantity && quantity > 0) return "delivered";
+  if (shipped >= quantity && quantity > 0) return "shipped";
+  if (shipped > 0) return "partially_shipped";
+  return "not_fulfilled";
 }
 
 /**
@@ -139,35 +139,35 @@ export function buildOrderTracking(order: TrackingOrder): OrderTracking {
         shipments: [],
       },
     ]),
-  )
+  );
 
-  let anyShipment = false
-  let anyDelivered = false
-  let allLinesDelivered = order.items.length > 0
+  let anyShipment = false;
+  let anyDelivered = false;
+  let allLinesDelivered = order.items.length > 0;
 
   for (const fulfillment of order.fulfillments ?? []) {
-    if (fulfillment.canceled_at) continue
-    const tracking = normalizeLabels(fulfillment.labels)
-    const shippedAt = toIso(fulfillment.shipped_at)
-    const deliveredAt = toIso(fulfillment.delivered_at)
+    if (fulfillment.canceled_at) continue;
+    const tracking = normalizeLabels(fulfillment.labels);
+    const shippedAt = toIso(fulfillment.shipped_at);
+    const deliveredAt = toIso(fulfillment.delivered_at);
     for (const fulfillmentItem of fulfillment.items) {
       const line = fulfillmentItem.line_item_id
         ? lines.get(fulfillmentItem.line_item_id)
-        : undefined
+        : undefined;
       // A fulfillment item without a matching line is inventory that is not
       // part of the buyer's purchase (e.g. a return label). It is not shown.
-      if (!line) continue
-      const quantity = Math.max(0, Math.min(fulfillmentItem.quantity, line.quantity))
+      if (!line) continue;
+      const quantity = Math.max(0, Math.min(fulfillmentItem.quantity, line.quantity));
 
       if (!shippedAt && !deliveredAt) {
         if (fulfillment.packed_at === null) {
-          line.preparing_quantity = Math.min(line.quantity, line.preparing_quantity + quantity)
+          line.preparing_quantity = Math.min(line.quantity, line.preparing_quantity + quantity);
         } else if (fulfillment.packed_at) {
-          line.ready_quantity = Math.min(line.quantity, line.ready_quantity + quantity)
+          line.ready_quantity = Math.min(line.quantity, line.ready_quantity + quantity);
         }
       }
 
-      if (!shippedAt && !deliveredAt) continue
+      if (!shippedAt && !deliveredAt) continue;
 
       line.shipments.push({
         fulfillment_id: fulfillment.id,
@@ -175,18 +175,22 @@ export function buildOrderTracking(order: TrackingOrder): OrderTracking {
         shipped_at: shippedAt,
         delivered_at: deliveredAt,
         tracking,
-      })
-      line.shipped_quantity = Math.min(line.quantity, line.shipped_quantity + quantity)
+      });
+      line.shipped_quantity = Math.min(line.quantity, line.shipped_quantity + quantity);
       if (deliveredAt) {
-        line.delivered_quantity = Math.min(line.quantity, line.delivered_quantity + quantity)
+        line.delivered_quantity = Math.min(line.quantity, line.delivered_quantity + quantity);
       }
-      anyShipment = true
-      if (deliveredAt) anyDelivered = true
+      anyShipment = true;
+      if (deliveredAt) anyDelivered = true;
     }
   }
 
   for (const line of lines.values()) {
-    const shipmentStatus = lineStatus(line.quantity, line.shipped_quantity, line.delivered_quantity)
+    const shipmentStatus = lineStatus(
+      line.quantity,
+      line.shipped_quantity,
+      line.delivered_quantity,
+    );
     line.status =
       shipmentStatus !== "not_fulfilled"
         ? shipmentStatus
@@ -196,19 +200,19 @@ export function buildOrderTracking(order: TrackingOrder): OrderTracking {
             ? "ready"
             : line.preparing_quantity + line.ready_quantity > 0
               ? "partially_prepared"
-              : "not_fulfilled"
-    if (line.status !== "delivered") allLinesDelivered = false
+              : "not_fulfilled";
+    if (line.status !== "delivered") allLinesDelivered = false;
   }
 
-  let status: OrderTracking["status"] = "not_fulfilled"
-  if (allLinesDelivered) status = "delivered"
-  else if (anyDelivered) status = "shipped"
+  let status: OrderTracking["status"] = "not_fulfilled";
+  if (allLinesDelivered) status = "delivered";
+  else if (anyDelivered) status = "shipped";
   else if (anyShipment) {
     status = [...lines.values()].every((line) => line.shipped_quantity >= line.quantity)
       ? "shipped"
-      : "partially_shipped"
+      : "partially_shipped";
   } else if ([...lines.values()].every((line) => line.status === "ready")) {
-    status = "ready"
+    status = "ready";
   } else if (
     [...lines.values()].some(
       (line) =>
@@ -222,12 +226,12 @@ export function buildOrderTracking(order: TrackingOrder): OrderTracking {
         (line) => line.status === "ready" || line.status === "partially_prepared",
       ) && [...lines.values()].some((line) => line.status !== "ready")
         ? "partially_prepared"
-        : "preparing"
+        : "preparing";
   }
 
   return {
     order_id: order.id,
     status,
     lines: [...lines.values()],
-  }
+  };
 }

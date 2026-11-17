@@ -837,6 +837,7 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - Negocio muestra la etapa en la lista y permite avanzar; Buyer proyecta las etapas por línea desde su ruta de seguimiento autenticada.
 - `pnpm --dir apps/commerce-api exec tsc --noEmit`, `pnpm --dir apps/business-app exec tsc --noEmit`, `pnpm --dir apps/buyer-app exec tsc --noEmit`, `pnpm --dir packages/domain exec tsc --noEmit` y `git diff --check` pasan. No ejecuté tests, no consulté ni modifiqué producción.
 - Pendiente: CI remoto y revisión cruzada de Claude antes de cerrar AG-04.
+- El CI del commit inicial falló únicamente en formato de `packages/domain/src/tracking.ts`; se ajustó al formato del repositorio. `prettier --check` y `git diff --check` pasan localmente; el nuevo CI queda pendiente.
 
 ## Turno 2026-11-17 22:00 UTC — claude: AG-03 movimientos de inventario (implementación)
 
