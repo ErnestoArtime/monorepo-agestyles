@@ -11,6 +11,7 @@ import { useCart } from "@/context/cart-context";
 import { useCustomer } from "@/context/customer-context";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { sdk } from "@/lib/sdk";
+import { rememberOrderWhatsAppLinks, snapshotCartBySeller } from "@/lib/order-whatsapp";
 import type { HttpTypes } from "@medusajs/types";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
@@ -271,6 +272,7 @@ export default function CheckoutScreen() {
         provider_id: selectedPaymentProvider,
       });
 
+      const sellerSnapshots = await snapshotCartBySeller(sdk.client, cart.id);
       const result = await completeCart(sdk.client, cart.id);
       if (result.type !== "order_group") {
         Alert.alert(
@@ -280,6 +282,7 @@ export default function CheckoutScreen() {
         return;
       }
 
+      await rememberOrderWhatsAppLinks(sdk.client, result.order_group.id, sellerSnapshots);
       router.replace({
         pathname: "/marketplace-confirmation",
         params: {

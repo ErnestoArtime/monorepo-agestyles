@@ -15,6 +15,7 @@ import {
   createOffersWorkflow,
   createSellerShippingOptionsWorkflow,
   createSellerStockLocationsWorkflow,
+  updateSellersWorkflow,
 } from "@mercurjs/core/workflows";
 
 /**
@@ -100,10 +101,11 @@ export default async function setupOfficialCommerce({ container }: ExecArgs) {
 
   const { data: sellers } = await query.graph({
     entity: "seller",
-    fields: ["id", "status", "external_id"],
+    fields: ["id", "status", "external_id", "metadata"],
     filters: { external_id: OFFICIAL_EXTERNAL_ID },
   });
-  const seller = sellers[0] as { id: string; status: string } | undefined;
+  const seller = sellers[0] as
+    { id: string; status: string; metadata?: Record<string, unknown> | null } | undefined;
   if (sellers.length !== 1 || !seller || seller.status !== "open") {
     throw new Error("La tienda oficial debe existir y estar abierta.");
   }
@@ -240,6 +242,27 @@ export default async function setupOfficialCommerce({ container }: ExecArgs) {
     report.store_currencies = store.supported_currencies?.map((currency) => currency.currency_code);
     console.log(JSON.stringify(report));
     return;
+  }
+
+  // 0. Public WhatsApp number buyers use to consult their order (seller metadata is public).
+  const whatsappPhone = process.env.AGESTYLES_OFFICIAL_WHATSAPP_PHONE?.trim();
+  if (whatsappPhone) {
+    if (!/^\+\d{8,15}$/.test(whatsappPhone)) {
+      throw new Error(
+        "AGESTYLES_OFFICIAL_WHATSAPP_PHONE debe tener formato internacional, p. ej. +5355555555.",
+      );
+    }
+    if (seller.metadata?.whatsapp_phone !== whatsappPhone) {
+      await updateSellersWorkflow(container).run({
+        input: {
+          selector: { id: seller.id },
+          update: {
+            metadata: { ...(seller.metadata ?? {}), whatsapp_phone: whatsappPhone },
+          },
+        },
+      });
+    }
+    report.whatsapp_phone_set = true;
   }
 
   // 1. Store: USD only, named AgeStyles, default sales channel.

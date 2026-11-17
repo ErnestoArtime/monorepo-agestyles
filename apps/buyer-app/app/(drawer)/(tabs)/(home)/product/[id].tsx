@@ -9,6 +9,8 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { formatPrice } from "@/lib/format-price";
 import { Icon } from "@agestyles/icons";
 import { listProductOffers } from "@agestyles/api-client/offers";
+import { formatCupEquivalent } from "@agestyles/api-client/exchange-rate";
+import { useCupRate } from "@/hooks/use-cup-rate";
 import { sdk } from "@/lib/sdk";
 import type { HttpTypes } from "@medusajs/types";
 import { useLocalSearchParams, useNavigation } from "expo-router";
@@ -25,6 +27,7 @@ export default function ProductDetailsScreen() {
 
   const [product, setProduct] = useState<HttpTypes.StoreProduct | null>(null);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
+  const cupRate = useCupRate();
   const [offers, setOffers] = useState<Awaited<ReturnType<typeof listProductOffers>>["offers"]>([]);
   const [offerId, setOfferId] = useState<string>();
   const [quantity, setQuantity] = useState(1);
@@ -201,9 +204,16 @@ export default function ProductDetailsScreen() {
         )}
 
         <View style={styles.priceContainer}>
-          <Text style={[styles.price, { color: colors.tint }]}>
-            {priceAmount === undefined ? "—" : formatPrice(priceAmount, currencyCode)}
-          </Text>
+          <View>
+            <Text style={[styles.price, { color: colors.tint }]}>
+              {priceAmount === undefined ? "—" : formatPrice(priceAmount, currencyCode)}
+            </Text>
+            {!!formatCupEquivalent(priceAmount, currencyCode, cupRate) && (
+              <Text style={[styles.cupEquivalent, { color: colors.icon }]}>
+                {formatCupEquivalent(priceAmount, currencyCode, cupRate)}
+              </Text>
+            )}
+          </View>
           {!isInStock && (
             <View style={[styles.stockBadge, { backgroundColor: colors.error }]}>
               <Text style={[styles.outOfStockText, { color: colors.onError }]}>Agotado</Text>
@@ -365,6 +375,7 @@ const styles = StyleSheet.create({
   priceContainer: {
     marginBottom: 24,
   },
+  cupEquivalent: { fontSize: 14, marginTop: 2 },
   price: {
     fontSize: 24,
     fontWeight: "600",

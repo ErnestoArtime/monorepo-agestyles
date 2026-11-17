@@ -8,7 +8,9 @@
     "./offers": "./src/offers.ts",
     "./order-quotes": "./src/order-quotes.ts",
     "./buyer-orders": "./src/buyer-orders.ts",
-    "./order-tracking": "./src/order-tracking.ts"
+    "./order-tracking": "./src/order-tracking.ts",
+    "./exchange-rate": "./src/exchange-rate.ts",
+    "./seller-contacts": "./src/seller-contacts.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

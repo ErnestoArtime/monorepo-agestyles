@@ -3,7 +3,8 @@ import Link from "next/link";
 import { Icon } from "@agestyles/icons";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getProductByHandle } from "@/lib/catalog";
+import { getCupRate, getProductByHandle } from "@/lib/catalog";
+import { formatCupEquivalent } from "@agestyles/api-client/exchange-rate";
 import { formatPrice, productPrice } from "@/lib/catalog-format";
 
 type PageProps = { params: Promise<{ handle: string }> };
@@ -24,7 +25,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function ProductPage({ params }: PageProps) {
   const { handle } = await params;
-  const data = await getProductByHandle(handle);
+  const [data, cupRate] = await Promise.all([getProductByHandle(handle), getCupRate()]);
   if (!data) notFound();
   const { product, offers, currency } = data;
   const buyerAppUrl = process.env.BUYER_APP_URL || "https://tienda.eav-labs.com";
@@ -110,6 +111,12 @@ export default async function ProductPage({ params }: PageProps) {
               Desde {formatPrice(basePrice.amount, basePrice.currency)}
             </p>
           )}
+          {basePrice && formatCupEquivalent(basePrice.amount, basePrice.currency, cupRate) && (
+            <p className="detail-cup-price">
+              {formatCupEquivalent(basePrice.amount, basePrice.currency, cupRate)} · referencia, se
+              cobra en USD
+            </p>
+          )}
           <a className="button button-dark" href="#tiendas">
             Comparar tiendas <Icon name="arrowDown" size={14} />
           </a>
@@ -153,6 +160,11 @@ export default async function ProductPage({ params }: PageProps) {
                     <>
                       <span className="seller-from">Desde</span>
                       <strong>{formatPrice(seller.price, currency)}</strong>
+                      {formatCupEquivalent(seller.price, currency, cupRate) && (
+                        <span className="seller-cup">
+                          {formatCupEquivalent(seller.price, currency, cupRate)}
+                        </span>
+                      )}
                     </>
                   ) : (
                     <strong>Consultar precio</strong>

@@ -9,12 +9,15 @@ import { useRouter } from "expo-router";
 import { Icon } from "@agestyles/icons";
 import React from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
+import { formatCupEquivalent } from "@agestyles/api-client/exchange-rate";
+import { useCupRate } from "@/hooks/use-cup-rate";
 
 export default function CartScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
   const router = useRouter();
   const { cart, updateItemQuantity, removeItem, loading } = useCart();
+  const cupRate = useCupRate();
 
   const isEmpty = !cart?.items || cart.items.length === 0;
 
@@ -92,6 +95,12 @@ export default function CartScreen() {
               {formatPrice(cart.total, cart.currency_code)}
             </Text>
           </View>
+          {!!formatCupEquivalent(cart.total, cart.currency_code, cupRate) && (
+            <Text style={[styles.cupEquivalent, { color: colors.icon }]}>
+              {formatCupEquivalent(cart.total, cart.currency_code, cupRate)} · referencia, se cobra
+              en USD
+            </Text>
+          )}
         </View>
         <Button title="Ir a pagar" onPress={() => router.push("/checkout")} loading={loading} />
       </View>
@@ -100,6 +109,7 @@ export default function CartScreen() {
 }
 
 const styles = StyleSheet.create({
+  cupEquivalent: { fontSize: 13, textAlign: "right", marginTop: 4 },
   container: {
     flex: 1,
   },

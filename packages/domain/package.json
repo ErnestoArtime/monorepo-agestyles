@@ -11,10 +11,12 @@
     "./order-quotes": "./src/order-quotes.ts",
     "./publication": "./src/publication.ts",
     "./tracking": "./src/tracking.ts",
-    "./fixtures/offers": "./src/fixtures/offers.ts"
+    "./fixtures/offers": "./src/fixtures/offers.ts",
+    "./exchange-rate": "./src/exchange-rate.ts",
+    "./whatsapp": "./src/whatsapp.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "node test/publication.test.ts && node test/tracking.test.ts && node test/order-quotes.test.ts"
+    "test": "node test/publication.test.ts && node test/tracking.test.ts && node test/order-quotes.test.ts && node test/exchange-rate-whatsapp.test.ts"
   }
 }

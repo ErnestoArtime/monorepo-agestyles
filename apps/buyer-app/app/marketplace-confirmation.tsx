@@ -1,14 +1,16 @@
 import { Button } from "@/components/ui/button";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { orderWhatsAppLinks } from "@/lib/order-whatsapp";
 import { Icon } from "@agestyles/icons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { StyleSheet, Text, View } from "react-native";
+import { Linking, StyleSheet, Text, View } from "react-native";
 
 export default function MarketplaceConfirmation() {
   const { groupId, orderCount } = useLocalSearchParams<{ groupId: string; orderCount: string }>();
   const colors = Colors[useColorScheme() ?? "light"];
   const router = useRouter();
+  const whatsappLinks = orderWhatsAppLinks(groupId);
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
@@ -35,7 +37,29 @@ export default function MarketplaceConfirmation() {
           <Text style={[styles.summaryLabel, { color: colors.icon }]}>Órdenes de la tienda</Text>
           <Text style={[styles.count, { color: colors.text }]}>{orderCount}</Text>
         </View>
+        {whatsappLinks.length > 0 && (
+          <View style={styles.whatsapp}>
+            <Text style={[styles.description, { color: colors.icon }]}>
+              Escribe a la tienda por WhatsApp para confirmar disponibilidad y forma de pago.
+            </Text>
+            {whatsappLinks.map((link) => (
+              <Button
+                key={link.sellerId}
+                title={
+                  whatsappLinks.length > 1
+                    ? `Consultar a ${link.sellerName} por WhatsApp`
+                    : "Consultar por WhatsApp"
+                }
+                accessibilityLabel={`Consultar a ${link.sellerName} por WhatsApp`}
+                onPress={() => {
+                  Linking.openURL(link.url).catch(() => undefined);
+                }}
+              />
+            ))}
+          </View>
+        )}
         <Button
+          variant={whatsappLinks.length > 0 ? "secondary" : "primary"}
           title="Continuar comprando"
           onPress={() => router.replace("/(drawer)/(tabs)/(home)")}
         />
@@ -68,4 +92,5 @@ const styles = StyleSheet.create({
   reference: { fontSize: 14, fontWeight: "600" },
   divider: { height: StyleSheet.hairlineWidth, marginVertical: 8 },
   count: { fontSize: 16, fontWeight: "600" },
+  whatsapp: { gap: 12 },
 });
