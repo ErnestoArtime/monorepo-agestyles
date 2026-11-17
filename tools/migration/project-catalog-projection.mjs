@@ -59,6 +59,7 @@ function parseVariantOptions(value) {
     }
   }
   if (!Array.isArray(options) || options.length > 100) fail("invalid_variant_options")
+  if (options.length === 0) return [{ key: "__default__", label: "Default" }]
   const seen = new Set()
   for (const option of options) {
     if (!object(option) || typeof option.key !== "string" || typeof option.label !== "string") {

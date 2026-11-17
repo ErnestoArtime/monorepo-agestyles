@@ -158,6 +158,49 @@ test("projects a sanitized synthetic catalog snapshot into a valid dry-run bundl
   }
 })
 
+test("creates a default variant when legacy variant options are empty", async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "agestyles-empty-variants-"))
+  const input = path.join(root, "projection")
+  const output = path.join(root, "bundle")
+  await import("node:fs/promises").then(({ mkdir }) => mkdir(input))
+  const projection = {
+    categories: [{ id: "cat-1", slug: "clothing", name: "Clothing" }],
+    subcategories: [],
+    products: [
+      {
+        id: "prod-array-empty",
+        name: "Synthetic no-options array",
+        category_slug: "clothing",
+        currency: "USD",
+        variant_options: [],
+      },
+      {
+        id: "prod-json-empty",
+        name: "Synthetic no-options JSON",
+        category_slug: "clothing",
+        currency: "CUP",
+        variant_options: "[]",
+      },
+    ],
+    image_metadata: [],
+  }
+
+  try {
+    for (const [name, rows] of Object.entries(projection)) {
+      await writeFile(path.join(input, `${name}.json`), `${JSON.stringify(rows)}\n`)
+    }
+    const result = await projectCatalog(input, output, { exportId: "synthetic-empty-variants" })
+    const variants = JSON.parse(await readFile(path.join(output, "variants.json"), "utf8"))
+    assert.equal(result.reconciliation.counts_match, true)
+    assert.equal(variants.length, 2)
+    assert.ok(variants.every((variant) => variant.payload.variant_key === "__default__"))
+    assert.equal(JSON.stringify(result).includes("prod-array-empty"), false)
+    assert.equal(JSON.stringify(result).includes("prod-json-empty"), false)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
 test("projection refuses unresolved relations, malformed options, image URLs, and existing outputs", async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), "agestyles-catalog-projection-"))
   const input = path.join(root, "projection")
