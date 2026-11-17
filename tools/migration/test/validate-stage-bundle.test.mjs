@@ -109,7 +109,7 @@ test("projects a sanitized synthetic catalog snapshot into a valid dry-run bundl
         subcategory_id: "sub-1",
         brand_id: "brand-1",
         variant_options: [{ key: "blue-m", label: "Blue / M" }],
-        store_id: "must-not-be-copied",
+        store_id: "legacy-store-1",
         stock: 99,
         customer_email: "must-not-be-copied@example.invalid",
       },
@@ -158,7 +158,8 @@ test("projects a sanitized synthetic catalog snapshot into a valid dry-run bundl
     const stagedProducts = JSON.parse(await readFile(path.join(output, "products.json"), "utf8"))
     assert.equal(stagedProducts[0].payload.code, "00042")
     assert.equal(stagedProducts[0].payload.import_visibility, "draft_until_reconciled")
-    assert.equal(JSON.stringify(stagedProducts).includes("must-not-be-copied"), false)
+    assert.equal(stagedProducts[0].payload.legacy_store_id, "store:legacy-store-1")
+    assert.equal("stock" in stagedProducts[0].payload, false)
     assert.equal(JSON.stringify(stagedProducts).includes("example.invalid"), false)
     const repeated = await projectCatalog(input, repeatedOutput, { exportId: "synthetic-001" })
     assert.deepEqual(repeated.reconciliation, result.reconciliation)
