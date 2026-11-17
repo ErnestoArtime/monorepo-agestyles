@@ -618,3 +618,7 @@ CI de `ec0bd17` terminó `success`: [run 44066099747](https://github.com/Ernesto
 ## Revisión de pendientes OpenCode — 17 de noviembre de 2026
 
 La cola `docs/OPEN_CODE_TASKS.md` confirma OC-01–OC-08 completadas. OC-09 sigue abierta únicamente para revisión visual clara/oscura de rutas completas de Buyer, Business y Storefront; los cambios estáticos y la banda de validación local están listos. Reejecutado en el árbol actual: `corepack pnpm test` 8/8 (caché), `corepack pnpm typecheck` 12/12 (caché), `corepack pnpm lint` 0 errores/20 advertencias y `corepack pnpm format:check` PASS. El host no tiene navegador instalado ni Android conectado; quedan 3.1 GiB libres. Por tanto no se afirma validación visual y no se inicia build nativo ni limpieza de disco.
+
+## CI de imagen Commerce API — 17 de noviembre de 2026
+
+El commit `3444eef` está en `main`; CI [run 44067825900](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44067825900) terminó success, incluida la construcción con `Dockerfile.public` usando secretos BuildKit efímeros, sin subir la imagen. Se está ampliando el gate para ejecutar migraciones y comprobar `/health` contra PostgreSQL/Redis desechables de GitHub Actions; esa nueva cobertura queda pendiente de CI.

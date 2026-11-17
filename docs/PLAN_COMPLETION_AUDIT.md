@@ -148,3 +148,7 @@ Se corrigió el desajuste que hacía apuntar EXPOSE, healthcheck y verificación
 ## CI de la corrección de puerto — 17 de noviembre de 2026
 
 El commit `ec0bd17` está en `main` y su CI [44066099747](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44066099747) finalizó success. La corrección y test de consistencia pasan compilación/test remoto; esto no publica la imagen ni demuestra runtime/health en el host. El endpoint de tracking continúa no disponible en la imagen desplegada.
+
+## Addendum de build de imagen API — 17 de noviembre de 2026
+
+CI del commit `3444eef` [run 44067825900](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44067825900) terminó success e hizo build con el `Dockerfile.public` exacto, sin publicación. Se añadió a CI una prueba de migración y health en PostgreSQL/Redis desechables; todavía requiere ejecución verde antes de contarla como evidencia F2/F7.

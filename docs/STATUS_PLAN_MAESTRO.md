@@ -213,3 +213,7 @@ La API ejecuta en `127.0.0.1:19081`; los gateways buyer/seller ya reenviaban a e
 ## CI de la corrección de publicación API — 17 de noviembre de 2026, 10:37 UTC
 
 El commit `ec0bd17` (`fix: align commerce API publish port`) está en `main`; CI [run 44066099747](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44066099747) terminó success con lint, formato, tests, typecheck, build aislado de Medusa y exports web. La nueva prueba de configuración es parte de los tests de Commerce API. No se inició `Publish commerce API image` ni se actualizó el VPS. Su despliegue sigue sujeto a conservar la imagen anterior/rollback; con 3.2 GiB libres no se satisface aún ese prerequisito.
+
+## Build de imagen API en CI — 17 de noviembre de 2026, 10:46 UTC
+
+El commit `3444eef` está en `main`; CI [run 44067825900](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44067825900) terminó success, incluyendo `Dockerfile.public` con configuración BuildKit efímera y `push: false`. No se publicó la imagen ni se tocó el VPS. El siguiente cambio añade un smoke test runtime sobre PostgreSQL/Redis efímeros; su resultado queda pendiente.

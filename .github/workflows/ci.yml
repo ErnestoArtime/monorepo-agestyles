@@ -12,6 +12,29 @@ permissions:
 jobs:
   typecheck:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: agestyles_lab
+          POSTGRES_PASSWORD: 0123456789abcdef
+          POSTGRES_DB: agestyles_mercur_lab
+        ports:
+          - 15472:5432
+        options: >-
+          --health-cmd "pg_isready -U agestyles_lab -d agestyles_mercur_lab"
+          --health-interval 2s
+          --health-timeout 2s
+          --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 16392:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 2s
+          --health-timeout 2s
+          --health-retries 20
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -55,6 +78,9 @@ jobs:
           db_password="$(openssl rand -hex 24)"
           jwt_secret="$(openssl rand -hex 32)"
           cookie_secret="$(openssl rand -hex 32)"
+          echo "::add-mask::${db_password}"
+          echo "::add-mask::${jwt_secret}"
+          echo "::add-mask::${cookie_secret}"
           {
             printf 'DATABASE_URL=postgres://agestyles_lab:%s@127.0.0.1:15472/agestyles_mercur_lab\n' "${db_password}"
             printf 'REDIS_URL=redis://127.0.0.1:16392\n'
@@ -72,9 +98,44 @@ jobs:
           context: .
           file: ./apps/commerce-api/Dockerfile.public
           push: false
+          load: true
           tags: agestyles/commerce-api:ci
           secret-files: |
             lab_env=${{ steps.api-build-env.outputs.path }}
+
+      - name: Migrate disposable PostgreSQL for API smoke test
+        env:
+          DATABASE_URL: postgres://agestyles_lab:0123456789abcdef@127.0.0.1:15472/agestyles_mercur_lab
+          REDIS_URL: redis://127.0.0.1:16392
+          JWT_SECRET: ci_jwt_0123456789abcdef0123456789abcdef
+          COOKIE_SECRET: ci_cookie_0123456789abcdef0123456789abcdef
+        run: |
+          set -euo pipefail
+          docker run --rm --network host \
+            --env DATABASE_URL --env REDIS_URL --env JWT_SECRET --env COOKIE_SECRET \
+            agestyles/commerce-api:ci pnpm migrate
+
+      - name: Start API and verify its health endpoint
+        run: |
+          set -euo pipefail
+          docker run -d --name agestyles-commerce-api-ci --network host \
+            --env DATABASE_URL=postgres://agestyles_lab:0123456789abcdef@127.0.0.1:15472/agestyles_mercur_lab \
+            --env REDIS_URL=redis://127.0.0.1:16392 \
+            --env JWT_SECRET=ci_jwt_0123456789abcdef0123456789abcdef \
+            --env COOKIE_SECRET=ci_cookie_0123456789abcdef0123456789abcdef \
+            agestyles/commerce-api:ci
+          for attempt in $(seq 1 90); do
+            if curl --fail --silent http://127.0.0.1:19081/health; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs agestyles-commerce-api-ci
+          exit 1
+
+      - name: Stop disposable Commerce API smoke test
+        if: always()
+        run: docker rm --force agestyles-commerce-api-ci || true
 
       - name: Remove disposable container build configuration
         if: always()
