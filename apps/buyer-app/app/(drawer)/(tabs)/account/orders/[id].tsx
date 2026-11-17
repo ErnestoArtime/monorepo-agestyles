@@ -119,7 +119,9 @@ export default function PurchaseDetailsScreen() {
             <Text style={[styles.muted, { color: colors.icon }]}>Orden #{order.display_id}</Text>
           </View>
           <Text style={[styles.status, { color: colors.icon }]}>
-            {getStatusLabel(order.fulfillment_status ?? order.status)}
+            {getStatusLabel(
+              trackingByOrder[order.id]?.status ?? order.fulfillment_status ?? order.status,
+            )}
             {order.payment_status
               ? ` · ${getStatusLabel(order.payment_status, PAYMENT_STATUS_LABELS)}`
               : ""}
@@ -181,7 +183,12 @@ function TrackingLine({
   return (
     <View style={styles.trackingDetails}>
       <Text style={{ color: colors.icon, textTransform: "capitalize" }}>
-        {getStatusLabel(line.status)} · {line.shipped_quantity} de {line.quantity} enviados
+        {getStatusLabel(line.status)}
+        {line.shipped_quantity > 0
+          ? ` · ${line.shipped_quantity} de ${line.quantity} enviados`
+          : line.preparing_quantity + line.ready_quantity > 0
+            ? ` · ${Math.min(line.quantity, line.preparing_quantity + line.ready_quantity)} de ${line.quantity} artículos`
+            : ""}
       </Text>
       {shipments.map(({ number, url }, index) => {
         const safeUrl = url && /^https:\/\//i.test(url) ? url : null;

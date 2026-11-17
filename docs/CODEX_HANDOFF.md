@@ -830,6 +830,14 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - La paridad enumera CUP/tasa, WhatsApp, favoritos locales, comparador, marcas/novedades, avisos con reintentos y devoluciones parciales con sus AG correspondientes. AG-17…AG-20 ya están en el tablero.
 - Solo documentación. `git diff --check` pasa; no se consultó ni modificó producción y no se ejecutaron pruebas. AG-21 queda pendiente de revisión final de Claude.
 
+## AG-04 — etapas de preparación del pedido — 17 de noviembre de 2026
+
+- Implementé las etapas con Medusa/Mercur: iniciar preparación crea el fulfillment usando el workflow de Mercur y devuelve `packed_at` a `null`; marcar listo actualiza ese campo; despachar usa `createOrderShipmentWorkflow`; confirmar entrega usa `markOrderFulfillmentAsDeliveredWorkflow`.
+- La ruta conserva el permiso `orders` de edición/gestión, verifica la tienda y el almacén, y limita las transiciones válidas. El registro de número y URL del transportista queda fuera de este alcance. El gateway ya permite la ruta AgeStyles `/vendor/agestyles/orders/:id/fulfillments`; no requirió cambios.
+- Negocio muestra la etapa en la lista y permite avanzar; Buyer proyecta las etapas por línea desde su ruta de seguimiento autenticada.
+- `pnpm --dir apps/commerce-api exec tsc --noEmit`, `pnpm --dir apps/business-app exec tsc --noEmit`, `pnpm --dir apps/buyer-app exec tsc --noEmit`, `pnpm --dir packages/domain exec tsc --noEmit` y `git diff --check` pasan. No ejecuté tests, no consulté ni modifiqué producción.
+- Pendiente: CI remoto y revisión cruzada de Claude antes de cerrar AG-04.
+
 ## Turno 2026-11-17 22:00 UTC — claude: AG-03 movimientos de inventario (implementación)
 
 - Commit `10fe3b0`. Nuevo módulo `@agestyles/inventory-movements` (tabla `agestyles_inventory_movement`, migración `Migration20261117220000`) con reglas puras y 1 test; registrado en `medusa-config.ts` y en `build:workspace-modules`.

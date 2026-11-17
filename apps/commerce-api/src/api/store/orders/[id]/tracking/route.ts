@@ -18,6 +18,7 @@ type OrderDetail = {
   items?: { id: string; title: string; quantity: number }[];
   fulfillments?: {
     id: string;
+    packed_at?: string | Date | null;
     shipped_at?: string | Date | null;
     delivered_at?: string | Date | null;
     canceled_at?: string | Date | null;
@@ -40,6 +41,7 @@ const fields = [
   "items.title",
   "items.quantity",
   "fulfillments.id",
+  "fulfillments.packed_at",
   "fulfillments.shipped_at",
   "fulfillments.delivered_at",
   "fulfillments.canceled_at",
@@ -59,6 +61,7 @@ type TrackingRules = {
     items: { id: string; title: string; quantity: number }[];
     fulfillments: {
       id: string;
+      packed_at?: string | Date | null;
       shipped_at?: string | Date | null;
       delivered_at?: string | Date | null;
       canceled_at?: string | Date | null;
@@ -111,6 +114,7 @@ export async function GET(req: AuthenticatedMedusaRequest, res: MedusaResponse) 
       .filter((fulfillment): fulfillment is NonNullable<typeof fulfillment> => Boolean(fulfillment))
       .map((fulfillment) => ({
         id: fulfillment.id,
+        packed_at: fulfillment.packed_at ?? null,
         shipped_at: fulfillment.shipped_at ?? null,
         delivered_at: fulfillment.delivered_at ?? null,
         canceled_at: fulfillment.canceled_at ?? null,

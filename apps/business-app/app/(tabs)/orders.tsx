@@ -14,17 +14,37 @@ type Order = {
   created_at?: string;
   currency_code?: string;
   total?: number;
+  fulfillments?: {
+    id: string;
+    packed_at?: string | null;
+    shipped_at?: string | null;
+    delivered_at?: string | null;
+    canceled_at?: string | null;
+  }[];
 };
 
 type OrderDetails = Order & {
   items?: { id: string; title?: string; variant_title?: string; quantity: number }[];
   fulfillments?: {
+    id: string;
+    packed_at?: string | null;
+    shipped_at?: string | null;
+    delivered_at?: string | null;
     canceled_at?: string | null;
     items?: { line_item_id?: string | null; quantity: number }[];
   }[];
 };
 
 type StockLocation = { id: string; name: string };
+
+function progressLabel(order: Order) {
+  const active = (order.fulfillments ?? []).filter((fulfillment) => !fulfillment.canceled_at);
+  if (active.some((fulfillment) => fulfillment.delivered_at)) return "Entregado";
+  if (active.some((fulfillment) => fulfillment.shipped_at)) return "Despachado";
+  if (active.some((fulfillment) => fulfillment.packed_at)) return "Listo para envío";
+  if (active.length) return "En preparación";
+  return orderStatusLabel(order.fulfillment_status ?? order.status);
+}
 
 function remainingItems(order: OrderDetails) {
   const fulfilled = new Map<string, number>();
@@ -68,7 +88,7 @@ export default function OrdersScreen() {
     setError("");
     try {
       const data = await request<{ orders?: Order[] }>(
-        "/vendor/orders?limit=50&fields=id,display_id,status,fulfillment_status,created_at,currency_code,total",
+        "/vendor/orders?limit=50&fields=id,display_id,status,fulfillment_status,created_at,currency_code,total,fulfillments.id,fulfillments.packed_at,fulfillments.shipped_at,fulfillments.delivered_at,fulfillments.canceled_at",
       );
       setItems(data?.orders ?? []);
     } catch {
@@ -100,7 +120,7 @@ export default function OrdersScreen() {
     setNotice("");
     try {
       const detail = await request<{ order?: OrderDetails }>(
-        `/vendor/orders/${order.id}?fields=id,display_id,status,fulfillment_status,items.id,items.title,items.variant_title,items.quantity,fulfillments.canceled_at,fulfillments.items.line_item_id,fulfillments.items.quantity`,
+        `/vendor/orders/${order.id}?fields=id,display_id,status,fulfillment_status,items.id,items.title,items.variant_title,items.quantity,fulfillments.id,fulfillments.packed_at,fulfillments.shipped_at,fulfillments.delivered_at,fulfillments.canceled_at,fulfillments.items.line_item_id,fulfillments.items.quantity`,
       );
       setSelectedOrder(detail.order ?? null);
       setLocationId("");
@@ -129,16 +149,53 @@ export default function OrdersScreen() {
     setNotice("");
     try {
       await request(`/vendor/agestyles/orders/${selectedOrder.id}/fulfillments`, "POST", {
+        action: "start",
         location_id: locationId,
         items: outstanding.map((item) => ({ id: item.id, quantity: item.remaining })),
       });
       setNotice(
-        `Pedido ${selectedOrder.display_id ?? selectedOrder.id.slice(-6)} preparado para envío.`,
+        `Pedido ${selectedOrder.display_id ?? selectedOrder.id.slice(-6)}: preparación iniciada.`,
       );
       setSelectedOrder(null);
       await load();
     } catch {
       setError("No se pudo preparar el pedido.");
+    } finally {
+      setFulfilling(false);
+    }
+  }
+
+  const activeFulfillment = [...(selectedOrder?.fulfillments ?? [])]
+    .reverse()
+    .find((fulfillment) => !fulfillment.canceled_at);
+  const nextAction = activeFulfillment
+    ? activeFulfillment.delivered_at
+      ? null
+      : activeFulfillment.shipped_at
+        ? "deliver"
+        : activeFulfillment.packed_at
+          ? "dispatch"
+          : "ready"
+    : null;
+
+  async function advanceOrder(action: "ready" | "dispatch" | "deliver") {
+    if (!canFulfill || !selectedOrder || !activeFulfillment || fulfilling) return;
+    setFulfilling(true);
+    setError("");
+    setNotice("");
+    try {
+      await request(`/vendor/agestyles/orders/${selectedOrder.id}/fulfillments`, "POST", {
+        action,
+        fulfillment_id: activeFulfillment.id,
+      });
+      const labels = { ready: "listo para envío", dispatch: "despachado", deliver: "entregado" };
+      setNotice(
+        `Pedido ${selectedOrder.display_id ?? selectedOrder.id.slice(-6)}: ${labels[action]}.`,
+      );
+      setSelectedOrder(null);
+      await load();
+    } catch {
+      setError("No se pudo actualizar la etapa del pedido.");
     } finally {
       setFulfilling(false);
     }
@@ -164,7 +221,7 @@ export default function OrdersScreen() {
             <Row
               key={item.id}
               title={`Pedido ${item.display_id ?? item.id.slice(-6)}`}
-              detail={`${orderStatusLabel(item.status)} · ${
+              detail={`${progressLabel(item)} · ${
                 item.created_at ? new Date(item.created_at).toLocaleDateString("es-ES") : ""
               }`}
               trailing={
@@ -200,7 +257,7 @@ export default function OrdersScreen() {
               Todos los artículos de este pedido ya tienen preparación registrada.
             </Text>
           )}
-          {canFulfill && outstanding.length ? (
+          {canFulfill && outstanding.length && !activeFulfillment ? (
             <View style={styles.fulfillmentPanel}>
               <Text style={styles.panelTitle}>Ubicación de preparación</Text>
               {locations.length ? (
@@ -237,7 +294,35 @@ export default function OrdersScreen() {
                 ]}
               >
                 <Text style={styles.primaryButtonText}>
-                  {fulfilling ? "Preparando…" : "Preparar pedido para envío"}
+                  {fulfilling ? "Iniciando…" : "Iniciar preparación"}
+                </Text>
+              </Pressable>
+            </View>
+          ) : null}
+          {canFulfill && activeFulfillment && nextAction ? (
+            <View style={styles.fulfillmentPanel}>
+              <Text style={styles.panelTitle}>
+                Etapa actual:{" "}
+                {activeFulfillment.shipped_at
+                  ? "Despachado"
+                  : activeFulfillment.packed_at
+                    ? "Listo para envío"
+                    : "En preparación"}
+              </Text>
+              <Pressable
+                onPress={() => void advanceOrder(nextAction)}
+                disabled={fulfilling}
+                accessibilityRole="button"
+                style={[styles.primaryButton, fulfilling && styles.disabledButton]}
+              >
+                <Text style={styles.primaryButtonText}>
+                  {fulfilling
+                    ? "Actualizando…"
+                    : nextAction === "ready"
+                      ? "Marcar como listo"
+                      : nextAction === "dispatch"
+                        ? "Marcar como despachado"
+                        : "Confirmar entrega"}
                 </Text>
               </Pressable>
             </View>
