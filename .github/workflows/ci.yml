@@ -209,6 +209,13 @@ jobs:
           AGESTYLES_LAB_SEEDED_PASSWORD: ci_lab_password_0123456789
         run: node apps/commerce-api/scripts/verify-seller-roles.mjs
 
+      - name: Verify mixed-seller checkout and buyer order ownership over HTTP
+        env:
+          EXPO_PUBLIC_MEDUSA_URL: http://127.0.0.1:19081
+          AGESTYLES_CI_DISPOSABLE: "true"
+          DATABASE_URL: postgres://agestyles_lab:0123456789abcdef@127.0.0.1:15472/agestyles_mercur_lab
+        run: node apps/commerce-api/scripts/verify-mixed-checkout-buyer-ownership.mjs
+
       - name: Verify variant removal permissions over HTTP on disposable data
         env:
           EXPO_PUBLIC_MEDUSA_URL: http://127.0.0.1:19081
