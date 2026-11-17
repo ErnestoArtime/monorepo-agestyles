@@ -595,4 +595,9 @@ El manifiesto de Mercur 2.4.1 muestra que `/vendor/orders` filtra por seller y l
 
 ## F1/F5/F7 — Contrato sintético del resolver de permisos seller — 17 de noviembre de 2026
 
-Se añadió `apps/commerce-api/test/seller-permissions.test.mjs` al target `@agestyles/commerce-api:test` (runner glob `node --test test/*.test.mjs`). Comprueba permisos declarados para owner, inventory manager y SUPPORT/viewer, superficie admin, actor/superficie inválidos, rol desconocido y la consulta de pertenencia compuesta por membership ID + member ID + seller ID, que deniega combinaciones cruzadas. Los mocks son en memoria; no se llama a servicios, DB ni red. La suite del API pasa 6/6 incluyendo tracking; `pnpm test` 8/8, `pnpm typecheck` 12/12, lint sin errores (20 advertencias preexistentes), formato y `git diff --check` PASS. Esto fortalece el contrato pero no sustituye BOLA/runtime en el laboratorio ni las pruebas UI/UAT pendientes.
+Se añadió `apps/commerce-api/test/seller-permissions.test.mjs` al target `@agestyles/commerce-api:test` (runner glob `node --test test/*.test.mjs`). Comprueba permisos declarados para owner, inventory manager y SUPPORT/viewer, superficie admin, actor/superficie inválidos, rol desconocido y la consulta de pertenencia compuesta por membership ID + member ID + seller ID, que deniega combinaciones cruzadas. Los mocks son en memoria; no se llama a servicios, DB ni red. La suite del API pasa 6/6 incluyendo tracking; `pnpm test` 8/8, `pnpm typecheck` 12/12, lint sin errores (20 advertencias preexistentes), formato y `git diff --check` PASS. CI del commit `1bb366a` [run 44063162920](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44063162920) terminó success. Esto fortalece el contrato pero no sustituye BOLA/runtime en el laboratorio ni las pruebas UI/UAT pendientes.
+
+
+## Infraestructura del host — 17 de noviembre de 2026, 10:19 UTC
+
+Lecturas actuales: disco de 193 GiB con 3.2 GiB disponibles, RAM total 11 GiB con 3.5 GiB disponibles y swap 2 GiB casi consumida. `adb devices -l` no enumera un teléfono/emulador Android. No iniciar builds nativos, descarga de imágenes ni limpieza de Docker con este margen.

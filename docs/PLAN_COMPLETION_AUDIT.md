@@ -125,3 +125,11 @@ El grafo del monorepo está indexado. La arquitectura muestra apps `commerce-api
 ## Addendum de permisos seller — 17 de noviembre de 2026
 
 El resolver `SellerPermissionsService` ahora tiene tests sintéticos ejecutados dentro del target de Commerce API: owner, inventory manager, viewer, admin, rol desconocido y mismatch de tienda/miembro. Resultado dirigido: 6/6 incluyendo tracking; Nx: 8/8 y typecheck: 12/12. La prueba usa un repositorio de membresías en memoria y no demuestra BOLA de ruta/DB, revocación runtime ni UI.
+
+
+## Addendum de permisos e infraestructura local — 17 de noviembre de 2026, 10:19 UTC
+
+- El commit actual `1bb366a` tiene CI exitoso [run 44063162920](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44063162920). Localmente: Commerce API test 6/6, monorepo 8/8, typecheck 12/12, lint 0 errores/20 avisos, formato PASS.
+- F1/F5: pruebas unitarias del resolver verifican el mapping de owner, inventory manager y SUPPORT/viewer, admin/rol desconocido y los tres IDs usados al consultar la membresía. Esto no cubre autorización end-to-end, BOLA en API/DB ni UI.
+- Capacidad actual verificada por lectura: 3.2 GiB libres, swap prácticamente agotada y ningún dispositivo Android listado; sin builds/descargas ni limpieza. iOS sigue requiriendo Mac/Xcode.
+- Permanecen sin prueba los criterios completos F0–F8; el avance de contrato no cambia las puertas de backup/restore, dispositivo, E2E/UAT, datos reales o go/no-go.
