@@ -1,7 +1,8 @@
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { formatPrice } from "@/lib/format-price";
+import { Icon } from "@agestyles/icons";
 import type { HttpTypes } from "@medusajs/types";
 import { Image } from "expo-image";
 import React from "react";
@@ -14,7 +15,12 @@ interface CartItemProps {
   onRemove: () => void;
 }
 
-export const CartItem = React.memo(function CartItem({ item, currencyCode, onUpdateQuantity, onRemove }: CartItemProps) {
+export const CartItem = React.memo(function CartItem({
+  item,
+  currencyCode,
+  onUpdateQuantity,
+  onRemove,
+}: CartItemProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
 
@@ -34,9 +40,7 @@ export const CartItem = React.memo(function CartItem({ item, currencyCode, onUpd
             {item.product_title || item.title}
           </Text>
           {item.variant_title && (
-            <Text style={[styles.variant, { color: colors.icon }]}>
-              {item.variant_title}
-            </Text>
+            <Text style={[styles.variant, { color: colors.icon }]}>{item.variant_title}</Text>
           )}
           <Text style={[styles.price, { color: colors.text }]}>
             {formatPrice(total, currencyCode)}
@@ -46,21 +50,36 @@ export const CartItem = React.memo(function CartItem({ item, currencyCode, onUpd
           <View style={styles.quantityContainer}>
             <TouchableOpacity
               style={[styles.quantityButton, { borderColor: colors.icon }]}
+              hitSlop={8}
               onPress={() => onUpdateQuantity(Math.max(1, item.quantity - 1))}
+              accessibilityRole="button"
+              accessibilityLabel={`Remove one ${item.product_title || item.title}`}
             >
-              <Text style={[styles.quantityButtonText, { color: colors.text }]}>-</Text>
+              <Icon name="minus" size={16} color={colors.text} />
             </TouchableOpacity>
-            <Text style={[styles.quantity, { color: colors.text }]}>
+            <Text
+              style={[styles.quantity, { color: colors.text }]}
+              accessibilityLabel={`Quantity: ${item.quantity}`}
+            >
               {item.quantity}
             </Text>
             <TouchableOpacity
               style={[styles.quantityButton, { borderColor: colors.icon }]}
+              hitSlop={8}
               onPress={() => onUpdateQuantity(item.quantity + 1)}
+              accessibilityRole="button"
+              accessibilityLabel={`Add one ${item.product_title || item.title}`}
             >
-              <Text style={[styles.quantityButtonText, { color: colors.text }]}>+</Text>
+              <Icon name="plus" size={16} color={colors.text} />
             </TouchableOpacity>
           </View>
-          <TouchableOpacity onPress={onRemove} style={styles.removeButton}>
+          <TouchableOpacity
+            onPress={onRemove}
+            style={styles.removeButton}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={`Remove ${item.product_title || item.title} from cart`}
+          >
             <IconSymbol size={20} name="trash" color={colors.text} />
           </TouchableOpacity>
         </View>
@@ -120,10 +139,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  quantityButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
   quantity: {
     marginHorizontal: 12,
     fontSize: 14,
@@ -135,4 +150,3 @@ const styles = StyleSheet.create({
     padding: 4,
   },
 });
-

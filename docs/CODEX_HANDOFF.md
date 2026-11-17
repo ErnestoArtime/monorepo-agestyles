@@ -382,3 +382,24 @@ Esto descarta que el fallo observado dependa solamente de los campos personaliza
 También quedan P2 de consistencia: trazo 2.2 solo en pestañas del comprador, tamaños de 17–19 px en controles y 12–15 px en enlaces, `#111B2D`/`#FFFFFF` duplicados fuera de tokens y `⌕`/`↗` como glifos de texto en el storefront. P3: `packages/icons` no tiene target de typecheck propio (la cobertura es indirecta vía apps) y no aparece en `transpilePackages` del storefront aunque exporta `.tsx` sin compilar.
 
 **Requiere dispositivo:** trazo real, tamaño de tab bar en 360 dp, anuncio de `radio`/`checked` con TalkBack y diferencia de color por defecto web/nativo. No se ejecutó typecheck ni build para no mezclar el estado sin commit de Codex.
+
+## Turno 2026-11-17 — Diagnóstico de lectura de pedidos Kickz/B1 (OC-08)
+
+| Alcance | Resultado |
+|---|---|
+| Revisión estática de Mercur 2.4.1/Medusa 2.22.3, configuración de laboratorio y observabilidad disponible; sin requests nuevos, escrituras, cambios de servicios ni consultas a la base | Informe `docs/lab/kickz-orders-500.md`. B1 sigue fallando en la evidencia previa con filtros explícitos de campos distintos; B2 responde 200. El proceso Medusa vigente corre en el host y stdout/stderr son pipes sin log persistido disponible en esta revisión. |
+
+El handler de Mercur aplica permiso, validación de `vendorOrderQueryConfig.list` y filtro seller antes de ejecutar `getOrdersListWorkflow`; luego normaliza colecciones de pago. Su configuración combina campos de pedido con relaciones anidadas, así que `?fields=id` no aísla necesariamente una lectura mínima. Esto acota la investigación a la consulta seller-scoped de B1 o sus relaciones; no prueba una causa raíz ni autoriza a revalidar la matriz. Se documentó la siguiente captura de stack trace redactada para una ejecución autorizada y en laboratorio. F1 permanece abierta. No se modificó código de aplicación ni `docs/STATUS_PLAN_MAESTRO.md`.
+
+## Turno 2026-11-17 03:48–04:01 UTC — Gates F0/F1/F2/F4/F7
+
+| Cambio/evidencia | Archivos / verificación |
+|---|---|
+| F0: nueva medición solo lectura del host | 6 CPU, 11 GiB RAM, 3.5 GiB libres (99% usado), 3.1 GiB disponibles, swap 2 GiB con 236 KiB libres. No se limpiaron imágenes/volúmenes ni se inició backup/build nativo. |
+| F1 OC-06: probe aislado de revisión de precio A2 | `apps/commerce-api/scripts/verify-price-revision.mjs`. Verifica API/Postgres loopback antes de mutaciones; consulta región primero y devuelve `unsupported` antes de carrito/cotización si falta EUR; rama viable restaura y compara cada campo de la escala original. No se ejecutó. `node --check` y Prettier pasan. |
+| F2 OC-04: lint y formato incremental | `eslint.config.mjs`, `.prettierrc.json`, `.prettierignore`, `package.json`, lockfile y CI. ESLint 9.39.2 con reglas por stack; `pnpm lint` → 0 errores/36 warnings; `pnpm format:check` → PASS; install de lockfile congelado → PASS (modo `--lockfile-only`). Markdown y lockfile excluidos con motivo documentado. |
+| F4/F7: controles de compra accesibles | `apps/buyer-app/components/cart-item.tsx` y `components/checkout/payment-step.tsx`: etiquetas/roles para cantidad/eliminación, iconos minus/plus/check y estado `radio/checked`. `pnpm typecheck` → 11/11; `pnpm test` → 4/4. TalkBack no probado. |
+| F4 OC-07: procedimiento de tracking aislado | `docs/mobile/order-tracking-verification.md`: contrato sintético, workflow solo en PostgreSQL/Redis desechables con `run_id`, propiedad buyer, logs saneados y descarte integral. No se ejecutó ni se llamó API/DB. |
+| Web/APK: respuesta HTTP externa | `catalogo.eav-labs.com`, `tienda.eav-labs.com`, `negocio.eav-labs.com` y el APK publicado responden 200. El gateway no expone healthchecks bajo sus rutas públicas; no se toma un 404 a `/health` como fallo de producto. Esto no valida render visual ni compra. |
+
+`pnpm lint`, `pnpm format:check`, `pnpm test`, `pnpm typecheck`, `node --check` del probe y `git diff --check` pasan. No se hizo build ni despliegue por el espacio disponible. Las fases F0/F1/F2/F4/F7 siguen parciales; backup/restore, Android/iOS/TalkBack, 500 de Kickz/B1, tracking runtime, ETL, checkout UI, UAT y gates de producción permanecen abiertos. `references/` continúa excluida.

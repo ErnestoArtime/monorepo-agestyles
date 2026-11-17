@@ -1,0 +1,18 @@
+**/node_modules/**
+**/references/**
+**/.expo/**
+**/.next/**
+**/.nx/**
+**/.turbo/**
+**/android/**
+**/build/**
+**/coverage/**
+**/dist/**
+**/ios/**
+
+# Markdown has no agreed repository baseline yet; add docs after a style decision.
+**/*.md
+**/*.mdx
+
+# pnpm owns the generated lockfile layout.
+pnpm-lock.yaml

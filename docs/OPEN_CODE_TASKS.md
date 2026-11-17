@@ -44,8 +44,9 @@ Comprobar toolchain (Node, Java, Android SDK, Gradle), configuración Expo y dis
 
 ### OC-04 — Configuración incremental de lint y formato para F2
 
-**Estado:** lista
+**Estado:** completada por Codex (17 nov 2026)
 **Prioridad:** P1
+**Resultado:** ESLint 9.39.2 con reglas base JS/TS y ajustes Expo/Next por app; Prettier `format:check` sobre archivos modificados con `FORMAT_BASE_REF` en CI. `pnpm lint` → 0 errores y 36 advertencias visibles; `pnpm format:check` → PASS. `.prettierignore` explica Markdown y lockfile generados; no se reformateó la base completa. El CI ejecuta ambos checks después de instalación congelada.
 **Archivos permitidos:** configuración de raíz (`package.json`, `pnpm-lock.yaml`, `nx.json`, `.github/workflows/ci.yml`) y archivos de configuración nuevos para ESLint/Prettier. Si aparece una infracción, añadir una lista concreta de archivos; no reformatear toda la base.
 
 Definir una configuración mantenible para TypeScript/Expo/Next/Medusa y conectar checks reales a CI. Primero medir compatibilidad con los paquetes ya instalados y la cobertura que ofrecen las configuraciones oficiales de cada stack. No añadir comandos vacíos ni usar `nx format:check` sin un formatter instalado. Si lograr una única regla completa exige un cambio masivo o decisiones de estilo incompatibles, proponer una implantación por etapas con cobertura explícita.
@@ -68,9 +69,10 @@ La auditoría es de lectura: no instalar paquetes, cambiar código de aplicació
 
 ### OC-06 — Aislar el probe de cambio de precio para F1
 
-**Estado:** lista para OpenCode
+**Estado:** completada por Codex (17 nov 2026; script no ejecutado)
 **Prioridad:** P1
 **Archivos permitidos:** `apps/commerce-api/scripts/verify-price-revision.mjs` (nuevo). No modificar `package.json`, lockfile, API, seed, región del vendedor ni datos del laboratorio.
+**Resultado:** nuevo verificador limitado a A2 que valida host/API/PostgreSQL loopback, lee regiones antes de crear carrito/cotización y termina `unsupported` sin esas escrituras si no existe EUR. La rama EUR guarda y restaura la escala completa, verifica `409/requoted` y comparación exacta; no acepta la cotización ni toca pedidos, pagos o inventario. `node --check`, Prettier y `git diff --check` pasan. No se ejecutó contra el laboratorio.
 
 `verify-order-quotes.mjs` contiene un cambio reversible de precio A2, pero está combinado con la aceptación de carrito A2+B2, creación de pedidos/grupo, cambios temporales de stock y expiración. Crear un script dedicado que pruebe únicamente la revisión de cotización después de cambiar una oferta A2.
 
@@ -82,9 +84,10 @@ No ejecutar el nuevo script contra el laboratorio. El estado compartido registra
 
 ### OC-07 — Diseño seguro de verificación para tracking F4
 
-**Estado:** lista para OpenCode
+**Estado:** completada por Codex (17 nov 2026; procedimiento no ejecutado)
 **Prioridad:** P1
 **Archivos permitidos:** `docs/mobile/order-tracking-verification.md` (nuevo). Revisar `apps/commerce-api/src/api/store/orders/[id]/tracking/route.ts` y `apps/commerce-api/src/scripts/verify-order-tracking.ts` en solo lectura.
+**Resultado:** procedimiento separado en contrato sintético, workflow sobre PostgreSQL/Redis desechables con `run_id` y comprobación runtime de una imagen identificada. Exige customer dueño/ajeno/anónimo, fixture sin fulfillments, logs saneados y descartar los volúmenes completos; no declara publicada la ruta. No se llamó API/DB ni se ejecutó el verificador.
 
 Preparar un plan de verificación separado en (a) prueba de contrato de la ruta con consultas/respuestas sintéticas, y (b) prueba de workflows reales únicamente en PostgreSQL/Redis desechables con fixtures identificados por `run_id`. La ruta fuente existe, pero el servicio publicado respondió `Cannot GET`; no asumir que el deploy la contiene. El verificador actual elige pedidos con relaciones de fulfillment potencialmente nulas, crea un envío real y luego intenta revertir marcadores y cancelar: una reversión que no está soportada de forma fiable.
 
@@ -94,9 +97,10 @@ Preparar un plan de verificación separado en (a) prueba de contrato de la ruta 
 
 ### OC-08 — Diagnóstico del 500 de pedidos en Kickz/B2
 
-**Estado:** lista para OpenCode
+**Estado:** diagnóstico estático completado por Codex (17 nov 2026; causa raíz abierta)
 **Prioridad:** P1
 **Archivos permitidos:** solo lectura para `apps/commerce-api/**`, `infra/compose/**`, `package.json` y los manifiestos de Mercur/Medusa instalados. Informe nuevo: `docs/lab/kickz-orders-500.md`. Handoff: `docs/CODEX_HANDOFF.md`.
+**Resultado:** `docs/lab/kickz-orders-500.md` confirma que la query de Mercur añade campos de relaciones anidadas incluso con `?fields=id`; no hay stack trace persistido disponible. El diagnóstico no confirma causa raíz ni cierra F1. Sin requests, escrituras, cambios de servicios o datos.
 
 La última ejecución de `corepack pnpm lab:verify:kickz-roles` falló al esperar 200 de `GET /vendor/orders?limit=20&fields=id,display_id,status,total` para el owner de Kickz/B1; el API devolvió 500 `An unknown error occurred`. En una comprobación posterior de solo lectura con el mismo owner, Kickz/B1 devuelve 500 tanto con campos predeterminados como con `fields=id`; B2 devuelve 200 para ambas variantes. Esto acota el fallo al alcance de B1 o a sus pedidos/relaciones, no a un campo solicitado concreto. La matriz Sole Society/A2 pasó 54/54 en el corte anterior. La limpieza `finally` del verificador retiró las membresías temporales.
 
@@ -115,9 +119,18 @@ Determinar si existe una diferencia entre la consulta de pedidos de Kickz y la o
 - Gateways buyer/seller: ambos usan el API vigente `19081`, permiten las rutas Store API requeridas por sus apps y reenvían `idempotency-key`; categorías y directorio de vendedor están disponibles para SSR público. No exponen Admin API.
 - CI: `pnpm test` ejecuta cuatro paquetes y precede al typecheck en GitHub Actions; 11 typechecks pasan.
 - OC-02: decisión de precondición y transiciones puras de cotización en `@agestyles/domain`, consumidas por la ruta de aceptación; prueba incluida en el target del paquete y de Nx.
+- OC-04: lint/formato real en CI con exclusiones explícitas y 36 advertencias iniciales visibles.
+- OC-06: probe price-only aislado preparado con guardas y restauración exacta; no ejecutado.
+- OC-07: procedimiento seguro para verificar tracking en datos sintéticos y entornos desechables; no ejecutado.
+- OC-08: 500 de pedidos Kickz acotado por revisión estática; la causa raíz aún requiere captura de stack trace.
+- A11y buyer: botones de cantidad/eliminación y opciones de pago tienen rol/estado/etiqueta accesible; typecheck pasa. TalkBack aún requiere dispositivo.
 
 ## Trabajo que sigue teniendo dueño en la sesión Codex
 
-- Consolidar los resultados recientes en el registro de fases y continuar con tareas del plan que no dependan del destino de backup, dispositivos o go/no-go.
+- Conseguir un destino cifrado con capacidad para completar F0; restaurar el backup aislado antes de contrastar esquema/ETL F6.
+- Capturar el 500 de Kickz/B1 en una ejecución desechable y repetir la matriz solo después de corregir/entenderlo.
+- Crear espacio suficiente para builds nativos y disponer de Android/macOS-iOS para prueba visual/TalkBack.
+- Desplegar el endpoint de tracking con un SHA identificable cuando haya margen de disco y completar su verificación runtime.
+- Completar checkout visual web, pruebas E2E/BOLA/carga/media/rollback, UAT y decisión go/no-go. F8 sigue sin autorizar cutover.
 
 Las áreas ya publicadas están cerradas para nuevos cambios en paralelo salvo que una incidencia verificable las reabra. No modificar archivos con cambios pendientes en `git status` sin revisar el handoff.
