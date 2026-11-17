@@ -291,7 +291,7 @@ async function assertHealthyApi() {
 async function applyBundle(bundle, variantsByProduct, verifiedMedia, sourceUrls) {
   assertLoopbackWriteGuards()
   const sellerId = production ? process.env.AGESTYLES_PRODUCTION_OFFICIAL_SELLER_ID : undefined
-  if (production && !/^seller_[a-zA-Z0-9]+$/.test(sellerId ?? "")) {
+  if (production && !/^sel_[a-zA-Z0-9]+$/.test(sellerId ?? "")) {
     fail("official_seller_id_required")
   }
   await assertHealthyApi()
