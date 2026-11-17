@@ -2,6 +2,10 @@ name: Publish commerce API image
 
 on:
   workflow_dispatch:
+  workflow_run:
+    workflows: ["Monorepo checks"]
+    branches: [main]
+    types: [completed]
 
 permissions:
   actions: read
@@ -14,11 +18,20 @@ concurrency:
 
 jobs:
   publish:
-    if: github.ref == 'refs/heads/main'
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-latest
+    env:
+      RELEASE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
     steps:
       - name: Check out selected commit
         uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_SHA }}
 
       - name: Require successful CI on this exact main commit
         env:
@@ -29,8 +42,8 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${GH_TOKEN}" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?head_sha=${GITHUB_SHA}&per_page=50")"
-          successful_runs="$(jq --arg sha "${GITHUB_SHA}" '[.workflow_runs[] | select(.head_sha == $sha and .event == "push" and .head_branch == "main" and .status == "completed" and .conclusion == "success")] | length' <<<"${response}")"
+            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?head_sha=${RELEASE_SHA}&per_page=50")"
+          successful_runs="$(jq --arg sha "${RELEASE_SHA}" '[.workflow_runs[] | select(.head_sha == $sha and .event == "push" and .head_branch == "main" and .status == "completed" and .conclusion == "success")] | length' <<<"${response}")"
           if [[ "${successful_runs}" -lt 1 ]]; then
             echo "No successful Monorepo checks run exists for this exact main commit." >&2
             exit 1
@@ -79,7 +92,7 @@ jobs:
       - name: Create unique SHA image tag
         id: image-tag
         run: |
-          tag="sha-${GITHUB_SHA}-run-${GITHUB_RUN_ID}-attempt-${GITHUB_RUN_ATTEMPT}"
+          tag="sha-${RELEASE_SHA}-run-${GITHUB_RUN_ID}-attempt-${GITHUB_RUN_ATTEMPT}"
           echo "value=${tag}" >> "${GITHUB_OUTPUT}"
 
       - name: Publish commerce API runtime image
@@ -92,7 +105,7 @@ jobs:
           tags: ${{ steps.registry.outputs.image }}:${{ steps.image-tag.outputs.value }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.revision=${{ env.RELEASE_SHA }}
             org.opencontainers.image.title=AgeStyles Commerce API
           secret-files: |
             lab_env=${{ steps.build-env.outputs.path }}
