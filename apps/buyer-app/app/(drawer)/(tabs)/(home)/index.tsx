@@ -72,7 +72,7 @@ export default function HomeScreen() {
       setProducts(fetchedProducts);
     } catch (err) {
       console.error("Failed to fetch products:", err);
-      setError("Failed to load products. Please try again.");
+      setError("No se pudieron cargar los productos. Inténtalo de nuevo.");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -91,7 +91,7 @@ export default function HomeScreen() {
   };
 
   if (loading) {
-    return <Loading message="Loading products..." />;
+    return <Loading message="Cargando productos..." />;
   }
 
   if (error) {
@@ -113,7 +113,7 @@ export default function HomeScreen() {
             onPress={fetchProducts}
             style={[styles.retryButton, { backgroundColor: colors.tint }]}
           >
-            <Text style={[styles.retryText, { color: colors.onTint }]}>Try again</Text>
+            <Text style={[styles.retryText, { color: colors.onTint }]}>Reintentar</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -180,10 +180,10 @@ export default function HomeScreen() {
             >
               <Icon name="search" size={19} color={colors.icon} />
               <TextInput
-                accessibilityLabel="Search products"
+                accessibilityLabel="Buscar productos"
                 value={searchTerm}
                 onChangeText={setSearchTerm}
-                placeholder="Search products"
+                placeholder="Buscar productos"
                 placeholderTextColor={colors.icon}
                 returnKeyType="search"
                 style={[styles.searchInput, { color: colors.text }]}
@@ -191,7 +191,7 @@ export default function HomeScreen() {
               {searchTerm ? (
                 <TouchableOpacity
                   accessibilityRole="button"
-                  accessibilityLabel="Clear search"
+                  accessibilityLabel="Borrar búsqueda"
                   onPress={() => setSearchTerm("")}
                 >
                   <Icon name="close" size={18} color={colors.icon} />
@@ -226,7 +226,7 @@ export default function HomeScreen() {
                           { color: active ? colors.onTint : colors.text },
                         ]}
                       >
-                        {category ?? "All products"}
+                        {category ?? "Todos los productos"}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -235,7 +235,9 @@ export default function HomeScreen() {
             ) : null}
             <View style={styles.sectionHeading}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                {searchTerm || selectedCategory ? "Catalog results" : "Discover something special"}
+                {searchTerm || selectedCategory
+                  ? "Resultados del catálogo"
+                  : "Descubre algo especial"}
               </Text>
               <Text style={[styles.resultCount, { color: colors.icon }]}>
                 {visibleProducts.length} products
@@ -253,8 +255,8 @@ export default function HomeScreen() {
             <Icon name="search" size={24} color={colors.icon} />
             <Text style={[styles.emptyText, { color: colors.text }]}>
               {products.length === 0
-                ? "No products are available yet"
-                : "No products match these filters"}
+                ? "Aún no hay productos disponibles"
+                : "Ningún producto coincide con estos filtros"}
             </Text>
           </View>
         }

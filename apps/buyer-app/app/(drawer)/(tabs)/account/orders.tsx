@@ -63,7 +63,9 @@ export default function OrdersScreen() {
   if (!customer) {
     return (
       <View style={[styles.center, styles.signedOut, { backgroundColor: colors.background }]}>
-        <Text style={[styles.title, { color: colors.text }]}>Inicia sesión para ver tus compras</Text>
+        <Text style={[styles.title, { color: colors.text }]}>
+          Inicia sesión para ver tus compras
+        </Text>
         <Button
           title="Iniciar sesión"
           onPress={() => router.push("/(drawer)/(tabs)/account/login")}

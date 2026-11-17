@@ -58,15 +58,17 @@ export default function OrderConfirmationScreen() {
   }, [clearCart]);
 
   if (loading) {
-    return <Loading message="Loading order details..." />;
+    return <Loading message="Cargando detalles del pedido..." />;
   }
 
   if (error || !order) {
     return (
       <View style={[styles.centerContainer, { backgroundColor: colors.background }]}>
-        <Text style={[styles.errorText, { color: colors.text }]}>{error || "Order not found"}</Text>
+        <Text style={[styles.errorText, { color: colors.text }]}>
+          {error || "Pedido no encontrado"}
+        </Text>
         <Button
-          title="Go to Home"
+          title="Ir al inicio"
           onPress={() => {
             // Reset to home screen and clear the navigation stack
             router.dismissAll();
@@ -85,13 +87,13 @@ export default function OrderConfirmationScreen() {
           <Icon name="check" size={28} color={colors.onSuccess} />
         </View>
 
-        <Text style={[styles.title, { color: colors.text }]}>Order Confirmed!</Text>
+        <Text style={[styles.title, { color: colors.text }]}>¡Pedido confirmado!</Text>
         <Text style={[styles.subtitle, { color: colors.icon }]}>
-          We have received your order and will process it as soon as possible.
+          Hemos recibido tu pedido y lo procesaremos lo antes posible.
         </Text>
 
         <Button
-          title="Continue Shopping"
+          title="Seguir comprando"
           onPress={() => {
             // Reset to home screen and clear the navigation stack
             router.dismissAll();

@@ -28,12 +28,12 @@ export default function CartScreen() {
         <View style={[styles.emptyMark, { backgroundColor: colors.cardBackground }]}>
           <Icon name="shoppingBag" size={32} color={colors.tint} />
         </View>
-        <Text style={[styles.emptyTitle, { color: colors.text }]}>Your cart is empty</Text>
+        <Text style={[styles.emptyTitle, { color: colors.text }]}>Tu carrito está vacío</Text>
         <Text style={[styles.emptyText, { color: colors.icon }]}>
-          Add some products to get started
+          Agrega productos para comenzar
         </Text>
         <Button
-          title="Browse Products"
+          title="Explorar productos"
           onPress={() => router.push("/")}
           style={styles.browseButton}
         />
@@ -93,11 +93,7 @@ export default function CartScreen() {
             </Text>
           </View>
         </View>
-        <Button
-          title="Proceed to Checkout"
-          onPress={() => router.push("/checkout")}
-          loading={loading}
-        />
+        <Button title="Ir a pagar" onPress={() => router.push("/checkout")} loading={loading} />
       </View>
     </View>
   );

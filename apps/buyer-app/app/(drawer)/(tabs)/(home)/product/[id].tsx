@@ -59,7 +59,7 @@ export default function ProductDetailsScreen() {
       }
     } catch (err) {
       console.error("Failed to fetch product:", err);
-      setError("Failed to load product. Please try again.");
+      setError("No se pudo cargar el producto. Inténtalo de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -112,7 +112,7 @@ export default function ProductDetailsScreen() {
       })
       .catch(() => {
         if (!active) return;
-        setToastMessage("Failed to load seller offers");
+        setToastMessage("No se pudieron cargar las ofertas de las tiendas");
         setToastVisible(true);
       });
     return () => {
@@ -146,7 +146,9 @@ export default function ProductDetailsScreen() {
 
   const handleAddToCart = async () => {
     if (!selectedOffer) {
-      setToastMessage(shouldShowOptions ? "Please select all options" : "Variant not available");
+      setToastMessage(
+        shouldShowOptions ? "Selecciona todas las opciones" : "Variante no disponible",
+      );
       setToastVisible(true);
       return;
     }
@@ -154,10 +156,10 @@ export default function ProductDetailsScreen() {
     try {
       setAddingToCart(true);
       await addToCart(selectedOffer.id, quantity);
-      setToastMessage("Product added to cart!");
+      setToastMessage("¡Producto agregado al carrito!");
       setToastVisible(true);
     } catch {
-      setToastMessage("Failed to add product to cart");
+      setToastMessage("No se pudo agregar el producto al carrito");
       setToastVisible(true);
     } finally {
       setAddingToCart(false);
@@ -172,7 +174,7 @@ export default function ProductDetailsScreen() {
     return (
       <View style={[styles.centerContainer, { backgroundColor: colors.background }]}>
         <Text style={[styles.errorText, { color: colors.text }]}>
-          {error || "Product not found"}
+          {error || "Producto no encontrado"}
         </Text>
       </View>
     );
@@ -296,7 +298,7 @@ export default function ProductDetailsScreen() {
             <TouchableOpacity
               style={[styles.quantityButton, { borderColor: colors.icon }]}
               accessibilityRole="button"
-              accessibilityLabel="Decrease quantity"
+              accessibilityLabel="Reducir cantidad"
               disabled={quantity <= 1}
               onPress={() => setQuantity(Math.max(1, quantity - 1))}
             >
@@ -306,7 +308,7 @@ export default function ProductDetailsScreen() {
             <TouchableOpacity
               style={[styles.quantityButton, { borderColor: colors.icon }]}
               accessibilityRole="button"
-              accessibilityLabel="Increase quantity"
+              accessibilityLabel="Aumentar cantidad"
               onPress={() => setQuantity(quantity + 1)}
             >
               <Icon name="plus" size={17} color={colors.text} />
@@ -315,7 +317,7 @@ export default function ProductDetailsScreen() {
         </View>
 
         <Button
-          title={isInStock ? "Add to Cart" : "Out of Stock"}
+          title={isInStock ? "Agregar al carrito" : "Agotado"}
           onPress={handleAddToCart}
           loading={addingToCart}
           disabled={!isInStock}
