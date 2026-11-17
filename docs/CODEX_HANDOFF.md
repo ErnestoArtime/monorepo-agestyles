@@ -591,3 +591,8 @@ Verificación local: `corepack pnpm migration:test` → 14/14; `corepack pnpm te
 ## F1 — Hallazgo estático adicional de `/vendor/orders` — 17 de noviembre de 2026
 
 El manifiesto de Mercur 2.4.1 muestra que `/vendor/orders` filtra por seller y luego usa una proyección con relaciones profundas predeterminadas aunque el cliente pida `fields=id`. El paquete instalado comenta que ciertas expansiones profundas pueden causar fallos de query. Es una hipótesis compatible con el 500 de Kickz/B1, no causa raíz probada; no se modifica upstream ni se cambian los defaults, que podrían retirar datos requeridos por la UI. El siguiente paso sigue siendo capturar stack trace en una reproducción desechable autorizada; no se llamó al API/DB ni se leyó configuración secreta.
+
+
+## F1/F5/F7 — Contrato sintético del resolver de permisos seller — 17 de noviembre de 2026
+
+Se añadió `apps/commerce-api/test/seller-permissions.test.mjs` al target `@agestyles/commerce-api:test` (runner glob `node --test test/*.test.mjs`). Comprueba permisos declarados para owner, inventory manager y SUPPORT/viewer, superficie admin, actor/superficie inválidos, rol desconocido y la consulta de pertenencia compuesta por membership ID + member ID + seller ID, que deniega combinaciones cruzadas. Los mocks son en memoria; no se llama a servicios, DB ni red. La suite del API pasa 6/6 incluyendo tracking; `pnpm test` 8/8, `pnpm typecheck` 12/12, lint sin errores (20 advertencias preexistentes), formato y `git diff --check` PASS. Esto fortalece el contrato pero no sustituye BOLA/runtime en el laboratorio ni las pruebas UI/UAT pendientes.
