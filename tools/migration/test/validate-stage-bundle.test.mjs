@@ -201,6 +201,93 @@ test("creates a default variant when legacy variant options are empty", async ()
   }
 })
 
+test("deduplicates identical image content while preserving product media order and primary flags", async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "agestyles-deduplicated-media-"))
+  const input = path.join(root, "projection")
+  const output = path.join(root, "bundle")
+  const { mkdir } = await import("node:fs/promises")
+  await mkdir(input)
+  const sharedHash = "b".repeat(64)
+  const projection = {
+    categories: [{ id: "cat-1", slug: "clothing", name: "Clothing" }],
+    subcategories: [],
+    products: [
+      { id: "prod-1", name: "One", category_slug: "clothing", currency: "USD" },
+      { id: "prod-2", name: "Two", category_slug: "clothing", currency: "USD" },
+    ],
+    image_metadata: [
+      {
+        id: "image-1",
+        product_id: "prod-1",
+        sha256: sharedHash,
+        mime_type: "image/jpeg",
+        display_order: 3,
+        is_primary: true,
+      },
+      {
+        id: "image-2",
+        product_id: "prod-1",
+        sha256: "c".repeat(64),
+        mime_type: "image/png",
+        display_order: 1,
+        is_primary: false,
+      },
+      {
+        id: "image-3",
+        product_id: "prod-2",
+        sha256: sharedHash,
+        mime_type: "image/jpeg",
+        display_order: 0,
+        is_primary: true,
+      },
+    ],
+  }
+  try {
+    for (const [name, rows] of Object.entries(projection)) {
+      await writeFile(path.join(input, `${name}.json`), `${JSON.stringify(rows)}\n`)
+    }
+    const result = await projectCatalog(input, output, { exportId: "deduplicated-media" })
+    const media = JSON.parse(await readFile(path.join(output, "media_objects.json"), "utf8"))
+    const products = JSON.parse(await readFile(path.join(output, "products.json"), "utf8"))
+    assert.equal(media.length, 2)
+    assert.equal(result.reconciliation.source_counts.unique_media_hashes, 2)
+    assert.equal(result.reconciliation.source_counts.duplicate_media_rows, 1)
+    assert.equal(result.reconciliation.count_matches.media_objects, true)
+    assert.deepEqual(
+      products[0].references
+        .filter((reference) => reference.relation === "media")
+        .map(({ legacy_id, display_order, is_primary }) => ({
+          legacy_id,
+          display_order,
+          is_primary,
+        })),
+      [
+        { legacy_id: `media:${"c".repeat(64)}`, display_order: 1, is_primary: false },
+        { legacy_id: `media:${sharedHash}`, display_order: 3, is_primary: true },
+      ],
+    )
+    assert.equal(
+      products[1].references.find((reference) => reference.relation === "media").legacy_id,
+      `media:${sharedHash}`,
+    )
+    assert.equal((await validateStageBundle(output, { profile: "catalog-only" })).status, "valid")
+
+    projection.image_metadata[2].mime_type = "image/webp"
+    await writeFile(
+      path.join(input, "image_metadata.json"),
+      `${JSON.stringify(projection.image_metadata)}\n`,
+    )
+    await assert.rejects(
+      projectCatalog(input, path.join(root, "conflicting-bundle"), {
+        exportId: "deduplicated-media-conflict",
+      }),
+      /media_hash_mime_conflict/,
+    )
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
 test("projection refuses unresolved relations, malformed options, image URLs, and existing outputs", async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), "agestyles-catalog-projection-"))
   const input = path.join(root, "projection")

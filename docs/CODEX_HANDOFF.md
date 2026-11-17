@@ -566,6 +566,14 @@ Este avance solo mejora el preflight sintético. F0/F6 reales siguen bloqueadas 
 
 CI del commit `c79f5f7` [run 44056377199](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44056377199) terminó success: lint, formato, tests, typecheck, build aislado de Medusa y exports web Buyer/Business/Storefront.
 
+La revisión del proyector encontró que una lista de opciones vacía (`[]` o la cadena JSON `"[]"`) producía cero variantes, pese a que el contrato exige `__default__` cuando el producto no tiene opciones. Se corrigió la normalización y se añadieron pruebas para ambas representaciones. Verificación: `migration:test` 12/12, `pnpm test` 8/8, ESLint/Prettier dirigidos y formato PASS; sin conexión ni exportación de datos reales.
+
+## F6 — Deduplicación de medios por contenido — 17 de noviembre de 2026
+
+El proyector de catálogo ahora crea un objeto staging por SHA-256 compartido, conserva `display_order` y `is_primary` en cada referencia producto→medio, rechaza IDs de imagen fuente repetidos y rechaza el mismo hash declarado con MIME incompatible. La conciliación reporta hashes únicos y filas de imagen duplicadas, y compara medios staging con hashes únicos. Se añadió prueba sintética con dos productos y orden/primaria distintos; el validador `catalog-only` la acepta.
+
+Verificación local: `corepack pnpm migration:test` → 13/13; `corepack pnpm test` → 8/8 targets; ESLint dirigido, `corepack pnpm format:check`, Prettier dirigido y `git diff --check` → PASS. No hubo conexión a Supabase/PostgreSQL, lectura/exportación de filas reales, descarga de medios ni importación. F6 real sigue pendiente de backup/restore y export/import aprobados.
+
 ## F5 — Exportación del actor comprador como paquete compartido — 17 de noviembre de 2026
 
 Business ahora declara `@agestyles/features-buyer` como dependencia workspace y consume `cart` y `business-buyer-session` por exports públicos del paquete, no por rutas internas a `packages/**/src`. Nx refleja la arista `@agestyles/business-app` → `@agestyles/features-buyer`. Se añadieron pruebas sintéticas para login customer, recuperación del customer, logout delegado al actor customer, desafío MFA sin lectura de customer y sesión expirada que devuelve `null`.

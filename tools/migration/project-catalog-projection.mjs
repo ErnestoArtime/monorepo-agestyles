@@ -108,6 +108,7 @@ async function readProjection(inputDir, name) {
 
 function normalizeMedia(rows, products) {
   const productIds = new Set(products.map((row) => String(row.id)))
+  const mediaIds = new Set()
   return rows.map((row) => {
     if (!object(row) || !productIds.has(String(row.product_id))) fail("invalid_media_projection")
     if (Object.keys(row).some((key) => /url/i.test(key))) fail("media_url_field_forbidden")
@@ -115,8 +116,11 @@ function normalizeMedia(rows, products) {
     if (typeof row.mime_type !== "string" || !row.mime_type.startsWith("image/")) {
       fail("media_image_mime_type_required")
     }
+    const mediaId = stableId("media-source", row.id)
+    if (mediaIds.has(mediaId)) fail("duplicate_media_id")
+    mediaIds.add(mediaId)
     return {
-      legacy_id: stableId("media", row.id),
+      legacy_id: stableId("media", row.sha256),
       references: [],
       payload: { sha256: row.sha256, mime_type: row.mime_type },
       product_id: String(row.product_id),
@@ -184,12 +188,18 @@ function normalizeProducts(products, categories, media) {
     const publicationStatus = source.publication_status ?? "draft"
     if (!PUBLICATION_STATES.has(publicationStatus)) fail("product_publication_status_unsupported")
 
-    const mediaRefs = (mediaByProduct.get(id) ?? [])
-      .sort((a, b) => a.display_order - b.display_order)
-      .map((item) => item.legacy_id)
+    const mediaRefs = (mediaByProduct.get(id) ?? []).sort(
+      (a, b) => a.display_order - b.display_order,
+    )
     const references = [{ relation: "category", entity: "categories", legacy_id: categoryId }]
-    for (const legacyId of mediaRefs) {
-      references.push({ relation: "media", entity: "media_objects", legacy_id: legacyId })
+    for (const item of mediaRefs) {
+      references.push({
+        relation: "media",
+        entity: "media_objects",
+        legacy_id: item.legacy_id,
+        display_order: item.display_order,
+        is_primary: item.is_primary,
+      })
     }
     const payload = {
       title: String(source.name ?? ""),
@@ -242,6 +252,9 @@ function buildReconciliation({ categories, subcategories, products, imageMetadat
     subcategories: subcategories.length,
     products: products.length,
     image_metadata: imageMetadata.length,
+    unique_media_hashes: new Set(imageMetadata.map((row) => row.sha256)).size,
+    duplicate_media_rows:
+      imageMetadata.length - new Set(imageMetadata.map((row) => row.sha256)).size,
     products_with_store_id: products.filter(
       (product) =>
         product.store_id !== null && product.store_id !== undefined && product.store_id !== "",
@@ -270,7 +283,8 @@ function buildReconciliation({ categories, subcategories, products, imageMetadat
     products: products.length === stagedCounts.products,
     variants:
       explicitVariantCounts.reduce((sum, count) => sum + count, 0) === stagedCounts.variants,
-    media_objects: imageMetadata.length === stagedCounts.media_objects,
+    media_objects:
+      new Set(imageMetadata.map((row) => row.sha256)).size === stagedCounts.media_objects,
   }
 
   return {
@@ -299,16 +313,23 @@ export async function projectCatalog(inputDir, outputDir, { exportId } = {}) {
   const normalizedCategories = normalizeCategories(categories, subcategories)
   const media = normalizeMedia(imageMetadata, products)
   const normalizedProducts = normalizeProducts(products, normalizedCategories, media)
-  const datasets = new Map([
-    ["categories", normalizedCategories.rows],
-    [
-      "media_objects",
-      media.map((record) => ({
+  const mediaObjects = new Map()
+  for (const record of media) {
+    const existing = mediaObjects.get(record.legacy_id)
+    if (existing && existing.payload.mime_type !== record.payload.mime_type) {
+      fail("media_hash_mime_conflict")
+    }
+    if (!existing) {
+      mediaObjects.set(record.legacy_id, {
         legacy_id: record.legacy_id,
         references: record.references,
         payload: record.payload,
-      })),
-    ],
+      })
+    }
+  }
+  const datasets = new Map([
+    ["categories", normalizedCategories.rows],
+    ["media_objects", [...mediaObjects.values()]],
     ["products", normalizedProducts.productRows],
     ["variants", normalizedProducts.variantRows],
   ])
