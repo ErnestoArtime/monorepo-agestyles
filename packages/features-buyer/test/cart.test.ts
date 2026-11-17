@@ -87,22 +87,42 @@ test("clear creates and persists a new cart when a region is available", async (
   assert.equal(calls[0]?.path, "/store/carts");
 });
 
-test("transfer persists the new cart ID and addOffer sends the selected seller offer", async () => {
+test("transfer persists the cart and addOffer appends offers from two sellers", async () => {
   const transferredCart = { id: "cart_transferred", region_id: "reg_eu" };
-  const addedCart = { id: "cart_transferred", items: [{ id: "line_1" }] };
+  const cartWithSellerA = { id: "cart_transferred", items: [{ id: "line_a" }] };
+  const cartWithBothSellers = {
+    id: "cart_transferred",
+    items: [{ id: "line_a" }, { id: "line_b" }],
+  };
   const { feature, calls, values } = createFixture([
     { cart: transferredCart },
-    { cart: addedCart },
+    { cart: cartWithSellerA },
+    { cart: cartWithBothSellers },
   ]);
 
   assert.deepEqual(await feature.transfer("cart_guest"), transferredCart);
   assert.equal(values.get("buyer.cart"), transferredCart.id);
-  assert.deepEqual(await feature.addOffer("cart_transferred", "offer_seller_b", 2), addedCart);
+  assert.deepEqual(
+    await feature.addOffer("cart_transferred", "offer_seller_a", 1),
+    cartWithSellerA,
+  );
+  assert.deepEqual(
+    await feature.addOffer("cart_transferred", "offer_seller_b", 2),
+    cartWithBothSellers,
+  );
   assert.deepEqual(calls[0], {
     path: "/store/carts/cart_guest/transfer",
     options: { method: "POST", query: { fields: "+items.*" } },
   });
   assert.deepEqual(calls[1], {
+    path: "/store/carts/cart_transferred/line-items",
+    options: {
+      method: "POST",
+      query: { fields: "+items.*" },
+      body: { offer_id: "offer_seller_a", quantity: 1 },
+    },
+  });
+  assert.deepEqual(calls[2], {
     path: "/store/carts/cart_transferred/line-items",
     options: {
       method: "POST",
