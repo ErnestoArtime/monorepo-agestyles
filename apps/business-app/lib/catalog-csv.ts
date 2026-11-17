@@ -12,40 +12,20 @@ export type CatalogCsvParseResult = {
   errors: string[];
 };
 
-function splitCsvLine(line: string, delimiter: string): string[] {
-  const values: string[] = [];
-  let value = "";
-  let quoted = false;
-
-  for (let index = 0; index < line.length; index += 1) {
-    const character = line[index];
-    if (character === '"') {
-      if (quoted && line[index + 1] === '"') {
-        value += '"';
-        index += 1;
-      } else {
-        quoted = !quoted;
-      }
-    } else if (character === delimiter && !quoted) {
-      values.push(value.trim());
-      value = "";
-    } else {
-      value += character;
-    }
-  }
-
-  if (quoted) throw new Error("Hay un campo entre comillas que no se cerró.");
-  values.push(value.trim());
-  return values;
-}
-
 function detectDelimiter(header: string): string {
   const candidates = [";", ",", "\t"];
-  return (
-    candidates
-      .map((delimiter) => ({ delimiter, count: splitCsvLine(header, delimiter).length }))
-      .sort((left, right) => right.count - left.count)[0]?.delimiter ?? ";"
-  );
+  const counts = new Map(candidates.map((delimiter) => [delimiter, 0]));
+  let quoted = false;
+  for (let index = 0; index < header.length; index += 1) {
+    const character = header[index];
+    if (character === '"') {
+      if (quoted && header[index + 1] === '"') index += 1;
+      else quoted = !quoted;
+    } else if (!quoted && counts.has(character)) {
+      counts.set(character, (counts.get(character) ?? 0) + 1);
+    }
+  }
+  return candidates.sort((left, right) => counts.get(right)! - counts.get(left)!)[0] ?? ";";
 }
 
 function parseCsvRecords(

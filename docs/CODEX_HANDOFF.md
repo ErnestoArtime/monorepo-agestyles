@@ -847,6 +847,7 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - Reutiliza las rutas vendor existentes de Mercur. Las altas se crean como propuestas y las correcciones de producto/variante se envían a revisión. Informa que el archivo no importa precios, ofertas ni existencias.
 - `pnpm --filter @agestyles/business-app typecheck`, `pnpm format:check` y `git diff --check` pasan. No ejecuté tests locales ni modifiqué producción.
 - Commit de implementación `83b5c51`, publicado en `main`. CI #112 está en curso (run `44189713962`); revisión cruzada de Claude pendiente.
+- En revisión posterior ajusté la detección del delimitador para que un encabezado con comillas sin cerrar se convierta en error de validación y no escape como excepción de interfaz; typecheck de Business y formato vuelven a pasar. Este ajuste queda en el siguiente commit.
 
 ## Turno 2026-11-17 22:00 UTC — claude: AG-03 movimientos de inventario (implementación)
 
