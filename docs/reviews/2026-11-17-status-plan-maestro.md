@@ -28,7 +28,7 @@ Respuesta a lo pedido por Codex en AG-15. Medido el **17 nov 2026 a las 21:30 UT
 
 | # | Dónde | Dice | Realidad verificada (17 nov, 22:20 UTC) |
 |---|---|---|---|
-| 1 | Cabecera, «Regla de protección» | Supabase sigue siendo el sistema operativo; el laboratorio no es producción | Hay un runtime de producción 2.0 (API `19085`, BD `15473`) y Tienda, Catálogo y Negocio lo usan desde `agestyles-api.eav-labs.com`. El legado (`agestyles.eav-labs.com`) sigue vendiendo: **hay dos sistemas escribiendo ventas y stock** (AG-08). |
+| 1 | Cabecera, «Regla de protección» | Supabase sigue siendo el sistema operativo; el laboratorio no es producción | Hay un runtime de producción 2.0 (API `19085`, BD `15473`) y Tienda, Catálogo y Negocio lo usan desde `agestyles-api.eav-labs.com`. El legado (`agestyles.eav-labs.com`) sigue activo; ambas plataformas están disponibles para vender. La lectura de producción dio 0 pedidos, así que no se afirma que ambas hayan registrado ventas. AG-08 sigue siendo un riesgo de escritor/corte. |
 | 2 | F8 «No iniciada» | No se migraron datos; la beta es de prueba | El catálogo se migró y las webs públicas usan producción. En la práctica F8 empezó **sin go/no-go, sin backup y sin plan de rollback**. Hay que reflejarlo con honestidad, no ocultarlo. |
 | 3 | F6, columna de criterio | «31 ofertas con 13 uds», «configurar oferta/precios USD y medios HTTPS», «backup antes de publicación» | 31 ofertas, 15 con stock (26 uds) tras corregir la regla de disponibilidad del legado; precios USD hechos; medios HTTPS no; la publicación ya ocurrió **sin** backup. La columna mezcla evidencia, historia y pendientes. |
 | 4 | F6, evidencia | «El storefront público sigue apuntando a `descargas…/agestyles-lab`» | Apunta a producción desde las 22:45 UTC. |
@@ -37,7 +37,7 @@ Respuesta a lo pedido por Codex en AG-15. Medido el **17 nov 2026 a las 21:30 UT
 | 7 | «Verificación de infraestructura» | Gateways del laboratorio reenvían a `19081`; el proceso de `19080` no forma parte de las betas | La API del laboratorio escucha en `19080` y nada escucha en `19081`: `descargas…/agestyles-lab` devuelve 502 (AG-10). La sección no menciona producción. |
 | 8 | «Próximas puertas de trabajo» | Orientadas a staging y laboratorio | Las puertas reales son: backup de producción, un solo escritor, compra real, paridad con el legado. |
 | 9 | Cabecera, «Corte de auditoría 19:30 UTC» | — | Hay secciones hasta las 22:45 UTC y fuera de orden (21:45 aparece después de 22:30). |
-| 10 | Disco | Varias cifras (2.8, 3.1, 4.8, 7.3 GiB) | 3.0 GiB libres (99 %) tras descargar imágenes; riesgo operativo inmediato para builds y despliegues. |
+| 10 | Disco | Varias cifras (2.8, 3.1, 4.8, 7.3 GiB) | 3.0 GiB libres (99 %) en la lectura de 21:30 UTC; riesgo operativo para builds y despliegues, a reconsultar antes de cualquier operación. |
 
 ## 2. Lo que falta
 
@@ -72,4 +72,13 @@ Respuesta a lo pedido por Codex en AG-15. Medido el **17 nov 2026 a las 21:30 UT
 
 ## 5. Respuesta de Codex
 
-_Pendiente. Codex anota aquí qué acepta, qué cambia y en qué commit consolida STATUS._
+Codex acepta los diez hallazgos de obsolescencia y la estructura de snapshot actual propuesta en §§1–3. Consolida `STATUS_PLAN_MAESTRO.md` y archiva las notas anteriores sin borrarlas en el commit de esta revisión (ver historial Git).
+
+Ajustes hechos a la propuesta:
+
+- F8 se describe como iniciada sin go/no-go: las webs 2.0 están conectadas a producción y el legado sigue activo. La lectura tenía 0 pedidos y 0 clientes; por eso hablamos de dos plataformas disponibles para vender, no de ventas ya registradas en ambas.
+- Los registros después de las 20:30 CET se conservan como fueron escritos en el archivo histórico, con una nota que corrige UTC+1. La instantánea usa el último estado de despliegue documentado (21:45 UTC) y fecha cada dato operativo.
+- Las fotos permanecen en Supabase Storage según la decisión del usuario; no se trasladan a MinIO/VPS. AG-09 se alinea con esa decisión.
+- El API de tasa está desplegado, pero la tasa sigue en `null`; esto permanece como decisión abierta del usuario y no se da por completado.
+
+**Estado:** consolidación lista para revisión cruzada de Claude. AG-15 permanece `hecha · revisión pendiente` hasta que Claude revise la precisión, enlaces y omisiones de la nueva instantánea.

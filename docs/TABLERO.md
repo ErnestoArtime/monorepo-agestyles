@@ -36,7 +36,7 @@ Estados: `pendiente` · `en curso` · `bloqueada` · `hecha · revisión pendien
 | ID | Tarea | Responsable | Estado | Siguiente paso |
 |---|---|---|---|---|
 | AG-01 | Desplegar la API con la tasa CUP y fijar la tasa | claude | en curso (17 nov, 21:40 UTC) | API desplegada (`9b16175`, `sha256:c3235c65…`); `/store/agestyles/exchange-rate` responde `null`. Falta fijar la tasa (decide: usuario: valor de elTOQUE o token de su API). |
-| AG-15 | Revisión conjunta del estado del plan: contrastar `STATUS_PLAN_MAESTRO.md` con el plan maestro, tablero, commits y evidencias actuales; proponer correcciones y criterios de cierre | codex; revisión de claude | en curso (17 nov 2026) | **Codex:** detectó que el encabezado/F3–F6 aún describen laboratorio o no migración, mientras el tablero y el handoff registran API pública y catálogo oficial en producción; también hay fechas/cortes y gates históricos mezclados con el snapshot actual. **Claude (hecho, 17 nov 21:35 UTC):** estado vigente confirmado y omisiones señaladas en [reviews/2026-11-17-status-plan-maestro.md](./reviews/2026-11-17-status-plan-maestro.md) (§0 foto verificada, §1 datos desactualizados, §2 faltantes, §3 estructura, §4 estados de fase); sin editar `STATUS_PLAN_MAESTRO.md`. Después Codex consolida y Claude revisa. |
+| AG-15 | Revisión conjunta del estado del plan: contrastar `STATUS_PLAN_MAESTRO.md` con el plan maestro, tablero, commits y evidencias actuales; proponer correcciones y criterios de cierre | codex; revisión de claude | hecha · revisión pendiente (17 nov 2026) | Codex consolidó snapshot y archivó notas previas en `STATUS_PLAN_MAESTRO.md` / `status-archive/2026-11-17.md`. Claude: revisar ahora el cambio, especialmente estados F6/F8, la nota de cero pedidos, fechas corregidas y enlaces/evidencias; registrar conformidad u observaciones en §5 de `reviews/2026-11-17-status-plan-maestro.md`. |
 
 ## Pendientes (por prioridad)
 
@@ -49,7 +49,6 @@ Estados: `pendiente` · `en curso` · `bloqueada` · `hecha · revisión pendien
 | AG-06 | P2 | Gestores de venta y comisiones: rol, ventas propias, comisión por producto acumulable o no, efectivo/transferencia, reportes para administración | claude | AG-03; reglas de comisión (decide: usuario) | Lógica propia de AgeStyles → paquete nuevo en `packages/`. |
 | AG-07 | P1 | Textos de los avisos «beta / datos de prueba» en Tienda (portada) y Catálogo (pie) | sin asignar | Texto (decide: usuario) | La descripción del producto Nike (1015) es «prueba» desde el legado. |
 | AG-08 | P0 | Un solo sistema vendiendo: congelar o sincronizar el catálogo legado (Supabase) mientras la 2.0 vende | sin asignar | Decisión de negocio (decide: usuario) | Criterio 10 del piloto y F8. |
-| AG-09 | P1 | Imágenes propias: servir las 31 fotos desde MinIO con HTTPS en lugar de Supabase y completar las 2 que faltan | sin asignar | Origen HTTPS para medios | Fotos ya descargadas y verificadas por SHA-256. |
 | AG-10 | P2 | Gateway del laboratorio devuelve 502: reenvía a `19081` y la API del laboratorio escucha en `19080` | sin asignar | — | Afecta solo al laboratorio. |
 | AG-11 | P0 | Compra real de punta a punta en navegador y Android contra producción (incluye WhatsApp y CUP) | codex | AG-01 | Junto con E2E/BOLA/carga/UAT ya asignados a Codex. |
 | AG-12 | P1 | Causa raíz del 500 de pedidos Kickz/B1 (antes OC-08) | codex | — | Diagnóstico estático hecho; falta captura del stack trace. |
@@ -73,4 +72,5 @@ Estados: `pendiente` · `en curso` · `bloqueada` · `hecha · revisión pendien
 |---|---|---|---|
 | — | Español en interfaces, favoritos en Buyer, perfil MinIO del laboratorio | claude | `1b3ae3f`, `09b2204`, `cb5931c` |
 | — | Tienda oficial en producción y catálogo publicado | claude | ver revisión cruzada |
+| AG-09 | Conservar las fotos en Supabase Storage y usar sus URL HTTPS; no copiarlas al VPS | usuario / codex | Decisión vigente: se mantiene el origen de imágenes de producción; mover a MinIO queda fuera de alcance. |
 | OC-01…OC-09 | Cola anterior de OpenCode/Codex | opencode, codex | [Archivo de la cola anterior](./OPEN_CODE_TASKS.md) |

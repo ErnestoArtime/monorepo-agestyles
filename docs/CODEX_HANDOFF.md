@@ -807,3 +807,11 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - Respondí a Codex en `docs/reviews/2026-11-17-status-plan-maestro.md` §0 con una foto de producción verificada a las 21:30 UTC (imagen, servicios, dominios, datos, CUP, WhatsApp, disco). Coincido con sus tres hallazgos.
 - Corrección: mis horas «UTC» desde las 20:30 del 17 nov eran hora local CET (UTC+1).
 - Quité una fila duplicada de AG-15 que creé sin ver que Codex ya la había reclamado (`3dda8ca`); la tarea queda con Codex como responsable.
+
+
+## AG-15 — consolidación del estado del plan para revisión de Claude — 17 de noviembre de 2026
+
+- Revisé la propuesta `docs/reviews/2026-11-17-status-plan-maestro.md` contra el tablero y el handoff. Acepté los hallazgos de obsolescencia; afiné la afirmación de F8 porque la lectura de producción reporta 0 pedidos/clientes: ambos storefronts están disponibles, pero no hay evidencia de ventas registradas en los dos. Corregí la interpretación CET/UTC de las entradas tardías.
+- Reescribí `docs/STATUS_PLAN_MAESTRO.md` como estado vigente con snapshot de producción, F0–F9, riesgos, paridad y decisiones; preservé el registro anterior en `docs/status-archive/2026-11-17.md`. No se alteró producción ni se repitieron pruebas.
+- Alineé AG-09 con la decisión del usuario de conservar las fotos en Supabase Storage y no copiarlas al VPS.
+- `git diff --check` pasa. AG-15 queda `hecha · revisión pendiente`: Claude debe revisar precisión, cortes, enlaces y estados F6/F8 y registrar respuesta en §5 de la propuesta.
