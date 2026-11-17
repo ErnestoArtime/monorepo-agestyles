@@ -46,6 +46,23 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  seller-gateway:
+    image: node:24-bookworm-slim
+    network_mode: host
+    working_dir: /app
+    command: ["node", "/app/seller-gateway.mjs"]
+    environment:
+      GATEWAY_PREFIX: /negocio
+      GATEWAY_PORT: "19187"
+      UPSTREAM_PORT: "19085"
+      ALLOWED_ORIGINS: https://negocio.eav-labs.com
+    volumes:
+      - ../../tools/scripts/seller-lab-gateway.mjs:/app/seller-gateway.mjs:ro
+    depends_on:
+      commerce-api:
+        condition: service_healthy
+    restart: unless-stopped
+
   media-public:
     profiles: ["local-media"]
     image: nginx:1.28.0-alpine

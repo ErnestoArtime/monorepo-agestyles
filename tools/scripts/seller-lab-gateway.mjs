@@ -1,8 +1,20 @@
 import { createServer, request } from "node:http";
 import { isIP } from "node:net";
 
-const prefix = "/agestyles-seller";
-const allowedOrigins = new Set(["https://negocio.eav-labs.com"]);
+// Defaults serve the seller lab. Production runs the same gateway with
+// GATEWAY_PREFIX/GATEWAY_PORT/UPSTREAM_PORT/ALLOWED_ORIGINS set by its compose service.
+const prefix = process.env.GATEWAY_PREFIX ?? "/agestyles-seller";
+const listenPort = Number(process.env.GATEWAY_PORT ?? 19183);
+const upstreamPort = Number(process.env.UPSTREAM_PORT ?? 19081);
+const allowedOrigins = new Set(
+  (process.env.ALLOWED_ORIGINS ?? "https://negocio.eav-labs.com")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean),
+);
+if (!/^(\/[a-z0-9-]+)?$/.test(prefix) || !listenPort || !upstreamPort) {
+  throw new Error("Invalid gateway configuration");
+}
 const clientRequests = new Map();
 const authAttempts = new Map();
 let totalRequests = 0;
@@ -146,7 +158,7 @@ createServer({ requestTimeout: 30_000, headersTimeout: 10_000 }, (incoming, outg
   const backend = request(
     {
       host: "127.0.0.1",
-      port: 19081,
+      port: upstreamPort,
       method: incoming.method,
       path: path + url.search,
       headers,
@@ -169,6 +181,8 @@ createServer({ requestTimeout: 30_000, headersTimeout: 10_000 }, (incoming, outg
   });
   outgoing.on("close", () => backend.destroy());
   incoming.pipe(backend);
-}).listen(19183, "127.0.0.1", () => {
-  console.log("Seller lab gateway listening on 127.0.0.1:19183");
+}).listen(listenPort, "127.0.0.1", () => {
+  console.log(
+    `Seller gateway ${prefix || "/"} listening on 127.0.0.1:${listenPort} -> ${upstreamPort}`,
+  );
 });
