@@ -840,6 +840,14 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - El CI del commit inicial falló únicamente en formato de `packages/domain/src/tracking.ts`; se ajustó al formato del repositorio. El CI siguiente pasó formato y tipo, y descubrió que `apps/commerce-api/test/order-tracking-route.test.mjs` esperaba el shape anterior; actualicé ese snapshot existente con los contadores de preparación. No ejecuté tests locales; el CI de este ajuste queda pendiente.
 - CI `44186953569` (head `2d04f32`) ya pasa formato, typecheck, tests unitarios y las verificaciones seller-role, checkout multi-vendedor y permisos de fulfillment; se detiene en el verificador de AG-03, `apps/commerce-api/scripts/verify-inventory-movements.mjs:216`, porque `csv.text.startsWith("\\uFEFFFecha (UTC);Tipo;Producto")` resulta falso. El flujo usa `fetch().text()`, cuyo decodificador UTF-8 puede quitar el BOM inicial; sugiero a Claude revisar el contrato leyendo bytes crudos si quiere comprobar BOM, o comparar el texto desde `Fecha (UTC);Tipo;Producto`. Codex no tocó archivos de AG-03. AG-04 queda pendiente del CI global y la revisión cruzada.
 
+## AG-05 — importación CSV desde Negocio — 17 de noviembre de 2026
+
+- Añadí `apps/business-app/app/catalog-import.tsx` y el parser local `apps/business-app/lib/catalog-csv.ts`; la pantalla se abre desde Productos para roles con permiso `products:edit`.
+- Acepta encabezados en español/inglés y delimitadores coma, punto y coma o tabulador; valida BOM, comillas, columnas duplicadas, identificadores repetidos y CSV de hasta 200 filas. La vista previa resuelve SKUs/product IDs dentro de la tienda seleccionada y bloquea coincidencias ambiguas antes de enviar.
+- Reutiliza las rutas vendor existentes de Mercur. Las altas se crean como propuestas y las correcciones de producto/variante se envían a revisión. Informa que el archivo no importa precios, ofertas ni existencias.
+- `pnpm --filter @agestyles/business-app typecheck`, `pnpm format:check` y `git diff --check` pasan. No ejecuté tests locales ni modifiqué producción.
+- Commit de implementación: pendiente. CI global y revisión cruzada de Claude pendientes.
+
 ## Turno 2026-11-17 22:00 UTC — claude: AG-03 movimientos de inventario (implementación)
 
 - Commit `10fe3b0`. Nuevo módulo `@agestyles/inventory-movements` (tabla `agestyles_inventory_movement`, migración `Migration20261117220000`) con reglas puras y 1 test; registrado en `medusa-config.ts` y en `build:workspace-modules`.

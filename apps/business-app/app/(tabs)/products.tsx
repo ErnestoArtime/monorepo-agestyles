@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { router } from "expo-router";
 import { Icon } from "@agestyles/icons";
 import { useBusiness } from "../../context/business-context";
 import { hasPermission, OperationList, Row, Section } from "../../components/operation-list";
@@ -317,6 +318,15 @@ export default function ProductsScreen() {
         <Text accessibilityRole="alert" style={styles.notice}>
           {notice}
         </Text>
+      ) : null}
+      {canEdit ? (
+        <Pressable
+          onPress={() => router.push("/catalog-import")}
+          accessibilityRole="button"
+          style={({ pressed }) => [styles.importButton, pressed && styles.pressed]}
+        >
+          <Text style={styles.primaryText}>Importar o corregir catálogo por CSV</Text>
+        </Pressable>
       ) : null}
       {items.length ? (
         <Section title={`${items.length} productos`}>
@@ -698,6 +708,15 @@ const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
       borderRadius: 12,
       paddingHorizontal: 16,
       backgroundColor: theme.action,
+    },
+    importButton: {
+      minHeight: 46,
+      justifyContent: "center",
+      alignItems: "center",
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      backgroundColor: theme.action,
+      marginBottom: 12,
     },
     primaryText: { color: theme.onAction, fontSize: 14, fontWeight: "700" },
     secondaryButton: {
