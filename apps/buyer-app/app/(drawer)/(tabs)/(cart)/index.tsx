@@ -1,17 +1,18 @@
-import { CartItem } from '@/components/cart-item';
-import { Loading } from '@/components/loading';
-import { Button } from '@/components/ui/button';
-import { Colors } from '@/constants/theme';
-import { useCart } from '@/context/cart-context';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { formatPrice } from '@/lib/format-price';
-import { useRouter } from 'expo-router';
-import React from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { CartItem } from "@/components/cart-item";
+import { Loading } from "@/components/loading";
+import { Button } from "@/components/ui/button";
+import { Colors } from "@/constants/theme";
+import { useCart } from "@/context/cart-context";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { formatPrice } from "@/lib/format-price";
+import { useRouter } from "expo-router";
+import { Icon } from "@agestyles/icons";
+import React from "react";
+import { FlatList, StyleSheet, Text, View } from "react-native";
 
 export default function CartScreen() {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
   const router = useRouter();
   const { cart, updateItemQuantity, removeItem, loading } = useCart();
 
@@ -24,13 +25,16 @@ export default function CartScreen() {
   if (isEmpty) {
     return (
       <View style={[styles.emptyContainer, { backgroundColor: colors.background }]}>
+        <View style={[styles.emptyMark, { backgroundColor: colors.cardBackground }]}>
+          <Icon name="shoppingBag" size={32} color={colors.tint} />
+        </View>
         <Text style={[styles.emptyTitle, { color: colors.text }]}>Your cart is empty</Text>
         <Text style={[styles.emptyText, { color: colors.icon }]}>
           Add some products to get started
         </Text>
         <Button
           title="Browse Products"
-          onPress={() => router.push('/')}
+          onPress={() => router.push("/")}
           style={styles.browseButton}
         />
       </View>
@@ -52,8 +56,13 @@ export default function CartScreen() {
         )}
         contentContainerStyle={styles.listContent}
       />
-      
-      <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.icon + '30' }]}>
+
+      <View
+        style={[
+          styles.footer,
+          { backgroundColor: colors.cardBackground, borderTopColor: colors.border },
+        ]}
+      >
         <View style={styles.totals}>
           <View style={styles.totalRow}>
             <Text style={[styles.totalLabel, { color: colors.text }]}>Subtotal</Text>
@@ -100,37 +109,48 @@ const styles = StyleSheet.create({
   },
   emptyContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 40,
   },
   emptyTitle: {
     fontSize: 24,
-    fontWeight: '700',
+    fontWeight: "600",
+    letterSpacing: -0.35,
     marginBottom: 12,
   },
   emptyText: {
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 32,
   },
   browseButton: {
     minWidth: 200,
   },
+  emptyMark: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+  },
   listContent: {
     paddingBottom: 20,
   },
   footer: {
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 20,
     borderTopWidth: 1,
   },
   totals: {
-    marginBottom: 20,
+    marginBottom: 14,
   },
   totalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 12,
   },
   totalLabel: {
@@ -138,7 +158,7 @@ const styles = StyleSheet.create({
   },
   totalValue: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   grandTotalRow: {
     marginTop: 8,
@@ -147,10 +167,10 @@ const styles = StyleSheet.create({
   },
   grandTotalLabel: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   grandTotalValue: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: "700",
   },
 });

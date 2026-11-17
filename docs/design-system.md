@@ -8,6 +8,10 @@ La tienda, la app compradora, la app de negocio y los paneles web comparten una 
 - Las apps Expo importan los tokens TypeScript; las webs cargan `@agestyles/design-tokens/tokens.css` y usan variables `--as-*`.
 - Los temas de plataforma pueden adaptar nombres a sus componentes existentes, pero no deben volver a definir colores base de forma independiente.
 - Comprador Expo, app de negocio y storefront web ya consumen el paquete. Al añadir otra app/panel, conectarlo antes de crear estilos propios.
+- Todas las interfaces deben ofrecer tema claro y oscuro. Expo sigue `useColorScheme()` del dispositivo; Next/web sigue `prefers-color-scheme` y mantiene una paleta semántica derivada de los tokens.
+- No fijar `Colors.light` ni colores hexadecimales para superficies o texto en pantallas que deban cambiar de tema. Usar tokens para superficie, texto, borde, acción y contenido sobre acción; comprobar contraste, foco, estados vacíos y errores en ambos temas.
+- Los pares semánticos de texto/acción/éxito/error deben mantener contraste WCAG AA; `@agestyles/design-tokens` valida los pares y la paridad con sus variables CSS.
+- Si se añade un selector manual, debe persistir `system`, `light` o `dark`; hasta entonces, el sistema operativo o navegador es la fuente de preferencia.
 
 ## Iconos
 

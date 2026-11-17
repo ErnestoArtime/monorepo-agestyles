@@ -1,5 +1,5 @@
 import { Colors } from "@/constants/theme";
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import React, { useEffect, useRef } from "react";
 import { Animated, StyleSheet, View } from "react-native";
 
@@ -21,7 +21,7 @@ export function ProductSkeleton() {
           duration: 1000,
           useNativeDriver: true,
         }),
-      ])
+      ]),
     ).start();
   }, [shimmerAnim]);
 
@@ -30,26 +30,20 @@ export function ProductSkeleton() {
     outputRange: [0.3, 0.7],
   });
 
-  const skeletonColor = colorScheme === 'dark' ? '#333' : '#e0e0e0';
+  const skeletonColor = colors.surfaceMuted;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Main Image Skeleton with Pagination Dots */}
       <View style={styles.imageContainer}>
         <Animated.View
-          style={[
-            styles.imageSkeleton,
-            { backgroundColor: skeletonColor, opacity },
-          ]}
+          style={[styles.imageSkeleton, { backgroundColor: skeletonColor, opacity }]}
         />
         <View style={styles.pagination}>
           {[1, 2, 3].map((i) => (
             <Animated.View
               key={i}
-              style={[
-                styles.paginationDot,
-                { backgroundColor: skeletonColor, opacity },
-              ]}
+              style={[styles.paginationDot, { backgroundColor: skeletonColor, opacity }]}
             />
           ))}
         </View>
@@ -58,10 +52,7 @@ export function ProductSkeleton() {
       <View style={styles.content}>
         {/* Title Skeleton */}
         <Animated.View
-          style={[
-            styles.titleSkeleton,
-            { backgroundColor: skeletonColor, opacity },
-          ]}
+          style={[styles.titleSkeleton, { backgroundColor: skeletonColor, opacity }]}
         />
 
         {/* Description Skeleton - 3 lines */}
@@ -69,47 +60,38 @@ export function ProductSkeleton() {
           <Animated.View
             style={[
               styles.descriptionLine,
-              { backgroundColor: skeletonColor, opacity, width: '100%' },
+              { backgroundColor: skeletonColor, opacity, width: "100%" },
             ]}
           />
           <Animated.View
             style={[
               styles.descriptionLine,
-              { backgroundColor: skeletonColor, opacity, width: '90%' },
+              { backgroundColor: skeletonColor, opacity, width: "90%" },
             ]}
           />
           <Animated.View
             style={[
               styles.descriptionLine,
-              { backgroundColor: skeletonColor, opacity, width: '70%' },
+              { backgroundColor: skeletonColor, opacity, width: "70%" },
             ]}
           />
         </View>
 
         {/* Price Skeleton */}
         <Animated.View
-          style={[
-            styles.priceSkeleton,
-            { backgroundColor: skeletonColor, opacity },
-          ]}
+          style={[styles.priceSkeleton, { backgroundColor: skeletonColor, opacity }]}
         />
 
         {/* Options Skeleton */}
         <View style={styles.optionsContainer}>
           <Animated.View
-            style={[
-              styles.optionTitleSkeleton,
-              { backgroundColor: skeletonColor, opacity },
-            ]}
+            style={[styles.optionTitleSkeleton, { backgroundColor: skeletonColor, opacity }]}
           />
           <View style={styles.optionButtons}>
             {[1, 2, 3].map((i) => (
               <Animated.View
                 key={i}
-                style={[
-                  styles.optionButtonSkeleton,
-                  { backgroundColor: skeletonColor, opacity },
-                ]}
+                style={[styles.optionButtonSkeleton, { backgroundColor: skeletonColor, opacity }]}
               />
             ))}
           </View>
@@ -118,39 +100,24 @@ export function ProductSkeleton() {
         {/* Quantity Skeleton */}
         <View style={styles.quantityContainer}>
           <Animated.View
-            style={[
-              styles.quantityLabelSkeleton,
-              { backgroundColor: skeletonColor, opacity },
-            ]}
+            style={[styles.quantityLabelSkeleton, { backgroundColor: skeletonColor, opacity }]}
           />
           <View style={styles.quantityControls}>
             <Animated.View
-              style={[
-                styles.quantityButtonSkeleton,
-                { backgroundColor: skeletonColor, opacity },
-              ]}
+              style={[styles.quantityButtonSkeleton, { backgroundColor: skeletonColor, opacity }]}
             />
             <Animated.View
-              style={[
-                styles.quantityValueSkeleton,
-                { backgroundColor: skeletonColor, opacity },
-              ]}
+              style={[styles.quantityValueSkeleton, { backgroundColor: skeletonColor, opacity }]}
             />
             <Animated.View
-              style={[
-                styles.quantityButtonSkeleton,
-                { backgroundColor: skeletonColor, opacity },
-              ]}
+              style={[styles.quantityButtonSkeleton, { backgroundColor: skeletonColor, opacity }]}
             />
           </View>
         </View>
 
         {/* Add to Cart Button Skeleton */}
         <Animated.View
-          style={[
-            styles.buttonSkeleton,
-            { backgroundColor: skeletonColor, opacity },
-          ]}
+          style={[styles.buttonSkeleton, { backgroundColor: skeletonColor, opacity }]}
         />
       </View>
     </View>
@@ -162,20 +129,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   imageContainer: {
-    position: 'relative',
+    position: "relative",
   },
   imageSkeleton: {
-    width: '100%',
+    width: "100%",
     height: 400,
   },
   pagination: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 16,
     left: 0,
     right: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     gap: 6,
   },
   paginationDot: {
@@ -188,7 +155,7 @@ const styles = StyleSheet.create({
   },
   titleSkeleton: {
     height: 32,
-    width: '70%',
+    width: "70%",
     borderRadius: 4,
     marginBottom: 12,
   },
@@ -202,7 +169,7 @@ const styles = StyleSheet.create({
   },
   priceSkeleton: {
     height: 36,
-    width: '40%',
+    width: "40%",
     borderRadius: 4,
     marginBottom: 24,
   },
@@ -211,12 +178,12 @@ const styles = StyleSheet.create({
   },
   optionTitleSkeleton: {
     height: 20,
-    width: '30%',
+    width: "30%",
     borderRadius: 4,
     marginBottom: 12,
   },
   optionButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
   },
   optionButtonSkeleton: {
@@ -229,13 +196,13 @@ const styles = StyleSheet.create({
   },
   quantityLabelSkeleton: {
     height: 20,
-    width: '25%',
+    width: "25%",
     borderRadius: 4,
     marginBottom: 12,
   },
   quantityControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   quantityButtonSkeleton: {
     width: 36,
@@ -254,4 +221,3 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
 });
-

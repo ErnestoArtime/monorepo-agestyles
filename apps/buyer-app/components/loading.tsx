@@ -1,5 +1,5 @@
 import { Colors } from "@/constants/theme";
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import React from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
@@ -12,11 +12,9 @@ export function Loading({ message }: LoadingProps) {
   const colors = Colors[colorScheme ?? "light"];
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ActivityIndicator size="large" color={colors.tint} />
-      {message && (
-        <Text style={[styles.message, { color: colors.text }]}>{message}</Text>
-      )}
+      {message && <Text style={[styles.message, { color: colors.text }]}>{message}</Text>}
     </View>
   );
 }
@@ -26,11 +24,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
+    padding: 24,
+    gap: 4,
   },
   message: {
     marginTop: 12,
     fontSize: 16,
   },
 });
-

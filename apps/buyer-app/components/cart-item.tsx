@@ -55,7 +55,7 @@ export const CartItem = React.memo(function CartItem({
               accessibilityRole="button"
               accessibilityLabel={`Remove one ${item.product_title || item.title}`}
             >
-              <Icon name="minus" size={16} color={colors.text} />
+              <Icon name="minus" size={20} color={colors.text} />
             </TouchableOpacity>
             <Text
               style={[styles.quantity, { color: colors.text }]}
@@ -70,7 +70,7 @@ export const CartItem = React.memo(function CartItem({
               accessibilityRole="button"
               accessibilityLabel={`Add one ${item.product_title || item.title}`}
             >
-              <Icon name="plus" size={16} color={colors.text} />
+              <Icon name="plus" size={20} color={colors.text} />
             </TouchableOpacity>
           </View>
           <TouchableOpacity

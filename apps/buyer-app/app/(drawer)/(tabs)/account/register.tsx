@@ -8,9 +8,10 @@ import { useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 
 function registrationError(error: unknown) {
-  const message = error instanceof Error ? error.message : "Please check your details and try again.";
+  const message =
+    error instanceof Error ? error.message : "Por favor, verifica tus datos e inténtalo de nuevo.";
   if (/identity.*already exists|already.*registered|email.*already/i.test(message)) {
-    return "An account already uses this email. Sign in instead.";
+    return "Ya existe una cuenta con este email. Inicia sesión en su lugar.";
   }
   return message;
 }
@@ -29,7 +30,7 @@ export default function RegisterScreen() {
   const handleRegister = async () => {
     const normalizedEmail = email.trim().toLowerCase();
     if (!firstName.trim() || !lastName.trim() || !normalizedEmail || password.length < 8) {
-      setError("Enter your name, a valid email, and a password with at least 8 characters.");
+      setError("Ingresa tu nombre, un email válido y una contraseña de al menos 8 caracteres.");
       return;
     }
 
@@ -51,16 +52,35 @@ export default function RegisterScreen() {
   };
 
   return (
-    <KeyboardAvoidingView style={[styles.flex, { backgroundColor: colors.background }]} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+    <KeyboardAvoidingView
+      style={[styles.flex, { backgroundColor: colors.background }]}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.intro}>
-          <Text style={[styles.title, { color: colors.text }]}>Create your account</Text>
-          <Text style={[styles.description, { color: colors.icon }]}>Your purchases will be saved here when you shop while signed in.</Text>
+          <Text style={[styles.title, { color: colors.text }]}>Crea tu cuenta</Text>
+          <Text style={[styles.description, { color: colors.icon }]}>
+            Tus compras se guardarán aquí cuando hagas compras mientras estás conectado.
+          </Text>
         </View>
 
         <View style={styles.form}>
-          <FormField label="First name" value={firstName} onChangeText={setFirstName} autoComplete="given-name" textContentType="givenName" returnKeyType="next" />
-          <FormField label="Last name" value={lastName} onChangeText={setLastName} autoComplete="family-name" textContentType="familyName" returnKeyType="next" />
+          <FormField
+            label="Nombre"
+            value={firstName}
+            onChangeText={setFirstName}
+            autoComplete="given-name"
+            textContentType="givenName"
+            returnKeyType="next"
+          />
+          <FormField
+            label="Apellido"
+            value={lastName}
+            onChangeText={setLastName}
+            autoComplete="family-name"
+            textContentType="familyName"
+            returnKeyType="next"
+          />
           <FormField
             label="Email"
             value={email}
@@ -76,7 +96,7 @@ export default function RegisterScreen() {
             label="Password"
             value={password}
             onChangeText={setPassword}
-            placeholder="At least 8 characters"
+            placeholder="Al menos 8 caracteres"
             secureTextEntry
             autoCapitalize="none"
             autoComplete="new-password"
@@ -84,16 +104,25 @@ export default function RegisterScreen() {
             onSubmitEditing={handleRegister}
             returnKeyType="go"
           />
-          {error ? <Text accessibilityRole="alert" style={[styles.error, { color: colors.error }]}>{error}</Text> : null}
+          {error ? (
+            <Text accessibilityRole="alert" style={[styles.error, { color: colors.error }]}>
+              {error}
+            </Text>
+          ) : null}
           <Button
-            title="Create account"
+            title="Crear cuenta"
             loading={loading}
             disabled={!firstName.trim() || !lastName.trim() || !email.trim() || password.length < 8}
             onPress={handleRegister}
           />
         </View>
 
-        <Text style={[styles.footer, { color: colors.icon }]}>Already have an account? <Link href="/(drawer)/(tabs)/account/login" style={{ color: colors.tint }}>Sign in</Link></Text>
+        <Text style={[styles.footer, { color: colors.icon }]}>
+          ¿Ya tienes una cuenta?{" "}
+          <Link href="/(drawer)/(tabs)/account/login" style={{ color: colors.tint }}>
+            Iniciar sesión
+          </Link>
+        </Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );

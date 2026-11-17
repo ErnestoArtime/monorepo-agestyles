@@ -8,9 +8,10 @@ import { useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 
 function signInError(error: unknown) {
-  const message = error instanceof Error ? error.message : "Please check your details and try again.";
+  const message =
+    error instanceof Error ? error.message : "Por favor, verifica tus datos e inténtalo de nuevo";
   return /unauthorized|invalid.*(email|password|credential)/i.test(message)
-    ? "That email and password did not match. Check them and try again."
+    ? "Ese email y contraseña no coinciden Check them and try again."
     : message;
 }
 
@@ -43,11 +44,16 @@ export default function LoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView style={[styles.flex, { backgroundColor: colors.background }]} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+    <KeyboardAvoidingView
+      style={[styles.flex, { backgroundColor: colors.background }]}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.intro}>
-          <Text style={[styles.title, { color: colors.text }]}>Welcome back</Text>
-          <Text style={[styles.description, { color: colors.icon }]}>Sign in to see your purchases and continue shopping.</Text>
+          <Text style={[styles.title, { color: colors.text }]}>Bienvenido de nuevo</Text>
+          <Text style={[styles.description, { color: colors.icon }]}>
+            Inicia sesión para ver tus compras y seguir comprando.
+          </Text>
         </View>
 
         <View style={styles.form}>
@@ -74,11 +80,25 @@ export default function LoginScreen() {
             onSubmitEditing={handleLogin}
             returnKeyType="go"
           />
-          {error ? <Text accessibilityRole="alert" style={[styles.error, { color: colors.error }]}>{error}</Text> : null}
-          <Button title="Sign in" loading={loading} disabled={!email.trim() || !password} onPress={handleLogin} />
+          {error ? (
+            <Text accessibilityRole="alert" style={[styles.error, { color: colors.error }]}>
+              {error}
+            </Text>
+          ) : null}
+          <Button
+            title="Iniciar sesión"
+            loading={loading}
+            disabled={!email.trim() || !password}
+            onPress={handleLogin}
+          />
         </View>
 
-        <Text style={[styles.footer, { color: colors.icon }]}>New to AgeStyles? <Link href="/(drawer)/(tabs)/account/register" style={{ color: colors.tint }}>Create an account</Link></Text>
+        <Text style={[styles.footer, { color: colors.icon }]}>
+          ¿Nuevo en AgeStyles?{" "}
+          <Link href="/(drawer)/(tabs)/account/register" style={{ color: colors.tint }}>
+            Crear una cuenta
+          </Link>
+        </Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );

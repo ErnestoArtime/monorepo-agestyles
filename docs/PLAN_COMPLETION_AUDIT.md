@@ -1,6 +1,6 @@
 # Auditoría de cumplimiento del plan maestro AgeStyles 2.0
 
-**Corte:** 17 de noviembre de 2026, 04:05 UTC
+**Corte:** 17 de noviembre de 2026, 05:19 UTC
 **Alcance:** contraste de `AGESTYLES_2_0_PLAN_MAESTRO.md`, `STATUS_PLAN_MAESTRO.md`, `MATRIZ_REUTILIZACION.md`, `CODEX_HANDOFF.md` y el grafo de código del monorepo.
 **Conclusión:** el plan sigue en ejecución; ninguna de las fases F0–F8 puede marcarse completa con la evidencia disponible. F9 está correctamente diferida. El laboratorio de marketplace y varias verticales están avanzadas, pero siguen pendientes gates de datos, validación en dispositivos, QA, despliegue y cutover.
 
@@ -44,3 +44,22 @@
 El grafo del monorepo está indexado. La arquitectura muestra apps `commerce-api`, `buyer-app`, `business-app`, `storefront-web` y paquetes `catalog-pim`, `manual-payments`, `features-buyer`, `quotations`, `api-client`, `domain`, `icons` y `design-tokens`. El grafo identifica funciones `SellerPermissionsService.resolvePermissions`, `business-buyer-session.loginBuyer/getBuyerSession/logoutBuyer`, `ProductExplorer`, handlers de cotización y comparación. Esta evidencia confirma que hay implementaciones, pero por sí sola no demuestra builds, despliegue, autorización end-to-end ni aceptación del piloto.
 
 **Regla de cierre:** actualizar esta auditoría con resultados medidos, no con intención. Una fase pasa a completa solo cuando su criterio de salida completo tiene evidencia actual verificable.
+
+## Addendum de avance — 17 de noviembre de 2026, 04:50 UTC
+
+- Gates locales del estado actual: `pnpm test` 4/4; `pnpm typecheck` 12/12; `pnpm lint` 0 errores y 36 advertencias; `pnpm format:check` pasó. Tras una edición concurrente, el typecheck dirigido de Buyer pasó y la repetición global de Nx terminó 12/12. Ninguno de estos controles prueba el runtime Mercur, el build móvil ni el cutover.
+- F4: el comprador tiene cambios locales de diseño para catálogo, ficha, carrito y checkout, con tema nativo derivado del sistema. El código no se compiló para dispositivo en este corte.
+- F3: se añadieron estilos oscuros por preferencia del navegador al catálogo y páginas de vendedor en `apps/storefront-web/src/app/styles.css` y `seller-pages.css`. Pasan typecheck del storefront, Prettier y `git diff --check`; falta build, inspección visual y publicación.
+- Sistema visual: `docs/design-system.md` ahora establece como requisito claro/oscuro y uso de tokens semánticos. La cobertura completa de Business y de pantallas secundarias del comprador sigue en OC-09; no se cierra por el mero éxito del typecheck.
+- No hubo export/build, pruebas E2E, prueba manual de pantalla, restauración, ETL ni modificación de servicio. El disco permanece a 3.5 GiB libres; F0/F1/F5/F6/F7/F8 mantienen sus gates pendientes. La carpeta `references/` sigue ignorada.
+- HTTP de solo lectura confirmó 200 para catálogo, app web compradora, portal de negocio y AgeStyles anterior. No valida sesiones, flujos funcionales, accesibilidad ni los cambios locales de tema oscuro.
+- Auditoría reciente de logs de órdenes: no se vieron respuestas 500 en las 46 líneas retenidas en 36 h, pero no existe atribución tienda/actor; el incidente histórico Kickz/B1 sigue sin resolver de forma demostrable.
+- La paleta compartida ahora tiene tokens de foreground para acciones/éxito/error y un test WCAG AA/paridad CSS. Business y Buyer siguen el tema del sistema en sus pantallas trabajadas; el cambio local aún requiere revisión visual y publicación.
+- Gates actuales: pruebas 5/5, typecheck 12/12, lint 0 errores/30 advertencias. El nuevo flujo manual de publicación por GHCR todavía está en elaboración y no se ha ejecutado.
+
+## Addendum de verificación — 17 de noviembre de 2026, 05:19 UTC
+
+- Se corrigieron dos errores detectados por los gates del árbol local: la prop de retorno del paso de pago y el uso de `getPrice` en el explorador. Typecheck pasó 12/12; `pnpm test` pasó 5/5; lint global pasó sin errores y con 28 advertencias; formato y `git diff --check` pasaron.
+- El tema claro/oscuro ahora tiene implementación en las rutas revisadas de Buyer y Business y en el storefront. No hay inspección visual reciente ni build móvil; el criterio visual de OC-09 sigue abierto.
+- La publicación tiene workflow manual por SHA y overrides Compose separados, validados mediante `docker compose config`. No se ha publicado el código local: remoto `main` sigue en `636a774`, los tres contenedores web usan imágenes antiguas y no se ejecutó Actions, pull o despliegue.
+- Límite operativo sin cambios: 3.5 GiB libres en el único disco. Sigue pendiente un destino externo cifrado; no se ejecutó prune, backup, restore, ETL ni cutover.

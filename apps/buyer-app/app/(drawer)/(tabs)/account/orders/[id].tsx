@@ -7,9 +7,44 @@ import { getOrderTracking, OrderTracking } from "@agestyles/api-client/order-tra
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Linking,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 type ThemeColors = (typeof Colors)[keyof typeof Colors];
+
+const STATUS_LABELS: Record<string, string> = {
+  pending: "Pendiente",
+  completed: "Completada",
+  canceled: "Cancelada",
+  requires_action: "Requiere acción",
+  archived: "Archivada",
+  not_fulfilled: "Sin preparar",
+  partially_fulfilled: "Preparada parcialmente",
+  fulfilled: "Preparada",
+  partially_shipped: "Enviada parcialmente",
+  shipped: "Enviada",
+  partially_delivered: "Entregada parcialmente",
+  delivered: "Entregada",
+  not_paid: "Sin pagar",
+  awaiting: "Pendiente de pago",
+  authorized: "Autorizado",
+  partially_authorized: "Autorizado parcialmente",
+  captured: "Pagado",
+  partially_captured: "Pagado parcialmente",
+  refunded: "Reembolsado",
+  partially_refunded: "Reembolsado parcialmente",
+};
+
+function statusLabel(value: string) {
+  return STATUS_LABELS[value] ?? value.replaceAll("_", " ");
+}
 
 export default function PurchaseDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -36,14 +71,16 @@ export default function PurchaseDetailsScreen() {
       .then(async ({ order_group }) => {
         if (!active) return;
         setGroup(order_group);
-        const entries = await Promise.all(order_group.orders.map(async (order) => {
-          try {
-            const { tracking } = await getOrderTracking(sdk.client, order.id);
-            return [order.id, tracking] as const;
-          } catch {
-            return [order.id, null] as const;
-          }
-        }));
+        const entries = await Promise.all(
+          order_group.orders.map(async (order) => {
+            try {
+              const { tracking } = await getOrderTracking(sdk.client, order.id);
+              return [order.id, tracking] as const;
+            } catch {
+              return [order.id, null] as const;
+            }
+          }),
+        );
         if (active) setTrackingByOrder(Object.fromEntries(entries));
       })
       .catch(() => {
@@ -65,7 +102,7 @@ export default function PurchaseDetailsScreen() {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
         <ActivityIndicator color={colors.tint} />
-        <Text style={{ color: colors.icon }}>Loading purchase…</Text>
+        <Text style={{ color: colors.icon }}>Cargando compra…</Text>
       </View>
     );
   }
@@ -73,43 +110,67 @@ export default function PurchaseDetailsScreen() {
   if (error || !group) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <Text style={[styles.title, { color: colors.text }]}>Purchase unavailable</Text>
-        <Text style={[styles.muted, { color: colors.icon }]}>It may have been removed or belong to another account.</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Compra no disponible</Text>
+        <Text style={[styles.muted, { color: colors.icon }]}>
+          Puede que haya sido removido o pertenezca a otra cuenta
+        </Text>
       </View>
     );
   }
 
   const currency = group.orders[0]?.currency_code;
   return (
-    <ScrollView style={{ backgroundColor: colors.background }} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={{ backgroundColor: colors.background }}
+      contentContainerStyle={styles.content}
+    >
       <View style={[styles.summary, { borderBottomColor: colors.border }]}>
-        <Text style={[styles.title, { color: colors.text }]}>Purchase #{group.display_id ?? group.id}</Text>
-        <Text style={{ color: colors.icon }}>{new Intl.DateTimeFormat("en", { dateStyle: "long" }).format(new Date(group.created_at))}</Text>
-        <Text style={[styles.total, { color: colors.text }]}>{formatPrice(group.total, currency)}</Text>
+        <Text style={[styles.title, { color: colors.text }]}>
+          Compra #{group.display_id ?? group.id}
+        </Text>
+        <Text style={{ color: colors.icon }}>
+          {new Intl.DateTimeFormat("es", { dateStyle: "long" }).format(new Date(group.created_at))}
+        </Text>
+        <Text style={[styles.total, { color: colors.text }]}>
+          {formatPrice(group.total, currency)}
+        </Text>
       </View>
 
       {group.orders.map((order) => (
         <View key={order.id} style={[styles.sellerSection, { borderBottomColor: colors.border }]}>
           <View style={styles.sellerHeading}>
-            <Text style={[styles.sellerName, { color: colors.text }]}>{order.seller?.name ?? "Store"}</Text>
-            <Text style={[styles.muted, { color: colors.icon }]}>Order #{order.display_id}</Text>
+            <Text style={[styles.sellerName, { color: colors.text }]}>
+              {order.seller?.name ?? "Tienda"}
+            </Text>
+            <Text style={[styles.muted, { color: colors.icon }]}>Orden #{order.display_id}</Text>
           </View>
           <Text style={[styles.status, { color: colors.icon }]}>
-            {order.fulfillment_status ?? order.status}{order.payment_status ? ` · ${order.payment_status}` : ""}
+            {statusLabel(order.fulfillment_status ?? order.status)}
+            {order.payment_status ? ` · ${statusLabel(order.payment_status)}` : ""}
           </Text>
           {order.items.map((item) => (
             <View key={item.id} style={styles.item}>
               <Text style={[styles.itemTitle, { color: colors.text }]}>{item.title}</Text>
-              <Text style={{ color: colors.icon }}>Qty {item.quantity}</Text>
-              <Text style={{ color: colors.text }}>{formatPrice(item.total, order.currency_code)}</Text>
+              <Text style={{ color: colors.icon }}>Cant. {item.quantity}</Text>
+              <Text style={{ color: colors.text }}>
+                {formatPrice(item.total, order.currency_code)}
+              </Text>
               <View style={styles.itemTracking}>
-                <Text style={[styles.trackingHeading, { color: colors.text }]}>Item tracking</Text>
+                <Text style={[styles.trackingHeading, { color: colors.text }]}>
+                  Seguimiento del ítem
+                </Text>
                 {trackingLoading ? (
-                  <Text style={{ color: colors.icon }}>Loading tracking…</Text>
+                  <Text style={{ color: colors.icon }}>Cargando seguimiento…</Text>
                 ) : trackingByOrder[order.id] ? (
-                  <TrackingLine tracking={trackingByOrder[order.id]!} itemId={item.id} colors={colors} />
+                  <TrackingLine
+                    tracking={trackingByOrder[order.id]!}
+                    itemId={item.id}
+                    colors={colors}
+                  />
                 ) : (
-                  <Text style={{ color: colors.icon }}>Tracking could not be loaded. Try again later.</Text>
+                  <Text style={{ color: colors.icon }}>
+                    No se pudo cargar el seguimiento. Inténtalo de nuevo más tarde.
+                  </Text>
                 )}
               </View>
             </View>
@@ -130,7 +191,12 @@ function TrackingLine({
   colors: ThemeColors;
 }) {
   const line = tracking.lines.find((entry) => entry.line_item_id === itemId);
-  if (!line) return <Text style={{ color: colors.icon }}>No tracking information is available for this item.</Text>;
+  if (!line)
+    return (
+      <Text style={{ color: colors.icon }}>
+        No hay información de seguimiento disponible para este ítem.
+      </Text>
+    );
 
   const shipments = line.shipments.flatMap((shipment) =>
     shipment.tracking.map((label) => ({ number: label.tracking_number, url: label.tracking_url })),
@@ -139,7 +205,7 @@ function TrackingLine({
   return (
     <View style={styles.trackingDetails}>
       <Text style={{ color: colors.icon, textTransform: "capitalize" }}>
-        {line.status.replaceAll("_", " ")} · {line.shipped_quantity} of {line.quantity} shipped
+        {statusLabel(line.status)} · {line.shipped_quantity} de {line.quantity} enviados
       </Text>
       {shipments.map(({ number, url }, index) => {
         const safeUrl = url && /^https:\/\//i.test(url) ? url : null;
@@ -147,14 +213,18 @@ function TrackingLine({
           <Pressable
             key={`${number}-${index}`}
             accessibilityRole="link"
-            accessibilityLabel={`Open shipment tracking ${number}`}
-            onPress={() => { void Linking.openURL(safeUrl).catch(() => undefined); }}
+            accessibilityLabel={`Abrir seguimiento del envío ${number}`}
+            onPress={() => {
+              void Linking.openURL(safeUrl).catch(() => undefined);
+            }}
             hitSlop={8}
           >
             <Text style={[styles.trackingLink, { color: colors.tint }]}>{number}</Text>
           </Pressable>
         ) : (
-          <Text key={`${number}-${index}`} style={{ color: colors.icon }}>{number}</Text>
+          <Text key={`${number}-${index}`} style={{ color: colors.icon }}>
+            {number}
+          </Text>
         );
       })}
     </View>
@@ -167,7 +237,12 @@ const styles = StyleSheet.create({
   title: { fontSize: 21, fontWeight: "700" },
   total: { fontSize: 18, fontWeight: "600", marginTop: 4 },
   sellerSection: { gap: 12, paddingVertical: 18, borderBottomWidth: StyleSheet.hairlineWidth },
-  sellerHeading: { flexDirection: "row", justifyContent: "space-between", flexWrap: "wrap", gap: 8 },
+  sellerHeading: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    flexWrap: "wrap",
+    gap: 8,
+  },
   sellerName: { fontSize: 17, fontWeight: "600" },
   muted: { fontSize: 14 },
   status: { fontSize: 14, textTransform: "capitalize" },

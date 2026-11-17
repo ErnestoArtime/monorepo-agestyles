@@ -1,6 +1,6 @@
 import { Colors } from "@/constants/theme";
 import { useRegion } from "@/context/region-context";
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { formatPrice } from "@/lib/format-price";
 import type { HttpTypes } from "@medusajs/types";
 import { Image } from "expo-image";
@@ -20,20 +20,24 @@ export const ProductCard = React.memo(function ProductCard({ product }: ProductC
 
   const thumbnail = product.thumbnail || product.images?.[0]?.url;
   const variant = product.variants?.[0];
-  
+
   // Get price from calculated_price.calculated_amount
-  const priceAmount = variant?.calculated_price?.calculated_amount || 0
-  
+  const priceAmount = variant?.calculated_price?.calculated_amount || 0;
+
   // Use selected region's currency code
   const currencyCode = selectedRegion?.currency_code;
 
   return (
     <TouchableOpacity
-      style={[styles.card, { backgroundColor: colors.cardBackground }]}
-      onPress={() => router.push({
-        pathname: `/(home)/product/${product.id}` as any,
-        params: { title: product.title }
-      })}
+      style={[styles.card, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}
+      accessibilityRole="button"
+      accessibilityLabel={`${product.title}, ${formatPrice(priceAmount, currencyCode)}`}
+      onPress={() =>
+        router.push({
+          pathname: `/(home)/product/${product.id}` as any,
+          params: { title: product.title },
+        })
+      }
       activeOpacity={0.7}
     >
       <Image
@@ -42,14 +46,11 @@ export const ProductCard = React.memo(function ProductCard({ product }: ProductC
         contentFit="cover"
       />
       <View style={styles.content}>
-        <Text
-          style={[styles.title, { color: colors.text }]}
-          numberOfLines={2}
-        >
+        <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
           {product.title}
         </Text>
         <View style={styles.priceRow}>
-          <Text style={[styles.price, { color: colors.tint }]}>
+          <Text style={[styles.price, { color: colors.text }]}>
             {formatPrice(priceAmount, currencyCode)}
           </Text>
         </View>
@@ -61,21 +62,21 @@ export const ProductCard = React.memo(function ProductCard({ product }: ProductC
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    margin: 6,
+    margin: 5,
     overflow: "hidden",
-    borderRadius: 6,
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   image: {
     width: "100%",
-    height: 190,
-    borderRadius: 4,
+    height: 184,
   },
   content: {
-    paddingHorizontal: 4,
+    paddingHorizontal: 10,
     paddingVertical: 12,
   },
   title: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "500",
     marginBottom: 8,
   },
@@ -86,9 +87,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   price: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "600",
     flex: 1,
   },
 });
-

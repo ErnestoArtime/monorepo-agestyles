@@ -110,6 +110,18 @@ Determinar si existe una diferencia entre la consulta de pedidos de Kickz y la o
 
 **Aceptación:** informe que separa evidencia observada de hipótesis, identifica los módulos/archivos relevantes y propone una corrección mínima con verificación reproducible solo para laboratorio. No declarar corregido ni cerrado F1; Codex revisará cualquier cambio de implementación por separado.
 
+### OC-09 — Cerrar temas claro/oscuro y gates del árbol de trabajo
+
+**Estado:** implementación local lista; revisión visual clara/oscura y publicación pendientes. Freebuff debe evitar esos archivos hasta recibir el handoff actualizado.
+**Prioridad:** P0
+**Archivos permitidos:** cambios existentes de `apps/business-app/**`, `apps/buyer-app/components/android-app-link.tsx` y `docs/design-system.md`. No reescribir los rediseños de Buyer, el CSS del storefront ni archivos de otro autor sin revisar su diff.
+
+El requisito del plan es que comprador, negocio y catálogo web funcionen con tema claro y oscuro. Buyer ya sigue `useColorScheme()` en las pantallas principales; el storefront Next acaba de incorporar `prefers-color-scheme`. Auditar el trabajo actual de Business y la banda de descarga Android del comprador, eliminar colores `light` fijados en runtime donde impidan el tema oscuro, y mantener todos los iconos desde `@agestyles/icons`.
+
+**Avisos del corte:** una corrida global detectó transitoriamente un error de símbolos `Colors` en `android-app-link.tsx` mientras se editaba; una corrida posterior del typecheck de Buyer pasó. El árbol de trabajo cambió durante las comprobaciones, así que verificar el estado actual antes de concluir. `pnpm format:check` pasó después de formatear únicamente archivos modificados. No inferir que la corrida anterior sustituye la validación final.
+
+**Aceptación:** inspección de claro y oscuro para rutas completas de Buyer/Business/storefront (no solo del home), `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm format:check` y `corepack pnpm test` con resultados registrados; cero errores de tipos/lint/formato. Advertencias heredadas se anotan sin ocultarlas. Evitar build nativo/web pesado mientras el host siga por debajo del margen de disco; no tocar `references/`, servicios, publicación ni DNS.
+
 ## Trabajo terminado en esta sesión Codex
 
 - F3: facetas de categoría en API, combinables con búsqueda y persistidas en URL (`apps/storefront-web/**`). Typecheck y verificador del laboratorio pasaron en cinco categorías.

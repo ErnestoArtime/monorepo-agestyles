@@ -3,6 +3,14 @@
 **Fecha:** 17 de noviembre de 2026
 **Alcance:** revisión estática y de observabilidad ya disponible; sin escrituras ni nuevas peticiones autenticadas.
 
+## Actualización de observabilidad (17 de noviembre de 2026)
+
+- El proceso de API vigente está ahora en el contenedor `agestyles-buyer-api` (`agestyles/commerce-api:buyer-preview`), healthy desde el 16 de noviembre a las 20:08 UTC. Esta revisión solo consultó metadatos del contenedor y logs ya existentes; no reinició servicios.
+- En los logs conservados de las últimas 36 horas hay 46 líneas de `/vendor/orders`: 26 respuestas 200, una 401 y 11 respuestas 403 para la lista; los otros registros corresponden a rutas de detalle y devuelven 200, 403 o 404. **No hay respuestas 500 en esa ventana.** El registro HTTP no identifica de forma segura qué tienda produjo cada respuesta, por lo que no prueba el resultado actual de Kickz/B1. Tampoco hay líneas de excepción/stack trace conservadas que identifiquen la causa.
+- El Mercur instalado en ese contenedor es 2.4.1. Su `vendor/orders/query-config.js` evita combinaciones de expansiones con `*items` y usa ramas explícitas (`items.*`, `items.variant.*`, etc.). El comentario del paquete documenta errores del parser de Medusa al combinar wildcards y un caso de `returns.items.reason.*` que provoca HTTP 500 con Mikro ORM; la configuración usa `returns.items.reason` en su lugar. Esto acredita mitigaciones generales para errores de expansión, pero **no establece que fueran la causa del fallo histórico de B1**.
+- La ruta instalada `GET /vendor/orders` aplica filtro de vendedor, consulta `getOrdersListWorkflow`, normaliza las colecciones de pago y serializa la lista. Sin stack trace, identidad de la tienda asociada a las respuestas recientes ni una petición B1 autorizada (expresamente fuera del alcance de esta revisión), la causa raíz y la resolución del caso B1 siguen sin confirmar.
+- No se hicieron peticiones HTTP, autenticaciones, consultas de base de datos, cambios de datos ni reinicios. No se imprimieron identificadores de pedido, credenciales ni datos personales en este informe.
+
 ## Evidencia observada
 
 - La matriz previa de solo lectura registró que el mismo actor de Kickz obtiene HTTP 500 en B1 tanto con los campos predeterminados como con `?limit=20`, `?fields=id` y `?fields=id,display_id,status,total`. B2 devuelve 200 con esas variantes. El verificador de roles salió por error y su `finally` quitó las membresías temporales. No se repitió la matriz.

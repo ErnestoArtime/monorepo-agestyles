@@ -1,7 +1,20 @@
-import { Stack } from "expo-router"
+import { Stack } from "expo-router";
+import { useBusinessTheme } from "../../hooks/use-business-theme";
 
 export default function BuyerModeLayout() {
-  return <Stack screenOptions={{ headerShown: true, headerStyle: { backgroundColor: "#fff" }, headerTintColor: "#111B2D" }}>
-    <Stack.Screen name="index" options={{ title: "Comprar" }} />
-  </Stack>
+  const theme = useBusinessTheme();
+
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: true,
+        headerStyle: { backgroundColor: theme.surface },
+        headerTintColor: theme.action,
+        headerTitleStyle: { color: theme.text },
+        contentStyle: { backgroundColor: theme.background },
+      }}
+    >
+      <Stack.Screen name="index" options={{ title: "Comprar" }} />
+    </Stack>
+  );
 }

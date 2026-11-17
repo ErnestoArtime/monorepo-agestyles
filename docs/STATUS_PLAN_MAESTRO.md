@@ -1,6 +1,6 @@
 # Estado de ejecución del plan maestro AgeStyles 2.0
 
-**Corte de auditoría:** 17 de noviembre de 2026, 04:05 UTC
+**Corte de auditoría:** 17 de noviembre de 2026, 05:19 UTC
 
 **Documento rector:** [AGESTYLES_2_0_PLAN_MAESTRO.md](./AGESTYLES_2_0_PLAN_MAESTRO.md)
 
@@ -37,7 +37,7 @@ Este documento separa evidencia actual de trabajo pendiente. Una fase no se cons
 - `tools/scripts/verify-multistore-memberships.mjs` comprobó en las cuatro tiendas lectura de productos, inventario, pedidos, ofertas y ubicaciones (200) y rechazó con 403 los accesos a las tiendas del otro propietario. A2/B2 ya tienen fixtures y un pedido mixto ejecutado; la matriz de roles todavía solo se ejercitó en la tienda primaria.
 - `apps/commerce-api/scripts/verify-multistore-checkout.mjs` descubre A2/B2 por handle y sus ofertas por SKU, completa carrito con opciones de envío para ambos vendedores, crea el grupo de pedidos y confirma acceso propio y denegación cruzada. La última ejecución creó `og_01M7KBDWSSEW7VBQRF8Z4FHSR2` con dos pedidos. Sus dos opciones marcaron `insufficient_inventory`; una lectura directa del carrito y de las ofertas confirmó, en cada ubicación, 20 disponibles de 25 (5 reservadas). El código de Mercur 2.4.1 recorre todas las líneas del carrito al calcular la bandera, sin aislar por seller; es un falso positivo conocido y está registrado en [ADR-003](./adr/ADR-003-mixed-cart-shipping-inventory-warning.md). La app compradora actual no usa la bandera para bloquear la selección.
 - `apps/commerce-api/scripts/verify-dual-actor-identity.mjs` pasó varias ejecuciones con la misma cuenta sintética: registra un customer, acepta invitación a tienda con la identidad existente, vuelve a autenticar como member y comprueba sesiones separadas con 401 cruzado. La membresía se revoca al final; el customer permanece en la base aislada para permitir reejecuciones. Requiere `DUAL_AUTH_LAB_EMAIL` (`@agestyles.example`) y `DUAL_AUTH_LAB_PASSWORD`; ejecútese con `corepack pnpm lab:verify:dual-identity`. Decisión y límites app-level en [ADR-002](./adr/ADR-002-dual-actor-identity.md).
-- La matriz de capacidades por requisito, con estado y decisión provisional de continuar solo con el prototipo aislado, está en [medusa-mercur-capability-matrix.md](./architecture/medusa-mercur-capability-matrix.md). F1 aún requiere completar el flujo quote-first, la tabla de brechas y la decisión final.
+- La matriz de capacidades por requisito, con estado y decisión provisional de continuar solo con el prototipo aislado, está en [medusa-mercur-capability-matrix.md](./architecture/medusa-mercur-capability-matrix.md). El flujo quote-first para carrito A2+B2 ya cuenta con verificación documentada; F1 aún requiere resolver el 500 de Kickz/B1, cerrar las brechas restantes y registrar la decisión seguir/no seguir.
 - Apps Expo: `corepack pnpm lab:buyer` y `corepack pnpm lab:business` generan `.env.local` privadas apuntando a `127.0.0.1:19081`; `corepack pnpm lab:app` y `corepack pnpm lab:business-app` inician Expo. No se incluyó una clave Admin ni se guardó `.env.local` en Git. Expo web exportó correctamente a `/tmp/agestyles-business-web`; no se hizo build nativo.
 - `adb devices` no detectó dispositivos conectados; iOS requiere macOS/Xcode. Por ello la app de negocio aún no cuenta con evidencia de instalación o uso nativo.
 - Medición fresca con `docker system df`: 179 imágenes (49 activas), 100 volúmenes (24 activos), 63.87 GB de imágenes con 27.45 GB recuperables, 16.37 GB de volúmenes con 3.5 GB recuperables, y 5.28 GB de caché de build (192 MB recuperables). El host aloja servicios ajenos a AgeStyles; no se borraron recursos ni se ejecutó `prune`.
@@ -61,3 +61,28 @@ El checkout fuente presenta cambios sin seguimiento en `.codex/`, `scripts/__pyc
 3. Terminar F1 sobre las cuatro cuentas seller del laboratorio: aprobación, ubicaciones, inventario/ofertas, aislamiento de pedidos, publicación y producto común; validar identidad dual y cerrar decisión Mercur.
 4. Completar F2/F5 con `business-app` y paquetes compartidos; establecer presupuesto de almacenamiento antes de builds de producción.
 5. Completar mapeo y ETL en staging, conciliación y piloto antes de solicitar go/no-go para cualquier corte.
+
+## Actualización de verificación — 17 de noviembre de 2026, 04:50 UTC
+
+- La revisión global local más reciente pasó `corepack pnpm test` (4 tareas), `corepack pnpm typecheck` (12 tareas), `corepack pnpm lint` (0 errores; 36 advertencias) y `corepack pnpm format:check`. Typecheck fue repetido sin caché en serie después de detectar una edición concurrente temporal en `android-app-link.tsx`; una verificación dirigida de Buyer y la corrida final global pasaron.
+- La app compradora recibió ajustes de catálogo, ficha, carrito, checkout y confirmación, con colores de navegación y superficies que siguen el tema del sistema. El storefront web recibió reglas `prefers-color-scheme: dark` para catálogo y páginas de vendedor. Los cambios son locales; no se hizo build ni publicación de esos estilos.
+- Se actualizó `docs/design-system.md` para exigir modo claro/oscuro en todas las interfaces y uso de tokens semánticos. La cobertura de todas las pantallas de `business-app` sigue pendiente de revisión y figura como OC-09 en `OPEN_CODE_TASKS.md`.
+- La medición de este host sigue en 3.5 GiB libres y 99% de disco. No se realizaron builds nativos, builds de imágenes, exportaciones pesadas, `prune`, respaldo, ETL, cambios en Supabase ni cutover. El estado de F0/F6/F8 no cambia.
+- No se repitió la matriz del laboratorio de roles: continúa el riesgo documentado de datos de fulfillment/prueba y el error histórico de Kickz/B1 no tiene stack trace conservado. Un análisis nuevo encontró 46 logs de `/vendor/orders` en 36 h, sin 500; no identifica tienda/actor y no prueba que B1 esté reparada. F1/F7 continúan abiertas.
+- Los archivos de `references/` siguen ignorados y sin cambios en el estado de Git. Los cambios de código locales aún no se han consolidado en un commit durante esta auditoría.
+- Verificación HTTP de solo lectura a las 04:52 UTC: `catalogo.eav-labs.com`, `tienda.eav-labs.com`, `negocio.eav-labs.com` y `agestyles.eav-labs.com` devolvieron 200. Esto confirma disponibilidad de portada, no tema oscuro publicado, login ni recorridos de compra.
+
+## Actualización de avance — 17 de noviembre de 2026, 05:09 UTC
+
+- El modo oscuro automático ya cubre las pantallas de Business del árbol local, incluidos selector de tienda y modo comprador; `app.json` usa `userInterfaceStyle: automatic`. Buyer también adapta el enlace del APK y los colores de acción/éxito/error ahora vienen de tokens semánticos compartidos con foreground contrastante.
+- Se añadió una prueba de `@agestyles/design-tokens` que calcula contraste WCAG AA de texto/acción/éxito/error en ambos temas y coteja TypeScript con `tokens.css`. Resultado: PASS.
+- Gates globales locales tras estos cambios: typecheck 12/12; pruebas 5/5; lint 0 errores/30 advertencias. La revisión de formato global se repetirá después de cerrar el workflow de publicación que está en edición.
+- El pipeline de publicación manual de imágenes runtime por SHA y su override Compose están en elaboración. No se habilitó ni ejecutó publicación, pull o deploy. Las tres webs actuales responden 200, pero sus imágenes son anteriores a los cambios locales.
+- El host solo tiene un disco de 199 GiB montado para `/`, con ~3.4 GiB libres. No se encontró un destino alternativo local para backup; F0/F6/F8 siguen sujetas a un destino cifrado y gates de negocio.
+
+## Actualización de verificación — 17 de noviembre de 2026, 05:19 UTC
+
+- Se cerró la implementación del tema claro/oscuro en Buyer y Business, la paleta semántica compartida y los estilos responsivos del catálogo. El código sigue pendiente de revisión visual en navegador/dispositivo; no se da OC-09 por terminado.
+- La revisión local encontró y corrigió una coma faltante en la navegación Buyer, un contrato `onBack` inconsistente en el paso de pago y dependencias de precio en el catálogo. Verificación actual: typecheck 12/12, tests 5/5, lint 0 errores/28 advertencias, `format:check` y `git diff --check` correctos. Los tres overrides Compose de GHCR validan y mantienen los servicios/puertos existentes.
+- El workflow manual `.github/workflows/publish-frontends.yml` y el runbook `docs/runbooks/manual-frontend-publish.md` ya están preparados. El workflow no se ha ejecutado: los cambios siguen locales, GitHub `main` conserva `636a774`, y buyer, business y catálogo continúan con imágenes anteriores. No hubo pull, deploy ni cambios DNS.
+- Se mantiene el límite de capacidad: 3.5 GiB libres en el único disco del host. No se ejecutaron builds grandes ni limpieza de Docker. F0/F1/F4/F6/F7/F8 siguen abiertas según sus gates previos.

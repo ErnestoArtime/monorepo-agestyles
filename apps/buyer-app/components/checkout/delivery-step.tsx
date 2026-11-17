@@ -1,9 +1,9 @@
-import { AddressForm } from '@/components/checkout/address-form';
-import { Button } from '@/components/ui/button';
-import { Colors } from '@/constants/theme';
-import { useRegion } from '@/context/region-context';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import React, { useEffect, useRef, useState } from 'react';
+import { AddressForm } from "@/components/checkout/address-form";
+import { Button } from "@/components/ui/button";
+import { Colors } from "@/constants/theme";
+import { useRegion } from "@/context/region-context";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Keyboard,
   KeyboardAvoidingView,
@@ -13,8 +13,8 @@ import {
   Switch,
   Text,
   TextInput,
-  View
-} from 'react-native';
+  View,
+} from "react-native";
 
 interface Address {
   firstName: string;
@@ -52,7 +52,7 @@ export function DeliveryStep({
   onNext,
 }: DeliveryStepProps) {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
   const { selectedRegion } = useRegion();
   const scrollViewRef = useRef<ScrollView>(null);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
@@ -61,12 +61,12 @@ export function DeliveryStep({
 
   useEffect(() => {
     const keyboardWillShowListener = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      () => setKeyboardVisible(true)
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      () => setKeyboardVisible(true),
     );
     const keyboardWillHideListener = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
-      () => setKeyboardVisible(false)
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => setKeyboardVisible(false),
     );
 
     return () => {
@@ -76,17 +76,17 @@ export function DeliveryStep({
   }, []);
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
     >
       <ScrollView
         ref={scrollViewRef}
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          isKeyboardVisible && styles.scrollContentKeyboard
+          isKeyboardVisible && styles.scrollContentKeyboard,
         ]}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
@@ -94,12 +94,10 @@ export function DeliveryStep({
         automaticallyAdjustKeyboardInsets={true}
       >
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Contact Information
-          </Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Información de contacto</Text>
 
           <TextInput
-            style={[styles.input, { color: colors.text, borderColor: colors.icon + '30' }]}
+            style={[styles.input, { color: colors.text, borderColor: colors.icon + "30" }]}
             placeholder="Email"
             placeholderTextColor={colors.icon}
             value={email}
@@ -110,7 +108,7 @@ export function DeliveryStep({
           />
 
           <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 20 }]}>
-            Shipping Address
+            Dirección de envío
           </Text>
 
           <AddressForm
@@ -122,29 +120,26 @@ export function DeliveryStep({
             countryCode={shippingAddress.countryCode}
             phone={shippingAddress.phone}
             countries={countries}
-            onFirstNameChange={(value) => onShippingAddressChange('firstName', value)}
-            onLastNameChange={(value) => onShippingAddressChange('lastName', value)}
-            onAddressChange={(value) => onShippingAddressChange('address', value)}
-            onCityChange={(value) => onShippingAddressChange('city', value)}
-            onPostalCodeChange={(value) => onShippingAddressChange('postalCode', value)}
-            onCountryCodeChange={(value) => onShippingAddressChange('countryCode', value)}
-            onPhoneChange={(value) => onShippingAddressChange('phone', value)}
+            onFirstNameChange={(value) => onShippingAddressChange("firstName", value)}
+            onLastNameChange={(value) => onShippingAddressChange("lastName", value)}
+            onAddressChange={(value) => onShippingAddressChange("address", value)}
+            onCityChange={(value) => onShippingAddressChange("city", value)}
+            onPostalCodeChange={(value) => onShippingAddressChange("postalCode", value)}
+            onCountryCodeChange={(value) => onShippingAddressChange("countryCode", value)}
+            onPhoneChange={(value) => onShippingAddressChange("phone", value)}
           />
 
           <View style={styles.switchContainer}>
             <Text style={[styles.switchLabel, { color: colors.text }]}>
-              Use same address for billing
+              Usar misma dirección para facturación
             </Text>
-            <Switch
-              value={useSameForBilling}
-              onValueChange={onUseSameForBillingChange}
-            />
+            <Switch value={useSameForBilling} onValueChange={onUseSameForBillingChange} />
           </View>
 
           {!useSameForBilling && (
             <>
               <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 20 }]}>
-                Billing Address
+                Dirección de facturación
               </Text>
 
               <AddressForm
@@ -156,13 +151,13 @@ export function DeliveryStep({
                 countryCode={billingAddress.countryCode}
                 phone={billingAddress.phone}
                 countries={countries}
-                onFirstNameChange={(value) => onBillingAddressChange('firstName', value)}
-                onLastNameChange={(value) => onBillingAddressChange('lastName', value)}
-                onAddressChange={(value) => onBillingAddressChange('address', value)}
-                onCityChange={(value) => onBillingAddressChange('city', value)}
-                onPostalCodeChange={(value) => onBillingAddressChange('postalCode', value)}
-                onCountryCodeChange={(value) => onBillingAddressChange('countryCode', value)}
-                onPhoneChange={(value) => onBillingAddressChange('phone', value)}
+                onFirstNameChange={(value) => onBillingAddressChange("firstName", value)}
+                onLastNameChange={(value) => onBillingAddressChange("lastName", value)}
+                onAddressChange={(value) => onBillingAddressChange("address", value)}
+                onCityChange={(value) => onBillingAddressChange("city", value)}
+                onPostalCodeChange={(value) => onBillingAddressChange("postalCode", value)}
+                onCountryCodeChange={(value) => onBillingAddressChange("countryCode", value)}
+                onPhoneChange={(value) => onBillingAddressChange("phone", value)}
               />
             </>
           )}
@@ -170,12 +165,7 @@ export function DeliveryStep({
 
         {/* Button moved inside ScrollView for consistent behavior */}
         <View style={[styles.buttonContainer, { backgroundColor: colors.background }]}>
-          <Button
-            title="Continue"
-            onPress={onNext}
-            loading={loading}
-            style={styles.button}
-          />
+          <Button title="Continuar" onPress={onNext} loading={loading} style={styles.button} />
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -194,7 +184,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   scrollContentKeyboard: {
-    paddingBottom: Platform.OS === 'ios' ? 300 : 320,
+    paddingBottom: Platform.OS === "ios" ? 300 : 320,
   },
   section: {
     padding: 20,
@@ -206,7 +196,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: "700",
     marginBottom: 20,
   },
   input: {
@@ -217,9 +207,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   switchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginVertical: 16,
   },
   switchLabel: {
@@ -230,4 +220,3 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
 });
-

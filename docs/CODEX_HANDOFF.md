@@ -428,3 +428,24 @@ Verificación local: typecheck de buyer-app, ESLint en cuatro archivos de códig
 | Estado posterior anotado en el informe | `docs/ui/icon-ecosystem-audit.md` | revisión del apartado 8 |
 
 **Siguen abiertas:** grosor 2.2 solo en pestañas del comprador, tamaños de control fuera de 20–24 px, `⌕`/`↗` como glifos de texto en el storefront (área publicada), prop `weight` ignorada en `IconSymbol`, typecheck propio de `@agestyles/icons` y su ausencia en `transpilePackages`. No se ejecutó build, instalación ni despliegue; la validación visual/TalkBack sigue pendiente de dispositivo.
+
+---
+
+## Turno 2026-11-17 — Segunda tanda de pendientes de iconos
+
+**Contexto:** sin tareas abiertas en `docs/OPEN_CODE_TASKS.md`, se continuó con la lista de pendientes del apartado 8 de `docs/ui/icon-ecosystem-audit.md`. Codex ya había commiteado su corrección de tipos en `636a774`, así que no se pisó trabajo en curso.
+
+| Cambio | Archivos | Verificación |
+|---|---|---|
+| Typecheck propio del paquete de iconos | `packages/icons/tsconfig.json` (nuevo), `packages/icons/package.json` (`typecheck`, `@types/react@19.1.17` dev), `pnpm-lock.yaml` | `corepack pnpm --filter @agestyles/icons typecheck` → PASS; Nx lo incluye: `pnpm typecheck` 12/12 |
+| `@agestyles/icons` añadido a `transpilePackages` | `apps/storefront-web/next.config.ts` | typecheck del storefront dentro del run 12/12 |
+| Prop `weight` muerta eliminada; tamaños 18→20 | `apps/buyer-app/components/ui/icon-symbol.tsx`, `components/ui/collapsible.tsx` | typecheck buyer 12/12 |
+| Trazo de pestañas sin el 2.2 del estado enfocado | `apps/buyer-app/app/(drawer)/(tabs)/_layout.tsx` | revisión; el estado sigue por color |
+| Controles a 20 px y menús de cabecera 28→24 | `apps/business-app/app/(tabs)/{_layout,index,more,team}.tsx`, `app/index.tsx`, `components/operation-list.tsx`, `apps/buyer-app/components/cart-item.tsx`, `components/android-app-link.tsx`, `app/(drawer)/(tabs)/({home,cart})/_layout.tsx` | typecheck 12/12 |
+| `⌕`/`↗` sustituidos por `search`/`arrowUpRight` decorativos | `apps/storefront-web/src/components/product-explorer.tsx`, `src/app/page.tsx`; glifo nuevo en ambas entradas de `packages/icons` | paridad 42/42; typecheck storefront 12/12 |
+
+**Verificación global:** `corepack pnpm typecheck` 12/12, `pnpm lint` 0 errores (36 warnings preexistentes), `pnpm test` 4/4, `git diff --check` limpio, paridad 42/42. No se ejecutó build, despliegue ni llamada a API/DB.
+
+**Bloqueo detectado para commitear:** `pnpm format:check` falla en 17 de los archivos tocados porque nunca siguieron el baseline de `.prettierrc.json` (punto y coma y comillas dobles); el storefront y varias pantallas usan otro estilo. No se reformatearon en masa: hace falta que Codex decida si se formatean esos archivos, se ajusta la configuración o se amplía `.prettierignore`. `FORMAT_BASE_REF` en CI solo evalúa lo commiteado, así que este árbol no altera el CI mientras no se commitee.
+
+**Siguen abiertas:** corazón decorativo de 19 px en tarjetas del storefront, `#FFFFFF` literal en `android-app-link`, divergencia del color nativo por defecto (`#171717` vs `currentColor`), rango 12–16 px para iconos en línea sin documentar y validación visual/TalkBack en dispositivo.

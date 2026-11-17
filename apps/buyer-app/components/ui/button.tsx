@@ -1,5 +1,5 @@
 import { Colors } from "@/constants/theme";
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import React from "react";
 import {
   ActivityIndicator,
@@ -28,15 +28,20 @@ export function Button({
 
   const isPrimary = variant === "primary";
   const isDisabled = disabled || loading;
-  
+
   const primaryBgColor = colors.tint;
-  const primaryTextColor = '#FFFFFF';
+  const primaryTextColor = colors.onTint;
 
   return (
     <TouchableOpacity
       style={[
         styles.button,
-        isPrimary ? { backgroundColor: primaryBgColor } : styles.secondaryButton,
+        isPrimary
+          ? { backgroundColor: primaryBgColor }
+          : [
+              styles.secondaryButton,
+              { backgroundColor: colors.cardBackground, borderColor: colors.border },
+            ],
         isDisabled && styles.disabled,
         style,
       ]}
@@ -47,10 +52,7 @@ export function Button({
         <ActivityIndicator color={isPrimary ? primaryTextColor : colors.tint} />
       ) : (
         <Text
-          style={[
-            styles.text,
-            isPrimary ? { color: primaryTextColor } : { color: colors.tint },
-          ]}
+          style={[styles.text, isPrimary ? { color: primaryTextColor } : { color: colors.text }]}
         >
           {title}
         </Text>
@@ -63,22 +65,19 @@ const styles = StyleSheet.create({
   button: {
     paddingVertical: 15,
     paddingHorizontal: 24,
-    borderRadius: 5,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
     minHeight: 48,
   },
   secondaryButton: {
-    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#D8D8D2",
   },
   text: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
   },
   disabled: {
     opacity: 0.5,
   },
 });
-

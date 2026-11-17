@@ -8,6 +8,7 @@
     "./tokens.css": "./tokens.css"
   },
   "scripts": {
+    "test": "node test/colors.test.mjs",
     "typecheck": "tsc --noEmit"
   }
 }

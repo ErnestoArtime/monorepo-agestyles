@@ -3,8 +3,8 @@
  * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
  */
 
-import { Platform } from 'react-native';
-import { colors } from '@agestyles/design-tokens';
+import { Platform } from "react-native";
+import { colors } from "@agestyles/design-tokens";
 
 export const Colors = {
   light: {
@@ -16,9 +16,14 @@ export const Colors = {
     tabIconSelected: colors.light.action,
     border: colors.light.border,
     cardBackground: colors.light.surface,
+    surfaceMuted: colors.light.placeholder,
+    accent: colors.light.accent,
+    onTint: colors.light.onAction,
     error: colors.light.error,
     warning: colors.light.warning,
     success: colors.light.success,
+    onSuccess: colors.light.onSuccess,
+    onError: colors.light.onError,
     imagePlaceholder: colors.light.placeholder,
   },
   dark: {
@@ -30,9 +35,14 @@ export const Colors = {
     tabIconSelected: colors.dark.action,
     border: colors.dark.border,
     cardBackground: colors.dark.surface,
+    surfaceMuted: colors.dark.placeholder,
+    accent: colors.dark.accent,
+    onTint: colors.dark.onAction,
     error: colors.dark.error,
     warning: colors.dark.warning,
     success: colors.dark.success,
+    onSuccess: colors.dark.onSuccess,
+    onError: colors.dark.onError,
     imagePlaceholder: colors.dark.placeholder,
   },
 };
@@ -40,19 +50,19 @@ export const Colors = {
 export const Fonts = Platform.select({
   ios: {
     /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
+    sans: "system-ui",
     /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
+    serif: "ui-serif",
     /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
+    rounded: "ui-rounded",
     /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
+    mono: "ui-monospace",
   },
   default: {
-    sans: 'normal',
-    serif: 'serif',
-    rounded: 'normal',
-    mono: 'monospace',
+    sans: "normal",
+    serif: "serif",
+    rounded: "normal",
+    mono: "monospace",
   },
   web: {
     sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",

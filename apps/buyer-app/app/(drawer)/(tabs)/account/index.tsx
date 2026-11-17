@@ -17,7 +17,7 @@ export default function AccountScreen() {
     try {
       await logout();
     } catch {
-      Alert.alert("Could not sign out", "Check your connection and try again.");
+      Alert.alert("No se pudo cerrar sesión", "Verifica tu conexión e inténtalo de nuevo");
     } finally {
       setSigningOut(false);
     }
@@ -29,31 +29,51 @@ export default function AccountScreen() {
       keyboardShouldPersistTaps="handled"
     >
       <View style={styles.intro}>
-        <Text style={[styles.title, { color: colors.text }]}>Your account</Text>
-        <Text style={[styles.description, { color: colors.icon }]}>Manage your details and purchases.</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Tu cuenta</Text>
+        <Text style={[styles.description, { color: colors.icon }]}>
+          Administra tus detalles y compras.
+        </Text>
       </View>
 
       {loading ? (
         <View style={styles.loading}>
           <ActivityIndicator color={colors.tint} />
-          <Text style={{ color: colors.icon }}>Checking your account…</Text>
+          <Text style={{ color: colors.icon }}>Verificando tu cuenta…</Text>
         </View>
       ) : customer ? (
         <View style={styles.section}>
           <View style={[styles.profile, { borderColor: colors.border }]}>
             <Text style={[styles.name, { color: colors.text }]}>
-              {[customer.first_name, customer.last_name].filter(Boolean).join(" ") || "Welcome back"}
+              {[customer.first_name, customer.last_name].filter(Boolean).join(" ") ||
+                "Bienvenido de nuevo"}
             </Text>
             <Text style={{ color: colors.icon }}>{customer.email}</Text>
           </View>
-          <Button title="View my purchases" onPress={() => router.push("/(drawer)/(tabs)/account/orders")} />
-          <Button title="Sign out" variant="secondary" loading={signingOut} onPress={handleSignOut} />
+          <Button
+            title="Ver mis compras"
+            onPress={() => router.push("/(drawer)/(tabs)/account/orders")}
+          />
+          <Button
+            title="Cerrar sesión"
+            variant="secondary"
+            loading={signingOut}
+            onPress={handleSignOut}
+          />
         </View>
       ) : (
         <View style={styles.section}>
-          <Text style={[styles.body, { color: colors.text }]}>Sign in to keep your purchases together and see their status.</Text>
-          <Button title="Sign in" onPress={() => router.push("/(drawer)/(tabs)/account/login")} />
-          <Button title="Create an account" variant="secondary" onPress={() => router.push("/(drawer)/(tabs)/account/register")} />
+          <Text style={[styles.body, { color: colors.text }]}>
+            Iniciar sesión para mantener tus compras juntas y consultar su estado.
+          </Text>
+          <Button
+            title="Iniciar sesión"
+            onPress={() => router.push("/(drawer)/(tabs)/account/login")}
+          />
+          <Button
+            title="Crear una cuenta"
+            variant="secondary"
+            onPress={() => router.push("/(drawer)/(tabs)/account/register")}
+          />
         </View>
       )}
     </ScrollView>

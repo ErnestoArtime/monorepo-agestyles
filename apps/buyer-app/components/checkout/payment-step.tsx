@@ -35,7 +35,9 @@ export function PaymentStep({
     <View style={styles.container}>
       <View style={styles.contentWrapper}>
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Select Payment Method</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Seleccionar método de pago
+          </Text>
 
           {loading ? (
             <Loading />
@@ -88,7 +90,7 @@ export function PaymentStep({
           )}
 
           <View style={[styles.summary, { borderColor: colors.icon + "30" }]}>
-            <Text style={[styles.summaryTitle, { color: colors.text }]}>Order Summary</Text>
+            <Text style={[styles.summaryTitle, { color: colors.text }]}>Resumen de la orden</Text>
             <View style={styles.summaryRow}>
               <Text style={[styles.summaryLabel, { color: colors.text }]}>Subtotal</Text>
               <Text style={[styles.summaryValue, { color: colors.text }]}>
@@ -96,20 +98,20 @@ export function PaymentStep({
               </Text>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={[styles.summaryLabel, { color: colors.text }]}>Discount</Text>
+              <Text style={[styles.summaryLabel, { color: colors.text }]}>Descuento</Text>
               <Text style={[styles.summaryValue, { color: colors.text }]}>
                 {(cart.discount_total || 0) > 0 ? "-" : ""}
                 {formatPrice(cart.discount_total || 0, cart.currency_code)}
               </Text>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={[styles.summaryLabel, { color: colors.text }]}>Shipping</Text>
+              <Text style={[styles.summaryLabel, { color: colors.text }]}>Envío</Text>
               <Text style={[styles.summaryValue, { color: colors.text }]}>
                 {formatPrice(cart.shipping_total || 0, cart.currency_code)}
               </Text>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={[styles.summaryLabel, { color: colors.text }]}>Tax</Text>
+              <Text style={[styles.summaryLabel, { color: colors.text }]}>Impuesto</Text>
               <Text style={[styles.summaryValue, { color: colors.text }]}>
                 {formatPrice(cart.tax_total || 0, cart.currency_code)}
               </Text>
@@ -131,9 +133,9 @@ export function PaymentStep({
         ]}
       >
         <View style={styles.buttonRow}>
-          <Button title="Back" variant="secondary" onPress={onBack} style={styles.halfButton} />
+          <Button title="Atrás" variant="secondary" onPress={onBack} style={styles.halfButton} />
           <Button
-            title="Place Order"
+            title="Realizar pedido"
             onPress={onPlaceOrder}
             loading={loading}
             disabled={!selectedPaymentProvider}

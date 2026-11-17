@@ -1,11 +1,11 @@
-import { Loading } from '@/components/loading';
-import { Button } from '@/components/ui/button';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { formatPrice } from '@/lib/format-price';
-import type { ShippingOptions } from '@agestyles/api-client/store';
-import React from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Loading } from "@/components/loading";
+import { Button } from "@/components/ui/button";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { formatPrice } from "@/lib/format-price";
+import type { ShippingOptions } from "@agestyles/api-client/store";
+import React from "react";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 interface ShippingStepProps {
   shippingOptions: ShippingOptions;
@@ -29,26 +29,26 @@ export function ShippingStep({
   onNext,
 }: ShippingStepProps) {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
 
   return (
     <View style={styles.container}>
       <ScrollView style={styles.contentWrapper}>
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Select shipping for each seller
+            Seleccionar envío para cada vendedor
           </Text>
           {loading ? (
             <Loading />
           ) : Object.keys(shippingOptions).length === 0 ? (
             <Text style={[styles.emptyText, { color: colors.icon }]}>
-              No shipping options available
+              No hay opciones de envío disponibles
             </Text>
           ) : (
             Object.entries(shippingOptions).map(([sellerId, options]) => (
               <View key={sellerId} accessibilityRole="radiogroup">
                 <Text style={[styles.optionTitle, { color: colors.text }]}>
-                  {options[0]?.seller?.name || 'Seller'}
+                  {options[0]?.seller?.name || "Seller"}
                 </Text>
                 {options.map((option) => {
                   const selected = selectedShipping[sellerId] === option.id;
@@ -60,14 +60,19 @@ export function ShippingStep({
                       style={[
                         styles.optionCard,
                         {
-                          backgroundColor: selected ? colors.tint + '20' : 'transparent',
-                          borderColor: selected ? colors.tint : colors.icon + '30',
+                          backgroundColor: selected ? colors.tint + "20" : "transparent",
+                          borderColor: selected ? colors.tint : colors.icon + "30",
                         },
                       ]}
                       onPress={() => onSelectOption(sellerId, option.id)}
                     >
                       <View style={styles.optionInfo}>
-                        <Text style={[styles.optionTitle, { color: selected ? colors.tint : colors.text }]}>
+                        <Text
+                          style={[
+                            styles.optionTitle,
+                            { color: selected ? colors.tint : colors.text },
+                          ]}
+                        >
                           {option.name}
                         </Text>
                         <Text style={[styles.optionPrice, { color: colors.text }]}>
@@ -84,16 +89,16 @@ export function ShippingStep({
         </View>
       </ScrollView>
 
-      <View style={[styles.buttonContainer, { backgroundColor: colors.background, borderTopColor: colors.icon + '30' }]}>
+      <View
+        style={[
+          styles.buttonContainer,
+          { backgroundColor: colors.background, borderTopColor: colors.icon + "30" },
+        ]}
+      >
         <View style={styles.buttonRow}>
+          <Button title="Atrás" variant="secondary" onPress={onBack} style={styles.halfButton} />
           <Button
-            title="Back"
-            variant="secondary"
-            onPress={onBack}
-            style={styles.halfButton}
-          />
-          <Button
-            title="Continue"
+            title="Continuar"
             onPress={onNext}
             loading={loading}
             disabled={!shippingComplete}
@@ -122,13 +127,13 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: "700",
     marginBottom: 20,
   },
   optionCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 16,
     borderRadius: 8,
     borderWidth: 1,
@@ -139,7 +144,7 @@ const styles = StyleSheet.create({
   },
   optionTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 4,
   },
   optionPrice: {
@@ -147,15 +152,14 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
     padding: 20,
   },
   buttonRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
   },
   halfButton: {
     flex: 1,
   },
 });
-

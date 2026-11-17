@@ -2,7 +2,7 @@
 
 **Tarea:** OC-05 de [docs/OPEN_CODE_TASKS.md](../OPEN_CODE_TASKS.md)
 **Fecha:** 17 de noviembre de 2026
-**Naturaleza:** auditoría de solo lectura. No se editó código de aplicación, no se instalaron paquetes y no se publicó nada.
+**Naturaleza:** auditoría inicial de solo lectura, seguida por las correcciones registradas en la sección 8. No se instalaron paquetes ni se publicó la app.
 
 ## 1. Alcance y método
 
@@ -43,9 +43,7 @@ Comprobaciones de higiene, todas correctas:
 
 ### P1 — corrigen comportamiento o accesibilidad
 
-1. **`IconSymbol` oculta nombres desconocidos tras un icono de ayuda.**
-   `apps/buyer-app/components/ui/icon-symbol.tsx:4-16` define 11 alias; el componente declara `name: string` (línea 26) y resuelve `iconAliases[name] || "help"` (línea 30). Un nombre nuevo o mal escrito no falla en TypeScript y se dibuja como `?`. Además, dos llamadas evitan el tipo con `as any`: `components/checkout/payment-step.tsx:68` y `app/order-confirmation/[id].tsx:207`.
-   *Propuesta:* tipar `name` como `IconName`, mapear alias a `IconName` y fallar en desarrollo si el nombre no existe, en lugar de degradar en silencio.
+1. **Resuelto:** `IconSymbol` restringe `name` a las claves de su mapa tipado y valida los valores contra `IconName`. Ya no sustituye alias desconocidos por un icono de ayuda. El tipo del icono de pago usa esas mismas claves y elimina los dos `as any`.
 
 2. **Botón de eliminar sin nombre accesible.**
    `components/cart-item.tsx:63-65`: `TouchableOpacity` con solo un icono `trash`, sin `accessibilityLabel` ni `accessibilityRole="button"`. Un lector de pantalla no anuncia la acción.
@@ -81,7 +79,7 @@ Comprobaciones de higiene, todas correctas:
 
 10. **Cobertura de tipos indirecta.** `packages/icons` no tiene `tsconfig`/target propio: un error de tipos en el paquete solo aparece al compilar una app. Es la duda ya abierta en el handoff (typecheck con `@types/react` fijado).
 11. **`@agestyles/icons` no está en `transpilePackages`.** `apps/storefront-web/next.config.ts:10` transpila `@agestyles/api-client` y `@agestyles/domain`, pero no el paquete de iconos, que exporta `.tsx` sin compilar. Hoy funciona en el build desplegado; conviene añadirlo o documentar por qué el layout de workspace lo hace innecesario.
-12. **API muerta en el adaptador.** `IconSymbol` acepta `weight` y lo ignora (`components/ui/collapsible.tsx:22-23`): resto del modelo SF Symbols. Eliminarlo evita expectativas falsas.
+12. **API muerta en el adaptador.** `IconSymbol` acepta `weight` y lo ignora; conviene retirarlo cuando se pueda resolver el uso en `components/ui/collapsible.tsx` sin ampliar el alcance de formato de ese archivo.
 13. **Afordancia engañosa en tarjetas.** `product-explorer.tsx:52` pinta un corazón de 19 px dentro del enlace de imagen, decorativo (`aria-hidden`) y no accionable; sugiere “favorito” sin serlo.
 14. **Faltantes y exportados sin uso.** No existen `alert` ni `externalLink`, que son los dos huecos que fuerzan las soluciones de los puntos 5 y 9. `minus` y `plus` están exportados y no se usan en ninguna app (el carrito dibuja `-`/`+` como texto), y `arrowLeft`, `bell`, `boxes`, `eye`, `eyeOff`, `mapPin`, `refresh`, `scan`, `send`, `settings`, `sliders`, `tag`, `truck` y `warehouse` tampoco tienen consumidor; conviene podarlos o justificarlos antes de ampliar el paquete.
 15. **Divergencia de color por defecto entre plataformas.** Web hereda `currentColor` y nativo cae a un hex fijo; un uso de `<Icon>` sin `color` se ve distinto en web y en Android/iOS.
@@ -109,7 +107,7 @@ Comprobaciones de higiene, todas correctas:
 | SVG locales / `<svg>` en línea | Solo los dos símbolos de marca |
 | Glifos Unicode en apps nativas | 0 |
 | Nombres usados por `IconSymbol` | 11 alias, todos resueltos (`home`, `send`, `code`, `chevronRight`, `chevronDown`, `menu`, `shoppingCart`, `creditCard`, `phone`, `arrowDown`, `trash`) |
-| `git diff --check` | Limpio (solo se añade este informe) |
+| `git diff --check` | Limpio tras las correcciones de noviembre |
 
 No se ejecutó typecheck ni build: la auditoría es de lectura y el árbol tiene cambios sin commit de la sesión Codex. La cobertura de tipos del paquete queda como brecha P3, no como verificación realizada.
 
@@ -119,3 +117,33 @@ No se ejecutó typecheck ni build: la auditoría es de lectura y el árbol tiene
 - Tamaño efectivo y alineación de los iconos de tab bar en pantallas de 360 dp.
 - Anuncio de los estados `radio`/`checked` con TalkBack (no verificable sin dispositivo).
 - Comportamiento de `currentColor` en web frente al hex por defecto en nativo cuando no se pasa `color`.
+
+## 8. Correcciones posteriores a esta auditoría
+
+- **P1 #1–#4 resueltas por Codex:** `IconSymbol` ahora tipa `name` como `IconSymbolName` (`as const satisfies Record<string, IconName>`) y ya no cae a `help`; las dos llamadas con `as any` desaparecieron; el carrito usa `minus`/`plus` con etiqueta y rol; la selección de pago usa `check` con `accessibilityRole="radio"` y `accessibilityState`.
+- **P1 #5 resuelta en este turno:** se añadió `alert` (`TriangleAlert`) a ambas entradas del paquete y `operation-list.tsx` lo usa para el estado de error. Paridad web/nativo sigue en 41/41.
+- **P2 #8 resuelta en `business-app`:** las pestañas usan `colors.light.*` en lugar de `#111B2D`, `#FFFFFF`, `#171717`, `#6F6F6B` y `#E4E4DF`.
+- **P2 #6 resuelta:** las pestañas del comprador ya no cambian el trazo a 2.2 al enfocar; usan el 1.8 del paquete y el estado se comunica por color, igual que en negocio y web.
+- **P2 #7 resuelta para controles:** chevrons, escudos, tienda, checks y cantidad pasan a 20 px, y el menú de cabecera de 28 a 24 px. Los 12–15 px que quedan son flechas dentro de enlaces con texto; falta que la guía documente ese rango en línea.
+- **P2 #9 resuelta:** `⌕` y `↗` salen del storefront; ahora usan `search` y el nuevo `arrowUpRight`, ambos `aria-hidden`.
+- **P3 #10 resuelta:** `packages/icons` tiene `tsconfig.json`, script `typecheck` y `@types/react` como devDependency local; el target entra en `nx run-many` (12 proyectos).
+- **P3 #11 resuelta:** `@agestyles/icons` está en `transpilePackages` del storefront.
+- **P3 #12 resuelta:** `IconSymbol` ya no acepta la prop `weight` que ignoraba.
+- **Siguen abiertas:** corazón decorativo de 19 px en tarjetas, `#FFFFFF` literal en `android-app-link`, color nativo por defecto distinto de web y el rango de tamaños en línea sin documentar.
+
+## 9. Verificación de la segunda tanda
+
+| Comprobación | Resultado |
+|---|---|
+| Paridad de glifos | 42/42, sin nombres exclusivos (`alert` y `arrowUpRight` incluidos) |
+| `corepack pnpm typecheck` | 12/12 proyectos, incluido el target nuevo de `@agestyles/icons` |
+| `corepack pnpm lint` | 0 errores (36 advertencias preexistentes) |
+| `corepack pnpm test` | 4/4 tareas |
+| `git diff --check` | Limpio |
+| `corepack pnpm exec prettier --check` sobre los archivos tocados | **Falla en 17 archivos**: son archivos que nunca siguieron el baseline de Prettier (comillas dobles y punto y coma), no un defecto de estos cambios; formatearlos reformatearía líneas ajenas |
+
+El desajuste entre `.prettierrc.json` y el estilo real de las apps es deuda de OC-04 y requiere decisión de Codex antes de commitear estos archivos.
+
+## 8. Correcciones aplicadas después de la auditoría
+
+El 17 de noviembre de 2026 se corrigió el punto 1 sin añadir dependencias: alias e iconos de pago ahora están tipados, se quitaron los dos `as any` y los nombres inválidos ya no se convierten silenciosamente en `help`. Verificación local: `tsc --project apps/buyer-app/tsconfig.json --noEmit`, ESLint sobre los archivos de código tocados y Prettier completaron correctamente. Las brechas de accesibilidad y la validación en dispositivos listadas arriba siguen abiertas.

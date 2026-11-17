@@ -29,3 +29,7 @@ When introducing an AgeStyles extension or upgrading Medusa/Mercur:
 - Prefer narrow adapters and documented APIs so upstream upgrades affect a small, identifiable integration surface.
 
 The default rule is: **do not modify Medusa or Mercur core while a supported extension point can satisfy the requirement.** A fork is an explicit, documented last resort, not the normal customization path.
+
+## Shared light and dark themes
+
+Every AgeStyles interface must support light and dark themes using `@agestyles/design-tokens` as its canonical palette. Expo applications follow `useColorScheme()`/the device preference; web applications follow `prefers-color-scheme` unless a persisted user preference is explicitly implemented. Use semantic foreground/background pairs such as `onAction`, `onSuccess`, and `onError`; do not hardcode `Colors.light` or duplicate base hex colors in components. Validate WCAG AA contrast and include empty, error, selected, focused, and loading states in theme reviews. See `docs/design-system.md` for implementation guidance.

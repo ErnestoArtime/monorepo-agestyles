@@ -1,4 +1,6 @@
 import { Icon, type IconName } from "@agestyles/icons";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { View, type StyleProp, type ViewStyle } from "react-native";
 
 const iconAliases = {
@@ -27,14 +29,16 @@ export function IconSymbol({
   size?: number;
   color: string | number;
   style?: StyleProp<ViewStyle>;
-  weight?: string;
 }) {
+  const colorScheme = useColorScheme();
+  const fallbackColor = Colors[colorScheme ?? "light"].text;
+
   return (
     <View style={style}>
       <Icon
         name={iconAliases[name]}
         size={size}
-        color={typeof color === "string" ? color : "#171717"}
+        color={typeof color === "string" ? color : fallbackColor}
       />
     </View>
   );
