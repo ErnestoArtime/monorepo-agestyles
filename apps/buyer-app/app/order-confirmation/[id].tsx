@@ -1,23 +1,23 @@
-import { Loading } from '@/components/loading';
-import { Button } from '@/components/ui/button';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useCart } from '@/context/cart-context';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { formatPrice } from '@/lib/format-price';
-import { getPaymentProviderInfo } from '@/lib/payment-providers';
-import { sdk } from '@/lib/sdk';
-import type { HttpTypes } from '@medusajs/types';
-import { Image } from 'expo-image';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Loading } from "@/components/loading";
+import { Button } from "@/components/ui/button";
+import { Icon } from "@agestyles/icons";
+import { Colors } from "@/constants/theme";
+import { useCart } from "@/context/cart-context";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { formatPrice } from "@/lib/format-price";
+import { getPaymentProviderInfo } from "@/lib/payment-providers";
+import { sdk } from "@/lib/sdk";
+import type { HttpTypes } from "@medusajs/types";
+import { Image } from "expo-image";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 export default function OrderConfirmationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
   const { clearCart } = useCart();
 
   const [order, setOrder] = useState<HttpTypes.StoreOrder | null>(null);
@@ -31,12 +31,12 @@ export default function OrderConfirmationScreen() {
       setError(null);
 
       const { order: fetchedOrder } = await sdk.store.order.retrieve(id, {
-        fields: '*payment_collections.payments',
+        fields: "*payment_collections.payments",
       });
       setOrder(fetchedOrder);
     } catch (err) {
-      console.error('Failed to fetch order:', err);
-      setError('Failed to load order details');
+      console.error("Failed to fetch order:", err);
+      setError("Failed to load order details");
     } finally {
       setLoading(false);
     }
@@ -64,15 +64,13 @@ export default function OrderConfirmationScreen() {
   if (error || !order) {
     return (
       <View style={[styles.centerContainer, { backgroundColor: colors.background }]}>
-        <Text style={[styles.errorText, { color: colors.text }]}>
-          {error || 'Order not found'}
-        </Text>
+        <Text style={[styles.errorText, { color: colors.text }]}>{error || "Order not found"}</Text>
         <Button
           title="Go to Home"
           onPress={() => {
             // Reset to home screen and clear the navigation stack
             router.dismissAll();
-            router.replace('/(drawer)/(tabs)/(home)');
+            router.replace("/(drawer)/(tabs)/(home)");
           }}
           style={styles.button}
         />
@@ -97,14 +95,19 @@ export default function OrderConfirmationScreen() {
           onPress={() => {
             // Reset to home screen and clear the navigation stack
             router.dismissAll();
-            router.replace('/(drawer)/(tabs)/(home)');
+            router.replace("/(drawer)/(tabs)/(home)");
           }}
           style={styles.continueButton}
         />
 
-        <View style={[styles.card, { backgroundColor: colors.background, borderColor: colors.icon + '30' }]}>
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: colors.background, borderColor: colors.icon + "30" },
+          ]}
+        >
           <Text style={[styles.cardTitle, { color: colors.text }]}>Order Details</Text>
-          
+
           <View style={styles.infoRow}>
             <Text style={[styles.label, { color: colors.icon }]}>Order ID</Text>
             <Text style={[styles.value, { color: colors.text }]}>{order.display_id}</Text>
@@ -116,20 +119,25 @@ export default function OrderConfirmationScreen() {
           </View>
         </View>
 
-        <View style={[styles.card, { backgroundColor: colors.background, borderColor: colors.icon + '30' }]}>
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: colors.background, borderColor: colors.icon + "30" },
+          ]}
+        >
           <Text style={[styles.cardTitle, { color: colors.text }]}>Order Items</Text>
-          
+
           {order.items?.map((item, index) => (
-            <View 
-              key={item.id} 
+            <View
+              key={item.id}
               style={[
                 styles.itemRow,
                 index === order.items!.length - 1 && styles.lastItemRow,
-                { borderBottomColor: colors.icon + '30' }
+                { borderBottomColor: colors.icon + "30" },
               ]}
             >
               <Image
-                source={{ uri: item.thumbnail || 'https://via.placeholder.com/60' }}
+                source={{ uri: item.thumbnail || "https://via.placeholder.com/60" }}
                 style={[styles.itemImage, { backgroundColor: colors.imagePlaceholder }]}
                 contentFit="cover"
               />
@@ -153,14 +161,17 @@ export default function OrderConfirmationScreen() {
           ))}
         </View>
 
-        <View style={[styles.card, { backgroundColor: colors.background, borderColor: colors.icon + '30' }]}>
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: colors.background, borderColor: colors.icon + "30" },
+          ]}
+        >
           <Text style={[styles.cardTitle, { color: colors.text }]}>Shipping</Text>
-          
+
           {order.shipping_address && (
             <>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                Shipping Address
-              </Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Shipping Address</Text>
               <Text style={[styles.addressText, { color: colors.text }]}>
                 {order.shipping_address.first_name} {order.shipping_address.last_name}
               </Text>
@@ -178,9 +189,7 @@ export default function OrderConfirmationScreen() {
 
           {order.shipping_methods && order.shipping_methods.length > 0 && (
             <>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                Shipping Method
-              </Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Shipping Method</Text>
               {order.shipping_methods.map((method) => (
                 <Text key={method.id} style={[styles.addressText, { color: colors.text }]}>
                   {method.name} - {formatPrice(method.amount || 0, order.currency_code)}
@@ -190,23 +199,22 @@ export default function OrderConfirmationScreen() {
           )}
         </View>
 
-        <View style={[styles.card, { backgroundColor: colors.background, borderColor: colors.icon + '30' }]}>
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: colors.background, borderColor: colors.icon + "30" },
+          ]}
+        >
           <Text style={[styles.cardTitle, { color: colors.text }]}>Payment</Text>
-          
+
           {order.payment_collections && order.payment_collections.length > 0 && (
             <>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                Payment Method
-              </Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Payment Method</Text>
               {order.payment_collections[0].payments?.map((payment) => {
                 const providerInfo = getPaymentProviderInfo(payment.provider_id);
                 return (
                   <View key={payment.id} style={styles.paymentMethodRow}>
-                    <IconSymbol
-                      size={20}
-                      name={providerInfo.icon as any}
-                      color={colors.text}
-                    />
+                    <Icon size={20} name={providerInfo.icon} color={colors.text} />
                     <Text style={[styles.addressText, { color: colors.text, marginLeft: 8 }]}>
                       {providerInfo.title}
                     </Text>
@@ -218,9 +226,7 @@ export default function OrderConfirmationScreen() {
 
           {order.billing_address && (
             <>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                Billing Address
-              </Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Billing Address</Text>
               <Text style={[styles.addressText, { color: colors.text }]}>
                 {order.billing_address.first_name} {order.billing_address.last_name}
               </Text>
@@ -237,9 +243,14 @@ export default function OrderConfirmationScreen() {
           )}
         </View>
 
-        <View style={[styles.card, { backgroundColor: colors.background, borderColor: colors.icon + '30' }]}>
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: colors.background, borderColor: colors.icon + "30" },
+          ]}
+        >
           <Text style={[styles.cardTitle, { color: colors.text }]}>Order Summary</Text>
-          
+
           <View style={styles.summaryRow}>
             <Text style={[styles.summaryLabel, { color: colors.text }]}>Subtotal</Text>
             <Text style={[styles.summaryValue, { color: colors.text }]}>
@@ -250,7 +261,8 @@ export default function OrderConfirmationScreen() {
           <View style={styles.summaryRow}>
             <Text style={[styles.summaryLabel, { color: colors.text }]}>Discount</Text>
             <Text style={[styles.summaryValue, { color: colors.text }]}>
-              {(order.discount_total || 0) > 0 ? '-' : ''}{formatPrice(order.discount_total || 0, order.currency_code)}
+              {(order.discount_total || 0) > 0 ? "-" : ""}
+              {formatPrice(order.discount_total || 0, order.currency_code)}
             </Text>
           </View>
 
@@ -286,8 +298,8 @@ const styles = StyleSheet.create({
   },
   centerContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 20,
   },
   content: {
@@ -297,25 +309,25 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'center',
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center",
     marginBottom: 24,
   },
   checkmark: {
     fontSize: 48,
-    color: '#fff',
-    fontWeight: '700',
+    color: "#fff",
+    fontWeight: "700",
   },
   title: {
     fontSize: 28,
-    fontWeight: '700',
-    textAlign: 'center',
+    fontWeight: "700",
+    textAlign: "center",
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 32,
   },
   card: {
@@ -326,12 +338,12 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: "700",
     marginBottom: 16,
   },
   infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 12,
   },
   label: {
@@ -339,11 +351,11 @@ const styles = StyleSheet.create({
   },
   value: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     marginTop: 16,
     marginBottom: 8,
   },
@@ -352,13 +364,13 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   paymentMethodRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 4,
   },
   itemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 16,
     paddingBottom: 16,
     borderBottomWidth: 1,
@@ -379,7 +391,7 @@ const styles = StyleSheet.create({
   },
   itemTitle: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 4,
   },
   itemVariant: {
@@ -391,12 +403,12 @@ const styles = StyleSheet.create({
   },
   itemPrice: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     marginLeft: 12,
   },
   summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 12,
   },
   summaryLabel: {
@@ -404,7 +416,7 @@ const styles = StyleSheet.create({
   },
   summaryValue: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   totalRow: {
     marginTop: 12,
@@ -413,11 +425,11 @@ const styles = StyleSheet.create({
   },
   totalLabel: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   totalValue: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   button: {
     marginTop: 20,
@@ -427,8 +439,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 20,
   },
 });
-

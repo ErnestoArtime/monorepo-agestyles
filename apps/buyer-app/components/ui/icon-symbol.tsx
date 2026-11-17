@@ -1,7 +1,7 @@
-import { Icon, type IconName } from "@agestyles/icons"
-import { View, type StyleProp, type ViewStyle } from "react-native"
+import { Icon, type IconName } from "@agestyles/icons";
+import { View, type StyleProp, type ViewStyle } from "react-native";
 
-const iconAliases: Record<string, IconName> = {
+const iconAliases = {
   "house.fill": "home",
   "paperplane.fill": "send",
   "chevron.left.forwardslash.chevron.right": "code",
@@ -9,11 +9,13 @@ const iconAliases: Record<string, IconName> = {
   "chevron.down": "chevronDown",
   "line.3.horizontal": "menu",
   "cart.fill": "shoppingCart",
-  "creditcard": "creditCard",
+  creditcard: "creditCard",
   "phone-portrait-outline": "phone",
   "arrow-down-outline": "arrowDown",
-  "trash": "trash",
-}
+  trash: "trash",
+} as const satisfies Record<string, IconName>;
+
+export type IconSymbolName = keyof typeof iconAliases;
 
 export function IconSymbol({
   name,
@@ -21,11 +23,19 @@ export function IconSymbol({
   color,
   style,
 }: {
-  name: string
-  size?: number
-  color: string | number
-  style?: StyleProp<ViewStyle>
-  weight?: string
+  name: IconSymbolName;
+  size?: number;
+  color: string | number;
+  style?: StyleProp<ViewStyle>;
+  weight?: string;
 }) {
-  return <View style={style}><Icon name={iconAliases[name] || "help"} size={size} color={typeof color === "string" ? color : "#171717"} /></View>
+  return (
+    <View style={style}>
+      <Icon
+        name={iconAliases[name]}
+        size={size}
+        color={typeof color === "string" ? color : "#171717"}
+      />
+    </View>
+  );
 }

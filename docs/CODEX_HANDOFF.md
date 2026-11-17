@@ -405,3 +405,26 @@ El handler de Mercur aplica permiso, validación de `vendorOrderQueryConfig.list
 `pnpm lint`, `pnpm format:check`, `pnpm test`, `pnpm typecheck`, `node --check` del probe y `git diff --check` pasan. No se hizo build ni despliegue por el espacio disponible. Las fases F0/F1/F2/F4/F7 siguen parciales; backup/restore, Android/iOS/TalkBack, 500 de Kickz/B1, tracking runtime, ETL, checkout UI, UAT y gates de producción permanecen abiertos. `references/` continúa excluida.
 
 **CI del commit:** GitHub Actions run [44014525470](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44014525470), SHA `332bda3`, terminó `success`: install frozen, lint, format-check, tests, typecheck y los tres builds web completados.
+
+## Turno 2026-11-17 — corrección de tipos en el paquete de iconos
+
+La revisión de Git confirmó que `main` estaba sincronizada con `origin/main` y no había cambios locales previos que subir. Se consultaron los patrones de rama y remoto en `Agestyles-Catalogo`, `beauty-saas`, `nx-monorepo` y `stores`; no se modificaron esos repositorios.
+
+En `buyer-app`, `IconSymbol` ahora restringe sus alias a las claves declaradas y valida sus glifos con `IconName`; se eliminó el fallback silencioso a `help`. El tipo del icono de los proveedores de pago también quedó ligado al catálogo compartido y se quitaron los casts `as any` de checkout y confirmación. No se añadieron dependencias.
+
+Verificación local: typecheck de buyer-app, ESLint en cuatro archivos de código, Prettier en los archivos tocados y `git diff --check`. `references/` permanece fuera del control de versiones. Las brechas de accesibilidad del carrito y la selección de pago, los glifos de texto y la validación nativa siguen abiertas.
+
+---
+
+## Turno 2026-11-17 — Cierre de brechas P1 de la auditoría de iconos
+
+**Contexto:** la cola `docs/OPEN_CODE_TASKS.md` no tiene tareas abiertas (OC-01 a OC-08 cerradas). Se revisó el estado real de las brechas de OC-05: Codex ya había corregido las P1 #1–#4 en `icon-symbol.tsx`, `payment-step.tsx` y `cart-item.tsx` (tipado `IconSymbolName` sin fallback, `minus`/`plus`, `check` con `radio/checked`), así que no se tocaron esos archivos, que siguen con cambios sin commit.
+
+| Cambio | Archivos | Verificación |
+|---|---|---|
+| Glifo `alert` (`TriangleAlert`) añadido a las dos entradas del paquete | `packages/icons/src/index.web.tsx`, `packages/icons/src/index.native.tsx` | paridad 41/41 sin nombres exclusivos; `alert` presente en ambas |
+| El estado de error deja de usar el glifo de ayuda | `apps/business-app/components/operation-list.tsx` | `corepack pnpm --filter @agestyles/business-app typecheck` → PASS |
+| Pestañas de negocio con tokens en lugar de literales (`#111B2D`, `#FFFFFF`, `#171717`, `#6F6F6B`, `#E4E4DF`) | `apps/business-app/app/(tabs)/_layout.tsx` | mismo typecheck; `git diff --check` limpio |
+| Estado posterior anotado en el informe | `docs/ui/icon-ecosystem-audit.md` | revisión del apartado 8 |
+
+**Siguen abiertas:** grosor 2.2 solo en pestañas del comprador, tamaños de control fuera de 20–24 px, `⌕`/`↗` como glifos de texto en el storefront (área publicada), prop `weight` ignorada en `IconSymbol`, typecheck propio de `@agestyles/icons` y su ausencia en `transpilePackages`. No se ejecutó build, instalación ni despliegue; la validación visual/TalkBack sigue pendiente de dispositivo.

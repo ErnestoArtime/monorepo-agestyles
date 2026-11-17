@@ -1,8 +1,10 @@
+import type { IconName } from "@agestyles/icons";
+
 /**
  * Information about a payment provider for display purposes
  */
 export interface PaymentProviderInfo {
-  icon: string;
+  icon: IconName;
   title: string;
 }
 
@@ -12,16 +14,18 @@ export interface PaymentProviderInfo {
  */
 export function getPaymentProviderInfo(providerId: string): PaymentProviderInfo {
   switch (providerId) {
-    case 'pp_system_default':
+    case "pp_system_default":
       return {
-        icon: 'creditcard',
-        title: 'Manual Payment',
+        icon: "creditCard",
+        title: "Manual Payment",
       };
     default:
       return {
-        icon: 'creditcard',
-        title: providerId.replace('pp_', '').replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
+        icon: "creditCard",
+        title: providerId
+          .replace("pp_", "")
+          .replace(/_/g, " ")
+          .replace(/\b\w/g, (l) => l.toUpperCase()),
       };
   }
 }
-

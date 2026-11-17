@@ -1,6 +1,5 @@
 import { Loading } from "@/components/loading";
 import { Button } from "@/components/ui/button";
-import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { formatPrice } from "@/lib/format-price";
@@ -66,9 +65,9 @@ export function PaymentStep({
                   accessibilityState={{ checked: isSelected }}
                 >
                   <View style={styles.optionContent}>
-                    <IconSymbol
+                    <Icon
                       size={24}
-                      name={providerInfo.icon as any}
+                      name={providerInfo.icon}
                       color={isSelected ? colors.tint : colors.icon}
                     />
                     <Text

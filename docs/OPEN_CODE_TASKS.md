@@ -14,7 +14,7 @@ Usar esta lista para avanzar el [plan maestro](./AGESTYLES_2_0_PLAN_MAESTRO.md) 
 
 ### OC-01 — Mapa del esquema legado para F0/F6
 
-**Estado:** completada por OpenCode (17 nov 2026)
+**Estado:** auditoría completada por OpenCode; corrección de tipos P1 completada por Codex (17 nov 2026)
 **Prioridad:** P0
 **Resultado:** [docs/migration/legacy-source-map.md](./migration/legacy-source-map.md). Solo esquema del repositorio, sin filas, credenciales, conexión ni migraciones. Identifica brechas y decisiones pendientes para ETL.
 
@@ -57,7 +57,7 @@ Definir una configuración mantenible para TypeScript/Expo/Next/Medusa y conecta
 
 **Estado:** completada por OpenCode (17 nov 2026)
 **Prioridad:** P1
-**Resultado:** [docs/ui/icon-ecosystem-audit.md](./ui/icon-ecosystem-audit.md). Solo lectura: sin cambios de código, instalaciones ni publicación. Sin importaciones directas de otras librerías y paridad 40/40 entre web y nativo; quedan 5 brechas P1 (fallback silencioso a `help`, etiquetas accesibles ausentes en carrito y pago, glifos de texto) y deuda de typecheck/`transpilePackages`.
+**Resultado:** [docs/ui/icon-ecosystem-audit.md](./ui/icon-ecosystem-audit.md). Paridad inicial 40/40 entre web y nativo y sin importaciones directas de otras librerías. Codex cerró la brecha de tipos/fallback sin instalar dependencias; el estado posterior de accesibilidad y glifos de texto está anotado en la auditoría y queda pendiente de cierre coordinado.
 
 **Archivos permitidos:** `apps/**` (solo lectura), `packages/icons/**` (solo lectura), `docs/design-system.md` (solo lectura) y `docs/ui/icon-ecosystem-audit.md` (nuevo informe). No editar componentes ni dependencias.
 
