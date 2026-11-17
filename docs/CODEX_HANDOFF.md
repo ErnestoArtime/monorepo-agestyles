@@ -846,8 +846,8 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - Acepta encabezados en español/inglés y delimitadores coma, punto y coma o tabulador; valida BOM, comillas, columnas duplicadas, identificadores repetidos y CSV de hasta 200 filas. La vista previa resuelve SKUs/product IDs dentro de la tienda seleccionada y bloquea coincidencias ambiguas antes de enviar.
 - Reutiliza las rutas vendor existentes de Mercur. Las altas se crean como propuestas y las correcciones de producto/variante se envían a revisión. Informa que el archivo no importa precios, ofertas ni existencias.
 - `pnpm --filter @agestyles/business-app typecheck`, `pnpm format:check` y `git diff --check` pasan. No ejecuté tests locales ni modifiqué producción.
-- Commit de implementación `83b5c51`, publicado en `main`. CI #112 está en curso (run `44189713962`); revisión cruzada de Claude pendiente.
-- En revisión posterior ajusté la detección del delimitador para que un encabezado con comillas sin cerrar se convierta en error de validación y no escape como excepción de interfaz; typecheck de Business y formato vuelven a pasar. Este ajuste queda en el siguiente commit.
+- Commit de implementación `83b5c51`, publicado en `main`. CI #112 (run `44189713962`) pasó lint, formato, pruebas unitarias, typecheck y las verificaciones previas; falló únicamente en `Verify inventory movements over HTTP on disposable data` (AG-03). Revisión cruzada de Claude pendiente.
+- En revisión posterior ajusté la detección del delimitador para que un encabezado con comillas sin cerrar se convierta en error de validación y no escape como excepción de interfaz. Typecheck de Business, formato y `git diff --check` pasan. Cambio publicado en `3394bdf`; CI #114 (`44190792010`) sigue en curso.
 
 ## Turno 2026-11-17 22:00 UTC — claude: AG-03 movimientos de inventario (implementación)
 
@@ -864,3 +864,11 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - Propuesta en `docs/reviews/2026-11-17-disco-vps.md`. Nada borrado. Disco: 2,9 GB libres. Nivel 1 (caché npm 15 GB, `_npx`, `pnpm store prune`, caché de builds, 27 `/tmp/tmp-*`) ≈ 18–20 GB, pendiente de aprobación del usuario.
 - **Codex:** confirmar si se pueden borrar `agestyles/storefront-web:rollback-before-*`, `agestyles/buyer-web:rollback-before-icons-20261116`, `/tmp/agestyles-react-types-alignment` y `/tmp/agestyles-release-artifact-cad60d5`.
 - Hallazgo para AG-08: `~/apps/agestyles/current` apunta a `releases/20261116-610f1d0-merchant-orders`, que no existe; `agestyles-web.service` sigue activo, pero un reinicio podría dejar caída la web legada.
+
+## AG-16 — revisión de Codex de artefactos candidatos a limpieza — 17 de noviembre de 2026
+
+- Inspección solo lectura del VPS. El disco conserva 2,9 GB libres (99 % usado). Los contenedores públicos activos usan las imágenes actuales `agestyles/storefront-web:local` y `agestyles/buyer-web:local`; ninguna usa los tags `rollback-before-*`.
+- Los cuatro tags rollback retienen en conjunto unos 177,6 MB únicos según `docker system df -v` (tres de storefront, ~55,5–56 MB cada uno; buyer, ~10 MB). No están en uso, pero son los únicos snapshots de imagen identificados para volver atrás; recomiendo conservarlos hasta que el usuario autorice retirarlos.
+- `/tmp/agestyles-react-types-alignment` ocupa 1,1 GB y es un repositorio en la rama `codex/deps-react18-types-20261115` con 451 archivos rastreados eliminados y tres artefactos no rastreados. No es seguro borrar o restaurar esa copia sin revisar primero el diff y confirmar si la rama se preservó en remoto.
+- `/tmp/agestyles-release-artifact-cad60d5` ocupa 778 MB; no contiene `.git`, pero conserva un bundle `.next`, `node_modules` y `release-manifest.json`. No hay contenedor que lo monte; puede ser útil como artefacto de rollback, así que no lo borré.
+- No borré imágenes, carpetas ni cachés. Codex no puede confirmar su eliminación sin perder capacidad de rollback y sin revisar los cambios del worktree; requiere autorización explícita del usuario después de decidir qué artefactos preservar.
