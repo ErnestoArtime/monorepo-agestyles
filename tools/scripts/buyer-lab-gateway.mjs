@@ -12,7 +12,7 @@ const allowedOrigins = new Set(
     .map((o) => o.trim())
     .filter(Boolean),
 );
-if (!/^\/[a-z0-9-]+$/.test(prefix) || !listenPort || !upstreamPort) {
+if (!/^(\/[a-z0-9-]+)?$/.test(prefix) || !listenPort || !upstreamPort) {
   throw new Error("Invalid gateway configuration");
 }
 const clientRequests = new Map();
@@ -155,5 +155,7 @@ createServer({ requestTimeout: 30_000, headersTimeout: 10_000 }, (incoming, outg
   outgoing.on("close", () => backend.destroy());
   incoming.pipe(backend);
 }).listen(listenPort, "127.0.0.1", () => {
-  console.log(`Buyer gateway ${prefix} listening on 127.0.0.1:${listenPort} -> ${upstreamPort}`);
+  console.log(
+    `Buyer gateway ${prefix || "/"} listening on 127.0.0.1:${listenPort} -> ${upstreamPort}`,
+  );
 });

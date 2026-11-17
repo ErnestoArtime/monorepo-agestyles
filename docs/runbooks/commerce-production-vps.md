@@ -29,11 +29,12 @@ Validar el catálogo en la API local antes de cambiar el origen de las webs púb
 
 ## Gateway público de compradores
 
-El servicio `buyer-gateway` de `infra/compose/commerce-production-data.yaml` reutiliza `tools/scripts/buyer-lab-gateway.mjs` con `GATEWAY_PREFIX=/agestyles`, `GATEWAY_PORT=19186`, `UPSTREAM_PORT=19085` y `ALLOWED_ORIGINS` para `tienda.eav-labs.com` y `catalogo.eav-labs.com`. Expone solo la lista de rutas Store/auth de clientes del gateway; Admin y Vendor responden 404 y orígenes ajenos 403.
+Todas las apps de AgeStyles (Tienda, Catálogo, Negocio y móvil) usan un único dominio de API: `https://agestyles-api.eav-labs.com`. Se eligió un subdominio de un solo nivel porque el certificado universal de Cloudflare cubre `*.eav-labs.com` pero no niveles inferiores, y un nombre propio evita mezclarlo con otros proyectos del VPS.
+
+El servicio `buyer-gateway` de `infra/compose/commerce-production-data.yaml` reutiliza `tools/scripts/buyer-lab-gateway.mjs` sin prefijo (`GATEWAY_PREFIX=""`), en `GATEWAY_PORT=19186`, hacia `UPSTREAM_PORT=19085`, con `ALLOWED_ORIGINS` para `tienda.eav-labs.com` y `catalogo.eav-labs.com`. Expone solo la lista de rutas Store y de autenticación de clientes; Admin y Vendor responden 404 y los orígenes ajenos 403.
 
 ```sh
 docker compose --env-file /ruta/privada/compose.env -f infra/compose/commerce-production-data.yaml up -d buyer-gateway
 ```
 
-La ruta pública se configura en el túnel Cloudflare compartido (gestionado desde el panel, modo token): `descargas.eav-labs.com`, ruta `^/agestyles/`, servicio `http://127.0.0.1:19186`. Después, `MEDUSA_BACKEND_URL`/`BUYER_WEB_MEDUSA_URL` pasan a `https://descargas.eav-labs.com/agestyles` con la clave publicable de producción.
-
+Ruta en el túnel Cloudflare compartido (gestionado desde el panel, modo token): hostname `agestyles-api.eav-labs.com`, sin ruta, servicio `http://127.0.0.1:19186`. Cuando se conecte Negocio, se añadirá en el mismo hostname una entrada con ruta `^/vendor/` hacia el gateway de vendedores. Las webs usan `https://agestyles-api.eav-labs.com` con la clave publicable de producción.
