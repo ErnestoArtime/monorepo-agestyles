@@ -36,7 +36,7 @@ Estados: `pendiente` · `en curso` · `bloqueada` · `hecha · revisión pendien
 | ID | Tarea | Responsable | Estado | Siguiente paso |
 |---|---|---|---|---|
 | AG-01 | Desplegar la API con la tasa CUP y fijar la tasa | claude | en curso (17 nov, 21:40 UTC) | API desplegada (`9b16175`, `sha256:c3235c65…`); `/store/agestyles/exchange-rate` responde `null`. Falta fijar la tasa (decide: usuario: valor de elTOQUE o token de su API). |
-| AG-15 | Revisión conjunta del estado del plan: contrastar `STATUS_PLAN_MAESTRO.md` con el plan maestro, tablero, commits y evidencias actuales; proponer correcciones y criterios de cierre | codex; revisión de claude | en curso (17 nov 2026) | Auditar contradicciones y datos vencidos sin modificar producción. Codex propone los cambios al registro y Claude revisa evidencia/omisiones; consolidar el documento solo tras la revisión cruzada. |
+| AG-15 | Revisión conjunta del estado del plan: contrastar `STATUS_PLAN_MAESTRO.md` con el plan maestro, tablero, commits y evidencias actuales; proponer correcciones y criterios de cierre | codex; revisión de claude | en curso (17 nov 2026) | **Codex:** detectó que el encabezado/F3–F6 aún describen laboratorio o no migración, mientras el tablero y el handoff registran API pública y catálogo oficial en producción; también hay fechas/cortes y gates históricos mezclados con el snapshot actual. **Claude:** confirmar que su registro refleja el estado vigente de runtime, productos, dominios y CUP; señalar omisiones o datos desactualizados, sin editar `STATUS_PLAN_MAESTRO.md`. Después Codex consolida y Claude revisa. |
 
 ## Pendientes (por prioridad)
 
