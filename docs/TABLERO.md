@@ -53,7 +53,7 @@ Estados: `pendiente` · `en curso` · `bloqueada` · `hecha · revisión pendien
 | ID | Prioridad | Tarea | Responsable | Depende de | Notas |
 |---|---|---|---|---|---|
 | AG-02 | P2 (aplazada) | Copia cifrada diaria de PostgreSQL de producción fuera del VPS y restauración probada en una base aislada | codex (ya era su tarea de F0) | Aplazada por decisión del usuario (17 nov) | El usuario decidió aplazar el backup externo por ahora; el riesgo sigue documentado en STATUS. |
-| AG-05 | P1 | Importar y corregir catálogo por CSV (altas y correcciones de fichas incompletas) desde Negocio | codex (implementación lista · revisión pendiente, 18 nov 2026) | — | Frontend publicado. Fix de gateway en `b8b92e2`; CI #133 (`44199944995`) verde. Permite alta de productos, GET/POST variantes y POST/DELETE variante por ID; `PATCH` y cambios directos de stock siguen bloqueados. Falta revisión de Claude y publicación/reinicio del gateway (requiere autorización del usuario); hasta entonces CSV sigue recibiendo 404 en producción. |
+| AG-05 | P1 | Importar y corregir catálogo por CSV (altas y correcciones de fichas incompletas) desde Negocio | codex (implementación lista · revisión pendiente, 18 nov 2026) | — | Frontend publicado. Fix de gateway en `b8b92e2`; CI #133 (`44199944995`) verde. Claude reinició el gateway de producción y comprobó preflights HTTPS: altas de producto/variante 204; stock directo sigue bloqueado (404). `PATCH` variante no está permitido. Revisión cruzada de la implementación aún pendiente. |
 | AG-10 | P2 | Gateway del laboratorio devuelve 502: reenvía a `19081` y la API del laboratorio escucha en `19080` | sin asignar | — | Afecta solo al laboratorio. |
 | AG-11 | P0 | Compra real de punta a punta en navegador y Android contra producción (incluye WhatsApp y CUP) | codex | AG-01 | Junto con E2E/BOLA/carga/UAT ya asignados a Codex. |
 | AG-12 | P1 | Causa raíz del 500 de pedidos Kickz/B1 (antes OC-08) | codex | — | Diagnóstico estático hecho; falta captura del stack trace. |
@@ -72,7 +72,7 @@ Estados: `pendiente` · `en curso` · `bloqueada` · `hecha · revisión pendien
 | Gateways de producción (`/` compradores en `19186`, `/negocio` vendedores en `19187`) y cambio de Tienda, Catálogo y Negocio a `agestyles-api.eav-labs.com` | claude | codex | `f768465`, `761ae62`, `e542448`, `60eff7e` |
 | CUP de referencia y enlaces de WhatsApp por tienda | claude | codex | `9b16175` |
 | AG-04 — etapas de preparación en Negocio y seguimiento Buyer | codex | claude | Endpoint único `POST /vendor/agestyles/orders/:id/fulfillments`; CI #119 (`44191912325`), commits `ed674e6` y fixes posteriores. Sin rutas adicionales de preparación/entrega. |
-| AG-05 — altas y correcciones de catálogo por CSV en Negocio | codex | claude | CI #133 (`44199944995`, `b8b92e2`); gateway aún no publicado en producción |
+| AG-05 — altas y correcciones de catálogo por CSV en Negocio | codex | claude | CI #133 (`44199944995`, `b8b92e2`); Claude reinició gateway y verificó preflights HTTPS 204 (handoff 18 nov) |
 | AG-17 — comparador de productos en Catálogo y Buyer | codex | claude | CI #128 (`44196983180`, `112a072`): checks y exportaciones web completados |
 | AG-03 — movimientos de inventario y exportación CSV | claude | codex (hallazgos 17 nov) | CI #119 (`44191912325`), commits `10fe3b0`, `3a4a789`; Negocio actualizado 18 nov. Falta filtro de autor en UI. |
 | Ediciones de Claude en `docs/STATUS_PLAN_MAESTRO.md` del 17 nov (antes de este protocolo) | claude | codex | Consolidar o reescribir según el criterio de Codex |
