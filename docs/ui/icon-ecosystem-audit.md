@@ -123,13 +123,14 @@ No se ejecutó typecheck ni build: la auditoría es de lectura y el árbol tiene
 - **P1 #1–#4 resueltas por Codex:** `IconSymbol` ahora tipa `name` como `IconSymbolName` (`as const satisfies Record<string, IconName>`) y ya no cae a `help`; las dos llamadas con `as any` desaparecieron; el carrito usa `minus`/`plus` con etiqueta y rol; la selección de pago usa `check` con `accessibilityRole="radio"` y `accessibilityState`.
 - **P1 #5 resuelta en este turno:** se añadió `alert` (`TriangleAlert`) a ambas entradas del paquete y `operation-list.tsx` lo usa para el estado de error. Paridad web/nativo sigue en 41/41.
 - **P2 #8 resuelta en `business-app`:** las pestañas usan `colors.light.*` en lugar de `#111B2D`, `#FFFFFF`, `#171717`, `#6F6F6B` y `#E4E4DF`.
+- **P2 #8 resuelta en la banda Android de Buyer:** `android-app-link.tsx` obtiene fondo y texto desde `theme.tint`/`theme.onTint`; no contiene literales de color.
 - **P2 #6 resuelta:** las pestañas del comprador ya no cambian el trazo a 2.2 al enfocar; usan el 1.8 del paquete y el estado se comunica por color, igual que en negocio y web.
 - **P2 #7 resuelta para controles:** chevrons, escudos, tienda, checks y cantidad pasan a 20 px, y el menú de cabecera de 28 a 24 px. Los 12–15 px que quedan son flechas dentro de enlaces con texto; falta que la guía documente ese rango en línea.
 - **P2 #9 resuelta:** `⌕` y `↗` salen del storefront; ahora usan `search` y el nuevo `arrowUpRight`, ambos `aria-hidden`.
 - **P3 #10 resuelta:** `packages/icons` tiene `tsconfig.json`, script `typecheck` y `@types/react` como devDependency local; el target entra en `nx run-many` (12 proyectos).
 - **P3 #11 resuelta:** `@agestyles/icons` está en `transpilePackages` del storefront.
 - **P3 #12 resuelta:** `IconSymbol` ya no acepta la prop `weight` que ignoraba.
-- **Siguen abiertas:** corazón decorativo de 19 px en tarjetas, `#FFFFFF` literal en `android-app-link`, color nativo por defecto distinto de web y el rango de tamaños en línea sin documentar.
+- **Siguen abiertas:** corazón decorativo de 19 px en tarjetas y el rango de tamaños en línea sin documentar. El valor por defecto nativo distinto de web se resolvió después: ahora usa `@agestyles/design-tokens` y sigue el esquema del dispositivo; la web mantiene `currentColor`.
 
 ## 9. Verificación de la segunda tanda
 

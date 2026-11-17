@@ -351,6 +351,9 @@ importers:
 
   packages/icons:
     dependencies:
+      '@agestyles/design-tokens':
+        specifier: workspace:*
+        version: link:../design-tokens
       lucide-react:
         specifier: 1.73.0
         version: 1.73.0(@types/react@19.1.17)(react@19.1.0)

@@ -42,6 +42,8 @@ import {
   Warehouse,
   X,
 } from "lucide-react-native";
+import { colors } from "@agestyles/design-tokens";
+import { useColorScheme } from "react-native";
 
 const glyphs = {
   alert: TriangleAlert,
@@ -96,7 +98,9 @@ export type IconProps = {
   strokeWidth?: number;
 };
 
-export function Icon({ name, size = 20, color = "#171717", strokeWidth = 1.8 }: IconProps) {
+export function Icon({ name, size = 20, color, strokeWidth = 1.8 }: IconProps) {
+  const scheme = useColorScheme();
+  const resolvedColor = color ?? (scheme === "dark" ? colors.dark.text : colors.light.text);
   const Glyph = glyphs[name];
-  return <Glyph size={size} color={color} strokeWidth={strokeWidth} />;
+  return <Glyph size={size} color={resolvedColor} strokeWidth={strokeWidth} />;
 }
