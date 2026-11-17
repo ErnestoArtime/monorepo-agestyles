@@ -116,3 +116,10 @@ El checkout fuente presenta cambios sin seguimiento en `.codex/`, `scripts/__pyc
 - F4/F7: agregada prueba de contrato de la ruta `GET /store/orders/:id/tracking` con `QUERY.graph` en memoria. Comprueba anónimo→401 sin consultar el grafo, cliente ajeno→404 sin etiqueta, y dueño→tracking por línea; no accede a base de datos.
 - `corepack pnpm test` pasa 6/6, typecheck 12/12, lint 0 errores/20 advertencias, Prettier y ESLint de los archivos tocados pasan. Nx detecta el test nuevo de Commerce API.
 - El endpoint aún no está en la imagen del API desplegado; la nueva prueba no sustituye la validación runtime ni autoriza reintentar el verificador con fixtures contaminados. CI remoto de este cambio queda pendiente.
+
+## Revalidación — 17 de noviembre de 2026, 05:59 UTC
+
+- GitHub Actions run [44027490205](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44027490205), para `main` en `01f1f6a418e06b6f93fdf7c10dd885d8fe0a883c`, terminó `success` a las 05:57 UTC. Pasaron instalación congelada, lint, formato, 6/6 pruebas, 12/12 typechecks y los tres builds web. F2 sigue parcial por builds nativos y validación en dispositivos.
+- `main` local y remoto siguen en `01f1f6a`; el commit está en GitHub. No hay evidencia de ejecución del workflow manual `Publish frontend images`; las webs públicas siguen usando imágenes anteriores `:local`. No se afirma que la UI/API reciente esté desplegada.
+- Se detectaron cambios locales sin commit en `apps/buyer-app/app/(drawer)/(tabs)/account/orders/[id].tsx` y `apps/buyer-app/lib/status-labels.ts`. Se preservaron sin incluirlos en el commit ni declararlos verificados/publicados.
+- La ruta de tracking continúa pendiente de despliegue e identificación de imagen de Commerce API, y de validación runtime con un pedido de fixture limpio. El test actual solo valida el handler contra `QUERY.graph` simulado.
