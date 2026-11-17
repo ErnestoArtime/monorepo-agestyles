@@ -220,4 +220,10 @@ El commit `3444eef` pasó CI [run 44067825900](https://github.com/ErnestoArtime/
 
 ## Cobertura del carrito compartido Buyer — 17 de noviembre de 2026, 11:03 UTC
 
-El commit `1038865` añade cinco casos sintéticos para persistencia/recuperación de carrito, selección seller-scoped de oferta y transferencia de actor buyer. `features-buyer` pasa sus 6 casos; Nx test 8/8, typecheck CI 12/12, lint sin errores (19 advertencias) y formato PASS. CI [run 44070309096](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44070309096) terminó success con además build de imagen, migraciones y health contra PostgreSQL/Redis de CI. Esto cubre contratos aislados, no el checkout UI ni una compra runtime nueva.
+El commit `8923f88` cubre persistencia/recuperación de carrito, transferencia de actor comprador y adición de ofertas de dos vendedores al mismo carrito. `features-buyer` pasa sus 6 pruebas. CI [run 44071834569](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44071834569) terminó success: typecheck, lint, formato, pruebas, build no publicado de API, migraciones/health en PostgreSQL/Redis desechables y build/export web. Esto cubre contratos aislados, no el checkout UI ni una compra runtime nueva.
+
+## Revalidación del gateway comprador — 17 de noviembre de 2026, 11:13 UTC
+
+Desde el origen público Buyer, CORS preflight de `store/regions` responde 204 y permite el origen/header esperado; regiones responde 200/1, productos 200/12 y las 12 miniaturas contestan HEAD 200. Se mantuvo la publishable key fuera de consola. El gateway ya entrega catálogo y miniaturas al comprador; falta inspección del render/UI en navegador y checkout completo desde la interfaz.
+
+OC-09 sigue abierto solo para la revisión visual de rutas completas en claro/oscuro y TalkBack. No hay dispositivo conectado ni navegador automatizable disponible y el host tiene 3.1 GiB libres (umbral documentado para AVD: 8 GiB). CI confirma build/export web, que no reemplaza esa comprobación manual.

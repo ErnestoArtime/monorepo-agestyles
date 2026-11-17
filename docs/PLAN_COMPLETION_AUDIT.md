@@ -155,4 +155,10 @@ CI del commit `3444eef` [run 44067825900](https://github.com/ErnestoArtime/monor
 
 ## Addendum de pruebas del carrito Buyer — 17 de noviembre de 2026
 
-El commit `1038865` incorporó cobertura para el feature compartido de carrito: carrito guardado/obsoleto, limpieza y creación regional, transferencia y alta de una oferta de vendedor concreta. Sus 6 pruebas de paquete y los 8 targets Nx pasan; typecheck 12/12, lint 0 errores/19 warnings y formato PASS. CI [run 44070309096](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44070309096) terminó success. La validación no incluye UI/browser ni reemplaza el checkout de laboratorio; F4/F5/F7 permanecen parciales.
+El commit `8923f88` añade cobertura para el feature compartido de carrito: carrito guardado/obsoleto, limpieza y creación regional, transferencia y añadir ofertas de dos vendedores al mismo carrito. Sus 6 pruebas de paquete pasan. CI [run 44071834569](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44071834569) terminó success: incluye typecheck, lint, formato, pruebas, build no publicado de API, migraciones/healthcheck en PostgreSQL/Redis desechables y export/build web. La validación no incluye UI/browser ni reemplaza el checkout de laboratorio; F4/F5/F7 permanecen parciales.
+
+## Addendum de gateway buyer — 17 de noviembre de 2026, 11:13 UTC
+
+Preflight público desde la tienda compradora: HTTP 204, allow-origin coincide exactamente con `https://tienda.eav-labs.com`, headers permitidas `x-publishable-api-key,x-medusa-locale`; regiones HTTP 200/1, productos HTTP 200/12 usando la región retornada y miniaturas declaradas 12/12 HTTP 200. La clave publicable no se guardó ni se imprimió. Esto descarta en este corte un fallo de CORS, listado de catálogo o disponibilidad HTTP de miniaturas en el gateway; no prueba que la app visualice la respuesta ni que el checkout UI funcione.
+
+OC-09: queda pendiente la inspección visual completa de temas claro/oscuro y TalkBack. No se detectó un navegador de automatización ni dispositivo Android conectado; el host dispone de 3.1 GiB, por debajo del mínimo documentado de 8 GiB para crear un AVD. Los exports/builds web en CI son satisfactorios, pero no verifican render ni interacción visual.
