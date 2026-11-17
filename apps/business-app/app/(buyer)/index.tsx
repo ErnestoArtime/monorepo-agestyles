@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createBuyerCartFeature } from "../../../../packages/features-buyer/src/cart";
+import { logoutBusinessBuyerActor } from "../../../../packages/features-buyer/src/business-buyer-session";
 import { listProductOffers } from "../../../../packages/api-client/src/offers";
 import {
   acceptOrderQuote,
@@ -116,6 +117,21 @@ export default function BuyerModeScreen() {
     }
   }
 
+  async function signOut() {
+    setBusy(true);
+    setError("");
+    try {
+      await logoutBusinessBuyerActor(buyer, () => {
+        setCustomer(null);
+        setQuote(null);
+      });
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "No se pudo cerrar la sesión de cliente.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function addOffer(offerId: string) {
     if (!region || !cart) return;
     setBusy(true);
@@ -220,14 +236,13 @@ export default function BuyerModeScreen() {
         <View style={styles.session}>
           <Text style={styles.sessionText}>Cliente: {customer.email}</Text>
           <Pressable
-            onPress={() => {
-              void buyer.logout().then(() => {
-                setCustomer(null);
-                setQuote(null);
-              });
-            }}
+            onPress={() => void signOut()}
+            disabled={busy}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: busy }}
+            style={({ pressed }) => [pressed && styles.pressed, busy && styles.disabled]}
           >
-            <Text style={styles.link}>Salir</Text>
+            <Text style={styles.link}>{busy ? "Cerrando…" : "Salir"}</Text>
           </Pressable>
         </View>
       )}
@@ -376,6 +391,8 @@ const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
     },
     sessionText: { color: theme.text, fontSize: 13 },
     link: { color: theme.action, fontWeight: "600", padding: 8 },
+    pressed: { opacity: 0.78 },
+    disabled: { opacity: 0.45 },
     search: {
       flexDirection: "row",
       alignItems: "center",

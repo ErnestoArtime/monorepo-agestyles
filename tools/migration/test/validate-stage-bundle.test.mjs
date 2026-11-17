@@ -1,11 +1,12 @@
 import assert from "node:assert/strict"
 import { createHash } from "node:crypto"
-import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
+import { cp, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises"
 import os from "node:os"
 import path from "node:path"
 import test from "node:test"
 import { fileURLToPath } from "node:url"
 import { validateStageBundle } from "../validate-stage-bundle.mjs"
+import { projectCatalog } from "../project-catalog-projection.mjs"
 
 const fixture = fileURLToPath(new URL("../fixtures/synthetic-v1", import.meta.url))
 const catalogFixture = fileURLToPath(new URL("../fixtures/synthetic-catalog-v1", import.meta.url))
@@ -67,6 +68,144 @@ test("accepts the checked-in synthetic catalog-only bundle", async () => {
   assert.equal(summary.totals.entities, 4)
   assert.equal(summary.totals.records, 4)
   assert.equal(JSON.stringify(summary).includes("product-synthetic-001"), false)
+})
+
+test("projects a sanitized synthetic catalog snapshot into a valid dry-run bundle", async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "agestyles-catalog-projection-"))
+  const input = path.join(root, "projection")
+  const output = path.join(root, "bundle")
+  await import("node:fs/promises").then(({ mkdir }) => mkdir(input))
+  const projection = {
+    categories: [{ id: "cat-1", slug: "clothing", name: "Clothing", sort_order: 1 }],
+    subcategories: [{ id: "sub-1", category_slug: "clothing", slug: "shirts", name: "Shirts" }],
+    products: [
+      {
+        id: "prod-1",
+        code: "00042",
+        name: "Synthetic shirt",
+        description: "Fixture only",
+        price: 25,
+        currency: "USD",
+        publication_status: "published",
+        subcategory_id: "sub-1",
+        brand_id: "brand-1",
+        variant_options: [{ key: "blue-m", label: "Blue / M" }],
+        store_id: "must-not-be-copied",
+        stock: 99,
+        customer_email: "must-not-be-copied@example.invalid",
+      },
+    ],
+    image_metadata: [
+      {
+        id: "image-1",
+        product_id: "prod-1",
+        sha256: "a".repeat(64),
+        mime_type: "image/jpeg",
+        display_order: 0,
+        is_primary: true,
+      },
+    ],
+  }
+  try {
+    for (const [name, rows] of Object.entries(projection)) {
+      await writeFile(path.join(input, `${name}.json`), `${JSON.stringify(rows)}\n`)
+    }
+    const result = await projectCatalog(input, output, { exportId: "synthetic-001" })
+    assert.equal(result.status, "projected")
+    assert.equal(result.total_records, 5)
+    const summary = await validateStageBundle(output, { profile: "catalog-only" })
+    assert.equal(summary.status, "valid")
+    const stagedProducts = JSON.parse(await readFile(path.join(output, "products.json"), "utf8"))
+    assert.equal(stagedProducts[0].payload.code, "00042")
+    assert.equal(stagedProducts[0].payload.import_visibility, "draft_until_reconciled")
+    assert.equal(JSON.stringify(stagedProducts).includes("must-not-be-copied"), false)
+    assert.equal(JSON.stringify(stagedProducts).includes("example.invalid"), false)
+    const stagedCategories = JSON.parse(
+      await readFile(path.join(output, "categories.json"), "utf8"),
+    )
+    assert.equal(stagedCategories[1].references[0].relation, "parent_category")
+    assert.equal(JSON.stringify(result).includes("prod-1"), false)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test("projection refuses unresolved relations, malformed options, image URLs, and existing outputs", async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "agestyles-catalog-projection-"))
+  const input = path.join(root, "projection")
+  const output = path.join(root, "bundle")
+  const { mkdir } = await import("node:fs/promises")
+  await mkdir(input)
+  const base = {
+    categories: [{ id: "cat-1", slug: "clothing", name: "Clothing" }],
+    subcategories: [],
+    products: [
+      {
+        id: "prod-1",
+        name: "Synthetic",
+        category_slug: "clothing",
+        currency: "USD",
+        variant_options: [{ key: "x", label: "X" }],
+      },
+    ],
+    image_metadata: [],
+  }
+  const writeProjection = async (value) => {
+    for (const [name, rows] of Object.entries(value)) {
+      await writeFile(path.join(input, `${name}.json`), `${JSON.stringify(rows)}\n`)
+    }
+  }
+  try {
+    await writeProjection({
+      ...base,
+      products: [{ ...base.products[0], category_slug: "missing" }],
+    })
+    await assert.rejects(
+      projectCatalog(input, output, { exportId: "synthetic-002" }),
+      /product_category_unresolved/,
+    )
+    await writeProjection({
+      ...base,
+      products: [{ ...base.products[0], variant_options: [{ key: "", label: "X" }] }],
+    })
+    await assert.rejects(
+      projectCatalog(input, output, { exportId: "synthetic-002" }),
+      /invalid_variant_options/,
+    )
+    await writeProjection({
+      ...base,
+      image_metadata: [
+        {
+          id: "img",
+          product_id: "prod-1",
+          sha256: "a".repeat(64),
+          mime_type: "image/jpeg",
+          image_url: "https://example.invalid/private",
+        },
+      ],
+    })
+    await assert.rejects(
+      projectCatalog(input, output, { exportId: "synthetic-002" }),
+      /media_url_field_forbidden/,
+    )
+    await writeProjection(base)
+    const categoriesPath = path.join(input, "categories.json")
+    await rm(categoriesPath)
+    const alternatePath = path.join(root, "alternate.json")
+    await writeFile(alternatePath, JSON.stringify(base.categories))
+    await symlink(alternatePath, categoriesPath)
+    await assert.rejects(
+      projectCatalog(input, output, { exportId: "synthetic-002" }),
+      /projection_file_not_regular_or_too_large/,
+    )
+    await mkdir(output)
+    await assert.rejects(
+      projectCatalog(input, output, { exportId: "synthetic-002" }),
+      /output_directory_must_not_exist/,
+    )
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
 })
 
 test("catalog-only profile accepts a catalog bundle without sellers, offers, stock, or customer data", async () => {

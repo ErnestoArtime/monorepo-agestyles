@@ -3,13 +3,26 @@ import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useBusiness } from "../../context/business-context";
 import { hasPermission, OperationList, Row, Section } from "../../components/operation-list";
 import { useBusinessTheme } from "../../hooks/use-business-theme";
+import {
+  canAddDefaultVariant,
+  deriveVariantAxes,
+  hasVariantCombination,
+  type VariantAxis,
+} from "../../lib/variant-options";
 
 type SellerProduct = {
   id: string;
   title: string;
   description?: string | null;
   status?: string;
-  variants?: { id: string; title?: string }[];
+  variants?: SellerVariant[];
+};
+
+type SellerVariant = {
+  id: string;
+  title?: string;
+  sku?: string | null;
+  options?: { value: string; option?: { title?: string } }[];
 };
 
 type ProductChangeResponse = {
@@ -28,6 +41,20 @@ export default function ProductsScreen() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [editingVariantId, setEditingVariantId] = useState<string | null>(null);
+  const [variantTitle, setVariantTitle] = useState("");
+  const [variantSku, setVariantSku] = useState("");
+  const [savingVariantId, setSavingVariantId] = useState<string | null>(null);
+  const [addingVariantProductId, setAddingVariantProductId] = useState<string | null>(null);
+  const [loadingVariantOptionsFor, setLoadingVariantOptionsFor] = useState<string | null>(null);
+  const [savingNewVariantFor, setSavingNewVariantFor] = useState<string | null>(null);
+  const [newVariantTitle, setNewVariantTitle] = useState("");
+  const [newVariantSku, setNewVariantSku] = useState("");
+  const [variantAxes, setVariantAxes] = useState<VariantAxis[]>([]);
+  const [selectedVariantOptions, setSelectedVariantOptions] = useState<Record<string, string>>({});
+  const [loadedVariantsByProduct, setLoadedVariantsByProduct] = useState<
+    Record<string, SellerVariant[]>
+  >({});
   const canEdit = hasPermission(member, "products", "edit");
 
   const load = useCallback(async () => {
@@ -36,7 +63,7 @@ export default function ProductsScreen() {
     setError("");
     try {
       const data = await request<{ products?: SellerProduct[] }>(
-        "/vendor/products?limit=50&fields=id,title,description,status,variants.id,variants.title",
+        "/vendor/products?limit=50&fields=id,title,description,status,variants.id,variants.title,variants.sku",
       );
       setItems(data?.products ?? []);
     } catch (cause) {
@@ -108,6 +135,146 @@ export default function ProductsScreen() {
     }
   }
 
+  function beginVariantEdit(variant: SellerVariant) {
+    if (!canEdit) return;
+    setNotice("");
+    setError("");
+    setEditingVariantId(variant.id);
+    setVariantTitle(variant.title ?? "");
+    setVariantSku(variant.sku ?? "");
+  }
+
+  function cancelVariantEdit() {
+    setEditingVariantId(null);
+    setVariantTitle("");
+    setVariantSku("");
+  }
+
+  async function submitVariantChange(item: SellerProduct, variant: SellerVariant) {
+    const nextTitle = variantTitle.trim();
+    const nextSku = variantSku.trim();
+    if (!nextTitle) {
+      setError("El nombre de la variante no puede quedar vacío.");
+      return;
+    }
+
+    const update: { title?: string; sku?: string | null } = {};
+    if (nextTitle !== (variant.title ?? "")) update.title = nextTitle;
+    if (nextSku !== (variant.sku ?? "")) update.sku = nextSku || null;
+    if (Object.keys(update).length === 0) {
+      setNotice("No hay cambios para enviar.");
+      cancelVariantEdit();
+      return;
+    }
+
+    setSavingVariantId(variant.id);
+    setError("");
+    setNotice("");
+    try {
+      await request<ProductChangeResponse>(
+        `/vendor/products/${item.id}/variants/${variant.id}`,
+        "POST",
+        update,
+      );
+      setNotice(
+        "Cambios de la variante enviados a AgeStyles para revisión. La ficha actual no cambia hasta su aprobación.",
+      );
+      cancelVariantEdit();
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : "No se pudo enviar la variante a revisión.",
+      );
+    } finally {
+      setSavingVariantId(null);
+    }
+  }
+
+  async function beginAddVariant(item: SellerProduct) {
+    if (!canEdit) return;
+    setError("");
+    setNotice("");
+    setLoadingVariantOptionsFor(item.id);
+    try {
+      const result = await request<{ variants?: SellerVariant[] }>(
+        `/vendor/products/${item.id}/variants?limit=50&fields=id,title,sku,options.value,options.option.title`,
+      );
+      const variants = result.variants ?? [];
+      const axes = deriveVariantAxes(variants);
+
+      if (axes.length === 0 && !canAddDefaultVariant(variants)) {
+        setError("Este producto no tiene opciones para diferenciar otra variante.");
+        return;
+      }
+
+      setLoadedVariantsByProduct((current) => ({ ...current, [item.id]: variants }));
+      setVariantAxes(axes);
+      setSelectedVariantOptions(
+        Object.fromEntries(axes.map((axis) => [axis.title, axis.values[0] ?? ""])),
+      );
+      setNewVariantTitle("");
+      setNewVariantSku("");
+      setAddingVariantProductId(item.id);
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "No se pudieron consultar las opciones del producto.",
+      );
+    } finally {
+      setLoadingVariantOptionsFor(null);
+    }
+  }
+
+  function cancelAddVariant() {
+    setAddingVariantProductId(null);
+    setNewVariantTitle("");
+    setNewVariantSku("");
+    setVariantAxes([]);
+    setSelectedVariantOptions({});
+  }
+
+  async function submitNewVariant(item: SellerProduct) {
+    const title = newVariantTitle.trim();
+    if (!title) {
+      setError("El nombre de la variante no puede quedar vacío.");
+      return;
+    }
+
+    const options = Object.fromEntries(
+      variantAxes.map((axis) => [axis.title, selectedVariantOptions[axis.title] ?? ""]),
+    );
+    if (Object.values(options).some((value) => !value)) {
+      setError("Selecciona un valor para cada opción de la variante.");
+      return;
+    }
+
+    if (hasVariantCombination(loadedVariantsByProduct[item.id] ?? [], options)) {
+      setError("Ya existe una variante con esa combinación de opciones.");
+      return;
+    }
+
+    setSavingNewVariantFor(item.id);
+    setError("");
+    setNotice("");
+    try {
+      await request<ProductChangeResponse>(`/vendor/products/${item.id}/variants`, "POST", {
+        title,
+        ...(newVariantSku.trim() ? { sku: newVariantSku.trim() } : {}),
+        ...(Object.keys(options).length > 0 ? { options } : {}),
+      });
+      setNotice(
+        "Variante enviada a revisión. Se creará sin inventario asignado; la ficha actual no cambia hasta su aprobación.",
+      );
+      cancelAddVariant();
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : "No se pudo enviar la variante a revisión.",
+      );
+    } finally {
+      setSavingNewVariantFor(null);
+    }
+  }
+
   return (
     <OperationList
       title="Productos"
@@ -135,6 +302,209 @@ export default function ProductsScreen() {
                 detail={`${item.variants?.length ?? 0} variantes · ${item.status ?? "Sin estado"}`}
                 action={canEdit ? () => beginEdit(item) : undefined}
               />
+              {item.variants?.length ? (
+                <View style={styles.variants}>
+                  {item.variants.map((variant) => (
+                    <View key={variant.id} style={styles.variant}>
+                      {editingVariantId === variant.id ? (
+                        <View style={styles.variantEditor}>
+                          <Text style={styles.label}>Nombre de la variante</Text>
+                          <TextInput
+                            accessibilityLabel={`Nombre de la variante ${variant.title ?? ""}`}
+                            value={variantTitle}
+                            onChangeText={setVariantTitle}
+                            editable={savingVariantId !== variant.id}
+                            maxLength={200}
+                            placeholder="Nombre de la variante"
+                            placeholderTextColor={theme.placeholderText}
+                            style={styles.input}
+                          />
+                          <Text style={styles.label}>SKU</Text>
+                          <TextInput
+                            accessibilityLabel={`SKU de la variante ${variant.title ?? ""}`}
+                            value={variantSku}
+                            onChangeText={setVariantSku}
+                            editable={savingVariantId !== variant.id}
+                            maxLength={100}
+                            autoCapitalize="characters"
+                            placeholder="Sin SKU"
+                            placeholderTextColor={theme.placeholderText}
+                            style={styles.input}
+                          />
+                          <View style={styles.actions}>
+                            <Pressable
+                              onPress={cancelVariantEdit}
+                              disabled={savingVariantId === variant.id}
+                              accessibilityRole="button"
+                              style={({ pressed }) => [
+                                styles.secondaryButton,
+                                pressed && styles.pressed,
+                                savingVariantId === variant.id && styles.disabled,
+                              ]}
+                            >
+                              <Text style={styles.secondaryText}>Cancelar</Text>
+                            </Pressable>
+                            <Pressable
+                              onPress={() => void submitVariantChange(item, variant)}
+                              disabled={savingVariantId === variant.id || !variantTitle.trim()}
+                              accessibilityRole="button"
+                              style={({ pressed }) => [
+                                styles.primaryButton,
+                                pressed && styles.pressed,
+                                (savingVariantId === variant.id || !variantTitle.trim()) &&
+                                  styles.disabled,
+                              ]}
+                            >
+                              <Text style={styles.primaryText}>
+                                {savingVariantId === variant.id ? "Enviando…" : "Enviar a revisión"}
+                              </Text>
+                            </Pressable>
+                          </View>
+                        </View>
+                      ) : (
+                        <View style={styles.variantSummary}>
+                          <View style={styles.variantText}>
+                            <Text style={styles.variantTitle}>{variant.title ?? "Variante"}</Text>
+                            <Text style={styles.variantSku}>{variant.sku || "Sin SKU"}</Text>
+                          </View>
+                          {canEdit ? (
+                            <Pressable
+                              onPress={() => beginVariantEdit(variant)}
+                              accessibilityRole="button"
+                              accessibilityLabel={`Editar variante ${variant.title ?? ""}`}
+                              style={({ pressed }) => [
+                                styles.variantAction,
+                                pressed && styles.pressed,
+                              ]}
+                            >
+                              <Text style={styles.variantActionText}>Editar</Text>
+                            </Pressable>
+                          ) : null}
+                        </View>
+                      )}
+                    </View>
+                  ))}
+                </View>
+              ) : null}
+              {canEdit ? (
+                <View style={styles.addVariantArea}>
+                  {addingVariantProductId === item.id ? (
+                    <View style={styles.variantEditor}>
+                      <Text style={styles.label}>Nueva variante</Text>
+                      <TextInput
+                        accessibilityLabel="Nombre de la nueva variante"
+                        value={newVariantTitle}
+                        onChangeText={setNewVariantTitle}
+                        editable={savingNewVariantFor !== item.id}
+                        maxLength={200}
+                        placeholder="Nombre de la variante"
+                        placeholderTextColor={theme.placeholderText}
+                        style={styles.input}
+                      />
+                      <TextInput
+                        accessibilityLabel="SKU de la nueva variante"
+                        value={newVariantSku}
+                        onChangeText={setNewVariantSku}
+                        editable={savingNewVariantFor !== item.id}
+                        maxLength={100}
+                        autoCapitalize="characters"
+                        placeholder="SKU (opcional)"
+                        placeholderTextColor={theme.placeholderText}
+                        style={styles.input}
+                      />
+                      {variantAxes.map((axis) => (
+                        <View key={axis.title} style={styles.optionAxis}>
+                          <Text style={styles.label}>{axis.title}</Text>
+                          <View style={styles.optionValues}>
+                            {axis.values.map((value) => {
+                              const selected = selectedVariantOptions[axis.title] === value;
+                              return (
+                                <Pressable
+                                  key={`${axis.title}-${value}`}
+                                  onPress={() =>
+                                    setSelectedVariantOptions((current) => ({
+                                      ...current,
+                                      [axis.title]: value,
+                                    }))
+                                  }
+                                  disabled={savingNewVariantFor === item.id}
+                                  accessibilityRole="radio"
+                                  accessibilityLabel={`${axis.title}: ${value}`}
+                                  accessibilityState={{ checked: selected }}
+                                  style={({ pressed }) => [
+                                    styles.optionChip,
+                                    selected && styles.optionChipSelected,
+                                    pressed && styles.pressed,
+                                  ]}
+                                >
+                                  <Text
+                                    style={[
+                                      styles.optionChipText,
+                                      selected && styles.optionChipTextSelected,
+                                    ]}
+                                  >
+                                    {value}
+                                  </Text>
+                                </Pressable>
+                              );
+                            })}
+                          </View>
+                        </View>
+                      ))}
+                      <Text style={styles.variantHelp}>
+                        Solo puedes elegir opciones ya usadas por este producto. La variante se
+                        enviará para aprobación y necesitará inventario antes de venderse.
+                      </Text>
+                      <View style={styles.actions}>
+                        <Pressable
+                          onPress={cancelAddVariant}
+                          disabled={savingNewVariantFor === item.id}
+                          accessibilityRole="button"
+                          style={({ pressed }) => [
+                            styles.secondaryButton,
+                            pressed && styles.pressed,
+                            savingNewVariantFor === item.id && styles.disabled,
+                          ]}
+                        >
+                          <Text style={styles.secondaryText}>Cancelar</Text>
+                        </Pressable>
+                        <Pressable
+                          onPress={() => void submitNewVariant(item)}
+                          disabled={savingNewVariantFor === item.id || !newVariantTitle.trim()}
+                          accessibilityRole="button"
+                          style={({ pressed }) => [
+                            styles.primaryButton,
+                            pressed && styles.pressed,
+                            (savingNewVariantFor === item.id || !newVariantTitle.trim()) &&
+                              styles.disabled,
+                          ]}
+                        >
+                          <Text style={styles.primaryText}>
+                            {savingNewVariantFor === item.id ? "Enviando…" : "Enviar a revisión"}
+                          </Text>
+                        </Pressable>
+                      </View>
+                    </View>
+                  ) : (
+                    <Pressable
+                      onPress={() => void beginAddVariant(item)}
+                      disabled={loadingVariantOptionsFor === item.id}
+                      accessibilityRole="button"
+                      style={({ pressed }) => [
+                        styles.addVariantButton,
+                        pressed && styles.pressed,
+                        loadingVariantOptionsFor === item.id && styles.disabled,
+                      ]}
+                    >
+                      <Text style={styles.variantActionText}>
+                        {loadingVariantOptionsFor === item.id
+                          ? "Cargando opciones…"
+                          : "Añadir variante"}
+                      </Text>
+                    </Pressable>
+                  )}
+                </View>
+              ) : null}
               {editingId === item.id ? (
                 <View style={styles.editor}>
                   <Text style={styles.label}>Nombre del producto</Text>
@@ -207,6 +577,53 @@ export default function ProductsScreen() {
 const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
   StyleSheet.create({
     product: { borderBottomWidth: 1, borderBottomColor: theme.border },
+    variants: { paddingHorizontal: 15, paddingBottom: 10 },
+    variant: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.border },
+    variantSummary: {
+      minHeight: 58,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 12,
+    },
+    variantText: { flex: 1, gap: 3 },
+    variantTitle: { color: theme.text, fontSize: 14, fontWeight: "600" },
+    variantSku: { color: theme.muted, fontSize: 12 },
+    variantAction: {
+      minHeight: 40,
+      minWidth: 60,
+      justifyContent: "center",
+      alignItems: "center",
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: theme.border,
+      paddingHorizontal: 12,
+    },
+    variantActionText: { color: theme.action, fontSize: 13, fontWeight: "600" },
+    variantEditor: { flex: 1, gap: 9, paddingVertical: 14 },
+    addVariantArea: { paddingHorizontal: 15, paddingBottom: 14 },
+    addVariantButton: {
+      minHeight: 42,
+      justifyContent: "center",
+      alignItems: "flex-start",
+      paddingHorizontal: 12,
+      borderRadius: 10,
+    },
+    optionAxis: { gap: 7 },
+    optionValues: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+    optionChip: {
+      minHeight: 38,
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: 20,
+      paddingHorizontal: 14,
+      backgroundColor: theme.surface,
+    },
+    optionChipSelected: { borderColor: theme.action, backgroundColor: theme.selectedSurface },
+    optionChipText: { color: theme.text, fontSize: 13 },
+    optionChipTextSelected: { color: theme.action, fontWeight: "600" },
+    variantHelp: { color: theme.muted, fontSize: 12, lineHeight: 17 },
     editor: { gap: 9, paddingHorizontal: 15, paddingBottom: 16 },
     label: { color: theme.text, fontSize: 13, fontWeight: "600" },
     input: {

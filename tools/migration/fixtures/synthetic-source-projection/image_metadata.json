@@ -1,0 +1,10 @@
+[
+  {
+    "id": "source-image-001",
+    "product_id": "source-product-001",
+    "display_order": 0,
+    "is_primary": true,
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "mime_type": "image/jpeg"
+  }
+]

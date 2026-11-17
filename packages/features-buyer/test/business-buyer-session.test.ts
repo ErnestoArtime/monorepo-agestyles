@@ -3,6 +3,7 @@ import {
   BUSINESS_BUYER_SESSION_PREFIX,
   createBuyerActorStorage,
   loginBusinessAndBuyerActors,
+  logoutBusinessBuyerActor,
 } from "../src/business-buyer-session.ts";
 
 {
@@ -30,6 +31,32 @@ import {
 
   assert.equal(await customerStorage.getItem("token"), null);
   assert.equal(values.get("agestyles.business.actor.token"), "member-token");
+}
+
+{
+  let clearedLocalSession = false;
+  await logoutBusinessBuyerActor({ async logout() {} }, () => {
+    clearedLocalSession = true;
+  });
+  assert.equal(clearedLocalSession, true);
+}
+
+{
+  let clearedLocalSession = false;
+  await assert.rejects(
+    logoutBusinessBuyerActor(
+      {
+        async logout() {
+          throw new Error("synthetic logout failure");
+        },
+      },
+      () => {
+        clearedLocalSession = true;
+      },
+    ),
+    /synthetic logout failure/,
+  );
+  assert.equal(clearedLocalSession, false);
 }
 
 {

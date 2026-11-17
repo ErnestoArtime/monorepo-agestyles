@@ -45,6 +45,11 @@ El grafo del monorepo está indexado. La arquitectura muestra apps `commerce-api
 
 **Regla de cierre:** actualizar esta auditoría con resultados medidos, no con intención. Una fase pasa a completa solo cuando su criterio de salida completo tiene evidencia actual verificable.
 
+## Revalidación local — 17 de noviembre de 2026, 08:37 UTC
+
+- La corrida completa actual de `pnpm test` pasa 8/8 targets (8 en caché); `pnpm typecheck` pasa 12/12 (11 en caché); `pnpm lint` termina con 0 errores y 20 advertencias; `pnpm format:check` y `git diff --check` pasan.
+- OC-09: revisión estática de Business no encuentra `Colors.light` ni colores hexadecimales locales en pantallas; el directorio y la ficha pública de tienda tienen reglas oscuras. No se pudo inspeccionar render visual: este host no tiene navegador automatizable ni dispositivo conectado. F4/F5/F7 siguen parciales y no se altera el estado de sus gates externos.
+
 ## Addendum de avance — 17 de noviembre de 2026, 04:50 UTC
 
 - Gates locales del estado actual: `pnpm test` 4/4; `pnpm typecheck` 12/12; `pnpm lint` 0 errores y 36 advertencias; `pnpm format:check` pasó. Tras una edición concurrente, el typecheck dirigido de Buyer pasó y la repetición global de Nx terminó 12/12. Ninguno de estos controles prueba el runtime Mercur, el build móvil ni el cutover.

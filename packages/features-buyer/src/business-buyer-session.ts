@@ -84,3 +84,12 @@ export function createBusinessBuyerSession(sdk: BuyerActorClient) {
     logout: () => sdk.auth.logout(),
   };
 }
+
+/** Apply local signed-out state only after the customer actor logout succeeds. */
+export async function logoutBusinessBuyerActor(
+  session: { logout(): Promise<unknown> },
+  onLoggedOut: () => void,
+) {
+  await session.logout();
+  onLoggedOut();
+}

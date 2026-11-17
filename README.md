@@ -12,8 +12,11 @@ Usa la versión de Node indicada en `.node-version` y Corepack para ejecutar la 
 
 ```sh
 corepack pnpm install --frozen-lockfile
-corepack pnpm typecheck
+corepack pnpm test
+corepack pnpm typecheck:quick
 ```
+
+Para un cambio en una sola app, usa su typecheck filtrado. El gate completo `corepack pnpm typecheck` incluye Commerce API y prepara primero los módulos workspace, así que resérvalo para checkpoints de integración. La guía de comandos está en [docs/DEV_WORKFLOW.md](docs/DEV_WORKFLOW.md).
 
 Los comandos del laboratorio están centralizados en la raíz. `corepack pnpm lab:up` crea un entorno privado si hace falta y arranca PostgreSQL y Redis. Después ejecuta `corepack pnpm lab:migrate`, `corepack pnpm lab:seed` y `corepack pnpm lab:buyer`. Arranca la API con `corepack pnpm lab:api` y Expo con `corepack pnpm lab:app`. `corepack pnpm lab:down` detiene los contenedores. Los procesos de API y Expo se detienen con Ctrl+C en sus terminales.
 

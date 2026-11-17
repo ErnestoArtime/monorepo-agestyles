@@ -28,9 +28,11 @@
     "seller:web:build": "node --env-file=apps/business-app/.env.local tools/scripts/build-business-web.mjs",
     "lab:web:serve": "python3 -m http.server 18081 --bind 127.0.0.1 --directory apps/buyer-app/dist",
     "migration:catalog:check": "node tools/migration/validate-stage-bundle.mjs --profile catalog-only",
+    "migration:catalog:project": "node tools/migration/project-catalog-projection.mjs",
     "migration:test": "node --test tools/migration/test/validate-stage-bundle.test.mjs",
     "test": "nx run-many --target=test",
     "typecheck": "nx run-many --target=typecheck",
+    "typecheck:quick": "nx run-many --target=typecheck --exclude=@agestyles/commerce-api",
     "lint": "eslint .",
     "format:check": "node --input-type=module -e 'import { execFileSync, spawnSync } from \"node:child_process\"; const base = process.env.FORMAT_BASE_REF; const diffArgs = [\"diff\", \"--name-only\", \"--diff-filter=ACMR\", ...(base ? [`${base}...HEAD`] : [\"HEAD\"]), \"--\"]; const files = execFileSync(\"git\", diffArgs, { encoding: \"utf8\" }).split(/\\r?\\n/).filter((file) => /\\.(?:cjs|css|html|js|json|jsonc|jsx|mjs|scss|ts|tsx|yaml|yml)$/.test(file) && !file.startsWith(\"references/\")); if (!files.length) { console.log(\"No changed supported files to format-check.\"); process.exit(0); } const result = spawnSync(\"prettier\", [\"--check\", ...files], { stdio: \"inherit\" }); process.exit(result.status ?? 1);'"
   },

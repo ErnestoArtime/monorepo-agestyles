@@ -33,7 +33,7 @@ La publicación se deriva de `publication_status`, pero los estados `pending`, `
 - Usar `legacy_id` estable y un futuro mapa de IDs para reintentos idempotentes. Un producto ya importado no debe crear otro al reejecutar.
 - Emitir informes con conteos y códigos de error, nunca filas, nombres, URLs privadas, identificadores o contenido completo de productos.
 
-El perfil `catalog-only` del validador comprueba estructura, hashes, referencias, moneda/estado permitidos, relación categoría-producto y metadatos de imagen sin URLs de origen. Rechaza entidades fuera del alcance y no escribe. Aún no existe un adaptador de exportación desde Supabase ni un importador a Medusa; el preflight acepta únicamente paquetes de intercambio preparados localmente.
+El perfil `catalog-only` del validador comprueba estructura, hashes, referencias, moneda/estado permitidos, relación categoría-producto y metadatos de imagen sin URLs de origen. Rechaza entidades fuera del alcance y no escribe. Existe un adaptador local (`tools/migration/project-catalog-projection.mjs`) que convierte proyecciones JSON ya preparadas a `stage-interchange` usando fixtures sintéticos. No consulta Supabase ni exporta filas. Aún no existe un exportador de origen ni un importador a Medusa; el preflight acepta únicamente paquetes de intercambio preparados localmente.
 
 ## Corte de esquema de referencia
 

@@ -493,3 +493,43 @@ La ruta de tracking está en código fuente pero falta en el API runtime. Se añ
 Verificación realizada: Prettier y `git diff --check`; `docker compose config` confirma imagen, red host y healthcheck correctos con un tag sintético. No se construyó ni publicó la imagen, no se desplegó, y no se tocó API/DB. Antes del runtime test, publicar desde GitHub, revisar espacio de disco y actualizar solo ese servicio; mantener el fixture de tracking desechable según `docs/mobile/order-tracking-verification.md`.
 
 El CI ahora incluye `medusa build` con valores loopback y secretos aleatorios enmascarados, para comprobar la compilación del runtime sin infraestructura de datos. No se ejecutó localmente porque el disco del host sigue sin margen; el primer resultado remoto tras este cambio será el gate de compilación.
+
+## Adaptador local de proyección para catálogo — 17 de noviembre de 2026
+
+Al revisar `docs/OPEN_CODE_TASKS.md`, OC-01–OC-08 constaban cerradas (con gates runtime expresamente pendientes) y OC-09 esperaba inspección visual en navegador/dispositivo. Se avanzó el siguiente entregable F6 indicado en `docs/migration/catalog-products-import.md`: `tools/migration/project-catalog-projection.mjs` convierte cuatro proyecciones JSON locales preparadas a `agestyles.stage-interchange` catalog-only. Incluye categorías/subcategorías, productos, opciones de variante y metadatos SHA-256/MIME de medios; rechaza referencias rotas, opciones mal formadas y cualquier campo URL en metadatos de imagen. Los campos ajenos a la lista se descartan. El destino debe ser una carpeta nueva, creada con permisos privados; el comando emite solo recuentos.
+
+La utilidad no conecta con Supabase/PostgreSQL, no descarga medios, no importa nada y no equivale al exportador real. No se usaron filas del catálogo: la prueba genera un fixture sintético temporal, valida el bundle con el perfil `catalog-only` y confirma que el código con ceros iniciales se conserva, no se emiten `store_id`/stock/datos de cliente y la visibilidad queda bloqueada hasta conciliación.
+
+Verificación: `corepack pnpm migration:test` → 11/11; el bundle catalog-only de referencia → válido; el comando `migration:catalog:project` produjo el bundle desde `fixtures/synthetic-source-projection` y `migration:catalog:check` lo validó con 5 registros; Prettier, ESLint dirigido y `git diff --check` → PASS. Se añadieron límites de tamaño/ID y rechazo de enlaces simbólicos; una prueba cubre ese rechazo. No se ejecutaron builds, servicios, navegador, red, exportación real ni despliegue. Quedan fuera de este avance el backup/restore, captura/aprobación del esquema vivo, exportador seguro de origen, estrategia para copiar bytes de imagen, vendedor/ofertas, políticas USD/CUP, importador idempotente y revisión visual de OC-09.
+
+## Revisión de logs del API para Kickz/B1 — 17 de noviembre de 2026
+
+El contenedor `agestyles-buyer-api` estaba activo. Se leyeron solo sus logs de las últimas 24 horas y se imprimieron únicamente conteos de líneas candidatas y rutas/números de línea de stack trace; no aparecieron líneas de error 500/`unknown error`, ni frames de stack. No se llamó a endpoints, no se leyó `.env` y no se modificaron servicios o datos. La causa del 500 de Kickz/B1 sigue abierta y requiere una captura futura en un entorno desechable durante una reproducción autorizada.
+
+## Gate de tests integrado — 17 de noviembre de 2026, 07:55 UTC
+
+`corepack pnpm test` completó los 7 targets Nx: 7/7 correctos (6 en caché). Esto incluye la suite de migración 11/11. `corepack pnpm exec eslint` dirigido, Prettier en archivos de código/fixtures y `git diff --check` pasan. El CLI de proyección sintética y el preflight catalog-only también pasaron por separado. Sin builds, exportación real, llamadas de API/DB ni despliegues.
+
+## Gestión de variantes en negocio — 17 de noviembre de 2026
+
+La pantalla de productos de `business-app` mostraba solo cuántas variantes existían. Añadí lectura de SKU y un editor de título/SKU por variante, que envía una solicitud de cambio a revisión mediante `POST /vendor/products/{product_id}/variants/{variant_id}`. Los botones se muestran únicamente con `products.edit`; en Mercur 2.4.1, el middleware de esa ruta también exige ese permiso en servidor, verifica que el producto pertenezca al vendedor y que la variante pertenezca al producto. La UI explica que los datos actuales no cambian hasta aprobación.
+
+Verificación local: `corepack pnpm --filter @agestyles/business-app typecheck` → PASS; ESLint dirigido, Prettier y `git diff --check` → PASS. No se llamó a la API ni se compiló/publicó. Alta/baja de variantes, fotos/medios, validación visual de la edición y fulfillment permanecen pendientes.
+
+La misma revisión encontró un rechazo sin manejar en el botón “Salir” de la sesión customer del modo Comprar. Ahora el handler captura el error, informa el resultado y solo limpia customer/cotización cuando el logout se completa. Se extrajo la secuencia a `logoutBusinessBuyerActor` y se probaron los casos logout exitoso y fallido, verificando que un fallo no borra el estado local. `packages/features-buyer` test → PASS; typecheck Business → PASS; ESLint y Prettier dirigidos → PASS. Requiere comprobación en UI/runtime junto con el cambio de actor.
+
+Después de estos cambios, `corepack pnpm test` volvió a pasar 7/7 targets Nx (6 en caché). Sin builds ni despliegues.
+
+## Alta de variantes con opciones desde Business — 17 de noviembre de 2026, 08:40 UTC
+
+La pantalla de productos ahora consulta `/vendor/products/{id}/variants` para obtener ejes/valores ya existentes, permite seleccionar una combinación válida, bloquea duplicados y envía la alta por `POST /vendor/products/{id}/variants`. No permite inventar valores de eje; si el producto no tiene opciones solo permite una variante por defecto cuando aún no tiene variantes. Mercur 2.4.1 devuelve `product_change` (202) y el handler fuerza `manage_inventory:false`; la UI informa que hace falta asignar inventario después de la aprobación. La ruta exige `products.edit` en servidor, verifica visibilidad seller-scoped del producto y no toma seller ID del body. Los roles de inventario/solo lectura no ven el formulario porque no tienen `products.edit`.
+
+Se extrajeron las reglas puras de ejes, combinaciones duplicadas y variante por defecto en `apps/business-app/lib/variant-options.ts`, con tres pruebas en `apps/business-app/test/variant-options.test.mjs`. El target `test` de Business quedó integrado en Nx. Verificación: Business tests 3/3, typecheck PASS, ESLint/Prettier dirigidos PASS; `corepack pnpm test` 8/8 targets (7 en caché), `git diff --check` PASS. No se llamó a la API/DB ni se desplegó. Alta/cambio aún requieren recorrido visual/runtime; fotos, baja y fulfillment siguen pendientes.
+
+## Atajo de typecheck para desarrollo — 17 de noviembre de 2026, 08:17 UTC
+
+Medición local: el gate completo `corepack pnpm typecheck` pasó 12/12 targets (8 en caché) y tardó 2:49; Commerce API ocupó 2:47 porque su script compila primero tres módulos workspace y después ejecuta `tsc --noEmit`. Añadí `corepack pnpm typecheck:quick`, que excluye solo `@agestyles/commerce-api`; verificado 11/11 targets, 100% en caché. `README.md` y `docs/DEV_WORKFLOW.md` ahora recomiendan tests/typecheck filtrados durante la iteración y reservan el gate completo para integración. Ninguno de estos comandos genera APK, export web de distribución o imagen Docker.
+
+## OC-09 — gates completos y revisión de temas — 17 de noviembre de 2026, 08:37 UTC
+
+En el árbol de trabajo vigente: `corepack pnpm test` → 8/8 targets (8 en caché); `corepack pnpm typecheck` → 12/12 (11 en caché, uno ejecutado); `corepack pnpm lint` → 0 errores y 20 advertencias; `corepack pnpm format:check` → PASS; `git diff --check` → PASS. La inspección estática de Business no encontró `Colors.light` ni colores hexadecimales locales en sus pantallas; su tema usa el hook compartido y tokens. `seller-pages.css` tiene reglas `prefers-color-scheme: dark` para directorio y página de vendedor. No hay navegador automatizable ni dispositivo conectado en este host, así que no se afirma revisión visual; Buyer, Business y storefront aún necesitan recorrido visual claro/oscuro en un navegador/dispositivo. Sin build o publicación.

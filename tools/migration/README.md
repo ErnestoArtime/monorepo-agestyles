@@ -4,6 +4,8 @@ El alcance inicial para trasladar el catálogo de productos se describe en [`doc
 
 `validate-stage-bundle.mjs` valida un paquete JSON local del contrato intermedio `agestyles.stage-interchange` v1. El perfil por defecto revisa conteos, hashes, duplicados y referencias. El perfil `catalog-only` limita el bundle a categorías, productos, variantes y metadatos de medios; comprueba moneda y estado legacy, referencias mínimas y metadatos de imagen sin URL de origen. Rechaza datasets fuera de alcance como customers, orders, offers e inventario. **No describe ni presupone el esquema real de `Agestyles-Catalogo`, no exporta ni importa datos y no escribe en DB.**
 
+`project-catalog-projection.mjs` transforma cuatro archivos JSON locales ya proyectados (`categories.json`, `subcategories.json`, `products.json`, `image_metadata.json`) en el contrato de staging. No conecta con Supabase/PostgreSQL ni descarga imágenes. La proyección de medios debe contener solo `id`, `product_id`, `display_order`, `is_primary`, `sha256` y `mime_type`; cualquier URL de imagen se rechaza. Los campos no incluidos en la lista de mapeo se descartan, por lo que `store_id`, stock, datos de clientes y otros campos no llegan al bundle. El producto conserva la publicación de origen como dato de auditoría, pero siempre marca `import_visibility: draft_until_reconciled`; esto no publica nada ni crea ofertas.
+
 El programa solo lee archivos locales, no carga SDK de Supabase/PostgreSQL, no abre conexiones de red y no tiene modo de escritura. Su salida contiene estado, entidades, cantidades, SHA-256 y códigos de error; nunca imprime IDs ni contenido `payload`. Los hashes detectan discrepancias entre los archivos y su manifiesto, pero no son una firma ni demuestran quién produjo el paquete. No usarlo con PII hasta que el formato de exportación real, el almacenamiento cifrado y la restauración hayan sido aprobados.
 
 ## Formato intermedio
@@ -30,8 +32,14 @@ Cada archivo de entidad es un array de filas normalizadas con `legacy_id`, `refe
 ```sh
 node tools/migration/validate-stage-bundle.mjs tools/migration/fixtures/synthetic-v1
 corepack pnpm migration:catalog:check tools/migration/fixtures/synthetic-catalog-v1
+corepack pnpm migration:catalog:project <projection-local> <directorio-nuevo-de-staging> <export-id>
+corepack pnpm migration:catalog:check <directorio-nuevo-de-staging>
+corepack pnpm migration:catalog:project tools/migration/fixtures/synthetic-source-projection /tmp/agestyles-catalog-stage-sample synthetic-001
+corepack pnpm migration:catalog:check /tmp/agestyles-catalog-stage-sample
 corepack pnpm migration:test
 ```
+
+La entrada de prueba sintética usa `id, slug, name, sort_order` en categorías; `id, category_slug, slug, name, sort_order` en subcategorías; una proyección acotada de `products` (`id, code, name, description, price, currency, featured, gender, model, brand_id, subcategory_id, category_slug, publication_status, specifications, variant_options, catalog_family_version_id`); y metadatos de medios con hash/MIME. `variant_options` debe ser una lista JSON de `{key,label}` o estar vacía; en ese caso se genera `__default__`. Cada destino debe ser una carpeta nueva y recibe permisos privados locales. La utilidad emite solo cantidades/estado; no vuelca nombres, IDs ni payload.
 
 El target `test` de migración está conectado a Nx; también se ejecuta como parte de `corepack pnpm test` en la raíz.
 
@@ -43,4 +51,5 @@ El perfil `catalog-only` ignora el contenido de archivos para entidades fuera de
 - Confirmar backup cifrado de PostgreSQL, Storage y Auth, destino externo con espacio y prueba de restore; el VPS no es destino mientras no haya margen de disco aprobado.
 - Definir mapeo legado→Medusa/Mercur para IDs, categorías/familias, marcas, variantes/ofertas, saldos/movimientos/reservas, medios, clientes/identidades, pedidos/ítems y favoritos/preferencias.
 - Decidir tratamiento histórico, monedas/totales, stock final, consentimiento/PII y estrategia de IDs idempotentes.
-- Implementar migrador transaccional/dry-run con métricas y reconciliación por entidad; este paquete no escribe en DB.
+- Capturar esquema vivo y aprobar el corte antes de producir una proyección real. El adaptador actual solo convierte proyecciones locales sintéticas; no es un exportador ni un migrador.
+- Implementar importador transaccional/idempotente y reconciliación por entidad después de resolver backup/restore, mapeo de vendedores, monedas, inventario y medios.

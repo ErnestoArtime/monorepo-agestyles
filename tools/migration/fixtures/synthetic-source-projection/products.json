@@ -1,0 +1,20 @@
+[
+  {
+    "id": "source-product-001",
+    "code": "000042",
+    "name": "Synthetic shirt",
+    "description": "Fixture data only",
+    "price": 25,
+    "currency": "USD",
+    "featured": false,
+    "gender": "unisex",
+    "model": "sample",
+    "brand_id": "source-brand-001",
+    "subcategory_id": "source-subcategory-001",
+    "publication_status": "published",
+    "specifications": { "fabric": "synthetic" },
+    "variant_options": [{ "key": "blue-medium", "label": "Blue / Medium" }],
+    "store_id": "synthetic-store-ignored",
+    "stock": 7
+  }
+]
