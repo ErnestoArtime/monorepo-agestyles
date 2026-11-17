@@ -1,6 +1,6 @@
 # Estado de ejecución del plan maestro AgeStyles 2.0
 
-**Corte de auditoría:** 17 de noviembre de 2026, 05:35 UTC
+**Corte de auditoría:** 17 de noviembre de 2026, 05:41 UTC
 
 **Documento rector:** [AGESTYLES_2_0_PLAN_MAESTRO.md](./AGESTYLES_2_0_PLAN_MAESTRO.md)
 
@@ -98,3 +98,9 @@ El checkout fuente presenta cambios sin seguimiento en `.codex/`, `scripts/__pyc
 
 - La auditoría de claro/oscuro encontró dos colores de superficie del panel Business definidos fuera de la paleta común. Se trasladaron `quietSurface` y `selectedSurface` a `@agestyles/design-tokens` y a CSS; `useBusinessTheme` ahora los consume desde el paquete compartido.
 - La prueba amplía WCAG AA a texto sobre esas superficies y comprueba paridad TS/CSS. En local pasaron 5/5 tests, 12/12 typechecks, Prettier y ESLint dirigido. Este último cambio está pendiente de commit y CI remoto; aún no está desplegado.
+
+## Actualización de CI y tokens — 17 de noviembre de 2026, 05:41 UTC
+
+- `57fdec5` subió los tokens de superficies y la ampliación de contraste WCAG AA a `main`; el CI de ese SHA terminó success: instalación congelada, lint, formato, 5/5 tests, 12/12 typechecks y los tres builds web.
+- La prueba del gateway confirma 1 región y 12 productos publicados desde la configuración de la app compradora. La solicitud HTTP y CORS pasan; falta validar la UI desplegada con una imagen nueva.
+- Las tres webs siguen respondiendo 200 con los contenedores iniciados antes de los commits recientes. No se ejecutó el workflow `Publish frontend images`, pull ni redeploy.

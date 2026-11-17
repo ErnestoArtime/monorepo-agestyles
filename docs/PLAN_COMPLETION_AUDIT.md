@@ -1,6 +1,6 @@
 # Auditoría de cumplimiento del plan maestro AgeStyles 2.0
 
-**Corte:** 17 de noviembre de 2026, 05:35 UTC
+**Corte:** 17 de noviembre de 2026, 05:41 UTC
 **Alcance:** contraste de `AGESTYLES_2_0_PLAN_MAESTRO.md`, `STATUS_PLAN_MAESTRO.md`, `MATRIZ_REUTILIZACION.md`, `CODEX_HANDOFF.md` y el grafo de código del monorepo.
 **Conclusión:** el plan sigue en ejecución; ninguna de las fases F0–F8 puede marcarse completa con la evidencia disponible. F9 está correctamente diferida. El laboratorio de marketplace y varias verticales están avanzadas, pero siguen pendientes gates de datos, validación en dispositivos, QA, despliegue y cutover.
 
@@ -75,3 +75,9 @@ El grafo del monorepo está indexado. La arquitectura muestra apps `commerce-api
 
 - `business-app` tenía dos colores hexadecimales locales para superficies secundarias. Se movieron a los tokens compartidos TypeScript/CSS y la app los consume desde `@agestyles/design-tokens`.
 - El test de color comprueba ahora contraste WCAG AA sobre fondo, superficie tranquila y superficie seleccionada en modo claro y oscuro. Localmente: 5/5 tests, 12/12 typechecks, ESLint de archivos afectados y Prettier pasan. Falta CI remoto de este cambio y visualización real; OC-09 continúa abierta.
+
+## Addendum de CI de tokens — 17 de noviembre de 2026, 05:41 UTC
+
+- El commit `57fdec5` está en `main`. Su CI pasó instalación congelada, lint, formato, 5/5 tests, 12/12 typechecks, exports Buyer/Business y build SEO storefront.
+- `quietSurface` y `selectedSurface` ahora se definen en TypeScript y CSS y se consumen desde Business; el test verifica contraste WCAG AA para ambas en tema claro y oscuro.
+- Gateway buyer responde CORS 204 y devuelve una región y 12 productos para la configuración actual de la app. El bundle web público aún es anterior; visualización de la nueva UI y publicación siguen pendientes.
