@@ -302,7 +302,7 @@ export default function ProductDetailsScreen() {
               disabled={quantity <= 1}
               onPress={() => setQuantity(Math.max(1, quantity - 1))}
             >
-              <Icon name="minus" size={17} color={quantity <= 1 ? colors.icon : colors.text} />
+              <Icon name="minus" size={20} color={quantity <= 1 ? colors.icon : colors.text} />
             </TouchableOpacity>
             <Text style={[styles.quantity, { color: colors.text }]}>{quantity}</Text>
             <TouchableOpacity
@@ -311,7 +311,7 @@ export default function ProductDetailsScreen() {
               accessibilityLabel="Aumentar cantidad"
               onPress={() => setQuantity(quantity + 1)}
             >
-              <Icon name="plus" size={17} color={colors.text} />
+              <Icon name="plus" size={20} color={colors.text} />
             </TouchableOpacity>
           </View>
         </View>

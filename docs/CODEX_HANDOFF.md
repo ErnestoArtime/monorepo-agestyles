@@ -540,4 +540,8 @@ Se eliminó el `#171717` fijo de la entrada nativa de `@agestyles/icons`: los ic
 
 ## Tarjetas de catálogo sin falso control de favoritos — 17 de noviembre de 2026
 
-Se retiró el corazón decorativo de `product-explorer`: era parte del enlace de producto, no ejecutaba favoritos y podía sugerir una acción inexistente. También se quitaron sus reglas CSS claras/oscuras. El resto de controles de favoritos auténticos en las apps no se modificó. Validación: typecheck de storefront PASS; ESLint dirigido PASS; Prettier en TSX/CSS/docs PASS; `git diff --check` PASS. Falta CI de este commit; no se publicó la interfaz.
+Se retiró el corazón decorativo de `product-explorer`: era parte del enlace de producto, no ejecutaba favoritos y podía sugerir una acción inexistente. También se quitaron sus reglas CSS claras/oscuras. El resto de controles de favoritos auténticos en las apps no se modificó. Validación: typecheck de storefront PASS; ESLint dirigido PASS; Prettier en TSX/CSS/docs PASS; `git diff --check` PASS. CI del commit `667fdd7` [run 44051230463](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44051230463) terminó success, incluido el build de Next. No se publicó la interfaz.
+
+## Tamaño mínimo de iconos de control — 17 de noviembre de 2026, 09:02 UTC
+
+Se subieron a 20 px los botones de cantidad del detalle Buyer y el chevron de selección/escudo informativo del acceso Business. `docs/design-system.md` ahora distingue controles (20–24 px), iconos en línea (12–16 px), adornos de campos (18–20 px) e ilustraciones/estados (hasta 28 px). Verificación local: `pnpm typecheck` 12/12, ESLint dirigido, Prettier dirigido y `git diff --check` PASS. Sin render en dispositivo; CI del commit nuevo pendiente.

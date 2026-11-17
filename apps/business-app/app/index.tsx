@@ -83,7 +83,7 @@ export default function EntryScreen() {
                 {item.handle ? `@${item.handle}` : "Tienda AgeStyles"}
               </Text>
             </View>
-            <Icon name="chevronRight" size={19} color={theme.muted} />
+            <Icon name="chevronRight" size={20} color={theme.muted} />
           </Pressable>
         ))
       ) : (
@@ -138,7 +138,7 @@ export default function EntryScreen() {
         <ActivityIndicator style={{ marginTop: 18 }} color={theme.action} />
       ) : null}
       <View style={styles.note}>
-        <Icon name="shieldCheck" size={17} color={theme.action} />
+        <Icon name="shieldCheck" size={20} color={theme.action} />
         <Text style={styles.noteText}>
           Los permisos se comprueban en el servidor para cada tienda.
         </Text>

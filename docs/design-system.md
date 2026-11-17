@@ -20,7 +20,7 @@ La tienda, la app compradora, la app de negocio y los paneles web comparten una 
 - La biblioteca base es Lucide; sus versiones web y React Native mantienen las mismas formas, nombres semánticos y trazo.
 - Web usa SVG en línea; Android y iOS usan React Native SVG. No depender de fuentes de iconos que aparezcan después de cargar la pantalla.
 - No importar lucide-react, lucide-react-native, @expo/vector-icons ni otra colección directamente en una app. Si falta un icono, añadirlo a las dos entradas de packages/icons y usar el nombre semántico común.
-- Usar 20–24 px para controles, trazo de 1.8 por defecto y el color activo/inactivo del control. Todo icono dentro de un botón debe tener una etiqueta accesible en el botón.
+- Usar 20–24 px para controles interactivos, 12–16 px para iconos en línea junto a texto y 18–20 px para adornos de campos como la lupa de búsqueda. Los iconos de estado o ilustración pueden llegar a 28 px cuando no son controles. Mantener trazo de 1.8 por defecto y el color activo/inactivo del control. Todo icono dentro de un botón debe tener una etiqueta accesible en el botón.
 
 ## Dirección visual
 

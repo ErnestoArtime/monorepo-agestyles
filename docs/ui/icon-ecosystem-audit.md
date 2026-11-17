@@ -130,7 +130,7 @@ No se ejecutó typecheck ni build: la auditoría es de lectura y el árbol tiene
 - **P3 #10 resuelta:** `packages/icons` tiene `tsconfig.json`, script `typecheck` y `@types/react` como devDependency local; el target entra en `nx run-many` (12 proyectos).
 - **P3 #11 resuelta:** `@agestyles/icons` está en `transpilePackages` del storefront.
 - **P3 #12 resuelta:** `IconSymbol` ya no acepta la prop `weight` que ignoraba.
-- **Siguen abiertas:** el rango de tamaños para iconos en línea sin documentar. El corazón decorativo de las tarjetas se eliminó porque parecía un control de favoritos sin acción. El valor por defecto nativo distinto de web se resolvió después: ahora usa `@agestyles/design-tokens` y sigue el esquema del dispositivo; la web mantiene `currentColor`.
+- El rango de tamaños quedó documentado en `docs/design-system.md`; los controles de cantidad y navegación ajustados en esta tanda usan el mínimo de 20 px. El corazón decorativo de las tarjetas se eliminó porque parecía un control de favoritos sin acción. El valor por defecto nativo distinto de web se resolvió después: ahora usa `@agestyles/design-tokens` y sigue el esquema del dispositivo; la web mantiene `currentColor`.
 
 ## 9. Verificación de la segunda tanda
 
