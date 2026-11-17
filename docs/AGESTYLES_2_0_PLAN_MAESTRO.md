@@ -367,4 +367,4 @@ No instalar ni modificar servicios de producción hasta respaldar, comprobar esp
 
 El estado verificable por fase y los diez criterios del piloto se mantiene en [STATUS_PLAN_MAESTRO.md](./STATUS_PLAN_MAESTRO.md) y [PLAN_COMPLETION_AUDIT.md](./PLAN_COMPLETION_AUDIT.md). F0/F6 siguen condicionadas a un destino cifrado suficiente y una restauración aislada; F4/F5/F7 requieren pruebas reales en Android y macOS/iOS; F8 requiere los gates completos y un go/no-go explícito. La fuente Supabase continúa intacta y AgeStyles aún no tiene un ETL/cutover aprobado.
 
-El código del monorepo no está sincronizado con GitHub en este corte; los cambios locales pendientes aparecen en `git status`. La carpeta `references/` permanece excluida del repositorio.
+Actualización del 17 de noviembre de 2026, 10:03 UTC: el código del monorepo está sincronizado con `origin/main` en `1cc09b0`; CI pasó para ese commit. Esto no significa que el workflow de publicación de imágenes se haya ejecutado ni que la versión más reciente esté desplegada en las webs. La carpeta `references/` permanece excluida del repositorio.

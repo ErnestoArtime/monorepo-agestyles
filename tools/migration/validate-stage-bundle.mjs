@@ -356,6 +356,36 @@ export async function validateStageBundle(directory, { profile = "full" } = {}) 
       if (!new Set(["draft", "published", "archived"]).has(payload.publication_status)) {
         issues.push(issue("product_publication_status_unsupported", "products", recordIndex))
       }
+
+      const mediaReferences = references.filter((reference) => reference?.relation === "media")
+      const displayOrders = new Set()
+      let primaryCount = 0
+      let previousDisplayOrder = -1
+      for (const reference of mediaReferences) {
+        if (
+          !Number.isSafeInteger(reference.display_order) ||
+          reference.display_order < 0 ||
+          typeof reference.is_primary !== "boolean"
+        ) {
+          issues.push(issue("product_media_reference_metadata_invalid", "products", recordIndex))
+          continue
+        }
+        if (displayOrders.has(reference.display_order)) {
+          issues.push(issue("product_media_display_order_duplicate", "products", recordIndex))
+        }
+        if (reference.display_order <= previousDisplayOrder) {
+          issues.push(issue("product_media_order_not_ascending", "products", recordIndex))
+        }
+        displayOrders.add(reference.display_order)
+        previousDisplayOrder = reference.display_order
+        if (reference.is_primary) primaryCount += 1
+      }
+      if (primaryCount > 1) {
+        issues.push(issue("product_media_primary_duplicate", "products", recordIndex))
+      }
+      if (payload.media_count !== undefined && payload.media_count !== mediaReferences.length) {
+        issues.push(issue("product_media_count_mismatch", "products", recordIndex))
+      }
     })
 
     const variants = recordsByEntity.get("variants") ?? []
@@ -371,10 +401,15 @@ export async function validateStageBundle(directory, { profile = "full" } = {}) 
     })
 
     const mediaObjects = recordsByEntity.get("media_objects") ?? []
+    const mediaHashes = new Set()
     mediaObjects.forEach((row, recordIndex) => {
       const payload = isObject(row.payload) ? row.payload : {}
       if (!HASH_PATTERN.test(payload.sha256 ?? "")) {
         issues.push(issue("media_content_hash_required", "media_objects", recordIndex))
+      } else if (mediaHashes.has(payload.sha256)) {
+        issues.push(issue("duplicate_media_content_hash", "media_objects", recordIndex))
+      } else {
+        mediaHashes.add(payload.sha256)
       }
       if (typeof payload.mime_type !== "string" || !payload.mime_type.startsWith("image/")) {
         issues.push(issue("media_image_mime_type_required", "media_objects", recordIndex))

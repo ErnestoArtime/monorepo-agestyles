@@ -581,3 +581,13 @@ Business ahora declara `@agestyles/features-buyer` como dependencia workspace y 
 Verificación: test de `features-buyer` PASS; typecheck del paquete y Business PASS; typecheck monorepo 12/12; tests Nx 8/8; grafo Nx 13 proyectos/18 dependencias y arista Business→Buyer features confirmada; ESLint/Prettier dirigidos y formato PASS. CI del commit `9b37aea` [run 44057675651](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44057675651) terminó success, con build aislado Medusa y exports web de Buyer, Business y Storefront. La revisión UI de login/alternancia y refresh/revocación sigue pendiente en navegador/dispositivo; no se usaron cuentas ni API real.
 
 F6: la revisión del proyector encontró que una lista de opciones vacía (`[]` o la cadena JSON `"[]"`) producía cero variantes, pese a que el contrato exige `__default__` cuando el producto no tiene opciones. Se corrigió la normalización y se añadieron pruebas para ambas representaciones. Verificación: `migration:test` 12/12, `pnpm test` 8/8, ESLint/Prettier dirigidos y formato PASS; sin conexión ni exportación de datos reales.
+
+## F6 — Contrato de relación producto→medio — 17 de noviembre de 2026
+
+El proyector exige ahora `display_order` entero no negativo y `is_primary` booleano, sin órdenes repetidos ni más de una imagen principal por producto. `catalog-only` valida la forma/tipo de esos metadatos, que las relaciones estén ordenadas en ascendente, que `media_count` coincida cuando se declara y que cada objeto SHA-256 aparezca una sola vez. El fixture canónico documenta la extensión de relación y mantiene su manifiesto actualizado.
+
+Verificación local: `corepack pnpm migration:test` → 14/14; `corepack pnpm test` → 8/8; lint → 0 errores/20 advertencias; `corepack pnpm format:check` y `git diff --check` → PASS. No hubo importación ni acceso a servicios.
+
+## F1 — Hallazgo estático adicional de `/vendor/orders` — 17 de noviembre de 2026
+
+El manifiesto de Mercur 2.4.1 muestra que `/vendor/orders` filtra por seller y luego usa una proyección con relaciones profundas predeterminadas aunque el cliente pida `fields=id`. El paquete instalado comenta que ciertas expansiones profundas pueden causar fallos de query. Es una hipótesis compatible con el 500 de Kickz/B1, no causa raíz probada; no se modifica upstream ni se cambian los defaults, que podrían retirar datos requeridos por la UI. El siguiente paso sigue siendo capturar stack trace en una reproducción desechable autorizada; no se llamó al API/DB ni se leyó configuración secreta.

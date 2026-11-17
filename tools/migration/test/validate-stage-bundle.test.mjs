@@ -21,6 +21,16 @@ async function withBundle(callback) {
   }
 }
 
+async function withCatalogBundle(callback) {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "agestyles-catalog-bundle-"))
+  await cp(catalogFixture, directory, { recursive: true })
+  try {
+    await callback(directory)
+  } finally {
+    await rm(directory, { recursive: true, force: true })
+  }
+}
+
 async function setDataset(directory, entity, rows) {
   const bytes = Buffer.from(`${JSON.stringify(rows, null, 2)}\n`)
   await writeFile(path.join(directory, `${entity}.json`), bytes)
@@ -46,8 +56,16 @@ async function keepCatalogOnly(directory) {
   products[0].references = products[0].references.filter(
     (reference) => reference.relation !== "seller",
   )
+  products[0].references = products[0].references.map((reference) =>
+    reference.relation === "media"
+      ? { ...reference, display_order: 0, is_primary: true }
+      : reference,
+  )
   products[0].payload.currency = "USD"
   products[0].payload.publication_status = "published"
+  products[0].payload.media_count = products[0].references.filter(
+    (reference) => reference.relation === "media",
+  ).length
   await setDataset(directory, "products", products)
 }
 
@@ -346,6 +364,36 @@ test("projection refuses unresolved relations, malformed options, image URLs, an
       projectCatalog(input, output, { exportId: "synthetic-002" }),
       /media_url_field_forbidden/,
     )
+    const mediaProjection = [
+      {
+        id: "image-1",
+        product_id: "prod-1",
+        sha256: "a".repeat(64),
+        mime_type: "image/jpeg",
+        display_order: 0,
+        is_primary: true,
+      },
+      {
+        id: "image-2",
+        product_id: "prod-1",
+        sha256: "b".repeat(64),
+        mime_type: "image/jpeg",
+        display_order: 0,
+        is_primary: false,
+      },
+    ]
+    await writeProjection({ ...base, image_metadata: mediaProjection })
+    await assert.rejects(
+      projectCatalog(input, output, { exportId: "synthetic-002" }),
+      /media_display_order_duplicate/,
+    )
+    mediaProjection[1].display_order = 1
+    mediaProjection[1].is_primary = true
+    await writeProjection({ ...base, image_metadata: mediaProjection })
+    await assert.rejects(
+      projectCatalog(input, output, { exportId: "synthetic-002" }),
+      /media_primary_duplicate/,
+    )
     await writeProjection(base)
     const categoriesPath = path.join(input, "categories.json")
     await rm(categoriesPath)
@@ -375,6 +423,54 @@ test("catalog-only profile accepts a catalog bundle without sellers, offers, sto
     assert.deepEqual(
       summary.entities.map((entity) => entity.entity),
       ["categories", "media_objects", "products", "variants"],
+    )
+  })
+})
+
+test("catalog-only profile enforces media relationship order, primary flag, count, and hash uniqueness", async () => {
+  await withCatalogBundle(async (directory) => {
+    const baselineProducts = JSON.parse(
+      await readFile(path.join(directory, "products.json"), "utf8"),
+    )
+    const assertIssue = async (products, expectedCode) => {
+      await setDataset(directory, "products", products)
+      const summary = await validateStageBundle(directory, { profile: "catalog-only" })
+      assert.equal(summary.status, "invalid")
+      assert.ok(summary.issues.some((entry) => entry.code === expectedCode))
+    }
+
+    const missingMetadata = structuredClone(baselineProducts)
+    delete missingMetadata[0].references.find((reference) => reference.relation === "media")
+      .is_primary
+    await assertIssue(missingMetadata, "product_media_reference_metadata_invalid")
+
+    const wrongCount = structuredClone(baselineProducts)
+    wrongCount[0].payload.media_count = 0
+    await assertIssue(wrongCount, "product_media_count_mismatch")
+
+    const mediaReference = baselineProducts[0].references.find(
+      (reference) => reference.relation === "media",
+    )
+    const duplicateOrder = structuredClone(baselineProducts)
+    duplicateOrder[0].references.push({ ...mediaReference, is_primary: false })
+    await assertIssue(duplicateOrder, "product_media_display_order_duplicate")
+
+    const duplicatePrimary = structuredClone(baselineProducts)
+    duplicatePrimary[0].references.push({ ...mediaReference, display_order: 1 })
+    await assertIssue(duplicatePrimary, "product_media_primary_duplicate")
+
+    const duplicateHashObjects = JSON.parse(
+      await readFile(path.join(directory, "media_objects.json"), "utf8"),
+    )
+    duplicateHashObjects.push({
+      ...structuredClone(duplicateHashObjects[0]),
+      legacy_id: "media-duplicate",
+    })
+    await setDataset(directory, "media_objects", duplicateHashObjects)
+    const duplicateHashSummary = await validateStageBundle(directory, { profile: "catalog-only" })
+    assert.equal(duplicateHashSummary.status, "invalid")
+    assert.ok(
+      duplicateHashSummary.issues.some((entry) => entry.code === "duplicate_media_content_hash"),
     )
   })
 })

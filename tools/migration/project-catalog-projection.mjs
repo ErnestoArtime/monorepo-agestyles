@@ -116,6 +116,10 @@ function normalizeMedia(rows, products) {
     if (typeof row.mime_type !== "string" || !row.mime_type.startsWith("image/")) {
       fail("media_image_mime_type_required")
     }
+    if (!Number.isSafeInteger(row.display_order) || row.display_order < 0) {
+      fail("media_display_order_invalid")
+    }
+    if (typeof row.is_primary !== "boolean") fail("media_primary_flag_invalid")
     const mediaId = stableId("media-source", row.id)
     if (mediaIds.has(mediaId)) fail("duplicate_media_id")
     mediaIds.add(mediaId)
@@ -191,6 +195,14 @@ function normalizeProducts(products, categories, media) {
     const mediaRefs = (mediaByProduct.get(id) ?? []).sort(
       (a, b) => a.display_order - b.display_order,
     )
+    const mediaOrders = new Set()
+    let primaryMediaCount = 0
+    for (const item of mediaRefs) {
+      if (mediaOrders.has(item.display_order)) fail("media_display_order_duplicate")
+      mediaOrders.add(item.display_order)
+      if (item.is_primary) primaryMediaCount += 1
+    }
+    if (primaryMediaCount > 1) fail("media_primary_duplicate")
     const references = [{ relation: "category", entity: "categories", legacy_id: categoryId }]
     for (const item of mediaRefs) {
       references.push({
