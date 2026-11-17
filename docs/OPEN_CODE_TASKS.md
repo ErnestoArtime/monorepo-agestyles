@@ -112,9 +112,11 @@ Determinar si existe una diferencia entre la consulta de pedidos de Kickz y la o
 
 ### OC-09 — Cerrar temas claro/oscuro y gates del árbol de trabajo
 
-**Estado:** implementación local lista; revisión visual clara/oscura y publicación pendientes. Freebuff debe evitar esos archivos hasta recibir el handoff actualizado.
+**Estado:** comprobaciones locales cerradas por Codex (17 nov 2026); queda revisión visual clara/oscura en navegador/dispositivo. No requiere build ni publicación para continuar el desarrollo.
 **Prioridad:** P0
-**Archivos permitidos:** cambios existentes de `apps/business-app/**`, `apps/buyer-app/components/android-app-link.tsx` y `docs/design-system.md`. No reescribir los rediseños de Buyer, el CSS del storefront ni archivos de otro autor sin revisar su diff.
+**Archivos permitidos:** cambios existentes de `apps/business-app/**`, `apps/buyer-app/app.json`, `apps/buyer-app/components/android-app-link.tsx` y `docs/design-system.md`. No reescribir los rediseños de Buyer, el CSS del storefront ni archivos de otro autor sin revisar su diff.
+
+**Hallazgo de Codex (17 nov 2026):** `apps/buyer-app/app.json` fijaba `userInterfaceStyle: "light"` pese a que las pantallas consumen `useColorScheme()`. Se cambió a `automatic` y se verificó con los gates locales enumerados en el handoff.
 
 El requisito del plan es que comprador, negocio y catálogo web funcionen con tema claro y oscuro. Buyer ya sigue `useColorScheme()` en las pantallas principales; el storefront Next acaba de incorporar `prefers-color-scheme`. Auditar el trabajo actual de Business y la banda de descarga Android del comprador, eliminar colores `light` fijados en runtime donde impidan el tema oscuro, y mantener todos los iconos desde `@agestyles/icons`.
 

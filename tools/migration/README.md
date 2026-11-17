@@ -2,7 +2,7 @@
 
 El alcance inicial para trasladar el catálogo de productos se describe en [`docs/migration/catalog-products-import.md`](../../docs/migration/catalog-products-import.md). Ese documento es un mapeo y plan, no un permiso ni una herramienta para exportar/importar datos reales.
 
-`validate-stage-bundle.mjs` valida un paquete JSON local del contrato intermedio `agestyles.stage-interchange` v1. Es un formato de transporte AgeStyles para revisar conteos, hashes, duplicados y referencias antes de diseñar/escribir el ETL. **No describe ni presupone el esquema real de `Agestyles-Catalogo` y no importa datos.**
+`validate-stage-bundle.mjs` valida un paquete JSON local del contrato intermedio `agestyles.stage-interchange` v1. El perfil por defecto revisa conteos, hashes, duplicados y referencias. El perfil `catalog-only` limita el bundle a categorías, productos, variantes y metadatos de medios; comprueba moneda y estado legacy, referencias mínimas y metadatos de imagen sin URL de origen. Rechaza datasets fuera de alcance como customers, orders, offers e inventario. **No describe ni presupone el esquema real de `Agestyles-Catalogo`, no exporta ni importa datos y no escribe en DB.**
 
 El programa solo lee archivos locales, no carga SDK de Supabase/PostgreSQL, no abre conexiones de red y no tiene modo de escritura. Su salida contiene estado, entidades, cantidades, SHA-256 y códigos de error; nunca imprime IDs ni contenido `payload`. Los hashes detectan discrepancias entre los archivos y su manifiesto, pero no son una firma ni demuestran quién produjo el paquete. No usarlo con PII hasta que el formato de exportación real, el almacenamiento cifrado y la restauración hayan sido aprobados.
 
@@ -29,10 +29,11 @@ Cada archivo de entidad es un array de filas normalizadas con `legacy_id`, `refe
 
 ```sh
 node tools/migration/validate-stage-bundle.mjs tools/migration/fixtures/synthetic-v1
+node tools/migration/validate-stage-bundle.mjs --profile catalog-only <catalog-bundle-directory>
 node --test tools/migration/test/validate-stage-bundle.test.mjs
 ```
 
-Una exportación futura debe pasar por aprobación de esquema específica antes de añadir entidades, transformar dinero/stock, escribir el mapa de IDs o conectar un importador a PostgreSQL. Esta utilidad es exclusivamente preflight y no constituye respaldo ni evidencia de conciliación/restauración.
+El perfil `catalog-only` ignora el contenido de archivos para entidades fuera de alcance y devuelve únicamente los códigos/counts; no elimina archivos del bundle. El operador debe usar una carpeta privada y no entregar bundles con PII. Una exportación futura debe pasar por aprobación de esquema específica antes de transformar dinero/stock, escribir el mapa de IDs o conectar un importador a PostgreSQL. Este preflight no es respaldo ni evidencia de conciliación/restauración.
 
 ## Pendiente antes de un ETL real
 

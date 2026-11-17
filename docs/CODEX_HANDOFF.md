@@ -470,6 +470,16 @@ El commit `598c7da` está en `main`; GitHub Actions run [44029135950](https://gi
 
 Se revisó el cambio local pendiente en `apps/buyer-app/app/(drawer)/(tabs)/account/orders/[id].tsx` y `apps/buyer-app/lib/status-labels.ts`. ESLint detectó que el helper puro llamado `useStatusLabel` se invocaba dentro de callbacks/condiciones como si fuera un hook; se renombró a `getStatusLabel`. El detalle usa además `PAYMENT_STATUS_LABELS` para el estado de pago. Verificación: typecheck de `@agestyles/buyer-app` PASS, ESLint dirigido sin errores, Prettier y `git diff --check` PASS. Esto es solo presentación del detalle; tracking en runtime aún depende de publicar la ruta del API y probarla con un fixture limpio.
 
+## Revisión de tareas OpenCode y tema comprador — 17 de noviembre de 2026
+
+Se revisó `docs/OPEN_CODE_TASKS.md`: OC-01–OC-08 ya estaban documentadas como cerradas o con ejecución/runtime expresamente pendiente. OC-09 era la única tarea local que se podía adelantar sin dispositivo ni publicación.
+
+En la auditoría se encontró que `apps/buyer-app/app.json` fijaba `userInterfaceStyle: "light"`, aunque las pantallas consultan `useColorScheme()`. Se cambió a `automatic` y se amplió el alcance registrado de OC-09. Business declara `automatic` y consume `@agestyles/design-tokens`; el storefront tiene media queries `prefers-color-scheme` en sus hojas de estilos.
+
+Gates locales, sin builds nativos/web ni llamadas de red: `corepack pnpm typecheck` → 12/12; `corepack pnpm lint` → 0 errores, 20 advertencias; `corepack pnpm format:check` → PASS; `corepack pnpm test` → 6 tareas exitosas; `git diff --check` → PASS. No se reiniciaron servicios ni se publicó nada.
+
+OC-09 queda pendiente únicamente de inspección visual clara/oscura de rutas completas y, en móvil, del comportamiento del sistema en Android/iOS. No se hizo esa comprobación con navegador/dispositivo; la inspección estática y los gates de código no la sustituyen. Durante desarrollo se puede seguir con comandos locales, sin esperar a una publicación.
+
 ## Preparación del release manual de Commerce API — 17 de noviembre de 2026
 
 La ruta de tracking está en código fuente pero falta en el API runtime. Se añadió un workflow manual, separado del de frontends, para publicar `agestyles-commerce-api` en GHCR tras CI del mismo SHA. El build crea una configuración loopback con secretos aleatorios, los monta solo como secreto BuildKit y los elimina al final; no usa credenciales del servidor ni requiere el VPS para compilar. El override Compose cambia solo la imagen de `commerce-api`; el runbook define pull/up/health y rollback.

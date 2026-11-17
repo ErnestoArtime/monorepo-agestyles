@@ -30,6 +30,25 @@ async function setDataset(directory, entity, rows) {
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
 }
 
+async function keepCatalogOnly(directory) {
+  const manifestPath = path.join(directory, "manifest.json")
+  const manifest = JSON.parse(await readFile(manifestPath, "utf8"))
+  const allowed = new Set(["categories", "products", "variants", "media_objects"])
+  for (const dataset of manifest.datasets) {
+    if (!allowed.has(dataset.entity)) await rm(path.join(directory, dataset.file), { force: true })
+  }
+  manifest.datasets = manifest.datasets.filter((dataset) => allowed.has(dataset.entity))
+  await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
+
+  const products = JSON.parse(await readFile(path.join(directory, "products.json"), "utf8"))
+  products[0].references = products[0].references.filter(
+    (reference) => reference.relation !== "seller",
+  )
+  products[0].payload.currency = "USD"
+  products[0].payload.publication_status = "published"
+  await setDataset(directory, "products", products)
+}
+
 test("accepts the synthetic staging interchange and reports only counts and hashes", async () => {
   const summary = await validateStageBundle(fixture)
   assert.equal(summary.status, "valid")
@@ -39,6 +58,63 @@ test("accepts the synthetic staging interchange and reports only counts and hash
   assert.ok(summary.entities.every((entity) => /^[a-f0-9]{64}$/.test(entity.sha256)))
   assert.equal(JSON.stringify(summary).includes("Producto sintético"), false)
   assert.equal(JSON.stringify(summary).includes("product-syn-001"), false)
+})
+
+test("catalog-only profile accepts a catalog bundle without sellers, offers, stock, or customer data", async () => {
+  await withBundle(async (directory) => {
+    await keepCatalogOnly(directory)
+    const summary = await validateStageBundle(directory, { profile: "catalog-only" })
+    assert.equal(summary.status, "valid")
+    assert.equal(summary.profile, "catalog-only")
+    assert.deepEqual(
+      summary.entities.map((entity) => entity.entity),
+      ["categories", "media_objects", "products", "variants"],
+    )
+  })
+})
+
+test("catalog-only profile rejects an empty product dataset", async () => {
+  await withBundle(async (directory) => {
+    await keepCatalogOnly(directory)
+    await setDataset(directory, "products", [])
+    const summary = await validateStageBundle(directory, { profile: "catalog-only" })
+    assert.equal(summary.status, "invalid")
+    assert.ok(summary.issues.some((entry) => entry.code === "catalog_products_required"))
+  })
+})
+
+test("catalog-only profile rejects out-of-scope entities and invalid product or media metadata without echoing values", async () => {
+  await withBundle(async (directory) => {
+    await keepCatalogOnly(directory)
+    const products = JSON.parse(await readFile(path.join(directory, "products.json"), "utf8"))
+    products[0].payload.currency = "SENSITIVE-SYNTHETIC-SENTINEL"
+    await setDataset(directory, "products", products)
+    const media = JSON.parse(await readFile(path.join(directory, "media_objects.json"), "utf8"))
+    media[0].payload.source_url = "https://example.invalid/SENSITIVE-SYNTHETIC-SENTINEL"
+    await setDataset(directory, "media_objects", media)
+
+    const manifestPath = path.join(directory, "manifest.json")
+    const manifest = JSON.parse(await readFile(manifestPath, "utf8"))
+    manifest.datasets.push({
+      entity: "customers",
+      file: "customers.json",
+      record_count: 1,
+      sha256: "0".repeat(64),
+    })
+    await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
+    await writeFile(path.join(directory, "customers.json"), "NOT-JSON-SENSITIVE-SYNTHETIC-SENTINEL")
+
+    const summary = await validateStageBundle(directory, { profile: "catalog-only" })
+    assert.equal(summary.status, "invalid")
+    assert.ok(summary.issues.some((entry) => entry.code === "entity_outside_catalog_profile"))
+    assert.equal(
+      summary.issues.some((entry) => entry.code === "invalid_json"),
+      false,
+    )
+    assert.ok(summary.issues.some((entry) => entry.code === "product_currency_unsupported"))
+    assert.ok(summary.issues.some((entry) => entry.code === "media_source_url_forbidden"))
+    assert.equal(JSON.stringify(summary).includes("SENSITIVE-SYNTHETIC-SENTINEL"), false)
+  })
 })
 
 test("detects changed contents without printing row data", async () => {

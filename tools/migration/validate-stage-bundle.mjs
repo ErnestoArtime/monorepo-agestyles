@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url"
 
 export const STAGE_BUNDLE_FORMAT = "agestyles.stage-interchange"
 export const STAGE_BUNDLE_VERSION = 1
+export const VALIDATION_PROFILES = Object.freeze(["full", "catalog-only"])
 
 /**
  * This is a project-owned, versioned interchange contract. It is not a claim
@@ -30,6 +31,7 @@ export const ALLOWED_ENTITIES = Object.freeze([
 ])
 
 const ALLOWED_ENTITY_SET = new Set(ALLOWED_ENTITIES)
+const CATALOG_ONLY_ENTITIES = new Set(["categories", "products", "variants", "media_objects"])
 const MAX_MANIFEST_BYTES = 1_000_000
 const MAX_ENTITY_BYTES = 250 * 1024 * 1024
 const MAX_ROWS_PER_ENTITY = 1_000_000
@@ -87,7 +89,9 @@ function isObject(value) {
 }
 
 function isSafeIdentifier(value) {
-  return typeof value === "string" && value.trim() === value && value.length > 0 && value.length <= 240
+  return (
+    typeof value === "string" && value.trim() === value && value.length > 0 && value.length <= 240
+  )
 }
 
 function emptySummary() {
@@ -132,7 +136,8 @@ function validateManifest(manifest, issues) {
     return []
   }
   if (manifest.format !== STAGE_BUNDLE_FORMAT) issues.push(issue("unsupported_bundle_format"))
-  if (manifest.schema_version !== STAGE_BUNDLE_VERSION) issues.push(issue("unsupported_schema_version"))
+  if (manifest.schema_version !== STAGE_BUNDLE_VERSION)
+    issues.push(issue("unsupported_schema_version"))
   if (manifest.bundle_mode !== "dry-run-only") issues.push(issue("bundle_must_be_dry_run_only"))
   if (manifest.schema_contract !== "agestyles-stage-interchange-v1") {
     issues.push(issue("unknown_interchange_contract"))
@@ -168,7 +173,11 @@ function validateManifest(manifest, issues) {
     if (seenFiles.has(file)) issues.push(issue("duplicate_dataset_filename", entity))
     seenFiles.add(file)
 
-    if (!Number.isSafeInteger(recordCount) || recordCount < 0 || recordCount > MAX_ROWS_PER_ENTITY) {
+    if (
+      !Number.isSafeInteger(recordCount) ||
+      recordCount < 0 ||
+      recordCount > MAX_ROWS_PER_ENTITY
+    ) {
       issues.push(issue("invalid_manifest_record_count", entity))
     }
     if (typeof digest !== "string" || !HASH_PATTERN.test(digest)) {
@@ -176,11 +185,18 @@ function validateManifest(manifest, issues) {
     }
   }
 
-  return manifest.datasets.filter((dataset) =>
-    isObject(dataset) && typeof dataset.entity === "string" && ALLOWED_ENTITY_SET.has(dataset.entity)
-    && typeof dataset.file === "string" && dataset.file === `${dataset.entity}.json` && path.basename(dataset.file) === dataset.file
-    && Number.isSafeInteger(dataset.record_count) && dataset.record_count >= 0
-    && typeof dataset.sha256 === "string" && HASH_PATTERN.test(dataset.sha256),
+  return manifest.datasets.filter(
+    (dataset) =>
+      isObject(dataset) &&
+      typeof dataset.entity === "string" &&
+      ALLOWED_ENTITY_SET.has(dataset.entity) &&
+      typeof dataset.file === "string" &&
+      dataset.file === `${dataset.entity}.json` &&
+      path.basename(dataset.file) === dataset.file &&
+      Number.isSafeInteger(dataset.record_count) &&
+      dataset.record_count >= 0 &&
+      typeof dataset.sha256 === "string" &&
+      HASH_PATTERN.test(dataset.sha256),
   )
 }
 
@@ -212,7 +228,11 @@ function validateRows(entity, rows, issues) {
       issues.push(issue("references_must_be_array", entity, index))
     } else {
       for (const reference of row.references) {
-        if (!isObject(reference) || typeof reference.relation !== "string" || !isSafeIdentifier(reference.legacy_id)) {
+        if (
+          !isObject(reference) ||
+          typeof reference.relation !== "string" ||
+          !isSafeIdentifier(reference.legacy_id)
+        ) {
           issues.push(issue("invalid_reference", entity, index))
         }
       }
@@ -226,9 +246,14 @@ function validateRows(entity, rows, issues) {
  * Validates a local staging interchange directory. This function is read-only:
  * it opens no database connections and never emits row content or identifiers.
  */
-export async function validateStageBundle(directory) {
+export async function validateStageBundle(directory, { profile = "full" } = {}) {
   const summary = emptySummary()
+  summary.profile = profile
   const issues = summary.issues
+  if (!VALIDATION_PROFILES.includes(profile)) {
+    issues.push(issue("unsupported_validation_profile"))
+    return summary
+  }
   let root
   try {
     root = path.resolve(directory)
@@ -255,6 +280,10 @@ export async function validateStageBundle(directory) {
   for (const dataset of datasets) {
     const { entity, file, record_count: expectedCount, sha256: expectedHash } = dataset
     listedFiles.add(file)
+    if (profile === "catalog-only" && !CATALOG_ONLY_ENTITIES.has(entity)) {
+      issues.push(issue("entity_outside_catalog_profile", entity))
+      continue
+    }
     const buffer = await readRegularFile(root, file, MAX_ENTITY_BYTES, issues, entity)
     if (!buffer) continue
 
@@ -308,6 +337,54 @@ export async function validateStageBundle(directory) {
     })
   }
 
+  if (profile === "catalog-only") {
+    const products = recordsByEntity.get("products") ?? []
+    if (products.length === 0) issues.push(issue("catalog_products_required", "products"))
+    products.forEach((row, recordIndex) => {
+      const references = Array.isArray(row.references) ? row.references : []
+      const payload = isObject(row.payload) ? row.payload : {}
+      if (
+        !references.some(
+          (reference) => reference?.relation === "category" && reference.entity === "categories",
+        )
+      ) {
+        issues.push(issue("product_category_reference_required", "products", recordIndex))
+      }
+      if (!new Set(["USD", "CUP"]).has(payload.currency)) {
+        issues.push(issue("product_currency_unsupported", "products", recordIndex))
+      }
+      if (!new Set(["draft", "published", "archived"]).has(payload.publication_status)) {
+        issues.push(issue("product_publication_status_unsupported", "products", recordIndex))
+      }
+    })
+
+    const variants = recordsByEntity.get("variants") ?? []
+    variants.forEach((row, recordIndex) => {
+      const references = Array.isArray(row.references) ? row.references : []
+      if (
+        !references.some(
+          (reference) => reference?.relation === "product" && reference.entity === "products",
+        )
+      ) {
+        issues.push(issue("variant_product_reference_required", "variants", recordIndex))
+      }
+    })
+
+    const mediaObjects = recordsByEntity.get("media_objects") ?? []
+    mediaObjects.forEach((row, recordIndex) => {
+      const payload = isObject(row.payload) ? row.payload : {}
+      if (!HASH_PATTERN.test(payload.sha256 ?? "")) {
+        issues.push(issue("media_content_hash_required", "media_objects", recordIndex))
+      }
+      if (typeof payload.mime_type !== "string" || !payload.mime_type.startsWith("image/")) {
+        issues.push(issue("media_image_mime_type_required", "media_objects", recordIndex))
+      }
+      if ("source_url" in payload || "url" in payload) {
+        issues.push(issue("media_source_url_forbidden", "media_objects", recordIndex))
+      }
+    })
+  }
+
   summary.entities = datasetSummaries.sort((a, b) => a.entity.localeCompare(b.entity))
   summary.totals = {
     entities: datasetSummaries.length,
@@ -318,14 +395,24 @@ export async function validateStageBundle(directory) {
 }
 
 async function main() {
-  const bundlePath = process.argv[2]
-  if (!bundlePath || process.argv.length !== 3) {
-    console.error("Usage: node tools/migration/validate-stage-bundle.mjs <local-bundle-directory>")
+  const args = process.argv.slice(2)
+  let profile = "full"
+  let bundlePath
+  if (args[0] === "--profile" && args.length === 3) {
+    profile = args[1]
+    bundlePath = args[2]
+  } else if (args.length === 1) {
+    bundlePath = args[0]
+  }
+  if (!bundlePath || !VALIDATION_PROFILES.includes(profile)) {
+    console.error(
+      "Usage: node tools/migration/validate-stage-bundle.mjs [--profile full|catalog-only] <local-bundle-directory>",
+    )
     process.exitCode = 2
     return
   }
 
-  const result = await validateStageBundle(bundlePath)
+  const result = await validateStageBundle(bundlePath, { profile })
   process.stdout.write(`${JSON.stringify(result, null, 2)}\n`)
   if (result.status !== "valid") process.exitCode = 1
 }
