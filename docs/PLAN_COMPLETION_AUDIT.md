@@ -1,6 +1,6 @@
 # Auditoría de cumplimiento del plan maestro AgeStyles 2.0
 
-**Corte:** 17 de noviembre de 2026, 05:41 UTC
+**Corte:** 17 de noviembre de 2026, 05:44 UTC
 **Alcance:** contraste de `AGESTYLES_2_0_PLAN_MAESTRO.md`, `STATUS_PLAN_MAESTRO.md`, `MATRIZ_REUTILIZACION.md`, `CODEX_HANDOFF.md` y el grafo de código del monorepo.
 **Conclusión:** el plan sigue en ejecución; ninguna de las fases F0–F8 puede marcarse completa con la evidencia disponible. F9 está correctamente diferida. El laboratorio de marketplace y varias verticales están avanzadas, pero siguen pendientes gates de datos, validación en dispositivos, QA, despliegue y cutover.
 
@@ -81,3 +81,9 @@ El grafo del monorepo está indexado. La arquitectura muestra apps `commerce-api
 - El commit `57fdec5` está en `main`. Su CI pasó instalación congelada, lint, formato, 5/5 tests, 12/12 typechecks, exports Buyer/Business y build SEO storefront.
 - `quietSurface` y `selectedSurface` ahora se definen en TypeScript y CSS y se consumen desde Business; el test verifica contraste WCAG AA para ambas en tema claro y oscuro.
 - Gateway buyer responde CORS 204 y devuelve una región y 12 productos para la configuración actual de la app. El bundle web público aún es anterior; visualización de la nueva UI y publicación siguen pendientes.
+
+## Addendum de publicación — 17 de noviembre de 2026, 05:44 UTC
+
+- El runbook contiene los valores públicos actuales de buyer (`descargas.eav-labs.com/agestyles-lab`), negocio (`descargas.eav-labs.com/agestyles-seller`), storefront (`catalogo.eav-labs.com`), buyer (`tienda.eav-labs.com`) y propietario GHCR (`ernestoartime`). La clave publicable se copiará directamente de la configuración local y no se incluirá en el documento.
+- Verificación pública con esa clave: preflight buyer 204, `store/regions` 200/1 y `store/products?limit=100` 200/12; preflight seller desde el dominio de negocio 204. Esto confirma los gateways, no la interfaz web ya desplegada.
+- El workflow de imágenes está activo pero no ejecutado; el conector de GitHub disponible no permite crear variables de Actions ni iniciar `workflow_dispatch`. Se solicitó al usuario configurar las variables y lanzar el workflow; el despliegue VPS queda pendiente de un tag GHCR resultante.

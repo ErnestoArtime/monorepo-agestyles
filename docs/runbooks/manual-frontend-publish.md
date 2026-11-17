@@ -10,16 +10,16 @@ En **Settings → Secrets and variables → Actions → Variables**, define esto
 
 | Variable | Uso |
 |---|---|
-| `AGESTYLES_BUYER_MEDUSA_URL` | URL pública del gateway/Store API que llevará la app compradora. |
-| `AGESTYLES_BUSINESS_MEDUSA_URL` | URL pública del gateway del portal de negocio. |
-| `AGESTYLES_STOREFRONT_MEDUSA_URL` | URL del backend Medusa usado por Next.js. |
-| `AGESTYLES_MEDUSA_PUBLISHABLE_KEY` | Clave publicable `pk_…` para los tres sitios. |
-| `AGESTYLES_BUYER_APP_URL` | URL pública a la que enlazan los CTA del catálogo. |
-| `AGESTYLES_STOREFRONT_SITE_URL` | Dominio canónico usado por Next.js. |
+| `AGESTYLES_BUYER_MEDUSA_URL` | `https://descargas.eav-labs.com/agestyles-lab` — gateway/Store API de compradores. |
+| `AGESTYLES_BUSINESS_MEDUSA_URL` | `https://descargas.eav-labs.com/agestyles-seller` — gateway del portal de negocio. |
+| `AGESTYLES_STOREFRONT_MEDUSA_URL` | `https://descargas.eav-labs.com/agestyles-lab` — API Medusa usada por Next.js. |
+| `AGESTYLES_MEDUSA_PUBLISHABLE_KEY` | Clave publicable `pk_…` para los tres sitios. Cópiala de `EXPO_PUBLIC_MEDUSA_PUBLISHABLE_API_KEY` en `apps/buyer-app/.env.local`. |
+| `AGESTYLES_BUYER_APP_URL` | `https://tienda.eav-labs.com` — destino de los enlaces de compra del catálogo. |
+| `AGESTYLES_STOREFRONT_SITE_URL` | `https://catalogo.eav-labs.com` — dominio canónico de Next.js. |
 | `AGESTYLES_BUYER_ANDROID_APK_URL` | URL pública del APK beta (opcional; dejar vacío si no corresponde). |
-| `AGESTYLES_GHCR_OWNER` | Usuario u organización GitHub en minúsculas donde Actions creará los paquetes, normalmente `ernestoartime`. |
+| `AGESTYLES_GHCR_OWNER` | `ernestoartime` — usuario GitHub en minúsculas donde Actions publicará las imágenes. |
 
-Los valores de Expo se incorporan en los bundles web y son visibles para los visitantes. La clave publicable también se usa en el servidor Next; no es una clave secreta. La imagen Next obtiene su configuración de Medusa desde el archivo `.env.storefront-web`, que debe estar preparado en el VPS al arrancar el contenedor. No pasar secretos de producción ni valores `.env` en la línea de build.
+Los valores de Expo se incorporan en los bundles web y son visibles para los visitantes. La clave `pk_` también se usa en el servidor Next; es publicable y no es una clave secreta. No pegues en GitHub ni compartas claves `sk_`, Admin o Vendor. La imagen Next obtiene su configuración de Medusa desde el archivo `.env.storefront-web`, que debe estar preparado en el VPS al arrancar el contenedor. No pasar secretos de producción ni valores `.env` en la línea de build.
 
 El workflow requiere permiso `packages: write`, ya configurado en su definición, y usa el `GITHUB_TOKEN` efímero del propio run. No hace falta crear un PAT para que Actions publique.
 

@@ -1,6 +1,6 @@
 # Estado de ejecución del plan maestro AgeStyles 2.0
 
-**Corte de auditoría:** 17 de noviembre de 2026, 05:41 UTC
+**Corte de auditoría:** 17 de noviembre de 2026, 05:44 UTC
 
 **Documento rector:** [AGESTYLES_2_0_PLAN_MAESTRO.md](./AGESTYLES_2_0_PLAN_MAESTRO.md)
 
@@ -104,3 +104,9 @@ El checkout fuente presenta cambios sin seguimiento en `.codex/`, `scripts/__pyc
 - `57fdec5` subió los tokens de superficies y la ampliación de contraste WCAG AA a `main`; el CI de ese SHA terminó success: instalación congelada, lint, formato, 5/5 tests, 12/12 typechecks y los tres builds web.
 - La prueba del gateway confirma 1 región y 12 productos publicados desde la configuración de la app compradora. La solicitud HTTP y CORS pasan; falta validar la UI desplegada con una imagen nueva.
 - Las tres webs siguen respondiendo 200 con los contenedores iniciados antes de los commits recientes. No se ejecutó el workflow `Publish frontend images`, pull ni redeploy.
+
+## Guía de publicación — 17 de noviembre de 2026, 05:44 UTC
+
+- El runbook ya tiene las URLs verificadas para gateways buyer/seller, web buyer, catálogo y propietario GHCR. Solo falta copiar el valor `pk_` publicable de la configuración local a la variable de GitHub Actions; no usar claves `sk_`, Admin o Vendor.
+- Una consulta pública desde el gateway remoto `https://descargas.eav-labs.com/agestyles-lab` con esa clave devuelve 1 región y 12 productos (HTTP 200). El preflight de negocio desde `negocio.eav-labs.com` también devuelve 204.
+- No se ha iniciado la publicación de imágenes. Los contenedores siguen con tags `agestyles/*:local`, anteriores a los cambios de `main`.
