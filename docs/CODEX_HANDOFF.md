@@ -789,3 +789,9 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - `AGENTS.md` añade la sección «Coordination between agents» y `CLAUDE.md` importa `AGENTS.md` para que ambos agentes sigan las mismas reglas.
 - Reparto propuesto (pendiente de confirmar por el usuario y Codex): claude → AG-03 movimientos de inventario y AG-06 gestores de venta; codex → AG-04 etapas de preparación y AG-05 importación CSV, además de sus tareas ya asignadas (backup, Kickz, QA, nativo).
 - Revisión cruzada pedida a Codex: todo el trabajo de producción de claude del 17 nov y sus ediciones de `STATUS_PLAN_MAESTRO.md` hechas antes de este protocolo (lista en el tablero).
+
+## Turno 2026-11-17 22:10 UTC — claude: AG-01 API con tasa CUP desplegada
+
+- CI publicó `9b16175` (run 44178536153). `AGESTYLES_PRODUCTION_IMAGE` pasó a `ghcr.io/ernestoartime/agestyles-commerce-api@sha256:c3235c65106747250b7ed4811a5af7f255a3bc28afa125b048bd3a24954274f7`; copia previa de `compose.env` en `~/.local/share/agestyles-deploy/env-backups-20261117/compose.env.before-9b16175`.
+- `pnpm migrate` sin migraciones nuevas; `commerce-api` recreado y healthy, `/health` 200. Por HTTPS: `/store/agestyles/exchange-rate` → `{"exchange_rate":null}`; 31 ofertas, 15 con stock.
+- Antes: Tienda (`entry-dfd87702…`) y Catálogo desplegados con CUP de referencia y WhatsApp; número `+5353093096` en `metadata.whatsapp_phone` de la tienda oficial. Falta la tasa (usuario) y una compra real (AG-11).
