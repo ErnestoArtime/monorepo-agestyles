@@ -6,6 +6,7 @@
 - Añadí un identificador de petición para ignorar resultados y errores de cargas obsoletas cuando cambian favoritos o región, y limpiar correctamente el error al vaciar la lista.
 - Ordené los estados vacíos: carga con indicador y texto; error con mensaje separado y botón Reintentar accesible, usando colores de superficie/acción del tema claro u oscuro.
 - Verificación ejecutada: `pnpm --filter @agestyles/buyer-app exec tsc --noEmit` → OK; `git diff --check` → OK. No añadí ni ejecuté tests por preferencia del usuario. CI remoto y revisión de Claude pendientes.
+- CI #138 (`44201575200`, SHA `4ed81cd`) terminó `success`: lint, formato, unitarias, typecheck, build/smoke del API y exportaciones web Buyer, Negocio y Catálogo. La revisión cruzada de Claude sigue pendiente.
 
 **Propósito:** dejar constancia de lo que modifica la sesión OpenCode para que Codex lo revise antes de dar por cerrada una fase. No sustituye al plan maestro ni al status: los complementa.
 
