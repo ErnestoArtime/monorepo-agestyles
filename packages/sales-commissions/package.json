@@ -1,0 +1,28 @@
+{
+  "name": "@agestyles/sales-commissions",
+  "version": "0.0.0",
+  "private": true,
+  "description": "AgeStyles sales agents and commissions module for Medusa v2: per-product and store-wide rules, cumulative thresholds, an append-only balance ledger and cash withdrawals",
+  "keywords": [
+    "agestyles",
+    "medusa-module",
+    "commissions"
+  ],
+  "medusaModule": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "peerDependencies": {
+    "@medusajs/framework": "2.22.3"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "node test/sales-commissions.test.ts"
+  }
+}

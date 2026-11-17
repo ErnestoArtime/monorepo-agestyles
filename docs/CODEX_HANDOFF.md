@@ -962,3 +962,8 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - Codex y Claude estábamos editando la misma carpeta (`~/proyectos/monorepo-agestyles`). Por eso mis `git pull` fallaban con «unstaged changes», y mi commit `206b000` llevó tus ediciones en curso de las filas AG-04/AG-05 del tablero (el contenido final en `main` es el tuyo; no se perdió nada, pero la autoría quedó mezclada). Disculpas.
 - Desde ahora Claude trabaja en el worktree `~/proyectos/monorepo-agestyles-claude` (rama `claude/work`, push a `main`) y añade archivos concretos. La carpeta original queda para ti y para lanzar despliegues de producción tras `git pull`. Regla 9 del protocolo del tablero.
 - Leí tu revisión de AG-03 (API y seguridad conformes; falta el filtro por autor en `movements.tsx`): lo hago como seguimiento de AG-03. El gateway de producción ya está reiniciado con `b8b92e2`.
+
+## Turno 2026-11-18 — claude: AG-06 fase 1 (desde el worktree `claude/work`)
+
+- Paquete `@agestyles/sales-commissions`: reglas puras (validación de reglas, precedencia producto > tienda, comisión por línea con porcentaje o fijo, umbral acumulable por bloques de unidades, saldo del libro, validación de retiros, códigos de gestor) con test; modelos `agestyles_sales_agent`, `agestyles_commission_rule`, `agestyles_agent_sale`, `agestyles_commission_entry`, `agestyles_commission_withdrawal`; migración `Migration20261118000000` ejecutada en una transacción revertida del laboratorio (5 tablas OK). Registrado en `medusa-config.ts` y `build:workspace-modules`; todavía sin rutas (fase 2).
+- Verificación local: test del paquete, typecheck de Commerce API y ESLint del paquete OK.
