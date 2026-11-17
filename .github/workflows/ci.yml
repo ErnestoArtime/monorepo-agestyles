@@ -115,7 +115,7 @@ jobs:
             --env DATABASE_URL --env REDIS_URL --env JWT_SECRET --env COOKIE_SECRET \
             agestyles/commerce-api:ci pnpm migrate
 
-      - name: Start API and verify its health endpoint
+      - name: Start API and verify health and tracking authentication
         run: |
           set -euo pipefail
           docker run -d --name agestyles-commerce-api-ci --network host \
@@ -124,14 +124,26 @@ jobs:
             --env JWT_SECRET=ci_jwt_0123456789abcdef0123456789abcdef \
             --env COOKIE_SECRET=ci_cookie_0123456789abcdef0123456789abcdef \
             agestyles/commerce-api:ci
+          health_status="000"
           for attempt in $(seq 1 90); do
-            if curl --fail --silent http://127.0.0.1:19081/health; then
-              exit 0
+            health_status="$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:19081/health || true)"
+            if [[ "${health_status}" == "200" ]]; then
+              break
             fi
             sleep 2
           done
-          docker logs agestyles-commerce-api-ci
-          exit 1
+          if [[ "${health_status}" != "200" ]]; then
+            echo "Expected API health endpoint to return HTTP 200; got ${health_status}." >&2
+            docker logs agestyles-commerce-api-ci
+            exit 1
+          fi
+          tracking_status="$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:19081/store/orders/order_ci_synthetic/tracking)"
+          if [[ "${tracking_status}" != "401" ]]; then
+            echo "Expected anonymous order-tracking request to return HTTP 401; got ${tracking_status}." >&2
+            docker logs agestyles-commerce-api-ci
+            exit 1
+          fi
+          exit 0
 
       - name: Stop disposable Commerce API smoke test
         if: always()
