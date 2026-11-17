@@ -10,6 +10,7 @@ export {
   ENTRY_KINDS,
   ledgerBalance,
   normalizeAgentCode,
+  parseAgentSaleInput,
   parseRuleInput,
   PAYMENT_METHODS,
   resolveRule,
@@ -19,6 +20,7 @@ export {
   validateWithdrawal,
 } from "./rules";
 export type {
+  AgentSaleInput,
   CommissionLine,
   CommissionRule,
   CommissionRuleInput,

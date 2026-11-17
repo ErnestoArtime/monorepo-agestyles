@@ -4,6 +4,7 @@ import {
   commissionForLine,
   ledgerBalance,
   normalizeAgentCode,
+  parseAgentSaleInput,
   parseRuleInput,
   resolveRule,
   unitsToNextThreshold,
@@ -118,5 +119,45 @@ invalid(() => validateWithdrawal(1.234, 2.3), /dos decimales/);
 assert.equal(normalizeAgentCode(" ana2026 "), "ANA2026");
 assert.equal(normalizeAgentCode("a-1"), null);
 assert.equal(normalizeAgentCode("ABCDEFGHIJKLM"), null);
+
+// Agent sale input
+const sale = parseAgentSaleInput({
+  location_id: "sloc_1",
+  payment_method: "cash",
+  note: "  Cliente de la tienda ",
+  lines: [{ offer_id: "offer_1", quantity: "2", unit_price: "19.99" }],
+});
+assert.equal(sale.note, "Cliente de la tienda");
+assert.deepEqual(sale.lines, [{ offer_id: "offer_1", quantity: 2, unit_price: 19.99 }]);
+const saleBase = { location_id: "sloc_1", payment_method: "transfer" };
+invalid(
+  () => parseAgentSaleInput({ ...saleBase, payment_method: "bizum", lines: [] }),
+  /efectivo o transferencia/,
+);
+invalid(() => parseAgentSaleInput({ ...saleBase, lines: [] }), /al menos un producto/);
+invalid(
+  () =>
+    parseAgentSaleInput({ ...saleBase, lines: [{ offer_id: "o", quantity: 0, unit_price: 1 }] }),
+  /entero entre 1/,
+);
+invalid(
+  () =>
+    parseAgentSaleInput({
+      ...saleBase,
+      lines: [{ offer_id: "o", quantity: 1, unit_price: 1.234 }],
+    }),
+  /dos decimales/,
+);
+invalid(
+  () =>
+    parseAgentSaleInput({
+      ...saleBase,
+      lines: [
+        { offer_id: "o", quantity: 1, unit_price: 1 },
+        { offer_id: "o", quantity: 2, unit_price: 1 },
+      ],
+    }),
+  /una vez/,
+);
 
 console.log("sales-commissions rules: ok");

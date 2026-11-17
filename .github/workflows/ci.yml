@@ -231,6 +231,13 @@ jobs:
           AGESTYLES_LAB_SEEDED_PASSWORD: ci_lab_password_0123456789
         run: node apps/commerce-api/scripts/verify-inventory-movements.mjs
 
+      - name: Verify sales agents and commissions over HTTP on disposable data
+        env:
+          EXPO_PUBLIC_MEDUSA_URL: http://127.0.0.1:19081
+          AGESTYLES_CI_DISPOSABLE: "true"
+          AGESTYLES_LAB_SEEDED_PASSWORD: ci_lab_password_0123456789
+        run: node apps/commerce-api/scripts/verify-sales-commissions.mjs
+
       - name: Verify variant removal permissions over HTTP on disposable data
         env:
           EXPO_PUBLIC_MEDUSA_URL: http://127.0.0.1:19081

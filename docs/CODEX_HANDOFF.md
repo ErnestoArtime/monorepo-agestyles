@@ -976,3 +976,11 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 
 - Paquete `@agestyles/sales-commissions`: reglas puras (validación de reglas, precedencia producto > tienda, comisión por línea con porcentaje o fijo, umbral acumulable por bloques de unidades, saldo del libro, validación de retiros, códigos de gestor) con test; modelos `agestyles_sales_agent`, `agestyles_commission_rule`, `agestyles_agent_sale`, `agestyles_commission_entry`, `agestyles_commission_withdrawal`; migración `Migration20261118000000` ejecutada en una transacción revertida del laboratorio (5 tablas OK). Registrado en `medusa-config.ts` y `build:workspace-modules`; todavía sin rutas (fase 2).
 - Verificación local: test del paquete, typecheck de Commerce API y ESLint del paquete OK.
+
+## Turno 2026-11-18 — claude: AG-06 fase 2 (rutas de comisiones)
+
+- Rutas vendor: `sales-agents` (GET; POST solo titular/administración; `POST /:id` activar/código), `commission-rules` (GET gestores y titular; POST upsert titular; `DELETE /:id`), `agent-sales` (GET propio o de la tienda; POST solo gestor activo: descuenta stock y escribe movimientos `venta` de AG-03 en un workflow con compensación), `commissions/balance` (saldo, solicitado, disponible y progreso de umbrales) y `commission-withdrawals` (POST gestor con bloqueo por gestor; `POST /:id` el titular marca `paid` o `rejected`; `paid` añade un asiento `withdrawn` revalidando el saldo).
+- Autorización en servidor: titular o `role_seller_administration` = gestión; gestor = registro activo en `agestyles_sales_agent` para ese miembro y tienda. Todo filtrado por la tienda seleccionada.
+- Gateway vendedor: añadidas solo esas rutas (IDs con prefijo `sagent_`, `crule_`, `cwdraw_`).
+- CI: `verify-sales-commissions.mjs` (roles, precedencia producto > tienda, umbral de 2 uds, stock, venta por encima del stock 400, saldo, retiro > saldo 400, 3 retiros concurrentes → 1, confirmación solo del titular de A2, B2 aislado, limpieza).
+- Local: tests 10/10, typecheck 14/14, lint sin errores en archivos nuevos, formato OK. Sin despliegue.

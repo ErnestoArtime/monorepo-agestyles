@@ -172,3 +172,65 @@ export function normalizeAgentCode(code: unknown): string | null {
   const normalized = code.trim().toUpperCase();
   return /^[A-Z0-9]{4,12}$/.test(normalized) ? normalized : null;
 }
+
+export type AgentSaleInput = {
+  location_id: string;
+  payment_method: PaymentMethod;
+  note: string | null;
+  lines: { offer_id: string; quantity: number; unit_price: number }[];
+};
+
+export const MAX_SALE_LINES = 50;
+
+/** Sale registered by an agent in Negocio (shop, WhatsApp…); stock leaves the given location. */
+export function parseAgentSaleInput(body: unknown): AgentSaleInput {
+  if (!body || typeof body !== "object") fail("Faltan los datos de la venta.");
+  const raw = body as Record<string, unknown>;
+  const locationId = typeof raw.location_id === "string" ? raw.location_id.trim() : "";
+  if (!locationId) fail("Elige la ubicación de la que sale la mercancía.");
+  if (
+    typeof raw.payment_method !== "string" ||
+    !PAYMENT_METHODS.includes(raw.payment_method as PaymentMethod)
+  ) {
+    fail("La forma de pago debe ser efectivo o transferencia.");
+  }
+  const note = typeof raw.note === "string" ? raw.note.trim().slice(0, 300) : "";
+  if (!Array.isArray(raw.lines) || !raw.lines.length)
+    fail("Añade al menos un producto a la venta.");
+  if (raw.lines.length > MAX_SALE_LINES)
+    fail(`Una venta admite como máximo ${MAX_SALE_LINES} líneas.`);
+  const lines = raw.lines.map((line) => {
+    if (!line || typeof line !== "object") fail("Línea de venta no válida.");
+    const row = line as Record<string, unknown>;
+    const offerId = typeof row.offer_id === "string" ? row.offer_id.trim() : "";
+    const quantity = typeof row.quantity === "string" ? Number(row.quantity) : row.quantity;
+    const price = typeof row.unit_price === "string" ? Number(row.unit_price) : row.unit_price;
+    if (!offerId) fail("Cada línea necesita un producto.");
+    if (
+      typeof quantity !== "number" ||
+      !Number.isSafeInteger(quantity) ||
+      quantity < 1 ||
+      quantity > 10_000
+    ) {
+      fail("La cantidad de cada línea debe ser un entero entre 1 y 10.000.");
+    }
+    if (
+      typeof price !== "number" ||
+      !Number.isFinite(price) ||
+      price < 0 ||
+      roundMoney(price) !== price
+    ) {
+      fail("El precio de cada línea debe ser un importe válido con dos decimales como máximo.");
+    }
+    return { offer_id: offerId, quantity, unit_price: price };
+  });
+  if (new Set(lines.map((line) => line.offer_id)).size !== lines.length) {
+    fail("Un producto solo puede aparecer una vez en la venta.");
+  }
+  return {
+    location_id: locationId,
+    payment_method: raw.payment_method as PaymentMethod,
+    note: note || null,
+    lines,
+  };
+}

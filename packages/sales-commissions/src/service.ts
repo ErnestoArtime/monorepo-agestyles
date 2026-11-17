@@ -6,7 +6,7 @@ class SalesCommissionsService extends MedusaService({
   CommissionRule,
   AgentSale,
   CommissionEntry,
-  Withdrawal,
+  CommissionWithdrawal: Withdrawal,
 }) {}
 
 export default SalesCommissionsService;

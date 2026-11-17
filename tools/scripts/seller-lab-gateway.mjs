@@ -54,6 +54,15 @@ const rules = [
   // location-level write is not exposed so nothing bypasses the history.
   ["GET POST", /^\/vendor\/agestyles\/inventory-movements$/],
   ["GET", /^\/vendor\/agestyles\/inventory-movements\/export$/],
+  // Sales agents and commissions (AG-06); authorization is enforced by the API.
+  ["GET POST", /^\/vendor\/agestyles\/sales-agents$/],
+  ["POST", /^\/vendor\/agestyles\/sales-agents\/sagent_[a-z0-9]+$/i],
+  ["GET POST", /^\/vendor\/agestyles\/commission-rules$/],
+  ["DELETE", /^\/vendor\/agestyles\/commission-rules\/crule_[a-z0-9]+$/i],
+  ["GET POST", /^\/vendor\/agestyles\/agent-sales$/],
+  ["GET", /^\/vendor\/agestyles\/commissions\/balance$/],
+  ["GET POST", /^\/vendor\/agestyles\/commission-withdrawals$/],
+  ["POST", /^\/vendor\/agestyles\/commission-withdrawals\/cwdraw_[a-z0-9]+$/i],
   ["GET POST", /^\/vendor\/sellers\/sel_[a-z0-9]+\/members$/i],
   ["POST DELETE", /^\/vendor\/sellers\/sel_[a-z0-9]+\/members\/[a-z0-9_-]+$/i],
 ];
