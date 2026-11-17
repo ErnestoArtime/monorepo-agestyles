@@ -165,6 +165,6 @@ OC-09: queda pendiente la inspección visual completa de temas claro/oscuro y Ta
 
 ## Revalidación de identidad seller y esquema fuente — 17 de noviembre de 2026, 11:27 UTC
 
-El resolver de permisos seller valida explícitamente la identidad completa de la membresía retornada (membership/member/seller IDs). Pruebas sintéticas adversariales cubren la respuesta de un owner/admin ajeno en cada uno de esos tres campos; `commerce-api test` 8/8, typecheck y checks dirigidos de lint/formato pasan. Esto aporta defensa local, sin cerrar BOLA por HTTP/DB.
+El resolver de permisos seller valida explícitamente la identidad completa de la membresía retornada (membership/member/seller IDs). Pruebas sintéticas adversariales cubren la respuesta de un owner/admin ajeno en cada uno de esos tres campos; `commerce-api test` 8/8, typecheck y checks dirigidos de lint/formato pasan. CI [run 44074681686](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44074681686) terminó success con build no publicado de API, migración/healthcheck sobre PostgreSQL/Redis de CI y builds web. Esto aporta defensa local, sin cerrar BOLA por HTTP/DB.
 
 El proyecto fuente continúa con 80 migraciones aplicadas hasta `20261116061921`. La migración de repositorio `20261116120000_merchant_product_media.sql` está pendiente y define funciones para imágenes de borradores merchant; no es una migración de los productos/media legados. Se dejó sin aplicar, en línea con el gate de backup/restore. No se leyeron filas comerciales.

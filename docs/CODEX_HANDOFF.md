@@ -635,7 +635,7 @@ La inspección visual OC-09 sigue pendiente: no hay navegador de automatización
 
 ## F1/F5 — Comprobación defensiva de identidad de membresía — 17 de noviembre de 2026, 11:27 UTC
 
-`SellerPermissionsService` ahora valida que la fila retornada coincida en `id`, `member_id` y `seller_id` con el actor y la tienda seleccionada antes de conceder cualquier permiso. La prueba nueva simula que el servicio ignora filtros y devuelve una membresía owner/admin de otra tienda, otro usuario o con otro ID; los tres casos quedan sin permisos. API tests 8/8, typecheck dirigido de Commerce API PASS, ESLint/Prettier dirigidos y `git diff --check` PASS. Es una defensa adicional de la política; no sustituye las pruebas BOLA sobre rutas HTTP, base de datos y revocación.
+`SellerPermissionsService` ahora valida que la fila retornada coincida en `id`, `member_id` y `seller_id` con el actor y la tienda seleccionada antes de conceder cualquier permiso. La prueba nueva simula que el servicio ignora filtros y devuelve una membresía owner/admin de otra tienda, otro usuario o con otro ID; los tres casos quedan sin permisos. API tests 8/8, typecheck dirigido de Commerce API PASS, ESLint/Prettier dirigidos y `git diff --check` PASS. CI del commit `81774df` [run 44074681686](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44074681686) terminó success, incluidos migraciones/healthcheck de API en PostgreSQL/Redis desechables y export/build web. Es una defensa adicional de la política; no sustituye las pruebas BOLA sobre rutas HTTP, base de datos y revocación.
 
 ## F0/F6 — Estado de esquema vivo y migración de medios — 17 de noviembre de 2026, 11:27 UTC
 

@@ -230,6 +230,6 @@ OC-09 sigue abierto solo para la revisión visual de rutas completas en claro/os
 
 ## Aislamiento por identidad explícita en permisos seller — 17 de noviembre de 2026, 11:27 UTC
 
-El resolver valida ahora `id`, `member_id` y `seller_id` de la membresía retornada contra el actor y la tienda solicitados, incluso si la consulta interna ignora filtros. Tres pruebas sintéticas de membresía cruzada y la suite Commerce API (8/8), su typecheck, ESLint, Prettier y `git diff --check` pasan. Refuerza el contrato local de F1/F5; aún falta BOLA por HTTP/DB y revocación end-to-end.
+El resolver valida ahora `id`, `member_id` y `seller_id` de la membresía retornada contra el actor y la tienda solicitados, incluso si la consulta interna ignora filtros. Tres pruebas sintéticas de membresía cruzada y la suite Commerce API (8/8), su typecheck, ESLint, Prettier y `git diff --check` pasan. CI del commit `81774df` [run 44074681686](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44074681686) terminó success e incluyó el smoke test aislado de API y los builds web. Refuerza el contrato local de F1/F5; aún falta BOLA por HTTP/DB y revocación end-to-end.
 
 Consulta read-only actual del proyecto `Agestyles-Catalogo`: 80 migraciones aplicadas hasta `20261116061921`; la migración posterior `20261116120000_merchant_product_media.sql` sigue sin aplicarse. La revisión estática confirma que añade RPCs para fotos de borradores merchant y no implementa el ETL del catálogo legado. No se aplicó ninguna migración ni se leyeron filas.
