@@ -1,6 +1,6 @@
 # Auditoría de cumplimiento del plan maestro AgeStyles 2.0
 
-**Corte:** 17 de noviembre de 2026, 05:32 UTC
+**Corte:** 17 de noviembre de 2026, 05:35 UTC
 **Alcance:** contraste de `AGESTYLES_2_0_PLAN_MAESTRO.md`, `STATUS_PLAN_MAESTRO.md`, `MATRIZ_REUTILIZACION.md`, `CODEX_HANDOFF.md` y el grafo de código del monorepo.
 **Conclusión:** el plan sigue en ejecución; ninguna de las fases F0–F8 puede marcarse completa con la evidencia disponible. F9 está correctamente diferida. El laboratorio de marketplace y varias verticales están avanzadas, pero siguen pendientes gates de datos, validación en dispositivos, QA, despliegue y cutover.
 
@@ -70,3 +70,8 @@ El grafo del monorepo está indexado. La arquitectura muestra apps `commerce-api
 - El pipeline CI de `202eff8` pasó lint, formato, tests, typecheck, exports web Buyer/Business y build SEO Next. Esto no equivale a imágenes runtime publicadas ni a deploy.
 - En esta comprobación, las webs públicas todavía usan imágenes anteriores. El siguiente paso del runbook requiere ejecutar `Publish frontend images` para un commit de `main` con CI exitoso y desplegar el tag inmutable por servicio.
 - En `202eff8` terminaron success todos los gates, incluidos los builds Buyer/Business/storefront. Un preflight público del comprador respondió 204 con `x-medusa-locale` y `x-publishable-api-key` permitidos; `store/regions` y `store/products?limit=1` respondieron 200 con la configuración de la app. Esto demuestra disponibilidad del gateway, no que el bundle web anterior cargue/renderice correctamente.
+
+## Addendum de auditoría de paleta — 17 de noviembre de 2026, 05:35 UTC
+
+- `business-app` tenía dos colores hexadecimales locales para superficies secundarias. Se movieron a los tokens compartidos TypeScript/CSS y la app los consume desde `@agestyles/design-tokens`.
+- El test de color comprueba ahora contraste WCAG AA sobre fondo, superficie tranquila y superficie seleccionada en modo claro y oscuro. Localmente: 5/5 tests, 12/12 typechecks, ESLint de archivos afectados y Prettier pasan. Falta CI remoto de este cambio y visualización real; OC-09 continúa abierta.

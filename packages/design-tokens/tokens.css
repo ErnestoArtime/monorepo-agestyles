@@ -10,6 +10,8 @@
   --as-color-muted: #6f6f6b;
   --as-color-border: #e4e4df;
   --as-color-placeholder: #ecece8;
+  --as-color-quiet-surface: #e9ebee;
+  --as-color-selected-surface: #eef0f3;
   --as-color-error: #b42318;
   --as-color-on-error: #ffffff;
   --as-color-warning: #a15c00;
@@ -42,6 +44,8 @@
   --as-color-muted: #a5a49f;
   --as-color-border: #3a3b39;
   --as-color-placeholder: #2a2c2b;
+  --as-color-quiet-surface: #262828;
+  --as-color-selected-surface: #383329;
   --as-color-error: #f97066;
   --as-color-on-error: #2a1010;
   --as-color-warning: #fdb022;

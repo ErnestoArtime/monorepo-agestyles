@@ -23,6 +23,8 @@ const css = await readFile(new URL("../tokens.css", import.meta.url), "utf8");
 for (const [mode, tokenSet] of Object.entries(colors)) {
   for (const [foreground, background] of [
     [tokenSet.text, tokenSet.background],
+    [tokenSet.text, tokenSet.quietSurface],
+    [tokenSet.text, tokenSet.selectedSurface],
     [tokenSet.onAction, tokenSet.action],
     [tokenSet.onError, tokenSet.error],
     [tokenSet.onSuccess, tokenSet.success],
@@ -39,6 +41,8 @@ for (const [mode, tokenSet] of Object.entries(colors)) {
     surface: tokenSet.surface,
     action: tokenSet.action,
     "on-action": tokenSet.onAction,
+    "quiet-surface": tokenSet.quietSurface,
+    "selected-surface": tokenSet.selectedSurface,
     error: tokenSet.error,
     "on-error": tokenSet.onError,
     success: tokenSet.success,

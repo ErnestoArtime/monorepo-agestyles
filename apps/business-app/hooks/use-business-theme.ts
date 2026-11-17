@@ -19,8 +19,8 @@ export function useBusinessTheme() {
     red: tokens.error,
     onAction: tokens.onAction,
     placeholderText: tokens.muted,
-    quietSurface: isDark ? "#262828" : "#E9EBEE",
-    selectedSurface: isDark ? "#383329" : "#EEF0F3",
+    quietSurface: tokens.quietSurface,
+    selectedSurface: tokens.selectedSurface,
     successText: tokens.success,
     statusBarStyle: isDark ? ("light" as const) : ("dark" as const),
   };

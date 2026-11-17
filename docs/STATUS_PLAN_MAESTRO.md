@@ -1,6 +1,6 @@
 # Estado de ejecución del plan maestro AgeStyles 2.0
 
-**Corte de auditoría:** 17 de noviembre de 2026, 05:32 UTC
+**Corte de auditoría:** 17 de noviembre de 2026, 05:35 UTC
 
 **Documento rector:** [AGESTYLES_2_0_PLAN_MAESTRO.md](./AGESTYLES_2_0_PLAN_MAESTRO.md)
 
@@ -93,3 +93,8 @@ El checkout fuente presenta cambios sin seguimiento en `.codex/`, `scripts/__pyc
 - `202eff8` añade textos en español a catálogo, carrito, ficha y confirmación de compra. Su typecheck dirigido, ESLint y Prettier pasaron; el CI remoto terminó success con lint, formato, tests, typecheck y las tres compilaciones web.
 - El repo ya tiene los últimos cambios de código, pero las webs públicas siguen en las imágenes anteriores. El workflow de imágenes está preparado y es manual; aún no se ha ejecutado ni desplegado.
 - En `202eff8` la verificación de CI terminó success. Prueba de solo lectura contra el gateway público del comprador: preflight desde `tienda.eav-labs.com` devuelve 204 y permite `x-medusa-locale`/`x-publishable-api-key`; `store/regions` y `store/products?limit=1` devuelven 200 usando la configuración local de la app. Esto acota el bloqueo previo de CORS en el gateway actual, pero no valida el bundle web desplegado ni la renderización de la app.
+
+## Actualización de tokens — 17 de noviembre de 2026, 05:35 UTC
+
+- La auditoría de claro/oscuro encontró dos colores de superficie del panel Business definidos fuera de la paleta común. Se trasladaron `quietSurface` y `selectedSurface` a `@agestyles/design-tokens` y a CSS; `useBusinessTheme` ahora los consume desde el paquete compartido.
+- La prueba amplía WCAG AA a texto sobre esas superficies y comprueba paridad TS/CSS. En local pasaron 5/5 tests, 12/12 typechecks, Prettier y ESLint dirigido. Este último cambio está pendiente de commit y CI remoto; aún no está desplegado.
