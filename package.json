@@ -13,12 +13,22 @@
     "lab:migrate": "pnpm --filter @agestyles/commerce-api migrate",
     "lab:seed": "pnpm --filter @agestyles/commerce-api seed",
     "lab:buyer": "node tools/scripts/mercur-lab-env.mjs buyer",
+    "lab:business": "node tools/scripts/mercur-lab-env.mjs business",
+    "lab:verify:seller-roles": "node --env-file=apps/buyer-app/.env.local apps/commerce-api/scripts/verify-seller-roles.mjs",
+    "lab:verify:kickz-roles": "node --env-file=apps/buyer-app/.env.local apps/commerce-api/scripts/verify-kickz-store-roles.mjs",
+    "lab:verify:memberships": "node --env-file=apps/buyer-app/.env.local tools/scripts/verify-multistore-memberships.mjs",
+    "lab:verify:multistore-checkout": "node --env-file=apps/buyer-app/.env.local apps/commerce-api/scripts/verify-multistore-checkout.mjs",
+    "lab:verify:order-quotes": "node --env-file=apps/commerce-api/.env --env-file=apps/buyer-app/.env.local apps/commerce-api/scripts/verify-order-quotes.mjs",
+    "lab:verify:dual-identity": "node --env-file=apps/buyer-app/.env.local apps/commerce-api/scripts/verify-dual-actor-identity.mjs",
     "lab:api": "pnpm --filter @agestyles/commerce-api start",
     "lab:app": "pnpm --filter @agestyles/buyer-app start",
+    "lab:business-app": "pnpm --filter @agestyles/business-app start",
     "lab:web:build": "pnpm --filter @agestyles/buyer-app exec expo export --platform web",
     "lab:web:build:public": "node tools/scripts/build-buyer-web.mjs",
+    "seller:web:build": "node --env-file=apps/business-app/.env.local tools/scripts/build-business-web.mjs",
     "lab:web:serve": "python3 -m http.server 18081 --bind 127.0.0.1 --directory apps/buyer-app/dist",
-    "typecheck": "nx run-many --target=typecheck --projects=@agestyles/domain,@agestyles/api-client,@agestyles/buyer-app,@agestyles/commerce-api,@agestyles/storefront-web"
+    "test": "nx run-many --target=test",
+    "typecheck": "nx run-many --target=typecheck"
   },
   "devDependencies": {
     "nx": "24.0.6",

@@ -1,0 +1,3 @@
+[
+  { "legacy_id": "variant-syn-001", "references": [{ "relation": "product", "entity": "products", "legacy_id": "product-syn-001" }], "payload": { "sku": "SYN-001" } }
+]

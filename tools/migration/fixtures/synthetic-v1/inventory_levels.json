@@ -1,0 +1,3 @@
+[
+  { "legacy_id": "inventory-level-syn-001", "references": [{ "relation": "inventory_item", "entity": "inventory_items", "legacy_id": "inventory-item-syn-001" }, { "relation": "stock_location", "entity": "stock_locations", "legacy_id": "location-syn-001" }], "payload": { "stocked_quantity": 7 } }
+]

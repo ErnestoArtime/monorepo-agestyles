@@ -13,6 +13,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@agestyles/features-buyer": "workspace:*",
+    "@agestyles/design-tokens": "workspace:*",
     "@agestyles/api-client": "workspace:*",
     "@agestyles/icons": "workspace:*",
     "@medusajs/js-sdk": "2.22.3",

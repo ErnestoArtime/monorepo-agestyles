@@ -2,6 +2,13 @@
 
 La tienda, la app compradora, la app de negocio y los paneles web comparten una sola dirección visual y una sola biblioteca de iconos.
 
+## Tokens compartidos
+
+- Los valores canónicos viven en `@agestyles/design-tokens`: paleta semántica claro/oscuro, tipografía, espaciado, radios y objetivo táctil mínimo.
+- Las apps Expo importan los tokens TypeScript; las webs cargan `@agestyles/design-tokens/tokens.css` y usan variables `--as-*`.
+- Los temas de plataforma pueden adaptar nombres a sus componentes existentes, pero no deben volver a definir colores base de forma independiente.
+- Comprador Expo, app de negocio y storefront web ya consumen el paquete. Al añadir otra app/panel, conectarlo antes de crear estilos propios.
+
 ## Iconos
 
 - Importar iconos siempre desde @agestyles/icons.

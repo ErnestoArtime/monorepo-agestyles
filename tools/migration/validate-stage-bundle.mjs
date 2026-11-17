@@ -1,0 +1,335 @@
+import { createHash } from "node:crypto"
+import { lstat, readdir, readFile } from "node:fs/promises"
+import path from "node:path"
+import { fileURLToPath } from "node:url"
+
+export const STAGE_BUNDLE_FORMAT = "agestyles.stage-interchange"
+export const STAGE_BUNDLE_VERSION = 1
+
+/**
+ * This is a project-owned, versioned interchange contract. It is not a claim
+ * about the legacy Supabase schema; actual source-to-target mappings remain a
+ * separate reviewed step.
+ */
+export const ALLOWED_ENTITIES = Object.freeze([
+  "organizations",
+  "sellers",
+  "stock_locations",
+  "categories",
+  "products",
+  "variants",
+  "offers",
+  "inventory_items",
+  "inventory_levels",
+  "customers",
+  "orders",
+  "order_lines",
+  "media_objects",
+  "favorites",
+  "customer_preferences",
+])
+
+const ALLOWED_ENTITY_SET = new Set(ALLOWED_ENTITIES)
+const MAX_MANIFEST_BYTES = 1_000_000
+const MAX_ENTITY_BYTES = 250 * 1024 * 1024
+const MAX_ROWS_PER_ENTITY = 1_000_000
+const HASH_PATTERN = /^[a-f0-9]{64}$/
+
+const RELATION_TARGETS = Object.freeze({
+  organizations: {},
+  sellers: { organization: "organizations" },
+  stock_locations: { seller: "sellers" },
+  categories: { parent_category: "categories" },
+  products: {
+    category: "categories",
+    seller: "sellers",
+    media: "media_objects",
+  },
+  variants: { product: "products" },
+  offers: {
+    seller: "sellers",
+    product: "products",
+    variant: "variants",
+  },
+  inventory_items: { offer: "offers" },
+  inventory_levels: {
+    inventory_item: "inventory_items",
+    stock_location: "stock_locations",
+  },
+  customers: {},
+  orders: { customer: "customers", seller: "sellers" },
+  order_lines: {
+    order: "orders",
+    product: "products",
+    variant: "variants",
+    offer: "offers",
+  },
+  media_objects: {},
+  favorites: { customer: "customers", product: "products" },
+  customer_preferences: { customer: "customers" },
+})
+
+function sha256(buffer) {
+  return createHash("sha256").update(buffer).digest("hex")
+}
+
+function issue(code, entity = undefined, recordIndex = undefined, relation = undefined) {
+  return {
+    code,
+    ...(entity ? { entity } : {}),
+    ...(Number.isInteger(recordIndex) ? { record_index: recordIndex } : {}),
+    ...(relation ? { relation } : {}),
+  }
+}
+
+function isObject(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+function isSafeIdentifier(value) {
+  return typeof value === "string" && value.trim() === value && value.length > 0 && value.length <= 240
+}
+
+function emptySummary() {
+  return {
+    format: STAGE_BUNDLE_FORMAT,
+    schema_version: STAGE_BUNDLE_VERSION,
+    mode: "dry-run",
+    status: "invalid",
+    entities: [],
+    totals: { entities: 0, records: 0 },
+    issues: [],
+  }
+}
+
+async function readRegularFile(directory, filename, maxBytes, issues, entity) {
+  const fullPath = path.join(directory, filename)
+  try {
+    const info = await lstat(fullPath)
+    if (!info.isFile() || info.isSymbolicLink() || info.size > maxBytes) {
+      issues.push(issue("file_not_regular_or_too_large", entity))
+      return null
+    }
+    return await readFile(fullPath)
+  } catch {
+    issues.push(issue("file_missing_or_unreadable", entity))
+    return null
+  }
+}
+
+function parseJson(buffer, issues, entity) {
+  try {
+    return JSON.parse(buffer.toString("utf8"))
+  } catch {
+    issues.push(issue("invalid_json", entity))
+    return null
+  }
+}
+
+function validateManifest(manifest, issues) {
+  if (!isObject(manifest)) {
+    issues.push(issue("manifest_must_be_object"))
+    return []
+  }
+  if (manifest.format !== STAGE_BUNDLE_FORMAT) issues.push(issue("unsupported_bundle_format"))
+  if (manifest.schema_version !== STAGE_BUNDLE_VERSION) issues.push(issue("unsupported_schema_version"))
+  if (manifest.bundle_mode !== "dry-run-only") issues.push(issue("bundle_must_be_dry_run_only"))
+  if (manifest.schema_contract !== "agestyles-stage-interchange-v1") {
+    issues.push(issue("unknown_interchange_contract"))
+  }
+  if (!isObject(manifest.source) || !isSafeIdentifier(manifest.source.export_id)) {
+    issues.push(issue("invalid_source_metadata"))
+  }
+  if (!Array.isArray(manifest.datasets)) {
+    issues.push(issue("datasets_must_be_array"))
+    return []
+  }
+
+  const seenEntities = new Set()
+  const seenFiles = new Set(["manifest.json"])
+  for (const dataset of manifest.datasets) {
+    if (!isObject(dataset)) {
+      issues.push(issue("dataset_must_be_object"))
+      continue
+    }
+
+    const { entity, file, record_count: recordCount, sha256: digest } = dataset
+    if (typeof entity !== "string" || !ALLOWED_ENTITY_SET.has(entity)) {
+      issues.push(issue("entity_not_allowlisted"))
+      continue
+    }
+    if (seenEntities.has(entity)) issues.push(issue("duplicate_entity_manifest_entry", entity))
+    seenEntities.add(entity)
+
+    if (typeof file !== "string" || file !== `${entity}.json` || path.basename(file) !== file) {
+      issues.push(issue("invalid_dataset_filename", entity))
+      continue
+    }
+    if (seenFiles.has(file)) issues.push(issue("duplicate_dataset_filename", entity))
+    seenFiles.add(file)
+
+    if (!Number.isSafeInteger(recordCount) || recordCount < 0 || recordCount > MAX_ROWS_PER_ENTITY) {
+      issues.push(issue("invalid_manifest_record_count", entity))
+    }
+    if (typeof digest !== "string" || !HASH_PATTERN.test(digest)) {
+      issues.push(issue("invalid_manifest_hash", entity))
+    }
+  }
+
+  return manifest.datasets.filter((dataset) =>
+    isObject(dataset) && typeof dataset.entity === "string" && ALLOWED_ENTITY_SET.has(dataset.entity)
+    && typeof dataset.file === "string" && dataset.file === `${dataset.entity}.json` && path.basename(dataset.file) === dataset.file
+    && Number.isSafeInteger(dataset.record_count) && dataset.record_count >= 0
+    && typeof dataset.sha256 === "string" && HASH_PATTERN.test(dataset.sha256),
+  )
+}
+
+function validateRows(entity, rows, issues) {
+  if (!Array.isArray(rows)) {
+    issues.push(issue("dataset_must_be_array", entity))
+    return []
+  }
+  if (rows.length > MAX_ROWS_PER_ENTITY) {
+    issues.push(issue("dataset_too_many_rows", entity))
+    return []
+  }
+
+  const ids = new Set()
+  for (let index = 0; index < rows.length; index += 1) {
+    const row = rows[index]
+    if (!isObject(row)) {
+      issues.push(issue("record_must_be_object", entity, index))
+      continue
+    }
+    if (!isSafeIdentifier(row.legacy_id)) {
+      issues.push(issue("invalid_legacy_id", entity, index))
+    } else if (ids.has(row.legacy_id)) {
+      issues.push(issue("duplicate_legacy_id", entity, index))
+    } else {
+      ids.add(row.legacy_id)
+    }
+    if (!Array.isArray(row.references)) {
+      issues.push(issue("references_must_be_array", entity, index))
+    } else {
+      for (const reference of row.references) {
+        if (!isObject(reference) || typeof reference.relation !== "string" || !isSafeIdentifier(reference.legacy_id)) {
+          issues.push(issue("invalid_reference", entity, index))
+        }
+      }
+    }
+    if (!isObject(row.payload)) issues.push(issue("payload_must_be_object", entity, index))
+  }
+  return rows
+}
+
+/**
+ * Validates a local staging interchange directory. This function is read-only:
+ * it opens no database connections and never emits row content or identifiers.
+ */
+export async function validateStageBundle(directory) {
+  const summary = emptySummary()
+  const issues = summary.issues
+  let root
+  try {
+    root = path.resolve(directory)
+    const info = await lstat(root)
+    if (!info.isDirectory() || info.isSymbolicLink()) {
+      issues.push(issue("bundle_path_not_directory"))
+      return summary
+    }
+  } catch {
+    issues.push(issue("bundle_path_missing_or_unreadable"))
+    return summary
+  }
+
+  const manifestBuffer = await readRegularFile(root, "manifest.json", MAX_MANIFEST_BYTES, issues)
+  if (!manifestBuffer) return summary
+  const manifest = parseJson(manifestBuffer, issues)
+  if (!manifest) return summary
+
+  const datasets = validateManifest(manifest, issues)
+  const recordsByEntity = new Map()
+  const datasetSummaries = []
+  const listedFiles = new Set(["manifest.json"])
+
+  for (const dataset of datasets) {
+    const { entity, file, record_count: expectedCount, sha256: expectedHash } = dataset
+    listedFiles.add(file)
+    const buffer = await readRegularFile(root, file, MAX_ENTITY_BYTES, issues, entity)
+    if (!buffer) continue
+
+    const actualHash = sha256(buffer)
+    if (actualHash !== expectedHash) issues.push(issue("sha256_mismatch", entity))
+
+    const rows = parseJson(buffer, issues, entity)
+    if (!rows) continue
+    const validatedRows = validateRows(entity, rows, issues)
+    if (rows.length !== expectedCount) issues.push(issue("record_count_mismatch", entity))
+    recordsByEntity.set(entity, validatedRows)
+    datasetSummaries.push({ entity, records: rows.length, sha256: actualHash })
+  }
+
+  try {
+    const directoryEntries = await readdir(root, { withFileTypes: true })
+    for (const entry of directoryEntries) {
+      if (entry.isSymbolicLink() || !entry.isFile() || !listedFiles.has(entry.name)) {
+        issues.push(issue("unlisted_or_nonregular_file"))
+      }
+    }
+  } catch {
+    issues.push(issue("bundle_directory_unreadable"))
+  }
+
+  const idsByEntity = new Map()
+  for (const [entity, rows] of recordsByEntity) {
+    const ids = new Set()
+    for (const row of rows) {
+      if (isSafeIdentifier(row?.legacy_id)) ids.add(row.legacy_id)
+    }
+    idsByEntity.set(entity, ids)
+  }
+
+  for (const [entity, rows] of recordsByEntity) {
+    const allowedRelations = RELATION_TARGETS[entity]
+    rows.forEach((row, recordIndex) => {
+      if (!Array.isArray(row?.references)) return
+      for (const reference of row.references) {
+        if (!isObject(reference) || typeof reference.relation !== "string") continue
+        const targetEntity = allowedRelations[reference.relation]
+        if (!targetEntity || reference.entity !== targetEntity) {
+          issues.push(issue("reference_relation_not_allowlisted", entity, recordIndex))
+          continue
+        }
+        const targetIds = idsByEntity.get(targetEntity)
+        if (!targetIds || !targetIds.has(reference.legacy_id)) {
+          issues.push(issue("unresolved_reference", entity, recordIndex, reference.relation))
+        }
+      }
+    })
+  }
+
+  summary.entities = datasetSummaries.sort((a, b) => a.entity.localeCompare(b.entity))
+  summary.totals = {
+    entities: datasetSummaries.length,
+    records: datasetSummaries.reduce((total, dataset) => total + dataset.records, 0),
+  }
+  summary.status = issues.length === 0 ? "valid" : "invalid"
+  return summary
+}
+
+async function main() {
+  const bundlePath = process.argv[2]
+  if (!bundlePath || process.argv.length !== 3) {
+    console.error("Usage: node tools/migration/validate-stage-bundle.mjs <local-bundle-directory>")
+    process.exitCode = 2
+    return
+  }
+
+  const result = await validateStageBundle(bundlePath)
+  process.stdout.write(`${JSON.stringify(result, null, 2)}\n`)
+  if (result.status !== "valid") process.exitCode = 1
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  await main()
+}

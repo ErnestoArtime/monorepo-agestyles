@@ -310,6 +310,7 @@ export type Routes = {
                         batch: typeof import("@medusajs/medusa/api/admin/products/[id]/variants/inventory-items/batch/route");
                     };
                 };
+                catalogFamily: typeof import("../src/api/admin/products/[id]/catalog-family/route");
             };
             batch: typeof import("@medusajs/medusa/api/admin/products/batch/route");
             export: typeof import("@medusajs/medusa/api/admin/products/export/route");
@@ -509,6 +510,21 @@ export type Routes = {
                 subscribe: typeof import("@medusajs/medusa/api/admin/workflows-executions/[workflow_id]/subscribe/route");
             };
         };
+        catalogFamilies: typeof import("../src/api/admin/catalog-families/route") & {
+            $id: {
+                versions: typeof import("../src/api/admin/catalog-families/[id]/versions/route") & {
+                    $versionId: {
+                        publish: typeof import("../src/api/admin/catalog-families/[id]/versions/[version_id]/publish/route");
+                    };
+                };
+            };
+        };
+        manualPayments: typeof import("../src/api/admin/manual-payments/route") & {
+            $id: {
+                reject: typeof import("../src/api/admin/manual-payments/[id]/reject/route");
+                verify: typeof import("../src/api/admin/manual-payments/[id]/verify/route");
+            };
+        };
     };
     auth: {
         $actorType: {
@@ -593,6 +609,7 @@ export type Routes = {
                     decline: typeof import("@medusajs/medusa/api/store/orders/[id]/transfer/decline/route");
                     request: typeof import("@medusajs/medusa/api/store/orders/[id]/transfer/request/route");
                 };
+                manualPayments: typeof import("../src/api/store/orders/[id]/manual-payments/route");
             };
         };
         paymentCollections: typeof import("@medusajs/medusa/api/store/payment-collections/route") & {
@@ -635,6 +652,15 @@ export type Routes = {
         shippingOptions: typeof import("@mercurjs/core/api/store/shipping-options/route") & {
             $id: {
                 calculate: typeof import("@medusajs/medusa/api/store/shipping-options/[id]/calculate/route");
+            };
+        };
+        catalogComparison: typeof import("../src/api/store/catalog-comparison/route");
+        catalogFamilies: {
+            $handle: typeof import("../src/api/store/catalog-families/[handle]/route");
+        };
+        orderQuotes: typeof import("../src/api/store/order-quotes/route") & {
+            $id: {
+                accept: typeof import("../src/api/store/order-quotes/[id]/accept/route");
             };
         };
     };

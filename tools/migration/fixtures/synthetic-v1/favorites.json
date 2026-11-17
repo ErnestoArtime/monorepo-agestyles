@@ -1,0 +1,3 @@
+[
+  { "legacy_id": "favorite-syn-001", "references": [{ "relation": "customer", "entity": "customers", "legacy_id": "customer-syn-001" }, { "relation": "product", "entity": "products", "legacy_id": "product-syn-001" }], "payload": { "synthetic": true } }
+]

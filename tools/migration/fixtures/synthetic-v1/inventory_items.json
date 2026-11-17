@@ -1,0 +1,3 @@
+[
+  { "legacy_id": "inventory-item-syn-001", "references": [{ "relation": "offer", "entity": "offers", "legacy_id": "offer-syn-001" }], "payload": { "sku": "SYN-001" } }
+]

@@ -1,0 +1,16 @@
+{
+  "name": "@agestyles/quotations",
+  "version": "0.0.0",
+  "private": true,
+  "description": "AgeStyles quote-first commerce module for Medusa v2",
+  "keywords": ["agestyles", "medusa-module", "commerce"],
+  "medusaModule": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "peerDependencies": {
+    "@medusajs/framework": "2.22.3"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}

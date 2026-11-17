@@ -5,7 +5,10 @@
   "type": "module",
   "exports": {
     "./store": "./src/store.ts",
-    "./buyer-orders": "./src/buyer-orders.ts"
+    "./offers": "./src/offers.ts",
+    "./order-quotes": "./src/order-quotes.ts",
+    "./buyer-orders": "./src/buyer-orders.ts",
+    "./order-tracking": "./src/order-tracking.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

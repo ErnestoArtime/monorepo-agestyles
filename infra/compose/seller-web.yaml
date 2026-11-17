@@ -1,0 +1,28 @@
+name: agestyles-seller-web
+
+services:
+  seller-gateway:
+    image: node:24-bookworm-slim
+    container_name: agestyles-seller-gateway
+    network_mode: host
+    working_dir: /app
+    command: ["node", "/app/seller-lab-gateway.mjs"]
+    volumes:
+      - ../../tools/scripts/seller-lab-gateway.mjs:/app/seller-lab-gateway.mjs:ro
+    restart: unless-stopped
+
+  seller-web:
+    build:
+      context: ../../apps/business-app
+      dockerfile: Dockerfile.web-runtime
+    image: agestyles/seller-web:local
+    container_name: agestyles-seller-web
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:18085:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/healthz || exit 1"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s

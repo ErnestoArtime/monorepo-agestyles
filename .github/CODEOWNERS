@@ -1,0 +1,3 @@
+# Repository maintainer. GitHub branch protection must require code-owner review
+# separately before this file can block merges.
+* @ErnestoArtime

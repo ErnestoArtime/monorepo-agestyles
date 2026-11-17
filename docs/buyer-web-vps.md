@@ -6,7 +6,7 @@ La beta está publicada en [https://tienda.eav-labs.com](https://tienda.eav-labs
 
 ## Preparación del VPS
 
-El contenedor Nginx publica la exportación en `127.0.0.1:18083`. El API Mercur y su gateway quedan en `127.0.0.1:19080` y `127.0.0.1:19182`; el gateway solo permite las rutas de comprador y admite CORS desde `https://tienda.eav-labs.com`. El túnel compartido llega a estos orígenes locales sin abrir sus puertos a Internet. Nginx resuelve rutas internas de Expo con `index.html` y sirve los recursos con caché.
+El contenedor Nginx publica la exportación en `127.0.0.1:18083`. El gateway buyer escucha en `127.0.0.1:19182` y reenvía al API vigente del laboratorio en `127.0.0.1:19081`; el proceso antiguo en `19080` no es destino de las betas actuales. La lista del gateway solo admite Store API, customer auth, carrito, pagos/grupos de pedido y cotizaciones; CORS acepta únicamente `https://tienda.eav-labs.com`. El túnel compartido llega a estos orígenes locales sin abrir sus puertos a Internet. Nginx resuelve rutas internas de Expo con `index.html` y sirve los recursos con caché.
 
 En la raíz del repositorio del VPS, crea el archivo privado `.env.buyer-web`:
 
@@ -36,7 +36,7 @@ La imagen Nginx contiene solo la exportación terminada; las dependencias de Exp
 
 ## Antes de abrirla a clientes
 
-El gateway permite y reenvía las cabeceras Store API `x-publishable-api-key`, `authorization` y `x-medusa-locale`. La respuesta al preflight CORS admite estas cabeceras para el origen `https://tienda.eav-labs.com`.
+El gateway permite y reenvía las cabeceras Store API `x-publishable-api-key`, `authorization`, `x-medusa-locale` e `idempotency-key`. La lista pública incluye regiones, productos, categorías, vendedores, ofertas, carrito, cotizaciones, grupos de pedidos, y seguimiento autenticado por ID de pedido. La respuesta al preflight CORS admite estas cabeceras para el origen `https://tienda.eav-labs.com`. No expone Vendor API ni Admin API.
 
 El laboratorio actual utiliza datos de prueba y no debe presentarse como tienda de producción. Antes de anunciar ventas, hay que migrar a una API de producción y sustituir el APK de laboratorio. El túnel y DNS para la beta pública se documentan por separado del entorno comercial.
 

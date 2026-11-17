@@ -1,0 +1,3 @@
+[
+  { "legacy_id": "location-syn-001", "references": [{ "relation": "seller", "entity": "sellers", "legacy_id": "seller-syn-001" }], "payload": { "name": "Almacén sintético" } }
+]

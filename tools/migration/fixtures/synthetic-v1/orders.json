@@ -1,0 +1,3 @@
+[
+  { "legacy_id": "order-syn-001", "references": [{ "relation": "customer", "entity": "customers", "legacy_id": "customer-syn-001" }, { "relation": "seller", "entity": "sellers", "legacy_id": "seller-syn-001" }], "payload": { "currency_code": "eur", "total_minor": 4990 } }
+]

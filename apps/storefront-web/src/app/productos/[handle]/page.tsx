@@ -26,11 +26,12 @@ export default async function ProductPage({ params }: PageProps) {
   if (!data) notFound()
   const { product, offers, currency } = data
   const buyerAppUrl = process.env.BUYER_APP_URL || "https://tienda.eav-labs.com"
-  const sellers = new Map<string, { name: string; prices: number[]; sizes: Set<string>; offers: number }>()
+  const sellers = new Map<string, { name: string; handle?: string; prices: number[]; sizes: Set<string>; offers: number }>()
   for (const offer of offers) {
-    const sellerId = offer.seller?.id || offer.seller_id
-    const sellerName = offer.seller?.name || "Tienda AgeStyles"
-    const current = sellers.get(sellerId) || { name: sellerName, prices: [], sizes: new Set<string>(), offers: 0 }
+    const seller = offer.seller as { id?: string; name?: string; handle?: string } | undefined
+    const sellerId = seller?.id || offer.seller_id
+    const sellerName = seller?.name || "Tienda AgeStyles"
+    const current = sellers.get(sellerId) || { name: sellerName, handle: seller?.handle, prices: [], sizes: new Set<string>(), offers: 0 }
     for (const price of offer.prices || []) if (price.currency_code.toLowerCase() === currency.toLowerCase()) current.prices.push(price.amount)
     if (offer.product_variant?.title) current.sizes.add(offer.product_variant.title)
     current.offers += 1
@@ -52,7 +53,7 @@ export default async function ProductPage({ params }: PageProps) {
       </div>
     </section>
     <section className="wrap seller-section" id="tiendas"><div className="section-heading"><div><p className="eyebrow">COMPARA TUS OPCIONES</p><h2>Disponible en {choices.length} {choices.length === 1 ? "tienda" : "tiendas"}</h2><p>Compara precios por tienda y elige la opción que prefieras.</p></div><span className="seller-count">{offers.length} opciones disponibles</span></div>
-      {choices.length ? <div className="seller-list">{choices.map((seller, index) => <article className="seller-row" key={seller.id}><div className="seller-avatar">{seller.name.charAt(0)}</div><div className="seller-info"><h3>{seller.name}</h3><p>{seller.sizes.size ? `${seller.sizes.size} variantes disponibles` : "Ver variantes disponibles"}</p></div><div className="seller-prices">{seller.price != null ? <><span className="seller-from">Desde</span><strong>{formatPrice(seller.price, currency)}</strong></> : <strong>Consultar precio</strong>}</div><span className={index === 0 ? "seller-badge best" : "seller-badge"}>{index === 0 ? "Mejor precio" : "Tienda verificada"}</span></article>)}</div> : <div className="empty-state"><h3>Opciones de tiendas en preparación</h3><p>Este producto todavía no tiene ofertas publicadas.</p></div>}
+      {choices.length ? <div className="seller-list">{choices.map((seller, index) => <article className="seller-row" key={seller.id}><div className="seller-avatar">{seller.name.charAt(0)}</div><div className="seller-info"><h3>{seller.handle ? <Link href={`/tiendas/${seller.handle}`}>{seller.name}</Link> : seller.name}</h3><p>{seller.sizes.size ? `${seller.sizes.size} variantes disponibles` : "Ver variantes disponibles"}</p></div><div className="seller-prices">{seller.price != null ? <><span className="seller-from">Desde</span><strong>{formatPrice(seller.price, currency)}</strong></> : <strong>Consultar precio</strong>}</div><span className={index === 0 ? "seller-badge best" : "seller-badge"}>{index === 0 ? "Mejor precio" : "Tienda verificada"}</span></article>)}</div> : <div className="empty-state"><h3>Opciones de tiendas en preparación</h3><p>Este producto todavía no tiene ofertas publicadas.</p></div>}
       <p className="beta-notice">Experiencia beta: las opciones y pedidos actuales son de prueba.</p>
     </section>
     <footer className="site-footer"><div className="wrap footer-bottom"><span>© 2026 AgeStyles</span><Link href="/">Volver al catálogo ↗</Link></div></footer>

@@ -4,9 +4,17 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./buyer-orders": "./src/buyer-orders.ts"
+    ".": "./src/index.ts",
+    "./buyer-orders": "./src/buyer-orders.ts",
+    "./catalog": "./src/catalog.ts",
+    "./catalog-pim": "./src/catalog-pim.ts",
+    "./order-quotes": "./src/order-quotes.ts",
+    "./publication": "./src/publication.ts",
+    "./tracking": "./src/tracking.ts",
+    "./fixtures/offers": "./src/fixtures/offers.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node test/publication.test.ts && node test/tracking.test.ts && node test/order-quotes.test.ts"
   }
 }

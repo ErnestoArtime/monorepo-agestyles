@@ -1,4 +1,4 @@
-import { addOffer } from "@agestyles/api-client/store";
+import { createBuyerCartFeature } from "@agestyles/features-buyer/cart";
 import { sdk } from "@/lib/sdk";
 import { FetchError } from "@medusajs/js-sdk";
 import type { HttpTypes } from "@medusajs/types";
@@ -21,6 +21,7 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 const CART_STORAGE_KEY = "cart_id";
+const cartFeature = createBuyerCartFeature(sdk.client, AsyncStorage, CART_STORAGE_KEY);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<HttpTypes.StoreCart | null>(null);
@@ -35,31 +36,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       setError(null);
 
-      const savedCartId = await AsyncStorage.getItem(CART_STORAGE_KEY);
-
-      if (savedCartId) {
-        try {
-          const { cart: fetchedCart } = await sdk.store.cart.retrieve(savedCartId, {
-            fields: "+items.*"
-          });
-          
-          setCart(fetchedCart);
-          return fetchedCart;
-        } catch {
-          // Cart not found or invalid, remove from storage
-          await AsyncStorage.removeItem(CART_STORAGE_KEY);
-        }
-      }
-
-      // Create new cart for current region
-      const { cart: newCart } = await sdk.store.cart.create({
-        region_id: selectedRegion.id,
-      }, {
-        fields: "+items.*"
-      });
-      setCart(newCart);
-      await AsyncStorage.setItem(CART_STORAGE_KEY, newCart.id);
-      return newCart;
+      const currentCart = await cartFeature.loadOrCreate(selectedRegion.id);
+      setCart(currentCart);
+      return currentCart;
     } catch (err) {
       setError(`Failed to load cart: ${err instanceof FetchError ? err.message : String(err)}`);
       return null;
@@ -82,11 +61,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       try {
         setLoading(true);
-        const { cart: updatedCart } = await sdk.store.cart.update(cart.id, {
-          region_id: selectedRegion.id,
-        }, {
-          fields: "+items.*"
-        });
+        const updatedCart = await cartFeature.updateRegion(cart.id, selectedRegion.id);
         setCart(updatedCart);
       } catch (err) {
         setError(`Failed to update cart region: ${err instanceof FetchError ? err.message : String(err)}`);
@@ -111,7 +86,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       setError(null);
 
-      const { cart: updatedCart } = await addOffer(sdk.client, currentCart.id, offerId, quantity);
+      const updatedCart = await cartFeature.addOffer(currentCart.id, offerId, quantity);
       setCart(updatedCart);
     } catch (err) {
       setError(`Failed to add item to cart: ${err instanceof FetchError ? err.message : String(err)}`);
@@ -128,14 +103,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       setError(null);
 
-      const { cart: updatedCart } = await sdk.store.cart.updateLineItem(
-        cart.id,
-        itemId,
-        { quantity },
-        {
-          fields: "+items.*"
-        }
-      );
+      const updatedCart = await cartFeature.updateItemQuantity(cart.id, itemId, quantity);
       setCart(updatedCart);
     } catch (err) {
       setError(`Failed to update quantity: ${err instanceof FetchError ? err.message : String(err)}`);
@@ -152,10 +120,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       setError(null);
 
-      const { parent: updatedCart } = await sdk.store.cart.deleteLineItem(cart.id, itemId, {
-        fields: "+items.*"
-      });
-      setCart(updatedCart!);
+      const updatedCart = await cartFeature.removeItem(cart.id, itemId);
+      setCart(updatedCart);
     } catch (err) {
       setError(`Failed to remove item: ${err instanceof FetchError ? err.message : String(err)}`);
       throw err;
@@ -168,9 +134,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (!cart) return;
 
     try {
-      const { cart: updatedCart } = await sdk.store.cart.retrieve(cart.id, {
-        fields: "+items.*"
-      });
+      const updatedCart = await cartFeature.refresh(cart.id);
       setCart(updatedCart);
     } catch (err) {
       setError(`Failed to refresh cart: ${err instanceof FetchError ? err.message : String(err)}`);
@@ -182,24 +146,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (!currentCart) currentCart = await loadCart();
     if (!currentCart) throw new Error("Could not load cart");
 
-    const { cart: transferredCart } = await sdk.store.cart.transferCart(currentCart.id);
+    const transferredCart = await cartFeature.transfer(currentCart.id);
     setCart(transferredCart);
     return transferredCart.id;
   }, [cart, loadCart]);
 
   const clearCart = async () => {
     setCart(null);
-    await AsyncStorage.removeItem(CART_STORAGE_KEY);
-    // Create a new cart
-    if (selectedRegion) {
-      const { cart: newCart } = await sdk.store.cart.create({
-        region_id: selectedRegion.id,
-      }, {
-        fields: "+items.*"
-      });
-      setCart(newCart);
-      await AsyncStorage.setItem(CART_STORAGE_KEY, newCart.id);
-    }
+    const newCart = await cartFeature.clear(selectedRegion?.id);
+    setCart(newCart);
   };
 
   return (

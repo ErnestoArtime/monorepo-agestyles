@@ -1,0 +1,3 @@
+[
+  { "legacy_id": "order-line-syn-001", "references": [{ "relation": "order", "entity": "orders", "legacy_id": "order-syn-001" }, { "relation": "product", "entity": "products", "legacy_id": "product-syn-001" }, { "relation": "variant", "entity": "variants", "legacy_id": "variant-syn-001" }, { "relation": "offer", "entity": "offers", "legacy_id": "offer-syn-001" }], "payload": { "quantity": 1, "total_minor": 4990 } }
+]

@@ -30,8 +30,23 @@ jobs:
       - name: Install workspace dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Run unit tests
+        run: pnpm test
+
       - name: Type-check the API, application, and shared client
         run: pnpm typecheck
 
+      - name: Export buyer app for web
+        env:
+          EXPO_PUBLIC_MEDUSA_URL: https://ci.invalid
+          EXPO_PUBLIC_MEDUSA_PUBLISHABLE_API_KEY: pk_ci_placeholder
+        run: pnpm --filter @agestyles/buyer-app exec expo export --platform web --output-dir /tmp/agestyles-ci-buyer-web
+
+      - name: Export business app for web
+        env:
+          EXPO_PUBLIC_MEDUSA_URL: https://ci.invalid
+          EXPO_PUBLIC_MEDUSA_PUBLISHABLE_API_KEY: pk_ci_placeholder
+        run: pnpm --filter @agestyles/business-app exec expo export --platform web --output-dir /tmp/agestyles-ci-business-web
+
       - name: Build the SEO storefront
-        run: pnpm --filter @agestyles/storefront-web build
+        run: pnpm nx build @agestyles/storefront-web

@@ -3,10 +3,13 @@ import { useCustomer } from "@/context/customer-context";
 import { formatPrice } from "@/lib/format-price";
 import { sdk } from "@/lib/sdk";
 import { getBuyerOrderGroup, BuyerOrderGroupDetail } from "@agestyles/api-client/buyer-orders";
+import { getOrderTracking, OrderTracking } from "@agestyles/api-client/order-tracking";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+
+type ThemeColors = (typeof Colors)[keyof typeof Colors];
 
 export default function PurchaseDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -14,6 +17,8 @@ export default function PurchaseDetailsScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
   const [group, setGroup] = useState<BuyerOrderGroupDetail | null>(null);
+  const [trackingByOrder, setTrackingByOrder] = useState<Record<string, OrderTracking | null>>({});
+  const [trackingLoading, setTrackingLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -25,15 +30,30 @@ export default function PurchaseDetailsScreen() {
     }
 
     let active = true;
+    setTrackingByOrder({});
+    setTrackingLoading(true);
     getBuyerOrderGroup(sdk.client, id)
-      .then(({ order_group }) => {
-        if (active) setGroup(order_group);
+      .then(async ({ order_group }) => {
+        if (!active) return;
+        setGroup(order_group);
+        const entries = await Promise.all(order_group.orders.map(async (order) => {
+          try {
+            const { tracking } = await getOrderTracking(sdk.client, order.id);
+            return [order.id, tracking] as const;
+          } catch {
+            return [order.id, null] as const;
+          }
+        }));
+        if (active) setTrackingByOrder(Object.fromEntries(entries));
       })
       .catch(() => {
         if (active) setError(true);
       })
       .finally(() => {
-        if (active) setLoading(false);
+        if (active) {
+          setTrackingLoading(false);
+          setLoading(false);
+        }
       });
 
     return () => {
@@ -82,11 +102,62 @@ export default function PurchaseDetailsScreen() {
               <Text style={[styles.itemTitle, { color: colors.text }]}>{item.title}</Text>
               <Text style={{ color: colors.icon }}>Qty {item.quantity}</Text>
               <Text style={{ color: colors.text }}>{formatPrice(item.total, order.currency_code)}</Text>
+              <View style={styles.itemTracking}>
+                <Text style={[styles.trackingHeading, { color: colors.text }]}>Item tracking</Text>
+                {trackingLoading ? (
+                  <Text style={{ color: colors.icon }}>Loading tracking…</Text>
+                ) : trackingByOrder[order.id] ? (
+                  <TrackingLine tracking={trackingByOrder[order.id]!} itemId={item.id} colors={colors} />
+                ) : (
+                  <Text style={{ color: colors.icon }}>Tracking could not be loaded. Try again later.</Text>
+                )}
+              </View>
             </View>
           ))}
         </View>
       ))}
     </ScrollView>
+  );
+}
+
+function TrackingLine({
+  tracking,
+  itemId,
+  colors,
+}: {
+  tracking: OrderTracking;
+  itemId: string;
+  colors: ThemeColors;
+}) {
+  const line = tracking.lines.find((entry) => entry.line_item_id === itemId);
+  if (!line) return <Text style={{ color: colors.icon }}>No tracking information is available for this item.</Text>;
+
+  const shipments = line.shipments.flatMap((shipment) =>
+    shipment.tracking.map((label) => ({ number: label.tracking_number, url: label.tracking_url })),
+  );
+
+  return (
+    <View style={styles.trackingDetails}>
+      <Text style={{ color: colors.icon, textTransform: "capitalize" }}>
+        {line.status.replaceAll("_", " ")} · {line.shipped_quantity} of {line.quantity} shipped
+      </Text>
+      {shipments.map(({ number, url }, index) => {
+        const safeUrl = url && /^https:\/\//i.test(url) ? url : null;
+        return safeUrl ? (
+          <Pressable
+            key={`${number}-${index}`}
+            accessibilityRole="link"
+            accessibilityLabel={`Open shipment tracking ${number}`}
+            onPress={() => { void Linking.openURL(safeUrl).catch(() => undefined); }}
+            hitSlop={8}
+          >
+            <Text style={[styles.trackingLink, { color: colors.tint }]}>{number}</Text>
+          </Pressable>
+        ) : (
+          <Text key={`${number}-${index}`} style={{ color: colors.icon }}>{number}</Text>
+        );
+      })}
+    </View>
   );
 }
 
@@ -102,5 +173,9 @@ const styles = StyleSheet.create({
   status: { fontSize: 14, textTransform: "capitalize" },
   item: { flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" },
   itemTitle: { flex: 1, minWidth: 120, fontSize: 15 },
+  itemTracking: { width: "100%", gap: 4, paddingTop: 4 },
+  trackingHeading: { fontSize: 13, fontWeight: "600" },
+  trackingDetails: { gap: 4 },
+  trackingLink: { textDecorationLine: "underline", minHeight: 24, paddingVertical: 2 },
   center: { flex: 1, justifyContent: "center", alignItems: "center", padding: 24, gap: 14 },
 });

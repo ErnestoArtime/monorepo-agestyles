@@ -1,0 +1,17 @@
+{
+  "name": "@agestyles/features-buyer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./cart": "./src/cart.ts"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@agestyles/api-client": "workspace:*",
+    "@medusajs/types": "2.22.3"
+  }
+}

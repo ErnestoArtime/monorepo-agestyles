@@ -1,0 +1,101 @@
+{
+  "format": "agestyles.stage-interchange",
+  "schema_version": 1,
+  "schema_contract": "agestyles-stage-interchange-v1",
+  "bundle_mode": "dry-run-only",
+  "source": {
+    "export_id": "synthetic-export-001"
+  },
+  "datasets": [
+    {
+      "entity": "categories",
+      "file": "categories.json",
+      "record_count": 1,
+      "sha256": "4ad192c63a302386139ced1e49d1ebb9e4e9521e24d0b7c1a8d324c460cc6d32"
+    },
+    {
+      "entity": "customer_preferences",
+      "file": "customer_preferences.json",
+      "record_count": 1,
+      "sha256": "10a7518f276a7445d9a8cb31cb9b89de6e7d2fce48726dc6cb2c5fcebea06656"
+    },
+    {
+      "entity": "customers",
+      "file": "customers.json",
+      "record_count": 1,
+      "sha256": "e1ffd58c1ff942f1819f776a8155523a42905f6c8c10848bf0d8a0cb3e27ed68"
+    },
+    {
+      "entity": "favorites",
+      "file": "favorites.json",
+      "record_count": 1,
+      "sha256": "de2f3b7ac2263121b41e552022218031bd95ea6df0425f7709fc84fc2004929f"
+    },
+    {
+      "entity": "inventory_items",
+      "file": "inventory_items.json",
+      "record_count": 1,
+      "sha256": "b70bdc624a644eb014a455de5abab3e52421bdc58f0e6ac2d20e94cd52392c21"
+    },
+    {
+      "entity": "inventory_levels",
+      "file": "inventory_levels.json",
+      "record_count": 1,
+      "sha256": "e8cd8725527843fbbb13cde93122e380e2956ad2f5c5e90c9457a7222a8e0a60"
+    },
+    {
+      "entity": "media_objects",
+      "file": "media_objects.json",
+      "record_count": 1,
+      "sha256": "05401b165e46e536d3df624388a8acf94d496f29af5511e7384a2289223862e9"
+    },
+    {
+      "entity": "offers",
+      "file": "offers.json",
+      "record_count": 1,
+      "sha256": "cf790ef793474765102e1224ca1d4f587b09c642fe41646e9fee3d632b1d63f6"
+    },
+    {
+      "entity": "order_lines",
+      "file": "order_lines.json",
+      "record_count": 1,
+      "sha256": "006cbeed29e160629a3722164abb752d2d6931fc56c629ddbafccd5edcf176bc"
+    },
+    {
+      "entity": "orders",
+      "file": "orders.json",
+      "record_count": 1,
+      "sha256": "c7dd8b92a81120e7564899f360853fc51a93d1cd42c4251861b68d8752d9b0a0"
+    },
+    {
+      "entity": "organizations",
+      "file": "organizations.json",
+      "record_count": 1,
+      "sha256": "62b28d0ecbadfe28fe50bacfe57bcf65130d5706ea6bea2b960ce9985158e7f7"
+    },
+    {
+      "entity": "products",
+      "file": "products.json",
+      "record_count": 1,
+      "sha256": "e64b863c5a49888d13edcb6caf50146490e5c843fff27283a22ccba25e17ec03"
+    },
+    {
+      "entity": "sellers",
+      "file": "sellers.json",
+      "record_count": 1,
+      "sha256": "8e25d1e517a36f5fc7b0d78d57f3cf16291a7a83b1839daca53cbe3aecde6885"
+    },
+    {
+      "entity": "stock_locations",
+      "file": "stock_locations.json",
+      "record_count": 1,
+      "sha256": "e373680241e88df6ffce098b63351c0905c9d7c52bdf451e37a4cf7fa75686c0"
+    },
+    {
+      "entity": "variants",
+      "file": "variants.json",
+      "record_count": 1,
+      "sha256": "2a24a66927e03a9fdac30c1049ff4dd18b6641a76488ca407757243257e7f5f2"
+    }
+  ]
+}

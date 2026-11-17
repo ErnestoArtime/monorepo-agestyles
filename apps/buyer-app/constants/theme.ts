@@ -4,38 +4,36 @@
  */
 
 import { Platform } from 'react-native';
-
-const tintColorLight = '#111111';
-const tintColorDark = '#fff';
+import { colors } from '@agestyles/design-tokens';
 
 export const Colors = {
   light: {
-    text: '#171717',
-    background: '#F7F7F4',
-    tint: tintColorLight,
-    icon: '#6F6F6B',
-    tabIconDefault: '#777772',
-    tabIconSelected: tintColorLight,
-    border: '#E4E4DF',
-    cardBackground: '#FFFFFF',
-    error: '#ff3b30',
-    warning: '#ff9500',
-    success: '#4CAF50',
-    imagePlaceholder: '#ECECE8',
+    text: colors.light.text,
+    background: colors.light.background,
+    tint: colors.light.action,
+    icon: colors.light.muted,
+    tabIconDefault: colors.light.muted,
+    tabIconSelected: colors.light.action,
+    border: colors.light.border,
+    cardBackground: colors.light.surface,
+    error: colors.light.error,
+    warning: colors.light.warning,
+    success: colors.light.success,
+    imagePlaceholder: colors.light.placeholder,
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
-    border: '#333',
-    cardBackground: '#1a1a1a',
-    error: '#ff3b30',
-    warning: '#ff9500',
-    success: '#4CAF50',
-    imagePlaceholder: '#2a2a2a',
+    text: colors.dark.text,
+    background: colors.dark.background,
+    tint: colors.dark.action,
+    icon: colors.dark.muted,
+    tabIconDefault: colors.dark.muted,
+    tabIconSelected: colors.dark.action,
+    border: colors.dark.border,
+    cardBackground: colors.dark.surface,
+    error: colors.dark.error,
+    warning: colors.dark.warning,
+    success: colors.dark.success,
+    imagePlaceholder: colors.dark.placeholder,
   },
 };
 

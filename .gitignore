@@ -6,6 +6,7 @@ dist/
 .expo/
 .medusa/
 /apps/buyer-app/android/
+/apps/business-app/android/
 /references/
 coverage/
 *.tsbuildinfo

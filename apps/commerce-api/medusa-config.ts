@@ -17,6 +17,9 @@ if (
 }
 
 module.exports = withMercur({
+  // The isolated lab uses Mercur's graph query path until its index engine is
+  // proven to refresh newly approved sellers and offers consistently.
+  featureFlags: { index_engine: false },
   admin: { disable: true },
   projectConfig: {
     databaseUrl: DATABASE_URL,
@@ -32,6 +35,9 @@ module.exports = withMercur({
   },
   modules: [
     { resolve: "./src/modules/seller-permissions", dependencies: [MercurModules.SELLER] },
+    { resolve: "../../packages/quotations" },
+    { resolve: "../../packages/catalog-pim" },
+    { resolve: "../../packages/manual-payments" },
     { resolve: "@mercurjs/core/modules/admin-ui", options: { disable: true } },
     { resolve: "@mercurjs/core/modules/vendor-ui", options: { disable: true } },
     { resolve: "@medusajs/medusa/cache-redis", options: { redisUrl: REDIS_URL } },

@@ -1,0 +1,3 @@
+[
+  { "legacy_id": "preference-syn-001", "references": [{ "relation": "customer", "entity": "customers", "legacy_id": "customer-syn-001" }], "payload": { "locale": "es-ES" } }
+]

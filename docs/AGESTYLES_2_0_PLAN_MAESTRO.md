@@ -363,4 +363,8 @@ No instalar ni modificar servicios de producción hasta respaldar, comprobar esp
 
 ---
 
-**No ejecutado:** no se ha clonado Mercur, instalado el monorepo, migrado base de datos, escrito en GitHub ni modificado el VPS. Este archivo define una hoja de ruta verificable y sus puertas de decisión.
+**Corte de ejecución — 17 de noviembre de 2026:** el monorepo Nx/pnpm está instalado y contiene `commerce-api`, buyer/business Expo, storefront Next y extensiones AgeStyles para permisos, PIM, pagos manuales y cotizaciones. El laboratorio aislado PostgreSQL/Redis y las betas compradora, catálogo y negocio están desplegados. Se han comprobado por API el carrito de dos vendedores, sesiones de buyer/member separadas, permisos por tienda y varias reglas de publicación. Esto no constituye migración ni corte de producción.
+
+El estado verificable por fase y los diez criterios del piloto se mantiene en [STATUS_PLAN_MAESTRO.md](./STATUS_PLAN_MAESTRO.md) y [PLAN_COMPLETION_AUDIT.md](./PLAN_COMPLETION_AUDIT.md). F0/F6 siguen condicionadas a un destino cifrado suficiente y una restauración aislada; F4/F5/F7 requieren pruebas reales en Android y macOS/iOS; F8 requiere los gates completos y un go/no-go explícito. La fuente Supabase continúa intacta y AgeStyles aún no tiene un ETL/cutover aprobado.
+
+El código del monorepo no está sincronizado con GitHub en este corte; los cambios locales pendientes aparecen en `git status`. La carpeta `references/` permanece excluida del repositorio.

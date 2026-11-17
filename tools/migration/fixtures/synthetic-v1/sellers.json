@@ -1,0 +1,3 @@
+[
+  { "legacy_id": "seller-syn-001", "references": [{ "relation": "organization", "entity": "organizations", "legacy_id": "org-syn-001" }], "payload": { "name": "Tienda sintética" } }
+]

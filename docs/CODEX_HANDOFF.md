@@ -1,0 +1,384 @@
+# Registro de trabajo compartido con Codex
+
+**Propósito:** dejar constancia de lo que modifica la sesión OpenCode para que Codex lo revise antes de dar por cerrada una fase. No sustituye al plan maestro ni al status: los complementa.
+
+**Regla de coordinación:** antes de tocar un archivo, revisar `git status`; después de tocar, registrar aquí el cambio, el comando de verificación y su resultado. Si Codex ya implementó algo, la entrada lo dice y no se duplica.
+
+---
+
+## Turno 2026-11-17 00:40–01:00 — Lote 0 y reconciliación
+
+**Contexto:** Codex estaba trabajando en `commerce-api`, `storefront-web` y `business-app` con cambios sin commit.
+
+| Cambio | Archivos | Verificación |
+|---|---|---|
+| Contratos de catálogo | `packages/domain/src/catalog.ts`, `src/index.ts`, `src/fixtures/offers.ts`, `package.json` | `pnpm --filter @agestyles/domain typecheck` |
+| Proyección de ofertas | `packages/api-client/src/offers.ts`, `src/store.ts` (`seller.handle`), `package.json` | `pnpm --filter @agestyles/api-client typecheck` |
+| Matriz de reutilización | `docs/MATRIZ_REUTILIZACION.md` (nuevo), enlace en `docs/STATUS_PLAN_MAESTRO.md` | revisión manual |
+| Tickets | `docs/tickets/LOTE-0-CONTRATOS.md`, `docs/tickets/LOTE-1-VITRINA.md` | revisión manual |
+
+**Hallazgo:** la vitrina (comparación por vendedor) ya estaba hecha en web y nativa; el ticket de Lote 1 se reescribió como consolidación de consultas, no como construcción.
+
+---
+
+## Turno 2026-11-17 01:40–02:20 — Cobertura de typecheck, contrato de cotización y consolidación de ofertas
+
+**Contexto:** Codex movió la cotización a `packages/quotations`, la amplió a carrito completo multi-vendedor y creó `packages/features-buyer`.
+
+| Cambio | Archivos | Verificación |
+|---|---|---|
+| Typecheck del módulo de cotización (antes no entraba en CI) | `packages/quotations/tsconfig.json`, script `typecheck` en su `package.json` | `pnpm --filter @agestyles/quotations typecheck` → OK |
+| Typecheck de tokens (paquete sin verificación) | `packages/design-tokens/tsconfig.json`, script `typecheck` | `pnpm --filter @agestyles/design-tokens typecheck` → OK |
+| **No** se añadió typecheck a `@agestyles/icons` | — | Requiere `@types/react`; los apps que lo consumen ya lo verifican de forma transitiva. Decisión reversible si Codex prefiere un task propio |
+| Contrato de cotización corregido al modelo real | `packages/domain/src/order-quotes.ts`, `packages/api-client/src/order-quotes.ts` | `pnpm --filter @agestyles/domain --filter @agestyles/api-client typecheck` → OK |
+| Consolidación de ofertas: `listProductOffers` admite `variantId`/`regionId`; ficha nativa migrada; `listOffers` deprecada y sin consumidores | `packages/api-client/src/offers.ts`, `src/store.ts`, `apps/buyer-app/app/(drawer)/(tabs)/(home)/product/[id].tsx` | `pnpm typecheck` → 9/9; búsqueda de `listOffers` solo devuelve la definición; export web de buyer OK |
+
+**Corrección importante:** la primera versión de los tipos asumía cotización por vendedor (`seller_id`, `order_id`). Codex evolucionó el módulo a **carrito completo**: `seller_ids: string[]`, `order_group_id`, y aceptación que devuelve `orders: [{ id, seller_id }]`. Los tipos y el cliente ya reflejan ese contrato.
+
+### Evidencia end-to-end (laboratorio aislado)
+Comando: `node --env-file=apps/buyer-app/.env.local apps/commerce-api/scripts/verify-order-quotes.mjs`
+
+Resultado:
+
+```json
+{"quoteId":"01M7KEWDMYGW26W61D1THNHXA0",
+ "orderGroupId":"og_01M7KEWG6T48HSVG423BAA5T2N",
+ "childOrders":[{"id":"order_01M7KEWG7J2VCZG07101W4NRGR","seller_id":"sel_01M7K70Z5STVKS9W61ZTY8CWZD"},
+                {"id":"order_01M7KEWG7J48Y59XE23CRKG7RX","seller_id":"sel_01M7K70ZF4HSWY4Z83QPNDE039"}],
+ "concurrencyAttempts":5,"initialConflicts":4,
+ "expiryProbeQuoteId":"01M7KEWK9FV3WS3MCW3SDZ1M0J"}
+```
+
+Y en la salida del helper: `Expired quote rejected: status=expired, no order accepted.`
+
+Cubre: cotización de carrito con dos vendedores, claves de idempotencia, rechazo de revisión obsoleta, cinco aceptaciones concurrentes que convergen en **un** grupo con **dos** pedidos hijos, y expiración sin pedido. Es el criterio de salida de quote-first en F1.
+
+### Empaquetado de la app compradora
+
+Comando: `pnpm --filter @agestyles/buyer-app exec expo export --platform web --output-dir /tmp/opencode/buyer-web-check`
+
+Resultado: `exit=0`, bundle web de 5 MB en `_expo/static/js/web/entry-*.js`. Confirma que Metro resuelve la nueva entrada `@agestyles/api-client/offers` en la ficha de producto, no solo TypeScript.
+
+---
+
+## Turno 2026-11-17 02:30–04:00 — Lote 2 PIM v1 (familia y versión)
+
+**Contexto:** Codex seguía con cambios sin commit en `commerce-api`, `storefront-web`, `business-app` y `packages/features-buyer`. No se tocó ninguno de sus archivos en curso salvo `apps/commerce-api/medusa-config.ts` y `apps/commerce-api/package.json`, que son puntos de registro inevitables.
+
+| Cambio | Archivos | Verificación |
+|---|---|---|
+| Contrato compartido de PIM: `CatalogField`, `CatalogFamilySummary`, `CatalogFamilyVersion`, `CatalogCompatibility`, `compareCatalogProducts` (regla version-scoped portada de Catalogo) | `packages/domain/src/catalog-pim.ts`, `src/index.ts`, `package.json` | `pnpm --filter @agestyles/domain typecheck` → OK |
+| Módulo Medusa propio `@agestyles/catalog-pim`: modelos, servicio, validación, mapeo a Mercur | `packages/catalog-pim/**` | `pnpm --filter @agestyles/catalog-pim typecheck` → OK |
+| Migración generada por el módulo (sin SQL a mano) | `packages/catalog-pim/src/migrations/Migration20261117004833.ts` + snapshot | `medusa db:generate agestylesCatalogPim` → `Generated successfully` |
+| Registro del módulo | `apps/commerce-api/medusa-config.ts`, `apps/commerce-api/package.json` (deps `@agestyles/domain`, `@agestyles/catalog-pim`) | `pnpm typecheck` → 10/10 |
+| API admin: listar/crear familia (valida categoría real), crear versión, publicar | `apps/commerce-api/src/api/admin/catalog-families/**` | `verify-catalog-pim-http.ts` |
+| API store pública: solo familia activa con versión publicada | `apps/commerce-api/src/api/store/catalog-families/[handle]/route.ts` | ídem |
+| Pruebas de reglas | `packages/catalog-pim/test/catalog-pim.test.ts`, script `test` | `pnpm --filter @agestyles/catalog-pim test` → PASS |
+| Verificadores de laboratorio | `apps/commerce-api/src/scripts/verify-catalog-pim.ts`, `verify-catalog-pim-http.ts` | ambos OK |
+| ADR y ticket | `docs/adr/ADR-004-catalog-family-versioning.md`, `docs/tickets/LOTE-2-PIM.md` | revisión manual |
+
+**Resultado de los verificadores:**
+
+- `verify-catalog-pim.ts`: crea familia + borrador v1, publica v1 (`frozen_at`), crea v2 borrador, confirma que v1 publicada no cambia (`maximum` sigue 240), publica v2 y deja v1 archivada; rechaza handle duplicado, campo inválido (`unit` en `text`) y segundo borrador. Limpia todo al final.
+- `verify-catalog-pim-http.ts`:
+
+```json
+{"created":201,"listed":1,"publishedVersion":2,"storeReturnsPublished":true,
+ "draftLeakBlocked":true,"crossFamilyPublishBlocked":true,"unknownCategoryRejected":true}
+```
+
+**Nota operativa (importante para Codex):** el contenedor `agestyles-buyer-api` no monta el repositorio y ejecuta una imagen anterior, así que las rutas nuevas **no** están expuestas en `http://127.0.0.1:19081`. Los handlers se verificaron invocándolos con el contenedor real de Medusa vía `medusa exec`; para probarlas por HTTP hay que reconstruir la imagen o arrancar `medusa develop`.
+
+**Decisiones que Codex debe revisar:**
+
+1. `category_id` referencia `product_category.id` de Medusa, no el `category_slug` heredado (ADR-004 §2).
+2. Los atributos/valores se quedan en Mercur; la familia guarda `attribute_handle`/`option_handles`. `option_ids` de Catalogo no se portan.
+3. Las escrituras son de plataforma; la autenticación admin la pone el framework por el prefijo `/admin`, sin middleware propio.
+4. `model.json()` está tipado como objeto y el snapshot es un array: el cruce se hace en `toFieldsJson` (un solo punto documentado).
+
+**Pendiente declarado, no oculto:** persistir `catalog_family_version_id` en productos y el comparador 2–4 productos quedan para el siguiente incremento. El criterio de aceptación #2 del ticket se cumple a nivel de contrato de comparación, no de persistencia.
+
+---
+
+## Turno 2026-11-17 04:10–05:00 — Producto → versión publicada y comparación pública
+
+**Contexto:** continuación del Lote 2 sobre lo ya verificado. No se tocó código de Codex en curso.
+
+| Cambio | Archivos | Verificación |
+|---|---|---|
+| Regla pura `validateCatalogSpecifications` (campos de la versión, requeridos, tipos, opciones, mín/máx, normalización) en el paquete compartido | `packages/domain/src/catalog-pim.ts` | prueba en `packages/catalog-pim/test/catalog-pim.test.ts` |
+| Asignación producto → versión publicada mediante `metadata` del producto (`catalog_family_id`, `catalog_family_version_id`, `catalog_specifications`), con rechazo de borradores y de valores inválidos | `apps/commerce-api/src/api/admin/products/[id]/catalog-family/route.ts` | `verify-catalog-product-assignment.ts` |
+| Lectura pública de comparación 2–4 productos publicados; ignora versiones en borrador y no expone productos no publicados | `apps/commerce-api/src/api/store/catalog-comparison/route.ts` | ídem |
+| Servicio: `getPublishedVersionById` (solo publicadas) y `getVersionById` (lectura tipada) | `packages/catalog-pim/src/service.ts` | typecheck |
+| Verificador de laboratorio | `apps/commerce-api/src/scripts/verify-catalog-product-assignment.ts` | OK |
+
+**Resultado del verificador:**
+
+```json
+{"assignedA":"Voltaje=220","assignedB":"Voltaje=110","comparedRows":2,
+ "sameVersionCompatible":true,"draftAssignmentRejected":true,
+ "invalidValuesRejected":true,"hiddenFieldExcluded":true,"missingFamilyReported":true}
+```
+
+Cubre: rechazo de versión en borrador, rechazo de campo desconocido / fuera de rango / opción inválida / requerido ausente, normalización al publicar la asignación, persistencia en `metadata`, comparación de dos productos de la misma versión excluyendo campos `comparable: false`, producto sin familia reportado como `family_missing`, y limpieza de datos.
+
+**Nota técnica para Codex:** `apps/commerce-api` compila a CommonJS y `@agestyles/domain` es ESM; las rutas cargan las reglas puras con un `import()` dinámico cacheado en vez de un import de valor (TypeScript lo rechaza). Si se prefiere un import estático, la alternativa es un paquete de reglas propio o cambiar la estrategia de módulos del app; no se hizo para no tocar la configuración de build de Medusa.
+
+**Pendiente declarado:** la UI del comparador (web/nativo) y la pantalla de administración siguen pendientes; el endpoint ya entrega la comparación completa.
+
+---
+
+## Turno 2026-11-17 05:10–06:10 — Lote 3 v1: comprobantes de pago manual
+
+**Contexto:** Mercur 2.4.1 no tiene comprobantes de pago manual (revisado en `@mercurjs/core/.medusa/server/src/modules`); es una brecha real del catálogo de capacidades. Se implementó como módulo propio, sin tocar el core.
+
+| Cambio | Archivos | Verificación |
+|---|---|---|
+| Módulo `@agestyles/manual-payments`: modelo, migración generada, validación pura y servicio con ciclo `pending → verified/rejected` | `packages/manual-payments/**` | `pnpm --filter @agestyles/manual-payments typecheck` + `test` |
+| Registro del módulo | `apps/commerce-api/medusa-config.ts`, `apps/commerce-api/package.json` | `pnpm typecheck` → 11/11 |
+| API comprador autenticada (enviar/listar comprobantes propios, 404 uniforme para pedidos ajenos) | `apps/commerce-api/src/api/store/orders/[id]/manual-payments/route.ts` | `verify-manual-payments.ts` |
+| API admin: cola por estado, verificar conciliando importe/moneda con el pedido, rechazar con motivo | `apps/commerce-api/src/api/admin/manual-payments/**` | ídem |
+| Verificador de laboratorio | `apps/commerce-api/src/scripts/verify-manual-payments.ts` | OK |
+| ADR y ticket | `docs/adr/ADR-005-manual-payment-proofs.md`, `docs/tickets/LOTE-3-POSTVENTA.md` | revisión manual |
+
+**Resultado del verificador:**
+
+```json
+{"orderId":"order_01M7KFW846KNRTAP6EV110DWJE","currency":"eur",
+ "depositAccepted":true,"overTotalRejected":true,"wrongCurrencyRejected":true,
+ "foreignOrderHidden":true,"duplicatePendingRejected":true,
+ "rejectionRequiresReason":true,"resubmitAfterRejection":true,
+ "verifiedMatchesOrder":true,"verifyIdempotent":true,"verifiedCannotBeRejected":true}
+```
+
+**Decisiones que Codex debe revisar:**
+
+1. Un comprobante pendiente por pedido y vendedor se garantiza con índice único parcial (`status = 'pending'`), no solo en código.
+2. Verificar es idempotente; un comprobante verificado no se puede rechazar y uno rechazado no se puede verificar (queda historial).
+3. La conciliación exacta importe/moneda se hace al verificar, no al enviar: el envío admite depósitos parciales hasta el total del pedido.
+4. El comprador solo accede a pedidos propios; pedido ajeno y pedido inexistente devuelven el mismo 404.
+5. `amount` es `numeric` (`model.bigNumber()`); con `model.number()` la migración generaba `integer` y habría roto los céntimos.
+
+**Nota operativa:** mismo límite que el resto: el contenedor no monta el repo; verificado con `medusa exec`, no por HTTP en `:19081`.
+
+---
+
+## Turno 2026-11-17 06:20–06:50 — Mapeo de publicación (pregunta #7)
+
+| Cambio | Archivos | Verificación |
+|---|---|---|
+| Mapeo único entre el estado heredado (`draft`/`published`/`archived`), el estado de producto de Medusa (`draft`/`proposed`/`published`/`rejected`) y la revisión de Mercur (`pending`/`confirmed`/`declined`/`canceled`) | `packages/domain/src/publication.ts`, export en `index.ts` y `package.json` | `pnpm --filter @agestyles/domain test` → PASS |
+| Pruebas de reglas | `packages/domain/test/publication.test.ts` | ídem |
+
+**Decisiones:** `archived` y `rejected` se guardan en `metadata.agestyles_publication_state` y **despublican** el producto (`status: draft`), porque Medusa no tiene estado archivado y un `status: published` obsoleto no debe filtrar un archivado. La revisión de Mercur no cambia por sí sola la visibilidad. El ETL usa `planLegacyImportWrite` en vez de inventar su propio mapeo.
+
+Cierra la pregunta #7 de `docs/MATRIZ_REUTILIZACION.md`.
+
+---
+
+## Hallazgos de capacidades (evidencia estática, Mercur 2.4.1)
+
+Inspección de `@mercurjs/core/.medusa/server/src/modules/product-attribute` y `@mercurjs/types/dist/product/common.js`:
+
+- `ProductAttribute`: `handle`, `name`, `type`, `is_required`, `is_filterable`, `is_variant_axis`, `rank`, `is_active`, `product_id` (global o por producto), `product_option_id`.
+- `AttributeType`: `single_select`, `multi_select`, **`unit`**, `toggle`, `text`.
+- Valores: `handle`, `name`, `rank`, `is_active`, `product_option_value_id`.
+- Links: `product-attribute-category-link`, `product-attribute-option-mirror-link`.
+- Ciclo de cambios de producto: `PENDING` (espera acción admin) → `CONFIRMED` / `DECLINED` / `CANCELED`.
+
+**Consecuencia para la matriz:**
+- PIM: Mercur cubre atributos tipados (incluida unidad), obligatoriedad, filtrabilidad y eje de variante. La brecha real se reduce a **familias/versiones y metadatos de comparación** (`comparable`, `group`, `help`, min/max). Ticket: `docs/tickets/LOTE-2-PIM.md`.
+- Publicación: existe flujo de cambios con aprobación nativa; la decisión pendiente es mapear estados AgeStyles, no construir un módulo de moderación.
+
+---
+
+## Pendiente de revisión por Codex
+
+1. ¿Acepta el contrato de cotización en `packages/domain/order-quotes.ts` tal como quedó (carrito completo, `seller_ids`, `order_group_id`)?
+2. ¿Quiere task de typecheck para `@agestyles/icons` con `@types/react` fijado, o lo deja cubierto por las apps?
+3. ¿Actualizamos el criterio de F1 en `STATUS_PLAN_MAESTRO.md` con la evidencia de cotización, o lo hace Codex?
+4. `packages/quotations/src/migrations` contiene tres migraciones; confirmar que la última (`20261117002638`) es la que corresponde al modelo con `seller_ids`/`order_group_id`.
+
+## Bloqueos que no dependen de código
+
+- **F0/F6:** destino de backup con capacidad. El disco local sigue en ~4.8 GiB libres; no se ejecutan backups ni builds pesados.
+- **F4/F5 nativo:** sin dispositivo Android conectado ni macOS/Xcode en este entorno.
+- **F8:** requiere decisión go/no-go de negocio.
+
+---
+
+## Turno 2026-11-17 — Facetas, dry-run y cola OpenCode
+
+| Cambio | Archivos | Verificación |
+|---|---|---|
+| Facetas de categoría desde la API, combinables con búsqueda y compartibles en URL | `apps/storefront-web/src/lib/catalog.ts`, `src/components/product-explorer.tsx`, `src/app/page.tsx`, ruta/verificador de facetas | Agente Codex: typecheck y verificador del laboratorio pasaron en cinco categorías, incluida búsqueda combinada; solo lectura |
+| Validador local de paquetes de exportación sintéticos | `tools/migration/**` | Agente Codex: 5 pruebas Node pasan; fixture 15/15 registros válido; `node --check` y `git diff --check` limpios |
+| Gateway seller para lectura/envío de cambios de producto | `tools/scripts/seller-lab-gateway.mjs` | Regla local permite GET/POST solo en `/vendor/products/{id}`; falta desplegar junto con la exportación web cuando termine el modo comprador |
+| Cola explícita para trabajo en paralelo de OpenCode | `docs/OPEN_CODE_TASKS.md` | OC-01 mapa legado sin filas personales; OC-02 pruebas de cotizaciones con dobles; OC-03 informe de build Android con límite de disco. Se excluyen áreas ya terminadas o en curso |
+
+No se modificó la infraestructura pública en este turno. El portal de negocio se publicará una vez integrada la pantalla de compra que sigue en curso.
+
+---
+
+## Turno 2026-11-17 01:42–02:05 UTC — Modo comprador y publicación de catálogos
+
+| Cambio | Archivos | Verificación |
+|---|---|---|
+| Modo Comprar en `business-app` con `customer` actor separado, carrito, ofertas, cotización y aceptación; vuelta a Mi negocio conserva el actor `member` | `apps/business-app/app/(buyer)/**`, `app/(tabs)/more.tsx`, `packages/features-buyer/src/business-buyer-session.ts`, `test/business-buyer-session.test.ts` | Agente: typecheck app/features y prueba de namespace customer pasan; Codex: `corepack pnpm typecheck` → 11/11 y `corepack pnpm test` → 4/4 tareas |
+| El test de sesión buyer entra ahora en el target Nx raíz | `packages/features-buyer/package.json` | `corepack pnpm test` → 4 tasks succeeded (3 cacheadas) |
+| Seller gateway usa el API actual de laboratorio y permite las operaciones Store API que consume el modo Comprar, manteniendo fuera Admin/Vendor no declaradas | `tools/scripts/seller-lab-gateway.mjs`, `docs/seller-web-vps.md` | Preflight cotización 204 con `idempotency-key`; región/productos/ofertas 200; customer anónimo 401; Admin 404. Sin clave/token impreso. |
+| Buyer gateway usa el API actual, permite cotizaciones y agrega lecturas públicas de categoría/vendedor necesarias para SSR | `tools/scripts/buyer-lab-gateway.mjs`, `docs/buyer-web-vps.md` | Regiones/productos/ofertas/categorías/vendedores 200; quote preflight 204 con `idempotency-key`; Admin 404 |
+| Publicación actualizada del portal de negocio, web compradora y storefront SEO | `apps/business-app/dist/**`, `apps/buyer-app/dist/**`, imágenes Docker de beta existentes | `pnpm seller:web:build` (bundle 3.9 MB), `pnpm lab:web:build:public` (bundle 5 MB), `pnpm nx build @agestyles/storefront-web`; `docker compose` reconstruyó solo los tres contenedores web ligeros. En Internet: buyer/seller/storefront 200; faceta `flip-flops` con productos y página de vendedor con productos. |
+
+## Turno 2026-11-17 02:05–02:10 UTC — Compra sintética por gateway público
+
+| Cambio | Archivos | Verificación |
+|---|---|---|
+| Verificación del checkout de comprador a través del gateway público, usando solo el API de laboratorio | `apps/buyer-app/scripts/verify-apk-gateway.mts` (sin cambios) | `node --env-file=apps/buyer-app/.env.local apps/buyer-app/scripts/verify-apk-gateway.mts https://descargas.eav-labs.com/agestyles-lab` → PASS; dos vendedores, envío por tienda y dos pedidos seller-scoped en el grupo `og_01M7KM63Q1QTRECRSAZHF4KQYW`. Verifica además Admin/Vendor no disponibles y endpoints de historial sin sesión respondiendo 401. |
+
+La prueba creó un pedido sintético en la base aislada del laboratorio y usó `pp_system_default`; no escribió en Supabase ni en producción. Esto verifica el flujo API a través del gateway público, pero no sustituye el recorrido visual en Android ni el checkout desde la interfaz web.
+
+## Turno 2026-11-17 — Contrato puro de aceptación de cotizaciones (OC-02)
+
+| Cambio | Archivos | Verificación |
+|---|---|---|
+| Decisiones puras de precondición/transición para aceptar una cotización; la ruta Medusa consume los helpers | `packages/domain/src/order-quotes.ts`, `apps/commerce-api/src/api/store/order-quotes/[id]/accept/route.ts` | Decisión extraída: revisión inválida/obsoleta, aceptar, expirar y no disponible. Transiciones extraídas: recotizar (incrementa revisión), marcar expirada/no disponible, accepting y accepted. La ruta sigue siendo responsable de cargar el grupo existente y de ejecutar el workflow de checkout bajo lock. |
+| Fixtures sintéticos y prueba determinista | `packages/domain/test/order-quotes.test.ts`, `packages/domain/package.json` | `corepack pnpm --filter @agestyles/domain test` → PASS; `corepack pnpm test` → 4/4 tareas; `corepack pnpm --filter @agestyles/domain typecheck` → PASS; `corepack pnpm --filter @agestyles/commerce-api typecheck` → PASS. `git diff --check` limpio. |
+
+La aceptación repetida prueba que el helper devuelve la misma decisión/grupo antes de revisar la revisión enviada, evitando pedir otro checkout. La lectura efectiva del grupo y la recuperación del resultado siguen siendo integración API, cubiertas por los verificadores de laboratorio existentes; no se simularon workflows ni lock. No hubo llamadas a red, DB, Redis ni cambios en el laboratorio durante esta prueba unitaria.
+
+**Hallazgo corregido:** ambos gateways apuntaban al proceso previo `19080`; el laboratorio vigente está en `19081`. El storefront público, además, necesitaba `GET /store/product-categories` y `GET /store/sellers`; al añadir esas lecturas públicas, SSR dejó de mostrar el estado de catálogo no disponible y renderizó productos. No se tocaron DNS, túnel, Supabase ni datos de producción. No se ejecutó build nativo Android/iOS.
+
+---
+
+## Turno 2026-11-17 — OC-01: mapa del esquema legado (solo esquema)
+
+**Tarea tomada:** OC-01 de `docs/OPEN_CODE_TASKS.md` (P0). OC-02 se completó en paralelo y está documentada arriba; OC-03 y OC-04 siguen disponibles. No se modificó código ni configuración para OC-01, y no se tocaron las áreas publicadas o en curso (`storefront-web`, `business-app`, `features-buyer`, gateways).
+
+| Cambio | Archivos | Verificación |
+|---|---|---|
+| Mapa entidad-a-entidad del esquema de `Agestyles-Catalogo` con destino propuesto en Medusa/Mercur/AgeStyles, brechas y pendientes | `docs/migration/legacy-source-map.md` (nuevo) | revisión manual del documento; `git diff --check` sobre el archivo nuevo |
+| Registro del turno | `docs/CODEX_HANDOFF.md` | este apartado |
+
+**Fuente inspeccionada:** `/home/ernesto/proyectos/Agestyles-Catalogo`, rama `develop`, HEAD `cc0a810` (2026-11-16 16:22 +0100). Solo lectura.
+
+**Método:** lectura de `scripts/supabase-schema-from-zero.sql` (baseline de 21 tablas) y de 17 migraciones de `supabase/migrations/` elegidas por entidad; lectura de `src/lib/cartCurrencySummary.ts`, `exchangeRate.ts` y `optimizedImage.ts` para moneda y medios. No se leyó ninguna fila, dump, `auth.users`, objeto de Storage ni credencial; no se abrió conexión a Supabase/PostgreSQL ni se ejecutó migración.
+
+**Hallazgos nuevos que afectan al ETL:**
+
+1. El baseline `scripts/supabase-schema-from-zero.sql` **no es un dump** de la base viva: reordena políticas y contiene columnas luego sustituidas (`stores.owner_id` → `merchant_id`). Antes del ETL hace falta un `pg_dump --schema-only` autorizado y contrastarlo con el mapa.
+2. `20261116120000_merchant_product_media.sql` (la migración no aplicada) **no crea tablas**: solo añade RPC de alta/baja/imagen principal de producto para vendedor. Es un cambio de funciones, no de esquema; aun así debe revisarse su intención antes de aplicarla.
+3. `merchant_product_publication_requests` usa `pending/approved/rejected/withdrawn`, cuatro estados que el mapeo actual de `packages/domain/src/publication.ts` no cubre (ese contrato solo mapea `draft/published/archived`). Habrá que extenderlo antes de importar productos.
+4. Hay **dos** tablas de favoritos con la misma semántica (`public.user_favorites` sobre `auth.users` y `public.wishlist` sobre `profiles`): el ETL debe unirlas con deduplicación, no duplicarlas.
+5. El contrato intermedio incluye `customer_preferences`, pero **no existe tabla fuente** para preferencias: no deben fabricarse registros.
+6. Moneda: el legacy admite USD y CUP por producto/variante, totales separados por moneda y `app_settings.cup_per_usd` con snapshot en pedidos; Medusa usa una moneda por región/carrito. La decisión de regiones o conversión queda marcada como pendiente P0 en el mapa.
+7. Stock sin ubicación: `product_variant_stock` y `product_size_stock` pueden duplicar el saldo; Medusa exige `stock_location`. Hay que fijar saldo canónico y una ubicación por tienda.
+
+**Pendiente de revisión por Codex:** confirmar las equivalencias propuestas (organización ↔ merchant, seller ↔ store), la tabla de estados de pedido y el mapeo de los seis roles de membresía antes de diseñar el importador. El mapa no es un export ni una conciliación.
+
+## Turno 2026-11-17 02:14–02:20 UTC — Accesibilidad y navegación del catálogo
+
+| Cambio | Archivos | Verificación |
+|---|---|---|
+| Foco visible para campos de búsqueda y ordenación; estado de foco en sus contenedores | `apps/storefront-web/src/app/styles.css` | `corepack pnpm nx run @agestyles/storefront-web:typecheck` → 1 tarea correcta; detector mecánico sin hallazgos |
+| Contraste de textos secundarios y estados pequeños ajustado a tonos grafito/cálidos más oscuros, manteniendo los acentos claros sobre superficies azul noche | `apps/storefront-web/src/app/styles.css` | valores anteriores `#888` y `#8a8883` daban 3.54:1 sobre blanco; estilos afectados pasan a `#5b574f` (contraste superior a 7:1 sobre blanco) |
+| El enlace de Favoritos sin destino se retiró; no existe almacenamiento ni pantalla de favoritos que pudiera conectarse sin inventar comportamiento | `apps/storefront-web/src/app/page.tsx` | revisión de la navegación de cabecera |
+| Catálogo paginado a 48 productos por página; API recibe offset, el estado muestra rango/total y los enlaces anterior/siguiente conservan búsqueda y categoría | `apps/storefront-web/src/lib/catalog.ts`, `src/app/page.tsx`, `src/components/product-explorer.tsx` | typecheck de storefront aprobado; al solicitar una página fuera de rango se usa la última página válida |
+| Movimiento reducido desactiva desplazamiento suave y transiciones/transformaciones decorativas de los controles del storefront | `apps/storefront-web/src/app/styles.css` | regla `prefers-reduced-motion` aplicada a animaciones presentes |
+
+`git diff --check` pasó. No se desplegó, no se modificó backend y no se tocaron datos. El detector ejecutado sobre los cuatro archivos modificados devolvió `[]`.
+
+## Turno 2026-11-17 02:10–02:32 UTC — Contrato de cotizaciones, mapa legacy y seguimiento buyer
+
+| Cambio | Archivos | Verificación |
+|---|---|---|
+| OC-02: decisiones puras de aceptación de cotización extraídas y usadas por la ruta real; casos de revisión, expiración, disponibilidad, recotización y aceptación repetida | `packages/domain/src/order-quotes.ts`, `packages/domain/test/order-quotes.test.ts`, `packages/domain/package.json`, ruta `apps/commerce-api/src/api/store/order-quotes/[id]/accept/route.ts` | Agente: `pnpm test` 4/4, typecheck domain y commerce-api y `git diff --check` pasan. Workflow, locks y lectura del grupo siguen siendo integración. |
+| OC-01: mapa propuesto de entidades origen/destino | `docs/migration/legacy-source-map.md`, estado actualizado en `docs/OPEN_CODE_TASKS.md` | Trabajo OpenCode: lectura solo de esquema/código histórico; sin filas, credenciales, conexión ni migraciones. Incluye brechas de moneda, inventario, roles, estados y medios; requiere contraste con esquema vivo restaurado. |
+| Seguimiento por línea en detalle de compra; lectura separada por pedido hijo, enlace externo solo HTTPS | `apps/buyer-app/app/(drawer)/(tabs)/account/orders/[id].tsx`, `packages/api-client/src/order-tracking.ts`, `packages/api-client/package.json`, `tools/scripts/buyer-lab-gateway.mjs`, `docs/buyer-web-vps.md` | Typecheck buyer/API-client y raíz 11/11; `pnpm test` 4/4. Beta compradora exportada/publicada: página 200, bundle servido contiene el cliente y texto de error actualizado, health local 200. Preflight tracking 204; Admin 404. **Brecha runtime:** el API público vigente responde `Cannot GET /store/orders/{id}/tracking` (404), así que no se confirmó autorización sin sesión ni hay seguimiento end-to-end. No se reconstruyó el API por capacidad del host (3.7 GiB libres, 99% usado). |
+| Correcciones de accesibilidad/navegación del catálogo | `apps/storefront-web/src/app/styles.css`, `src/app/page.tsx`, `src/components/product-explorer.tsx`, `src/lib/catalog.ts` | Typecheck y detector sin hallazgos; `corepack pnpm nx build @agestyles/storefront-web` pasó. Imagen estática desplegada sin recrear API. Home/categoría públicas 200; CSS servido incluye regla de movimiento reducido y estilos de paginación. No se verificó visualmente con teclado/lector. |
+| Verificación de Nx y estado de calidad | `/tmp/agestyles-nx-graph.json` (artefacto temporal) | `corepack pnpm exec nx graph --file=/tmp/agestyles-nx-graph.json --open=false --watch=false` → JSON generado; `corepack pnpm typecheck` 11/11, `corepack pnpm test` 4/4 y `git diff --check` pasan. |
+
+No se tocaron Supabase, DNS, Cloudflare, Admin API ni el API de producción. Las fases F0/F6/F8 siguen abiertas; este avance no es un permiso de migración/cutover.
+
+## Turno 2026-11-17 02:32–02:39 UTC — Ownership de repositorio
+
+| Cambio | Archivos | Verificación |
+|---|---|---|
+| Añadido propietario de código por defecto para todas las rutas | `.github/CODEOWNERS` | Identidad `@ErnestoArtime` coincide con el dueño indicado por el usuario para `ErnestoArtime/monorepo-agestyles`. El archivo documenta que GitHub debe exigir code-owner review en reglas de rama para hacerlo obligatorio; no se modificaron reglas remotas. |
+
+## Turno 2026-11-17 02:42–03:02 UTC — Seguimiento de pedidos: ajuste local y verificación fallida
+
+| Cambio / hallazgo | Archivos | Verificación |
+|---|---|---|
+| El handler de seguimiento tolera una referencia nula de fulfillment, y el verificador ahora exige un pedido customer limpio antes de crear uno temporal. La limpieza borra la etiqueta/prueba, revierte los marcadores de envío y usa el workflow de cancelación de Medusa; ya no borra directamente el fulfillment. | `apps/commerce-api/src/api/store/orders/[id]/tracking/route.ts`, `apps/commerce-api/src/scripts/verify-order-tracking.ts` | `pnpm --filter @agestyles/commerce-api typecheck` pasa; `git diff --check` pasa. El verificador `medusa exec` **no pasó**, así que no se declara seguimiento validado. |
+| El API desplegado sigue sin esa ruta (`Cannot GET`); no se reconstruyó su imagen. Al probar el verificador en el laboratorio, aparecieron dos fulfillments con etiqueta sintética de corridas anteriores. Una corrida de esta sesión creó y luego retiró su fulfillment de prueba; otra dejó un fulfillment sin envío/etiquetas y la cancelación no se pudo confirmar porque la relación order–fulfillment del fixture estaba inconsistente. El estado final de esa relación no se considera verificado. | Laboratorio local PostgreSQL/Redis aislado | No se tocó Supabase, DNS ni producción. No repetir la prueba sobre este fixture; hace falta restaurar o preparar un pedido aislado limpio y comprobar reservas/stock antes de continuar. |
+
+No se hizo despliegue ni se anunció el endpoint como activo. F4 sigue parcial.
+
+## Turno 2026-11-17 03:02–03:06 UTC — Revisión de probe de precio F1
+
+| Cambio / hallazgo | Archivos | Verificación |
+|---|---|---|
+| Análisis de solo lectura encontró que `apps/commerce-api/scripts/verify-order-quotes.mjs` ya implementa una mutación temporal de +1 sobre la escala de A2, valida `409/requoted` y restaura/compara la escala original en `finally`. Solo ejecuta esa rama si el vendedor tiene región EUR; el estado anteriormente registrado dice que A2 no la tiene y queda a EUR 49. | Sin cambios en código; consolidado en `docs/STATUS_PLAN_MAESTRO.md`, `docs/PLAN_COMPLETION_AUDIT.md` y `docs/architecture/medusa-mercur-capability-matrix.md` | El comando `lab:verify:order-quotes` es compuesto: además crea un grupo y pedidos A2+B2, toca stock temporalmente y verifica expiración. No se ejecutó ni se comprobó el estado vivo de región/precio. Se añadió OC-06 para que OpenCode cree un probe price-only, con salida no destructiva `unsupported` sin EUR y sin ejecutarlo. |
+
+## Turno 2026-11-17 03:08–03:10 UTC — Healthchecks de la composición local (F2)
+
+| Verificación | Resultado |
+|---|---|
+| `docker compose --env-file apps/commerce-api/.env -f infra/compose/mercur-lab.yaml ps` | PostgreSQL y Redis: `running healthy`. La variable de entorno se usó solo para interpolación; no se imprimió. |
+| Compose de buyer, seller y storefront | API y las tres webs: `running healthy`; gateways están arriba (no tienen healthcheck Compose declarado). |
+| Endpoints locales | API en `19080/health` y `19081/health`: 200; buyer `18083/healthz`, storefront `18084/healthz`, business `18085/healthz`: 200. |
+
+Esto confirma el health local del laboratorio y las tres webs en este corte, no el build nativo ni el flujo de login/API completo. No se modificó infraestructura ni se hizo despliegue.
+
+## Turno 2026-11-17 — Revalidación de permisos de vendedor
+
+| Verificador | Resultado |
+|---|---|
+| `corepack pnpm lab:verify:seller-roles` | **54/54 comprobaciones pasaron** para dueño, gestor y solo lectura en Sole Society/A2, incluyendo la segunda tienda A2, cambios/revocación de rol y rechazo de accesos a la organización ajena. Salió con código 0. El script retira artículos y membresías sintéticas en `finally`. |
+| `corepack pnpm lab:verify:kickz-roles` | **Falló** antes de terminar B1/B2: `GET /vendor/orders?limit=20&fields=id,display_id,status,total` devolvió 500 (`An unknown error occurred`) donde el guion esperaba 200. Salió con código 1; su bloque `finally` limpió las membresías creadas. No se repitió para evitar dejar más cuentas sintéticas. |
+
+El fallo no demuestra por sí solo un defecto de permisos; requiere diagnosticar los logs del proceso Medusa local y la consulta de pedidos de Kickz antes de aceptar de nuevo los 46 checks históricos. No se modificó el código ni la base del laboratorio fuera de las escrituras temporales de los verificadores. Se actualizó la fila F1 de `docs/STATUS_PLAN_MAESTRO.md` para que no presente la matriz Kickz como revalidada.
+
+Se dejó OC-08 en `docs/OPEN_CODE_TASKS.md` para que OpenCode examine dependencias, configuración y logs ya disponibles en solo lectura. No se reiniciará el proceso ni se repetirá la matriz durante ese análisis.
+
+## Turno 2026-11-17 03:28 UTC — Aislamiento de lectura para `/vendor/orders`
+
+| Alcance | Resultado |
+|---|---|
+| Mismo owner sintético Kickz, GET solo lectura en `127.0.0.1:19081`; sin escribir pedidos, stock ni membresías | `Kickz Corner` (B1) responde 500 con campos predeterminados, `?limit=20`, `?fields=id` y `?fields=id,display_id,status,total`. `agestyles-lab-b2` responde 200 en las mismas cuatro consultas. |
+
+Esto descarta que el fallo observado dependa solamente de los campos personalizados del verificador. El problema sigue acotado a B1 o a los pedidos/relaciones que la consulta incluye para esa tienda; no identifica una fila ni prueba la causa. Se inspeccionó el handler instalado de Mercur 2.4.1: arma `getOrdersListWorkflow` con el filtro seller añadido por middleware y aplica los campos predeterminados de `vendorOrderQueryConfig`. No se consultó la base directamente ni se accedió a datos de cliente. OC-08 recibió esta comparación diferencial para investigar en solo lectura.
+
+## Turno 2026-11-17 — OC-03: preparación Android, solo medición
+
+| Cambio | Archivos | Verificación |
+|---|---|---|
+| Informe de readiness para comprador y negocio | `docs/mobile/android-build-readiness.md`; OC-03 actualizado en `docs/OPEN_CODE_TASKS.md` | Node 24.18, Java 21.0.13, Expo 54.0.38, Android SDK 6.3 GiB, ADB 37.0.1; `adb devices -l` vacío. Buyer tiene proyecto Android generado localmente; Business requiere prebuild. No hay EAS ni `eas.json`; falta system image/AVD. Disco: 3.7 GiB libres frente al mínimo de 8 GiB. Ambas `.env.local` apuntan a localhost y deben usar el gateway público de laboratorio para una app física. No se ejecutó Gradle/EAS/prebuild, no se descargó nada y no se tocó código de apps. |
+
+---
+
+## Turno 2026-11-17 — OC-05: auditoría del ecosistema de iconos
+
+**Tarea tomada:** OC-05 de `docs/OPEN_CODE_TASKS.md` (P1, “lista para OpenCode”). Auditoría de solo lectura: no se editó código de app, no se instalaron paquetes y no se publicó nada. OC-04 se descartó porque sus archivos permitidos (`package.json`, `nx.json`, `.github/workflows/ci.yml`) tienen cambios sin commit de la sesión Codex; OC-06 y OC-07 siguen libres.
+
+| Cambio | Archivos | Verificación |
+|---|---|---|
+| Informe de adopción del paquete de iconos, con evidencia por app y brechas priorizadas | `docs/ui/icon-ecosystem-audit.md` (nuevo) | búsquedas estáticas y comparación automática de glifos; `git diff --check` limpio |
+| Registro del turno | `docs/CODEX_HANDOFF.md` | este apartado |
+
+**Alcance revisado:** `packages/icons` (ambas entradas, 40 glifos), `buyer-app` (10 archivos que tocan iconos), `business-app` (6) y `storefront-web` (5, 13 usos), más `docs/design-system.md` en solo lectura. Excluidos `references/**`, `node_modules`, `dist` y los SVG de marca.
+
+**Resultado:** el paquete es la única fuente en las tres apps (sin `lucide-react`, `lucide-react-native` ni `@expo/vector-icons` directos), la paridad web/nativo es 40/40 y `react-native-svg` coincide con el peer en ambas apps Expo.
+
+**Brechas P1 encontradas (no corregidas, por ser auditoría):**
+
+1. `IconSymbol` resuelve nombres desconocidos a `help` con `name: string` y dos llamadas fuerzan `as any` (`payment-step.tsx:68`, `order-confirmation/[id].tsx:207`): un nombre nuevo se dibuja como `?` sin error de TypeScript.
+2. El botón de eliminar del carrito es solo-icono y no tiene etiqueta accesible (`cart-item.tsx:63-65`).
+3. Los botones de cantidad usan texto `-`/`+` y no tienen rol ni etiqueta, aunque `minus`/`plus` existen en el paquete (`cart-item.tsx:49-60`).
+4. La selección de pago usa `✓` de texto y no anuncia el estado (`payment-step.tsx:55-83`).
+5. El estado de error usa el glifo `help` porque no hay glifo de alerta (`operation-list.tsx:22`).
+
+También quedan P2 de consistencia: trazo 2.2 solo en pestañas del comprador, tamaños de 17–19 px en controles y 12–15 px en enlaces, `#111B2D`/`#FFFFFF` duplicados fuera de tokens y `⌕`/`↗` como glifos de texto en el storefront. P3: `packages/icons` no tiene target de typecheck propio (la cobertura es indirecta vía apps) y no aparece en `transpilePackages` del storefront aunque exporta `.tsx` sin compilar.
+
+**Requiere dispositivo:** trazo real, tamaño de tab bar en 360 dp, anuncio de `radio`/`checked` con TalkBack y diferencia de color por defecto web/nativo. No se ejecutó typecheck ni build para no mezclar el estado sin commit de Codex.

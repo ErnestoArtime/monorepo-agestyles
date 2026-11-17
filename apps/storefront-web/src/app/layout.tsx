@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import "./styles.css"
+import "./seller-pages.css"
 
 const siteUrl = process.env.SITE_URL || "https://catalogo.eav-labs.com"
 

@@ -7,7 +7,7 @@ import { useCart } from '@/context/cart-context';
 import { useRegion } from '@/context/region-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { formatPrice } from '@/lib/format-price';
-import { listOffers, type Offer } from '@agestyles/api-client/store';
+import { listProductOffers } from '@agestyles/api-client/offers';
 import { sdk } from '@/lib/sdk';
 import type { HttpTypes } from '@medusajs/types';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
@@ -24,7 +24,7 @@ export default function ProductDetailsScreen() {
 
   const [product, setProduct] = useState<HttpTypes.StoreProduct | null>(null);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
-  const [offers, setOffers] = useState<Offer[]>([]);
+  const [offers, setOffers] = useState<Awaited<ReturnType<typeof listProductOffers>>['offers']>([]);
   const [offerId, setOfferId] = useState<string>();
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -104,8 +104,8 @@ export default function ProductDetailsScreen() {
     setOfferId(undefined);
     if (!variantId || !regionId) return;
     let active = true;
-    listOffers(sdk.client, regionId, variantId).then(({ offers }) => {
-      if (active) setOffers(offers.filter((offer) => offer.in_stock && offer.calculated_price));
+    listProductOffers(sdk.client, { variantId, regionId }).then(({ offers }) => {
+      if (active) setOffers(offers.filter((offer) => offer.available_quantity !== 0 && offer.price));
     }).catch(() => {
       if (!active) return;
       setToastMessage('Failed to load seller offers');
@@ -114,8 +114,8 @@ export default function ProductDetailsScreen() {
     return () => { active = false; };
   }, [regionId, variantId]);
 
-  const selectedOffer = offers.find((offer) => offer.id === offerId && offer.variant_id === variantId)
-    ?? offers.find((offer) => offer.variant_id === variantId);
+  const selectedOffer = offers.find((offer) => offer.id === offerId && offer.variant?.id === variantId)
+    ?? offers.find((offer) => offer.variant?.id === variantId);
 
   // Check if we should show options UI
   // Hide if there's only one option with one value (or all options have only one value each)
@@ -171,11 +171,11 @@ export default function ProductDetailsScreen() {
     );
   }
 
-  // Get price from calculated_price.calculated_amount
-  const priceAmount = selectedOffer?.calculated_price?.calculated_amount;
-  
-  // Use selected region's currency code
-  const currencyCode = selectedRegion?.currency_code;
+  // Get price from the canonical offer projection (region price wins, raw price otherwise)
+  const priceAmount = selectedOffer?.price?.amount;
+
+  // Prefer the offer currency; fall back to the selected region
+  const currencyCode = selectedOffer?.price?.currency_code ?? selectedRegion?.currency_code;
 
   // Check if selected variant is in stock
   const isInStock = !!selectedOffer;
@@ -267,7 +267,7 @@ export default function ProductDetailsScreen() {
                 onPress={() => setOfferId(offer.id)}
               >
                 <Text style={{ color: colors.text }}>
-                  {offer.seller.name} · {formatPrice(offer.calculated_price?.calculated_amount, currencyCode)}
+                  {offer.seller.name} · {formatPrice(offer.price?.amount, offer.price?.currency_code ?? currencyCode)}
                 </Text>
               </TouchableOpacity>
             ))}

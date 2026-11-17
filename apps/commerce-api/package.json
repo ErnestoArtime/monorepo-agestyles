@@ -5,10 +5,14 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "migrate": "medusa db:migrate",
-    "start": "medusa start --host 127.0.0.1 --port 19080",
-    "seed": "medusa exec ./src/scripts/seed.ts"
+    "start": "medusa start --host 127.0.0.1 --port 19081",
+    "seed": "medusa exec ./src/scripts/seed.ts",
+    "verify:order-quote-expiry": "node --env-file=../../apps/commerce-api/.env --env-file=../../apps/buyer-app/.env.local scripts/verify-order-quote-expiry.mjs"
   },
   "dependencies": {
+    "@agestyles/domain": "workspace:*",
+    "@agestyles/catalog-pim": "workspace:*",
+    "@agestyles/manual-payments": "workspace:*",
     "@medusajs/admin-sdk": "2.22.3",
     "@medusajs/cli": "2.22.3",
     "@medusajs/draft-order": "2.22.3",

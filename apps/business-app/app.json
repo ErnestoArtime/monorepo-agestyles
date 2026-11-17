@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "AgeStyles Negocio",
+    "slug": "agestyles-business-lab",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "agestyles-business-lab",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "ios": { "supportsTablet": true },
+    "android": {
+      "package": "com.eavlabs.agestyles.businesslab",
+      "versionCode": 1,
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": true
+    },
+    "plugins": ["expo-router"],
+    "experiments": { "typedRoutes": true }
+  }
+}
