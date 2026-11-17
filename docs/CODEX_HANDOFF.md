@@ -736,3 +736,10 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - Tienda oficial creada con `create-official-seller.ts`: `sel_01M7NH1254S7Z1HZ7YQTJT39N7`, nombre AgeStyles, estado `open`, moneda `usd`, `external_id=agestyles-official`.
 - Dry-run del importador en modo producción con `catalog-supabase-links` y `AGESTYLES_PRODUCTION_REUSE_SOURCE_IMAGES=true`: bundle válido, 33 productos, 19 categorías, 33 variantes, 31 imágenes de origen, 0 escrituras.
 - Pendiente: crear el usuario admin de producción (`medusa user` con `admin.env`) y obtener el bearer token; después `--apply`. Siguen faltando región, ubicación de stock, ofertas/precios e inventario. Las webs públicas siguen apuntando al laboratorio.
+
+## F6 — catálogo importado en producción — 17 de noviembre de 2026, 21:00 UTC
+
+- Usuario admin de producción creado con `medusa user` desde `admin.env` privado. Token obtenido por `/auth/user/emailpass` sin imprimirlo.
+- `import-catalog-bundle-to-medusa.mjs --apply` en modo `production` con `catalog-supabase-links` y `AGESTYLES_PRODUCTION_REUSE_SOURCE_IMAGES=true`: 19 categorías y 33 productos creados, 0 omitidos.
+- Verificación SQL de solo lectura: 33 productos `draft` con 33 `external_id` distintos, 33 variantes, 31 imágenes (todas URLs de Supabase), 19 categorías inactivas, 33 vínculos `product_seller` con `sel_01M7NH1254S7Z1HZ7YQTJT39N7`. Dos productos sin miniatura (el origen tiene 31 imágenes para 33 productos).
+- Siguen pendientes: región USD, ubicación de stock de la tienda oficial, ofertas/precios, inventario (19 saldos), activar categorías y publicar productos. Las webs públicas siguen apuntando al laboratorio. Backup cifrado + restore de producción aún no existe.
