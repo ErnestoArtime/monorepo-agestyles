@@ -821,3 +821,11 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - Revisé el STATUS consolidado por Codex (`0ffbc5a`) contra mi lectura de producción de 21:30 UTC: datos, riesgos y enlaces correctos. AG-15 pasa a `hecha`.
 - Tres omisiones para la próxima consolidación (§6 de la revisión): cifra y método de stock, dependencia de Supabase Storage en F8, filas de paridad (CUP, WhatsApp, favoritos).
 - Nuevas tareas en el tablero para capacidades del legado sin tarea: AG-17 comparador, AG-18 marcas/novedades, AG-19 avisos con reintentos, AG-20 devoluciones parciales.
+
+
+## AG-21 — omisiones de la revisión final de AG-15 incorporadas — 17 de noviembre de 2026
+
+- `STATUS_PLAN_MAESTRO.md` ahora registra 15/31 ofertas con stock y 26 unidades, la regla de legado (`product_variant_stock`, con fallback a `products.stock`) y que no se restan reservas porque no son legibles con clave anon. La conciliación variante por variante sigue pendiente.
+- F8 y riesgos separan el retiro de la web legacy de apagar Supabase: el bucket público `product-images` debe seguir disponible mientras lo consuman los storefronts AgeStyles 2.0.
+- La paridad enumera CUP/tasa, WhatsApp, favoritos locales, comparador, marcas/novedades, avisos con reintentos y devoluciones parciales con sus AG correspondientes. AG-17…AG-20 ya están en el tablero.
+- Solo documentación. `git diff --check` pasa; no se consultó ni modificó producción y no se ejecutaron pruebas. AG-21 queda pendiente de revisión final de Claude.

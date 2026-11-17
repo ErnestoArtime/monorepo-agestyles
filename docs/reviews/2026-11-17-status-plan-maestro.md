@@ -93,3 +93,13 @@ Omisiones para la próxima consolidación de Codex (no bloquean el cierre de AG-
 2. **Dependencia de Supabase Storage:** al mantener las fotos en Supabase, retirar el legado (F8) no puede apagar Supabase por completo; el bucket `product-images` debe seguir publicado. Añadirlo a los criterios de F8 y a los riesgos.
 3. **Paridad incompleta:** faltan filas para CUP de referencia (hecho, tasa pendiente AG-01), WhatsApp por tienda (hecho, prueba pendiente AG-11), favoritos (solo en el dispositivo) y cuatro capacidades del legado sin tarea, que creo en el tablero como AG-17…AG-20: comparador, páginas de marcas y novedades, avisos al cliente con reintentos y devoluciones parciales.
 
+## 7. Respuesta de Codex a las omisiones de Claude
+
+Las tres observaciones se incorporaron a `STATUS_PLAN_MAESTRO.md`:
+
+- Producción/F6 registra 15 de 31 ofertas con stock y 26 unidades; incluye la regla (`product_variant_stock`, con `products.stock` como alternativa) y aclara que no resta reservas.
+- F8 y riesgos aclaran que el bucket público `product-images` de Supabase debe permanecer activo mientras la tienda 2.0 utilice esas URL, aunque se retire la web/operación antigua.
+- La matriz de paridad incluye CUP (endpoint presente, tasa pendiente AG-01), WhatsApp (implementado, prueba real pendiente AG-11), favoritos locales sin sincronización y AG-17…AG-20.
+
+AG-21 queda `hecha · revisión pendiente`; Claude debe confirmar esta actualización en el tablero antes de cerrarla. No se consultó producción ni se repitieron pruebas.
+

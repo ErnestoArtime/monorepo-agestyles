@@ -11,6 +11,7 @@
 | API | `https://agestyles-api.eav-labs.com`; raíz para Buyer vía gateway `19186`, `/negocio/` para Business vía `19187`. API `commerce-api` healthy; PostgreSQL `15473` y Redis `16393` healthy. Imagen `sha256:c3235c651067…` (`9b16175`). |
 | Webs | `tienda.eav-labs.com`, `catalogo.eav-labs.com` y `negocio.eav-labs.com` responden 200 y usan la API de producción. Login del titular y carga de 31 productos en Negocio se verificaron por HTTPS. El legado `agestyles.eav-labs.com` sigue activo. |
 | Catálogo | Tienda oficial AgeStyles: 31 productos publicados y con oferta USD, 5 categorías activas; 2 productos excluidos siguen como borradores. Las imágenes conservan sus URL públicas de Supabase: no se copian al VPS. |
+| Inventario | 15 de las 31 ofertas tienen stock, 26 unidades en total. Se aplicó la regla de disponibilidad del legado: sumar `product_variant_stock` cuando existen filas y, si no, usar `products.stock`; no se restaron reservas porque no son legibles con la clave anon. |
 | Actividad | En la lectura del 17 nov 21:30 UTC: 0 pedidos y 0 clientes en producción. No hay compra real validada. Los dos storefronts están disponibles para vender; no hay evidencia de ventas registradas en ambos. |
 | CUP | Endpoint desplegado; la tasa devuelve `null`. No mostrar ni cobrar en CUP hasta fijar la tasa. |
 | Capacidad | 3.0 GiB libres (99 % usado) en la lectura de 21:30 UTC. Evitar builds pesados; AG-16 está pendiente de revisar una limpieza segura. |
@@ -25,9 +26,9 @@
 | F3 Catálogo y marketplace web | Parcial | Catálogo público en producción con 31 productos y 5 categorías. | Recorrido visual/teclado, compra web completa y mensajes de beta/prueba coherentes (AG-07, AG-11, AG-13). |
 | F4 App comprador | Parcial | Web compradora conectada a producción; soporte de cotización, checkout mixto, seguimiento y WhatsApp está en el código/runtime. El endpoint de tasa CUP aún devuelve `null`. | AG-11: compra real y verificación de pedido/WhatsApp; AG-14: Android/iOS y accesibilidad manual. No hay pedidos/clientes de producción en la foto actual. |
 | F5 App negocio | En curso | Web Negocio en producción; login del titular, selección de tienda y listado de 31 productos comprobados por HTTPS. | Flujos seller por rol en producción; etapas completas del pedido (AG-04), movimientos (AG-03), importación CSV (AG-05), medios/UX y builds nativos (AG-14). |
-| F6 Migración de catálogo | Parcial: catálogo activo migrado | 33 productos de origen: 31 ofertas USD publicadas en la tienda oficial; 2 quedan en borrador por reglas de precio/exclusión. Fotos referenciadas desde Supabase; 5 categorías activas. | Conciliación documentada de variantes/inventario; decidir y fijar CUP; migrar pedidos/clientes/históricos solo si forman parte del alcance; completar backup/restore (AG-02). Mantener fotos en Supabase según la decisión vigente del usuario. |
+| F6 Migración de catálogo | Parcial: catálogo activo migrado | 33 productos de origen: 31 ofertas USD publicadas en la tienda oficial; 2 quedan en borrador por reglas de precio/exclusión. Hay 15 ofertas con stock (26 uds) por la regla de legado: suma de `product_variant_stock` si hay filas; si no, `products.stock`. El dato no resta reservas, que no son legibles con la clave anon. Fotos referenciadas desde Supabase; 5 categorías activas. | Documentar conciliación de fuente → producto/oferta/variante y la limitación de reservas; decidir y fijar CUP; migrar pedidos/clientes/históricos solo si forman parte del alcance; completar backup/restore (AG-02). Mantener el bucket de medios de Supabase operativo. |
 | F7 QA y piloto | Parcial | CI cubre contratos/API desechable para carrito, permisos y seguimiento; no sustituye la prueba de las webs ni de la API con compra real. | AG-11/12/13/14: compra real, diagnóstico Kickz/B1, revisión visual y dispositivos; carga/seguridad/rollback y UAT. |
-| F8 Producción y retiro gradual del legado | Iniciada, sin go/no-go | Las webs nuevas y el legado están activos a la vez. No hay pedidos/clientes en la lectura de producción; esto es una capacidad dual de venta, no evidencia de doble venta realizada. | AG-02/08/11: backup y restore, decisión de escritor único/sincronización, compra piloto, rollback, criterios de corte y periodo de archivo. No retirar el legado aún. |
+| F8 Producción y retiro gradual del legado | Iniciada, sin go/no-go | Las webs nuevas y el legado están activos a la vez. No hay pedidos/clientes en la lectura de producción; esto es una capacidad dual de venta, no evidencia de doble venta realizada. Las imágenes públicas siguen sirviéndose desde Supabase Storage. | AG-02/08/11: backup y restore, decisión de escritor único/sincronización, compra piloto, rollback, criterios de corte y periodo de archivo. Retirar la web/operación antigua no autoriza apagar el proyecto o bucket de Supabase: conservar `product-images` y sus URLs mientras las use la tienda 2.0, o migrar/verificar los medios antes de desactivarlo. |
 | F9 Evolución posterior | No iniciada | AI Studio no forma parte del piloto actual. | Abordar tras cerrar piloto y definir límites, aprobación y costes. |
 
 ## Riesgos y decisiones abiertas
@@ -40,6 +41,7 @@
 6. **Mensajes de beta/datos de prueba** en páginas que ya apuntan a producción y contenido legado con la palabra «prueba» (AG-07); ajustar copy con aprobación del usuario.
 7. **Comisiones sin reglas acordadas:** AG-06 depende de que el usuario defina acumulación, base y forma de liquidación.
 8. **Laboratorio Buyer devuelve 502** (AG-10); no confundirlo con la API pública de producción.
+9. **Dependencia de Supabase Storage:** las fotos del catálogo 2.0 dependen del bucket público `product-images`. Apagar Supabase al retirar la web antigua rompería esas imágenes; separar la retirada de la app legacy del ciclo de vida del proyecto/bucket.
 
 ## Paridad con el catálogo legado
 
@@ -49,8 +51,15 @@
 | Etapas de preparación y seguimiento del pedido | Completar y mostrar el ciclo en Negocio y Buyer; distinguir la preparación básica ya existente de todo el ciclo. | AG-04 |
 | Importación/corrección por CSV | Crear flujo seguro de altas y corrección de fichas incompletas. | AG-05 |
 | Gestores de venta y comisiones | Esperar reglas comerciales del usuario; depende del historial de movimientos. | AG-06 |
+| Precios en CUP | El endpoint de referencia está desplegado, pero la tasa sigue en `null`; requiere decisión/fuente de tasa. | AG-01 |
+| Contacto y pedido por WhatsApp | Enlaces por tienda implementados; falta recorrerlos en una compra real de punta a punta. | AG-11 |
+| Favoritos | Buyer los guarda localmente en el dispositivo; no hay sincronización con cuenta entre dispositivos. Confirmar si el legado ofrecía persistencia de cuenta antes de ampliar. | paridad por confirmar |
+| Comparador de productos | El endpoint de comparación existe; faltan las pantallas en Catálogo y Tienda. | AG-17 |
+| Páginas de marcas y novedades | 14 marcas en el origen; entidad/páginas no migradas. | AG-18 |
+| Avisos de pedido con reintentos | El legado tenía outbox transaccional; falta bandeja buyer y reintentos. | AG-19 |
+| Devoluciones parciales | Falta flujo y permisos desde Negocio y Tienda. | AG-20 |
 | Un solo sistema de venta | Resolver relación entre la plataforma nueva y el legado activo antes de corte. | AG-08 |
-| Imágenes | Decisión aplicada: mantener las URL HTTPS de Supabase; no copiar los archivos al VPS. | AG-09 fuera del alcance activo |
+| Imágenes | Decisión aplicada: mantener las URL HTTPS de Supabase; conservar el bucket mientras esas URL estén en uso. | decisión de corte F8 |
 
 ## Próximos pasos
 
@@ -58,8 +67,8 @@
 2. Resolver copia cifrada y restore de producción (AG-02).
 3. Fijar la tasa CUP desde una fuente acordada; después verificar visualización y condiciones de cobro (AG-01).
 4. Ejecutar una compra real controlada y documentar resultado/rollback (AG-11).
-5. Avanzar paridad por tareas AG-03–AG-06; mantener revisión cruzada para cambios de negocio/producción.
-6. Decidir cuándo congelar o sincronizar el legado y aprobar el go/no-go de corte (AG-08).
+5. Avanzar paridad por tareas AG-03–AG-06 y AG-17–AG-20; mantener revisión cruzada para cambios de negocio/producción.
+6. Decidir cuándo congelar o sincronizar el legado y aprobar el go/no-go de corte (AG-08), preservando el bucket de Supabase mientras se consuman sus fotos.
 
 ## Fuentes y alcance de esta revisión
 
