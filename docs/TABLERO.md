@@ -58,7 +58,7 @@ Estados: `pendiente` · `en curso` · `bloqueada` · `hecha · revisión pendien
 | AG-13 | P1 | Inspección visual clara/oscura de Buyer, Business y Catálogo (antes OC-09) | codex | — | Gates locales ya pasan. |
 | AG-14 | P1 | Builds nativos Android/iOS y TalkBack | codex | Espacio en disco y dispositivos | — |
 | AG-17 | P2 | Comparador de productos (el legado tenía `/comparar`) en Catálogo y Tienda | codex (hecha · revisión pendiente, 18 nov 2026) | API `/store/catalog-comparison` existente | Implementado en Catálogo web y Buyer; CI #128 (`44196983180`, `112a072`) verde. Falta revisión cruzada de Claude; gateway público requiere publicación/reinicio autorizado para llegar a usuarios. |
-| AG-18 | P2 | Páginas de marcas y de novedades (legado: `/marcas/[marca]`, `/novedades`) | sin asignar | — | 14 marcas en el origen; las marcas no se migraron como entidad. |
+| AG-18 | P2 | Páginas de marcas y de novedades (legado: `/marcas/[marca]`, `/novedades`) | sin asignar | — | Revisión de solo lectura de Supabase el 18 nov: existen 14 marcas, pero los 33 productos publicados tienen `brand_id` nulo; 32 conservan `activated_at`. No inferir asociaciones por nombre. Antes de replicar marcas hay que definir cómo asociar productos; Novedades debe preservar fecha de activación, no usar la fecha de importación de Medusa. Evidencia en `docs/CODEX_HANDOFF.md`. |
 | AG-19 | P1 | Avisos al cliente con reintentos (outbox) y bandeja «Mis pedidos» | sin asignar | AG-04 | El legado tenía outbox transaccional y supervisión. |
 | AG-20 | P2 | Devoluciones parciales desde Negocio y Tienda | sin asignar | AG-11 | Medusa las soporta; faltan pantallas y permisos. |
 

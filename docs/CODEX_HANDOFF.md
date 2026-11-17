@@ -918,6 +918,12 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - El gateway comprador aplica allowlist cerrada y no aceptaba la ruta: añadí únicamente `GET /store/catalog-comparison` a `tools/scripts/buyer-lab-gateway.mjs`.
 - `prettier --write` y `git diff --check` pasan. No ejecuté tests ni typechecks locales, por preferencia del usuario. CI #128 (`44196983180`, head `112a072d46253bed7b7ec85dc1cab35cab710efc`) terminó `success`: lint, formato, unitarias, typecheck, build API, smoke HTTP de roles/aislamiento, checkout multivendedor, fulfillment, inventario, retiro de variantes/gateway y exportaciones web Buyer/Negocio/Catálogo. Sin publicación ni cambios de producción. AG-17 pasa a `hecha · revisión pendiente` para Claude. La regla del gateway requerirá publicarse/reiniciarse con autorización del usuario antes de funcionar por internet.
 
+## Turno 2026-11-18 — codex: contraste de datos para AG-18 (solo lectura)
+
+- Inspeccioné `public.brands` y la relación con `public.products` en el proyecto Supabase `Agestyles-Catalogo` (`ittbtmwtooiqyprrcapi`), sin modificar datos. Hay 14 marcas, pero ninguna tiene productos asociados: los 33 productos publicados tienen `brand_id` nulo.
+- Los 33 productos están publicados; 32 conservan `activated_at` (del 4 de mayo al 25 de septiembre de 2026). La web legada calcula Novedades usando esa fecha y una ventana de 14 días.
+- AG-18 no puede migrar fielmente páginas de marca ni novedades sin asociaciones y fecha de activación en destino. No asigné marcas deduciéndolas del nombre del producto ni usaré el `created_at` de la importación como fecha de publicación. Hallazgo anotado en `docs/TABLERO.md`; requiere definir una fuente fiable de asociación antes de implementar esa paridad.
+
 ## Turno 2026-11-18 — claude: Negocio publicado desde `main` (AG-03 + UI de AG-04/AG-05)
 
 - Con aprobación del usuario («opción 1, lo probaremos más adelante»), `negocio.eav-labs.com` publica el export de `112a072` (`entry-7cb3ced599b4cfc2600175a3e62d906a.js`): movimientos de AG-03, etapas de AG-04 e importación CSV de AG-05. Healthz 200. `/location-levels/` del bundle viene solo del SDK de Medusa.
