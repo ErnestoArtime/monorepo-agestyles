@@ -443,13 +443,6 @@ select {
   font-size: 8px;
   letter-spacing: 0.1em;
 }
-.heart {
-  position: absolute;
-  right: 12px;
-  top: 9px;
-  color: #1c1c1c;
-  font-size: 21px;
-}
 .product-meta {
   display: flex;
   justify-content: space-between;
@@ -960,10 +953,6 @@ select {
     font-size: 7px;
     padding: 6px;
   }
-  .heart {
-    right: 8px;
-    top: 6px;
-  }
   .product-meta {
     font-size: 7px;
     margin: 11px 0 6px;
@@ -1316,13 +1305,11 @@ select:focus-visible {
     color: #a5a49f;
   }
 
-  .product-tag,
-  .product-card .heart {
+  .product-tag {
     background: #242626;
     color: var(--ink);
   }
 
-  .heart,
   .product-foot a span {
     color: var(--ink);
   }

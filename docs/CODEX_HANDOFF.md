@@ -537,3 +537,7 @@ En el árbol de trabajo vigente: `corepack pnpm test` → 8/8 targets (8 en cach
 ## Color predeterminado del paquete de iconos — 17 de noviembre de 2026, 08:51 UTC
 
 Se eliminó el `#171717` fijo de la entrada nativa de `@agestyles/icons`: los iconos que no reciben `color` ahora usan `colors.light.text` o `colors.dark.text` según `useColorScheme()`. La entrada web continúa heredando `currentColor`. Se añadió `@agestyles/design-tokens` como dependencia workspace y se corrigió la auditoría, que también declaraba pendientes obsoletos para iconos y la banda APK. Verificado localmente: typecheck completo 12/12; typecheck propio de icons; ESLint/Prettier dirigidos; `pnpm install --lockfile-only --offline` deja el lockfile actualizado. CI del commit `09b5ed2` [run 44050404722](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44050404722) terminó success: lint, formato, tests, typecheck, build aislado de Medusa, exports web Buyer/Business y build Next. No hay revisión visual en dispositivo.
+
+## Tarjetas de catálogo sin falso control de favoritos — 17 de noviembre de 2026
+
+Se retiró el corazón decorativo de `product-explorer`: era parte del enlace de producto, no ejecutaba favoritos y podía sugerir una acción inexistente. También se quitaron sus reglas CSS claras/oscuras. El resto de controles de favoritos auténticos en las apps no se modificó. Validación: typecheck de storefront PASS; ESLint dirigido PASS; Prettier en TSX/CSS/docs PASS; `git diff --check` PASS. Falta CI de este commit; no se publicó la interfaz.

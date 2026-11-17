@@ -127,9 +127,6 @@ export function ProductExplorer({
                     <div className="image-placeholder">AGESTYLES</div>
                   )}
                   {index < 2 && <span className="product-tag">DESTACADO</span>}
-                  <span className="heart" aria-hidden="true">
-                    <Icon name="heart" size={19} />
-                  </span>
                 </Link>
                 <div className="product-meta">
                   <span>{product.categories?.[0]?.name || "AGESTYLES SELECTION"}</span>
