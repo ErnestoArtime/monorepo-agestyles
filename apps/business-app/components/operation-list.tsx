@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { Icon } from "@agestyles/icons";
 import { useBusinessTheme, type BusinessTheme } from "../hooks/use-business-theme";
+export { hasPermission } from "../lib/permissions";
 
 export function OperationList({
   title,
@@ -115,17 +116,6 @@ export function Section({ title, children }: { title: string; children: ReactNod
       <View style={styles.sectionBody}>{children}</View>
     </View>
   );
-}
-
-export function hasPermission(
-  member: { is_owner?: boolean; permissions?: Record<string, string> } | null,
-  resource: string,
-  minimum: "view" | "edit" = "view",
-) {
-  if (member?.is_owner) return true;
-  const value = member?.permissions?.[resource];
-  if (minimum === "view") return value === "view" || value === "edit" || value === "manage";
-  return value === "edit" || value === "manage";
 }
 
 const createStyles = (theme: BusinessTheme) =>

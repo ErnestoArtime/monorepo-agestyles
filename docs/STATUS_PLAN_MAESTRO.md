@@ -237,3 +237,8 @@ Consulta read-only actual del proyecto `Agestyles-Catalogo`: 80 migraciones apli
 ## Smoke aislado de la ruta tracking — 17 de noviembre de 2026, 11:48 UTC
 
 CI [run 44078209194](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44078209194) terminó success. El API en imagen de CI responde `/health` 200; `GET /store/orders/order_ci_synthetic/tracking` sin publishable key se rechaza con 400 en la capa Store. El test del handler cubre además sin customer 401, customer ajeno 404 y lectura del propietario. Esto verifica compilación/ruta en runtime desechable; el API actualmente publicado sigue sin probarse/actualizarse, y BOLA real queda pendiente.
+
+## Matriz seller en HTTP aislado y retiro de variantes — 17 de noviembre de 2026
+
+- **F1/F5/F7:** CI [run 44081670026](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44081670026), commit `f30af7b`, terminó success. En PostgreSQL/Redis efímeros, el job ejecutó la matriz HTTP de propietario, gestor, solo lectura, cambio de tienda y denegaciones entre dos propietarios y cuatro tiendas, usando el seed/fixtures del laboratorio. El job descarta esos servicios al terminar; esto no prueba el VPS.
+- **F5, avance local siguiente:** `business-app` permite al rol con `products.manage` enviar una solicitud de retiro de variante al endpoint DELETE soportado por Mercur 2.4.1. La confirmación deja claro que la variante sigue disponible hasta aprobación. `tools/scripts/seller-lab-gateway.mjs` autoriza solo el DELETE de `/vendor/products/{id}/variants/{variant_id}`; CI añadirá comprobación del preflight DELETE y rechazo POST. Tests y typecheck local pasan; esta pantalla/gateway aún esperan CI remoto. No se publicó el web ni se modificó el VPS.

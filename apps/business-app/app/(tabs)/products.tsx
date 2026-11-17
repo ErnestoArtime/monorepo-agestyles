@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Icon } from "@agestyles/icons";
 import { useBusiness } from "../../context/business-context";
 import { hasPermission, OperationList, Row, Section } from "../../components/operation-list";
 import { useBusinessTheme } from "../../hooks/use-business-theme";
@@ -45,6 +46,7 @@ export default function ProductsScreen() {
   const [variantTitle, setVariantTitle] = useState("");
   const [variantSku, setVariantSku] = useState("");
   const [savingVariantId, setSavingVariantId] = useState<string | null>(null);
+  const [deletingVariantId, setDeletingVariantId] = useState<string | null>(null);
   const [addingVariantProductId, setAddingVariantProductId] = useState<string | null>(null);
   const [loadingVariantOptionsFor, setLoadingVariantOptionsFor] = useState<string | null>(null);
   const [savingNewVariantFor, setSavingNewVariantFor] = useState<string | null>(null);
@@ -56,6 +58,7 @@ export default function ProductsScreen() {
     Record<string, SellerVariant[]>
   >({});
   const canEdit = hasPermission(member, "products", "edit");
+  const canManageProducts = hasPermission(member, "products", "manage");
 
   const load = useCallback(async () => {
     if (!seller) return;
@@ -187,6 +190,45 @@ export default function ProductsScreen() {
     } finally {
       setSavingVariantId(null);
     }
+  }
+
+  function confirmVariantRemoval(item: SellerProduct, variant: SellerVariant) {
+    if (!canManageProducts || deletingVariantId) return;
+    Alert.alert(
+      "Retirar variante",
+      `Se enviará a revisión la solicitud para retirar “${variant.title ?? "esta variante"}”. Seguirá disponible hasta que AgeStyles apruebe el cambio.`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Enviar solicitud",
+          style: "destructive",
+          onPress: () => {
+            setDeletingVariantId(variant.id);
+            setError("");
+            setNotice("");
+            void request<ProductChangeResponse>(
+              `/vendor/products/${item.id}/variants/${variant.id}`,
+              "DELETE",
+            )
+              .then((result) => {
+                setNotice(
+                  result?.product_change?.id
+                    ? "Solicitud enviada a AgeStyles para revisión. La variante actual sigue disponible hasta su aprobación."
+                    : "La solicitud para retirar la variante se envió para revisión.",
+                );
+              })
+              .catch((cause) =>
+                setError(
+                  cause instanceof Error
+                    ? cause.message
+                    : "No se pudo solicitar el retiro de la variante.",
+                ),
+              )
+              .finally(() => setDeletingVariantId(null));
+          },
+        },
+      ],
+    );
   }
 
   async function beginAddVariant(item: SellerProduct) {
@@ -378,6 +420,25 @@ export default function ProductsScreen() {
                               ]}
                             >
                               <Text style={styles.variantActionText}>Editar</Text>
+                            </Pressable>
+                          ) : null}
+                          {canManageProducts ? (
+                            <Pressable
+                              onPress={() => confirmVariantRemoval(item, variant)}
+                              disabled={deletingVariantId === variant.id}
+                              accessibilityRole="button"
+                              accessibilityLabel={`Solicitar retiro de variante ${variant.title ?? ""}`}
+                              accessibilityHint="AgeStyles debe aprobar el cambio antes de retirar la variante del catálogo."
+                              style={({ pressed }) => [
+                                styles.variantAction,
+                                pressed && styles.pressed,
+                                deletingVariantId === variant.id && styles.disabled,
+                              ]}
+                            >
+                              <Icon name="trash" color={theme.error} size={20} />
+                              <Text style={styles.dangerActionText}>
+                                {deletingVariantId === variant.id ? "Enviando…" : "Retirar"}
+                              </Text>
                             </Pressable>
                           ) : null}
                         </View>
@@ -592,14 +653,17 @@ const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
     variantAction: {
       minHeight: 40,
       minWidth: 60,
+      flexDirection: "row",
       justifyContent: "center",
       alignItems: "center",
+      gap: 6,
       borderRadius: 10,
       borderWidth: 1,
       borderColor: theme.border,
       paddingHorizontal: 12,
     },
     variantActionText: { color: theme.action, fontSize: 13, fontWeight: "600" },
+    dangerActionText: { color: theme.error, fontSize: 13, fontWeight: "600" },
     variantEditor: { flex: 1, gap: 9, paddingVertical: 14 },
     addVariantArea: { paddingHorizontal: 15, paddingBottom: 14 },
     addVariantButton: {

@@ -209,6 +209,37 @@ jobs:
           AGESTYLES_LAB_SEEDED_PASSWORD: ci_lab_password_0123456789
         run: node apps/commerce-api/scripts/verify-seller-roles.mjs
 
+      - name: Verify seller gateway only permits the variant-removal preflight
+        run: |
+          set -euo pipefail
+          node tools/scripts/seller-lab-gateway.mjs >/tmp/agestyles-seller-gateway-ci.log 2>&1 &
+          gateway_pid=$!
+          trap 'kill "${gateway_pid}" 2>/dev/null || true; wait "${gateway_pid}" 2>/dev/null || true' EXIT
+          ready_status="000"
+          for attempt in $(seq 1 20); do
+            ready_status="$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:19183/healthz || true)"
+            if [[ "${ready_status}" == "200" ]]; then break; fi
+            sleep 1
+          done
+          if [[ "${ready_status}" != "200" ]]; then
+            cat /tmp/agestyles-seller-gateway-ci.log
+            echo "Seller gateway did not become ready." >&2
+            exit 1
+          fi
+          delete_status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            --request OPTIONS http://127.0.0.1:19183/agestyles-seller/vendor/products/prod_ci_1/variants/variant_ci_1 \
+            --header 'Origin: https://negocio.eav-labs.com' \
+            --header 'Access-Control-Request-Method: DELETE')"
+          post_status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            --request OPTIONS http://127.0.0.1:19183/agestyles-seller/vendor/products/prod_ci_1/variants/variant_ci_1 \
+            --header 'Origin: https://negocio.eav-labs.com' \
+            --header 'Access-Control-Request-Method: POST')"
+          if [[ "${delete_status}" != "204" || "${post_status}" != "403" ]]; then
+            echo "Expected variant DELETE preflight 204 and unsupported POST 403; got ${delete_status}/${post_status}." >&2
+            cat /tmp/agestyles-seller-gateway-ci.log
+            exit 1
+          fi
+
       - name: Stop disposable Commerce API smoke test
         if: always()
         run: docker rm --force agestyles-commerce-api-ci || true
