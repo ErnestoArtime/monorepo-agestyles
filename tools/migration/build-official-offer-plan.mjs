@@ -27,7 +27,7 @@ function variantLabel(key) {
 const [bundlePath, stockPath, outPath, ...rest] = process.argv.slice(2)
 if (!bundlePath || !stockPath || !outPath) {
   fail(
-    "usage: node tools/migration/build-official-offer-plan.mjs <bundle> <stock.json> <out.json> [--exclude-code <code>]... [--delivery-usd <amount>]",
+    "usage: node tools/migration/build-official-offer-plan.mjs <bundle> <availability.json> <out.json> [--exclude-code <code>]... [--delivery-usd <amount>]",
   )
 }
 const excludedCodes = new Set()
@@ -40,18 +40,24 @@ for (let i = 0; i < rest.length; i += 2) {
 if (!(deliveryUsd >= 0)) fail("delivery_usd_invalid")
 
 const products = readJson(join(bundlePath, "products.json"))
-const stockRows = readJson(stockPath).stock
-if (!Array.isArray(stockRows)) fail("stock_snapshot_invalid")
+// Availability snapshot with the legacy rule: when a product has rows in
+// product_variant_stock their sum wins; otherwise products.stock applies.
+const availability = readJson(stockPath).products
+if (!Array.isArray(availability)) fail("availability_snapshot_invalid")
 
-const stockByProduct = new Map()
-for (const row of stockRows) {
-  const list = stockByProduct.get(row.product_id) ?? []
-  list.push({
-    key: String(row.variant_key),
-    stock: Math.max(0, Math.trunc(Number(row.stock) || 0)),
-  })
-  stockByProduct.set(row.product_id, list)
-}
+const availabilityByProduct = new Map(
+  availability.map((item) => [
+    item.product_id,
+    {
+      source: item.source,
+      units: Math.max(0, Math.trunc(Number(item.units) || 0)),
+      rows: (item.rows ?? []).map(([key, stock]) => ({
+        key: String(key),
+        stock: Math.max(0, Math.trunc(Number(stock) || 0)),
+      })),
+    },
+  ]),
+)
 
 const offers = []
 const excluded = []
@@ -72,7 +78,23 @@ for (const { legacy_id: legacyId, payload } of products) {
     excluded.push({ ...base, reason: "price_not_positive_usd", usd })
     continue
   }
-  const rows = stockByProduct.get(productUuid) ?? []
+  const item = availabilityByProduct.get(productUuid)
+  if (!item) {
+    excluded.push({ ...base, reason: "missing_from_availability_snapshot", usd })
+    continue
+  }
+  if (item.source === "product") {
+    offers.push({
+      ...base,
+      usd,
+      stock: item.units,
+      legacy_variant_key: DEFAULT_KEY,
+      option_title: null,
+      variant_label: null,
+    })
+    continue
+  }
+  const rows = item.rows
   const sized = rows.filter((row) => row.key !== DEFAULT_KEY && row.stock > 0)
   if (sized.length > 1) {
     excluded.push({ ...base, reason: "multiple_sized_balances_need_variants", usd })

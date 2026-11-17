@@ -758,3 +758,19 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - `apps/commerce-api/src/scripts/publish-official-catalog.ts` (idempotente, dry-run por defecto) se ejecutó montado en la imagen `a078cf4`: 31 productos con oferta vinculados a `Default Sales Channel` (antes 0 productos tenían canal) y publicados; 5 categorías activadas (las usadas y sus padres). Los 2 productos sin oferta (0 USD y código 1031) y las 14 categorías vacías siguen ocultos.
 - Verificación por la Store API de producción (`127.0.0.1:19085`, clave publicable sin imprimir): región `Cuba/usd`, `/store/products` devuelve 31 productos y los 31 tienen `calculated_price` en USD; `/store/product-categories` lista Suplementos vitamínicos; Ropa, calzado y accesorios; Ferretería; Calzado; Electricidad.
 - No se cambió el origen de las webs públicas: `catalogo.eav-labs.com`, Buyer y Business siguen usando la API del laboratorio. Para exponer producción falta túnel/HTTPS, CORS y la clave publicable en sus builds. Siguen abiertos CUP, backup cifrado/restore y UAT.
+
+## Webs públicas conectadas a la API de producción — 17 de noviembre de 2026, 21:45 UTC
+
+- API pública única: `https://agestyles-api.eav-labs.com` → túnel Cloudflare compartido → `buyer-gateway` de producción (`127.0.0.1:19186`, sin prefijo) → API `19085`. El usuario añadió el hostname en el panel del túnel (CNAME protegido) y guardó una copia privada de la configuración anterior.
+- Verificación HTTPS (resolviendo vía 1.1.1.1/8.8.8.8): `/store/regions` 200, `/store/products` 31 productos, preflight CORS desde `tienda.eav-labs.com` 204 con `access-control-allow-origin`, `/admin/*` y `/vendor/*` 404, origen ajeno 403.
+- Copias de `.env.storefront-web` y `.env.buyer-web` en `~/.local/share/agestyles-deploy/env-backups-20261117` (600). Ambos apuntan ahora a `https://agestyles-api.eav-labs.com` con la clave publicable de producción.
+- `tienda.eav-labs.com`: exportación Expo nueva (`entry-2e63090358a896c8432ba58112ba3e54.js`) desplegada; el bundle contiene la URL de producción y ninguna referencia al laboratorio. Healthz local 200. Sin recorrido visual en navegador.
+- `catalogo.eav-labs.com`: configuración cambiada; el reinicio espera a que los resolvedores del proveedor del VPS (195.179.224.53, 209.126.15.53) caduquen la respuesta negativa cacheada (SOA mínimo 1800 s).
+- Hallazgo previo: el gateway del laboratorio (`descargas.eav-labs.com/agestyles-lab`) devolvía 502 porque reenvía a `19081` y la API del laboratorio escucha en `19080`.
+- Pendiente: el aviso de portada de Buyer aún dice que catálogo y pedidos son de prueba; el enlace APK sigue apuntando al APK de laboratorio; Negocio no está conectado a producción, así que la tienda oficial no puede gestionar pedidos desde la app todavía.
+
+## Corrección de stock migrado — 17 de noviembre de 2026, 22:30 UTC
+
+- Síntoma: en `tienda.eav-labs.com` casi todas las fichas salían «Agotado». Causa: el plan de ofertas solo leyó `product_variant_stock`; el legado calcula disponibilidad con la suma de esas filas cuando existen y, si no hay filas, con `products.stock`. Trece productos (1001–1013) tenían 1 unidad en `products.stock` y quedaron con 0.
+- `build-official-offer-plan.mjs` ahora recibe un snapshot de disponibilidad con esa regla (`~/.local/share/agestyles-migrations/legacy-availability-2026-11-17.json`, lectura anon). Las reservas activas del legado no son legibles con la clave anon; se usaron unidades físicas.
+- `setup-official-commerce.ts` informa diferencias de stock de ofertas existentes y solo las reescribe con `AGESTYLES_OFFICIAL_SYNC_STOCK=true`. Con 0 pedidos y 0 reservas en producción se aplicaron 13 cambios 0→1. Store API: 31 ofertas, 15 `in_stock` (1001–1013, 1015, 1018), 26 unidades.

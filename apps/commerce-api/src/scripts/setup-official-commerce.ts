@@ -8,6 +8,7 @@ import {
   createTaxRegionsWorkflow,
   linkSalesChannelsToApiKeyWorkflow,
   linkSalesChannelsToStockLocationWorkflow,
+  updateInventoryLevelsWorkflow,
   updateStoresWorkflow,
 } from "@medusajs/medusa/core-flows";
 import {
@@ -176,6 +177,64 @@ export default async function setupOfficialCommerce({ container }: ExecArgs) {
   report.offers_existing = plan.offers.length - pendingOffers.length;
   report.offers_to_create = pendingOffers.length;
   report.stock_units = pendingOffers.reduce((sum, offer) => sum + offer.stock, 0);
+
+  // Stock of offers that already exist. Only rewritten with AGESTYLES_OFFICIAL_SYNC_STOCK=true,
+  // because it replaces whatever the store recorded since the previous run.
+  const syncStock = process.env.AGESTYLES_OFFICIAL_SYNC_STOCK === "true";
+  const { data: officialLocations } = await query.graph({
+    entity: "stock_location",
+    fields: ["id"],
+    filters: { name: plan.location.name },
+  });
+  const officialLocationId = (officialLocations[0] as { id: string } | undefined)?.id;
+  const stockUpdates: {
+    code: string;
+    from: number;
+    inventory_item_id: string;
+    location_id: string;
+    stocked_quantity: number;
+  }[] = [];
+  const existingPlanned = plan.offers.filter((offer) =>
+    existingSkus.has(offerSku(offer.legacy_code)),
+  );
+  if (officialLocationId && existingPlanned.length) {
+    const { data: items } = await query.graph({
+      entity: "inventory_item",
+      fields: ["id", "sku", "location_levels.location_id", "location_levels.stocked_quantity"],
+      filters: { sku: existingPlanned.map((offer) => offerSku(offer.legacy_code)) },
+    });
+    const bySku = new Map(
+      (
+        items as {
+          id: string;
+          sku: string;
+          location_levels?: { location_id: string; stocked_quantity: number }[];
+        }[]
+      ).map((item) => [item.sku, item]),
+    );
+    for (const offer of existingPlanned) {
+      const item = bySku.get(offerSku(offer.legacy_code));
+      const level = item?.location_levels?.find(
+        (candidate) => candidate.location_id === officialLocationId,
+      );
+      if (!item || !level) {
+        throw new Error(`La oferta ${offer.legacy_code} no tiene stock en la ubicación oficial.`);
+      }
+      const current = Number(level.stocked_quantity);
+      if (current !== offer.stock) {
+        stockUpdates.push({
+          code: offer.legacy_code,
+          from: current,
+          inventory_item_id: item.id,
+          location_id: officialLocationId,
+          stocked_quantity: offer.stock,
+        });
+      }
+    }
+  }
+  report.stock_differences = stockUpdates.map(
+    (update) => `${update.code}:${update.from}->${update.stocked_quantity}`,
+  );
 
   if (!apply) {
     report.store_currencies = store.supported_currencies?.map((currency) => currency.currency_code);
@@ -429,6 +488,19 @@ export default async function setupOfficialCommerce({ container }: ExecArgs) {
       },
     });
   }
+  // 8. Align existing offers' stock with the plan when explicitly requested.
+  if (syncStock && stockUpdates.length) {
+    await updateInventoryLevelsWorkflow(container).run({
+      input: {
+        updates: stockUpdates.map(({ inventory_item_id, location_id, stocked_quantity }) => ({
+          inventory_item_id,
+          location_id,
+          stocked_quantity,
+        })),
+      },
+    });
+  }
+  report.stock_synced = syncStock ? stockUpdates.length : 0;
   report.region_id = region.id;
   report.stock_location_id = locationId;
   report.shipping_options_created = missingShipping.map((option) => option.name);
