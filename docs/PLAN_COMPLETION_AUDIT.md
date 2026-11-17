@@ -180,3 +180,7 @@ El proyecto fuente continúa con 80 migraciones aplicadas hasta `20261116061921`
 ## Smoke runtime de tracking — 17 de noviembre de 2026, 11:48 UTC
 
 CI [run 44078209194](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44078209194) terminó success con build no publicado, migraciones/health de API sobre servicios desechables y exports web. El request de tracking sin `x-publishable-api-key` recibe 400 del middleware Store; el test de handler separado cubre 401 sin sesión, 404 para pedido ajeno y la proyección del dueño. Es evidencia de ruta/imagen en CI, no del VPS ni de una compra autenticada runtime. La ruta publicada continúa pendiente de despliegue y validación.
+
+## Avance F5 — Preparación de pedidos seller — 17 de noviembre de 2026, 13:56 UTC
+
+Business permite consultar detalle/cantidades pendientes y preparar el fulfillment con una ubicación de la tienda activa. La extensión AgeStyles reutiliza el workflow de Mercur y valida `orders:edit`, el vínculo seller-pedido, el vínculo seller-ubicación y las cantidades restantes en servidor. Verificadores CI cubren owner, gestor de inventario, solo lectura, tienda/ubicación ajenas y repetición. Gates locales pasan (typecheck 12/12, tests 8/8, lint sin errores, formato). F5 permanece en curso: CI remoto, despliegue y validación visual/nativa siguen pendientes.

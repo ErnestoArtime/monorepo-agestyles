@@ -676,3 +676,11 @@ Gates: test 8/8, typecheck 12/12, lint 0 errores/19 advertencias, Prettier y `gi
 ## F4 — Revalidación pública del catálogo Buyer — 17 de noviembre de 2026
 
 Desde el origen `https://tienda.eav-labs.com`, el gateway público `https://descargas.eav-labs.com/agestyles-lab` respondió CORS OPTIONS 204 con el origen exacto y permite `x-medusa-locale`/`x-publishable-api-key`. GET regiones 200/1, GET productos 200/12; la respuesta real incluye `Access-Control-Allow-Origin` correcto y las 12 miniaturas respondieron HEAD 200. La clave publishable se leyó en memoria y no se imprimió. El catálogo/API/gateway tienen respuesta; esto no prueba qué URL/API quedó embebida en la APK instalada ni que el render nativo muestre las respuestas.
+
+## F5 — Preparación de pedidos seller en Business — 17 de noviembre de 2026, 13:56 UTC
+
+Se añadió detalle/preparación de pedido en `apps/business-app/app/(tabs)/orders.tsx`: cantidades pendientes, selección de ubicación de la tienda y acción de preparar fulfillment solo con `orders:edit`.
+
+El endpoint `POST /vendor/agestyles/orders/:id/fulfillments` reutiliza `createOrderFulfillmentWorkflow` de Mercur y valida en servidor el permiso resuelto por Mercur, el vínculo `order_seller`, el vínculo `stock_location_seller`, las líneas del pedido y las cantidades aún no preparadas. El gateway seller permite solo esa ruta, el detalle de pedido GET y stock-locations GET; el endpoint estándar de fulfillment Mercur no se expone al gateway.
+
+Los verificadores de CI protegidos para PostgreSQL/Redis desechables cubren fulfillment A2, denegación por tienda/ubicación B2, repetición, propietario, gestor de inventario y solo lectura. Gates locales: typecheck 12/12, tests 8/8, lint 0 errores/19 advertencias, formato y `git diff --check` PASS. CI remoto pendiente; no se desplegó ni se escribió en el laboratorio compartido.

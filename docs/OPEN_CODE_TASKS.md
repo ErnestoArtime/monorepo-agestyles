@@ -137,6 +137,7 @@ El requisito del plan es que comprador, negocio y catálogo web funcionen con te
 - OC-06: probe price-only aislado preparado con guardas y restauración exacta; no ejecutado.
 - OC-07: procedimiento seguro para verificar tracking en datos sintéticos y entornos desechables; no ejecutado.
 - OC-08: 500 de pedidos Kickz acotado por revisión estática; la causa raíz aún requiere captura de stack trace.
+- F5: flujo de preparación de pedidos seller en Business añadido en esta sesión. El endpoint AgeStyles usa el workflow de fulfillment de Mercur, valida permiso `orders:edit`, pertenencia del pedido y de la ubicación, y cantidades restantes. La UI muestra el detalle, las líneas pendientes y las ubicaciones propias. Verificación HTTP de propietario/roles/tiendas añadida a CI; ejecución pendiente del push.
 - A11y buyer: botones de cantidad/eliminación y opciones de pago tienen rol/estado/etiqueta accesible; typecheck pasa. TalkBack aún requiere dispositivo.
 
 ## Trabajo que sigue teniendo dueño en la sesión Codex

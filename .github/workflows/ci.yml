@@ -213,8 +213,16 @@ jobs:
         env:
           EXPO_PUBLIC_MEDUSA_URL: http://127.0.0.1:19081
           AGESTYLES_CI_DISPOSABLE: "true"
+          AGESTYLES_LAB_SEEDED_PASSWORD: ci_lab_password_0123456789
           DATABASE_URL: postgres://agestyles_lab:0123456789abcdef@127.0.0.1:15472/agestyles_mercur_lab
         run: node apps/commerce-api/scripts/verify-mixed-checkout-buyer-ownership.mjs
+
+      - name: Verify seller fulfillment permissions over HTTP
+        env:
+          EXPO_PUBLIC_MEDUSA_URL: http://127.0.0.1:19081
+          AGESTYLES_CI_DISPOSABLE: "true"
+          AGESTYLES_LAB_SEEDED_PASSWORD: ci_lab_password_0123456789
+        run: node apps/commerce-api/scripts/verify-fulfillment-permissions.mjs
 
       - name: Verify variant removal permissions over HTTP on disposable data
         env:
@@ -250,6 +258,23 @@ jobs:
             --header 'Access-Control-Request-Method: POST')"
           if [[ "${delete_status}" != "204" || "${post_status}" != "403" ]]; then
             echo "Expected variant DELETE preflight 204 and unsupported POST 403; got ${delete_status}/${post_status}." >&2
+            cat /tmp/agestyles-seller-gateway-ci.log
+            exit 1
+          fi
+          fulfillment_status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            --request OPTIONS http://127.0.0.1:19183/agestyles-seller/vendor/agestyles/orders/order_ci_1/fulfillments \
+            --header 'Origin: https://negocio.eav-labs.com' \
+            --header 'Access-Control-Request-Method: POST')"
+          locations_status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            --request OPTIONS 'http://127.0.0.1:19183/agestyles-seller/vendor/stock-locations?limit=1' \
+            --header 'Origin: https://negocio.eav-labs.com' \
+            --header 'Access-Control-Request-Method: GET')"
+          upstream_fulfillment_status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            --request OPTIONS http://127.0.0.1:19183/agestyles-seller/vendor/orders/order_ci_1/fulfillments \
+            --header 'Origin: https://negocio.eav-labs.com' \
+            --header 'Access-Control-Request-Method: POST')"
+          if [[ "${fulfillment_status}" != "204" || "${locations_status}" != "204" || "${upstream_fulfillment_status}" != "404" ]]; then
+            echo "Expected custom fulfillment/location preflights 204 and blocked upstream fulfillment route 404; got ${fulfillment_status}/${locations_status}/${upstream_fulfillment_status}." >&2
             cat /tmp/agestyles-seller-gateway-ci.log
             exit 1
           fi
