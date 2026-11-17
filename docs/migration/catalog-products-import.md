@@ -1,7 +1,7 @@
 # Preparación para migrar productos de AgeStyles Catálogo
 
 **Estado:** preparación de alcance y mapeo; no hay exportación ni importación ejecutada.
-**Fuente de esquema:** repositorio `Agestyles-Catalogo`, inspección de código y migraciones, sin leer filas ni conectar a Supabase.
+**Fuente de esquema:** inspección del repositorio y lectura de metadatos de esquema/migraciones de Supabase `Agestyles-Catalogo`; no se leyeron filas de productos, usuarios ni otros datos.
 **Contrato de staging:** `agestyles.stage-interchange` v1, validación local en modo dry-run.
 
 Este documento concreta la primera migración de catálogo. La prioridad es llevar productos, variantes y medios al laboratorio aislado de AgeStyles; pedidos, clientes, pagos e identidades quedan fuera.
@@ -34,6 +34,10 @@ La publicación se deriva de `publication_status`, pero los estados `pending`, `
 - Emitir informes con conteos y códigos de error, nunca filas, nombres, URLs privadas, identificadores o contenido completo de productos.
 
 El validador actual comprueba estructura, hashes y referencias básicas del bundle; no verifica reglas semánticas de este mapeo ni realiza escrituras. La siguiente pieza de implementación será un adaptador de exportación saneado → staging, con pruebas de fixtures sintéticos antes de conectar un importador.
+
+## Corte de esquema de referencia
+
+La lectura de metadatos del 17 nov 2026 confirmó en la fuente 33 productos, 17 imágenes, 14 marcas, 1 categoría, 10 subcategorías y 19 saldos en `product_variant_stock`. `product_commercial_variants`, `stores` y las tablas de comercios/membresías reportaron cero registros. La tabla `products` ya contiene `currency`, `publication_status`, `store_id`, `specifications`, `variant_options` y `catalog_family_version_id`; por tanto, el exportador debe leer las relaciones/columnas vivas y no asumir que solo existen los campos del baseline antiguo. Estos conteos son metadatos agregados, no una conciliación ni un compromiso de importar todas las filas.
 
 ## Secuencia propuesta
 
