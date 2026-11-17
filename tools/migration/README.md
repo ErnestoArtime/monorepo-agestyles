@@ -1,5 +1,7 @@
 # Dry-run del paquete de migración
 
+El alcance inicial para trasladar el catálogo de productos se describe en [`docs/migration/catalog-products-import.md`](../../docs/migration/catalog-products-import.md). Ese documento es un mapeo y plan, no un permiso ni una herramienta para exportar/importar datos reales.
+
 `validate-stage-bundle.mjs` valida un paquete JSON local del contrato intermedio `agestyles.stage-interchange` v1. Es un formato de transporte AgeStyles para revisar conteos, hashes, duplicados y referencias antes de diseñar/escribir el ETL. **No describe ni presupone el esquema real de `Agestyles-Catalogo` y no importa datos.**
 
 El programa solo lee archivos locales, no carga SDK de Supabase/PostgreSQL, no abre conexiones de red y no tiene modo de escritura. Su salida contiene estado, entidades, cantidades, SHA-256 y códigos de error; nunca imprime IDs ni contenido `payload`. Los hashes detectan discrepancias entre los archivos y su manifiesto, pero no son una firma ni demuestran quién produjo el paquete. No usarlo con PII hasta que el formato de exportación real, el almacenamiento cifrado y la restauración hayan sido aprobados.

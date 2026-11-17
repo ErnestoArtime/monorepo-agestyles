@@ -3,7 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "build:workspace-modules": "pnpm --filter @agestyles/quotations build && pnpm --filter @agestyles/catalog-pim build && pnpm --filter @agestyles/manual-payments build",
+    "build": "pnpm build:workspace-modules && medusa build",
+    "typecheck": "pnpm build:workspace-modules && tsc --noEmit",
     "test": "node test/order-tracking-route.test.mjs",
     "migrate": "medusa db:migrate",
     "start": "medusa start --host 127.0.0.1 --port 19081",

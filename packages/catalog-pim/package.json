@@ -3,13 +3,24 @@
   "version": "0.0.0",
   "private": true,
   "description": "AgeStyles catalog family and version module for Medusa v2",
-  "keywords": ["agestyles", "medusa-module", "pim", "catalog"],
+  "keywords": [
+    "agestyles",
+    "medusa-module",
+    "pim",
+    "catalog"
+  ],
   "medusaModule": true,
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./validation": "./src/validation.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./validation": {
+      "types": "./dist/validation.d.ts",
+      "default": "./dist/validation.js"
+    }
   },
   "dependencies": {
     "@agestyles/domain": "workspace:*"
@@ -19,6 +30,7 @@
     "@mercurjs/types": "2.4.1"
   },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "test": "node test/catalog-pim.test.ts"
   }

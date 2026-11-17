@@ -60,7 +60,7 @@ jobs:
           echo "::add-mask::${DATABASE_URL}"
           echo "::add-mask::${JWT_SECRET}"
           echo "::add-mask::${COOKIE_SECRET}"
-          pnpm --filter @agestyles/commerce-api exec medusa build
+          pnpm --filter @agestyles/commerce-api build
 
       - name: Export buyer app for web
         env:
