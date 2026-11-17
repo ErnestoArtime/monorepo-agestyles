@@ -26,3 +26,14 @@ La carga inicial crea borradores vinculados a la tienda oficial. Con la tienda y
 Para crear la tienda oficial, pasar `AGESTYLES_OFFICIAL_OWNER_EMAIL` y `AGESTYLES_OFFICIAL_OWNER_PASSWORD` mediante un archivo privado de entorno al ejecutar `pnpm exec medusa exec ./src/scripts/create-official-seller.ts` con el servicio `commerce-api`. El comando imprime el ID que se usa como `AGESTYLES_PRODUCTION_OFFICIAL_SELLER_ID`. Si la creación se interrumpe, revisar si el titular o la tienda ya existen y confirmar el estado de aprobación antes de continuar.
 
 Validar el catálogo en la API local antes de cambiar el origen de las webs públicas. El seed de demostración carga vendedores y datos de prueba.
+
+## Gateway público de compradores
+
+El servicio `buyer-gateway` de `infra/compose/commerce-production-data.yaml` reutiliza `tools/scripts/buyer-lab-gateway.mjs` con `GATEWAY_PREFIX=/agestyles`, `GATEWAY_PORT=19186`, `UPSTREAM_PORT=19085` y `ALLOWED_ORIGINS` para `tienda.eav-labs.com` y `catalogo.eav-labs.com`. Expone solo la lista de rutas Store/auth de clientes del gateway; Admin y Vendor responden 404 y orígenes ajenos 403.
+
+```sh
+docker compose --env-file /ruta/privada/compose.env -f infra/compose/commerce-production-data.yaml up -d buyer-gateway
+```
+
+La ruta pública se configura en el túnel Cloudflare compartido (gestionado desde el panel, modo token): `descargas.eav-labs.com`, ruta `^/agestyles/`, servicio `http://127.0.0.1:19186`. Después, `MEDUSA_BACKEND_URL`/`BUYER_WEB_MEDUSA_URL` pasan a `https://descargas.eav-labs.com/agestyles` con la clave publicable de producción.
+
