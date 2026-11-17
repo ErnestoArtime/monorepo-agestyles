@@ -36,15 +36,18 @@ jobs:
             exit 1
           fi
 
-      - name: Validate GHCR owner
+      - name: Resolve GHCR owner
+        id: registry
         env:
           GHCR_OWNER: ${{ vars.AGESTYLES_GHCR_OWNER }}
         run: |
           set -euo pipefail
-          if [[ -z "${GHCR_OWNER}" || ! "${GHCR_OWNER}" =~ ^[a-z0-9][a-z0-9-]*$ ]]; then
-            echo "Set AGESTYLES_GHCR_OWNER to the lowercase GHCR owner." >&2
+          owner="${GHCR_OWNER:-${GITHUB_REPOSITORY_OWNER,,}}"
+          if [[ ! "${owner}" =~ ^[a-z0-9][a-z0-9-]*$ ]]; then
+            echo "AGESTYLES_GHCR_OWNER must be a lowercase GitHub owner." >&2
             exit 1
           fi
+          echo "image=ghcr.io/${owner}/agestyles-commerce-api" >> "${GITHUB_OUTPUT}"
 
       - name: Create disposable build-time configuration
         id: build-env
@@ -78,21 +81,31 @@ jobs:
         run: |
           tag="sha-${GITHUB_SHA}-run-${GITHUB_RUN_ID}-attempt-${GITHUB_RUN_ATTEMPT}"
           echo "value=${tag}" >> "${GITHUB_OUTPUT}"
-          echo "Published API image tag: ${tag}" >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Publish commerce API runtime image
+        id: publish-image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./apps/commerce-api/Dockerfile.public
           push: true
-          tags: ghcr.io/${{ vars.AGESTYLES_GHCR_OWNER }}/agestyles-commerce-api:${{ steps.image-tag.outputs.value }}
+          tags: ${{ steps.registry.outputs.image }}:${{ steps.image-tag.outputs.value }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.title=AgeStyles Commerce API
           secret-files: |
             lab_env=${{ steps.build-env.outputs.path }}
+
+      - name: Record published image
+        env:
+          IMAGE: ${{ steps.registry.outputs.image }}
+          DIGEST: ${{ steps.publish-image.outputs.digest }}
+          TAG: ${{ steps.image-tag.outputs.value }}
+        run: |
+          set -euo pipefail
+          [[ "${DIGEST}" =~ ^sha256:[a-f0-9]{64}$ ]]
+          printf 'Imagen para producción: `%s@%s`\n\nEtiqueta: `%s`\n' "${IMAGE}" "${DIGEST}" "${TAG}" >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Remove disposable build-time configuration
         if: always()
