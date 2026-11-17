@@ -37,3 +37,8 @@ Every AgeStyles interface must support light and dark themes using `@agestyles/d
 ## Spanish user-facing copy
 
 Spanish is the default language for customer, seller, and administration interfaces across web and mobile. Write labels, navigation, empty/loading/error states, accessibility labels, dates, and status names in natural Spanish (`es-ES` formatting unless a locale setting is available). Map API enums and errors to Spanish labels/messages; do not display raw backend error text or unknown enum values. Preserve proper names, trademarks, and product titles; translate descriptive catalog content when its meaning is clear, and do not invent product claims. Keep internal code identifiers, protocol fields, and logs in their established technical language.
+
+## Coordination between agents
+
+Codex, Claude Code and OpenCode work on this repository together toward one goal, stated at the top of `docs/TABLERO.md`. That board is the single source of tasks, owners and progress: take a task there (commit and push the claim before changing code), keep its state current, and close it with the commits and checks that prove it. Append each turn's changes, commands and results to `docs/CODEX_HANDOFF.md`. Codex consolidates `docs/STATUS_PLAN_MAESTRO.md`; other agents propose phase-status changes in the handoff instead of editing it. Do not change files declared by another agent's in-progress task, and leave production, infrastructure, migrated-data or business-rule changes marked for cross-review by the other agent. Production deploys, migrations and data writes need the user's explicit authorization in that session.
+

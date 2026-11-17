@@ -2,6 +2,8 @@
 
 **Propósito:** dejar constancia de lo que modifica la sesión OpenCode para que Codex lo revise antes de dar por cerrada una fase. No sustituye al plan maestro ni al status: los complementa.
 
+**Tareas y estado:** viven en el [tablero único](./TABLERO.md); este archivo es el registro de turnos (solo añadir al final).
+
 **Regla de coordinación:** antes de tocar un archivo, revisar `git status`; después de tocar, registrar aquí el cambio, el comando de verificación y su resultado. Si Codex ya implementó algo, la entrada lo dice y no se duplica.
 
 ---
@@ -780,3 +782,10 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - `catalogo.eav-labs.com` recreado con `.env.storefront-web` apuntando a `https://agestyles-api.eav-labs.com` (clave publicable de producción) cuando el DNS del proveedor del VPS dejó de devolver la respuesta negativa. Healthz 200; la portada pública lista productos de producción en USD y las 5 categorías activas.
 - `negocio.eav-labs.com`: `seller-gateway` de producción en `127.0.0.1:19187` con prefijo `/negocio`; ruta del túnel `agestyles-api.eav-labs.com` + `^/negocio/` añadida por el usuario por encima de la entrada general. Export Expo (`entry-38841f7483ffb4654a37ec296d36d98f.js`) desplegado; recorrido HTTPS externo del titular: login 200, selección de tienda 200, 31 productos.
 - Avisos pendientes de decisión: pie del catálogo «Experiencia beta · Productos y pedidos de prueba» y aviso equivalente en la portada de Tienda. El producto Nike (1015) trae del legado la descripción literal «prueba».
+
+## Turno 2026-11-17 22:00 UTC — claude: tablero único y protocolo de coordinación
+
+- A petición del usuario, Codex, Claude Code y OpenCode comparten ahora una fuente única de tareas y un objetivo: [`docs/TABLERO.md`](./TABLERO.md). `OPEN_CODE_TASKS.md` queda archivado con un enlace al tablero; sus tareas abiertas pasaron a AG-02 y AG-11…AG-14.
+- `AGENTS.md` añade la sección «Coordination between agents» y `CLAUDE.md` importa `AGENTS.md` para que ambos agentes sigan las mismas reglas.
+- Reparto propuesto (pendiente de confirmar por el usuario y Codex): claude → AG-03 movimientos de inventario y AG-06 gestores de venta; codex → AG-04 etapas de preparación y AG-05 importación CSV, además de sus tareas ya asignadas (backup, Kickz, QA, nativo).
+- Revisión cruzada pedida a Codex: todo el trabajo de producción de claude del 17 nov y sus ediciones de `STATUS_PLAN_MAESTRO.md` hechas antes de este protocolo (lista en el tablero).

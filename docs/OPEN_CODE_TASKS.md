@@ -1,5 +1,7 @@
 # Cola de trabajo para OpenCode
 
+> **Archivada el 17 nov 2026.** Las tareas y su estado viven ahora en el [tablero único](./TABLERO.md), compartido por Codex, Claude Code y OpenCode. Las tareas abiertas de esta cola (OC-08, OC-09 y el trabajo con dueño de Codex) pasaron al tablero como AG-02, AG-11 a AG-14. Este archivo se conserva como historial.
+
 Usar esta lista para avanzar el [plan maestro](./AGESTYLES_2_0_PLAN_MAESTRO.md) en paralelo con Codex. Antes de empezar cada tarea, revisar `AGENTS.md`, este archivo, `docs/STATUS_PLAN_MAESTRO.md`, `docs/CODEX_HANDOFF.md` y `git status`. Registrar aquí los archivos modificados, comandos ejecutados y resultados en `docs/CODEX_HANDOFF.md`.
 
 ## Reglas de coordinación
