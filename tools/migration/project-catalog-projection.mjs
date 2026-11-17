@@ -222,6 +222,64 @@ function normalizeProducts(products, categories, media) {
   return { productRows, variantRows }
 }
 
+function countSafeValues(values, allowed) {
+  const counts = Object.fromEntries(allowed.map((value) => [value, 0]))
+  counts.unsupported = 0
+  for (const value of values) {
+    const safeValue = allowed.includes(value) ? value : "unsupported"
+    counts[safeValue] += 1
+  }
+  return counts
+}
+
+function buildReconciliation({ categories, subcategories, products, imageMetadata, staged }) {
+  const explicitVariantCounts = products.map(
+    (product) => parseVariantOptions(product.variant_options).length,
+  )
+  const sourceCounts = {
+    categories: categories.length,
+    subcategories: subcategories.length,
+    products: products.length,
+    image_metadata: imageMetadata.length,
+    products_with_store_id: products.filter(
+      (product) =>
+        product.store_id !== null && product.store_id !== undefined && product.store_id !== "",
+    ).length,
+    products_without_store_id: products.filter(
+      (product) =>
+        product.store_id === null || product.store_id === undefined || product.store_id === "",
+    ).length,
+    products_by_currency: countSafeValues(
+      products.map((product) => String(product.currency ?? "").toUpperCase()),
+      ["USD", "CUP"],
+    ),
+    products_by_publication_status: countSafeValues(
+      products.map((product) => product.publication_status ?? "draft"),
+      ["draft", "published", "archived"],
+    ),
+  }
+  const stagedCounts = {
+    categories: staged.categories,
+    products: staged.products,
+    variants: staged.variants,
+    media_objects: staged.media_objects,
+  }
+  const countMatches = {
+    categories: categories.length + subcategories.length === stagedCounts.categories,
+    products: products.length === stagedCounts.products,
+    variants:
+      explicitVariantCounts.reduce((sum, count) => sum + count, 0) === stagedCounts.variants,
+    media_objects: imageMetadata.length === stagedCounts.media_objects,
+  }
+
+  return {
+    source_counts: sourceCounts,
+    staged_counts: stagedCounts,
+    count_matches: countMatches,
+    counts_match: Object.values(countMatches).every(Boolean),
+  }
+}
+
 /** Convert a sanitized, local catalog projection to a dry-run staging bundle. */
 export async function projectCatalog(inputDir, outputDir, { exportId } = {}) {
   if (typeof exportId !== "string") fail("export_id_required")
@@ -253,6 +311,16 @@ export async function projectCatalog(inputDir, outputDir, { exportId } = {}) {
     ["products", normalizedProducts.productRows],
     ["variants", normalizedProducts.variantRows],
   ])
+  const stagedCounts = Object.fromEntries(
+    [...datasets].map(([entity, records]) => [entity, records.length]),
+  )
+  const reconciliation = buildReconciliation({
+    categories,
+    subcategories,
+    products,
+    imageMetadata,
+    staged: stagedCounts,
+  })
 
   const manifest = {
     format: FORMAT,
@@ -291,6 +359,7 @@ export async function projectCatalog(inputDir, outputDir, { exportId } = {}) {
       records: record_count,
     })),
     total_records: manifest.datasets.reduce((sum, dataset) => sum + dataset.record_count, 0),
+    reconciliation,
   }
 }
 

@@ -74,6 +74,7 @@ test("projects a sanitized synthetic catalog snapshot into a valid dry-run bundl
   const root = await mkdtemp(path.join(os.tmpdir(), "agestyles-catalog-projection-"))
   const input = path.join(root, "projection")
   const output = path.join(root, "bundle")
+  const repeatedOutput = path.join(root, "bundle-repeat")
   await import("node:fs/promises").then(({ mkdir }) => mkdir(input))
   const projection = {
     categories: [{ id: "cat-1", slug: "clothing", name: "Clothing", sort_order: 1 }],
@@ -113,6 +114,27 @@ test("projects a sanitized synthetic catalog snapshot into a valid dry-run bundl
     const result = await projectCatalog(input, output, { exportId: "synthetic-001" })
     assert.equal(result.status, "projected")
     assert.equal(result.total_records, 5)
+    assert.equal(result.reconciliation.counts_match, true)
+    assert.deepEqual(result.reconciliation.staged_counts, {
+      categories: 2,
+      media_objects: 1,
+      products: 1,
+      variants: 1,
+    })
+    assert.deepEqual(result.reconciliation.source_counts.products_by_currency, {
+      USD: 1,
+      CUP: 0,
+      unsupported: 0,
+    })
+    assert.deepEqual(result.reconciliation.source_counts.products_by_publication_status, {
+      draft: 0,
+      published: 1,
+      archived: 0,
+      unsupported: 0,
+    })
+    assert.equal(result.reconciliation.source_counts.products_with_store_id, 1)
+    assert.equal(JSON.stringify(result).includes("prod-1"), false)
+    assert.equal(JSON.stringify(result).includes("must-not-be-copied"), false)
     const summary = await validateStageBundle(output, { profile: "catalog-only" })
     assert.equal(summary.status, "valid")
     const stagedProducts = JSON.parse(await readFile(path.join(output, "products.json"), "utf8"))
@@ -120,6 +142,12 @@ test("projects a sanitized synthetic catalog snapshot into a valid dry-run bundl
     assert.equal(stagedProducts[0].payload.import_visibility, "draft_until_reconciled")
     assert.equal(JSON.stringify(stagedProducts).includes("must-not-be-copied"), false)
     assert.equal(JSON.stringify(stagedProducts).includes("example.invalid"), false)
+    const repeated = await projectCatalog(input, repeatedOutput, { exportId: "synthetic-001" })
+    assert.deepEqual(repeated.reconciliation, result.reconciliation)
+    assert.deepEqual(
+      JSON.parse(await readFile(path.join(repeatedOutput, "manifest.json"), "utf8")),
+      JSON.parse(await readFile(path.join(output, "manifest.json"), "utf8")),
+    )
     const stagedCategories = JSON.parse(
       await readFile(path.join(output, "categories.json"), "utf8"),
     )

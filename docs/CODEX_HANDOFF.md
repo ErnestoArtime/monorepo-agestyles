@@ -555,3 +555,11 @@ La revisión estática de apps encontró dos checks Unicode en el selector de re
 Gates actuales: `corepack pnpm test` → 8/8 targets (7 en caché); `corepack pnpm typecheck` → 12/12 (10 en caché); `corepack pnpm lint` → 0 errores, 20 advertencias preexistentes; `corepack pnpm format:check` → PASS; `git diff --check` → PASS. No se construyó APK ni se publicó.
 
 OC-09 continúa pendiente solo en su aceptación visual: recorrer rutas completas de Buyer, Business y Storefront en temas claro/oscuro en navegador/dispositivo, y validar Android/iOS donde aplique. El host no ofrece navegador automatizable ni dispositivo Android/iOS conectado; no se declara esa revisión completada.
+
+## F6 — Informe agregado de conciliación del proyector — 17 de noviembre de 2026
+
+Se amplió `tools/migration/project-catalog-projection.mjs`: la salida efímera ahora compara conteos entre las cuatro proyecciones fuente y el bundle staging (categorías+subcategorías, productos, variantes y metadatos de medios), informa productos por moneda/estado permitido y cuenta presencia/ausencia de `store_id`. No emite valores desconocidos, IDs, nombres, precios, URLs ni payload; el store ID no se equipara a una asignación seller válida.
+
+La suite de migración agregó una verificación sintética de conciliación y repetibilidad: dos bundles con el mismo export_id/proyección producen manifiestos y hashes iguales. `corepack pnpm migration:test` → 11/11; `corepack pnpm test` → 8/8 targets; `corepack pnpm typecheck` → 12/12; `corepack pnpm lint` → 0 errores/20 advertencias; `corepack pnpm format:check`, Prettier dirigido y `git diff --check` → PASS. No se consultó ni exportó Supabase, no se importó a Medusa y no se ejecutaron builds.
+
+Este avance solo mejora el preflight sintético. F0/F6 reales siguen bloqueadas por destino cifrado y restore, `pg_dump --schema-only` aprobado, y decisiones explícitas de seller, USD/CUP, stock y medios.

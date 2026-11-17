@@ -33,7 +33,7 @@ La publicación se deriva de `publication_status`, pero los estados `pending`, `
 - Usar `legacy_id` estable y un futuro mapa de IDs para reintentos idempotentes. Un producto ya importado no debe crear otro al reejecutar.
 - Emitir informes con conteos y códigos de error, nunca filas, nombres, URLs privadas, identificadores o contenido completo de productos.
 
-El perfil `catalog-only` del validador comprueba estructura, hashes, referencias, moneda/estado permitidos, relación categoría-producto y metadatos de imagen sin URLs de origen. Rechaza entidades fuera del alcance y no escribe. Existe un adaptador local (`tools/migration/project-catalog-projection.mjs`) que convierte proyecciones JSON ya preparadas a `stage-interchange` usando fixtures sintéticos. No consulta Supabase ni exporta filas. Aún no existe un exportador de origen ni un importador a Medusa; el preflight acepta únicamente paquetes de intercambio preparados localmente.
+El perfil `catalog-only` del validador comprueba estructura, hashes, referencias, moneda/estado permitidos, relación categoría-producto y metadatos de imagen sin URLs de origen. Rechaza entidades fuera del alcance y no escribe. Existe un adaptador local (`tools/migration/project-catalog-projection.mjs`) que convierte proyecciones JSON ya preparadas a `stage-interchange` usando fixtures sintéticos. Su salida agrega conteos fuente/staging por entidad, moneda/estado y presencia de `store_id`; una repetición sintética idéntica produce el mismo manifiesto/hash. La salida no contiene IDs ni valores de productos y no valida correspondencia store→seller. No consulta Supabase ni exporta filas. Aún no existe un exportador de origen ni un importador a Medusa; el preflight acepta únicamente paquetes de intercambio preparados localmente.
 
 ## Corte de esquema de referencia
 
@@ -59,4 +59,4 @@ La consulta agregada de una sola sentencia del 17 nov 2026 (09:11 UTC) confirmó
 - Las imágenes necesitan una estrategia de copia/hash y almacenamiento destino.
 - No se han ejecutado backup cifrado/restauración, exportación, preflight con datos reales ni importación.
 
-Hasta cerrar esos puntos, no hay base segura para insertar productos reales ni publicarlos. El siguiente entregable de código debe ser un adaptador de solo exportación/preflight con fixtures sintéticos; no un script que escriba directamente en Medusa.
+Hasta cerrar esos puntos, no hay base segura para insertar productos reales ni publicarlos. El proyector y conciliador sintético son preparación local, no un exportador de Supabase. El siguiente paso de implementación es ampliar el contrato de proyección únicamente después de aprobar el esquema vivo y las decisiones de seller/moneda/stock/medios; el importador a Medusa seguirá fuera de alcance hasta demostrar backup y restore.
