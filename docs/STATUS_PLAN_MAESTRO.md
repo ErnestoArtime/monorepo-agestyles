@@ -216,4 +216,4 @@ El commit `ec0bd17` (`fix: align commerce API publish port`) está en `main`; CI
 
 ## Build de imagen API en CI — 17 de noviembre de 2026, 10:46 UTC
 
-El commit `3444eef` está en `main`; CI [run 44067825900](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44067825900) terminó success, incluyendo `Dockerfile.public` con configuración BuildKit efímera y `push: false`. No se publicó la imagen ni se tocó el VPS. El siguiente cambio añade un smoke test runtime sobre PostgreSQL/Redis efímeros; su resultado queda pendiente.
+El commit `3444eef` pasó CI [run 44067825900](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44067825900) construyendo `Dockerfile.public` con configuración BuildKit efímera y `push: false`. En `c9b7502` quedó añadido el smoke test de runtime; CI [run 44068837811](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44068837811) terminó success: migró PostgreSQL efímero, arrancó el API contra Redis efímero y obtuvo `/health` satisfactoria; exports Buyer/Business y build del Storefront también pasaron. La imagen no se publicó y el VPS no se modificó.

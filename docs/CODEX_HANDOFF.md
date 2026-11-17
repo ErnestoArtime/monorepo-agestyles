@@ -621,4 +621,4 @@ La cola `docs/OPEN_CODE_TASKS.md` confirma OC-01–OC-08 completadas. OC-09 sigu
 
 ## CI de imagen Commerce API — 17 de noviembre de 2026
 
-El commit `3444eef` está en `main`; CI [run 44067825900](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44067825900) terminó success, incluida la construcción con `Dockerfile.public` usando secretos BuildKit efímeros, sin subir la imagen. Se está ampliando el gate para ejecutar migraciones y comprobar `/health` contra PostgreSQL/Redis desechables de GitHub Actions; esa nueva cobertura queda pendiente de CI.
+El commit `3444eef` está en `main`; CI [run 44067825900](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44067825900) terminó success con `Dockerfile.public` y `push: false`. El gate del commit `c9b7502` también terminó success en [run 44068837811](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44068837811): instaló las migraciones en PostgreSQL desechable, inició Commerce API conectado a Redis desechable y verificó `/health`; luego eliminó el contenedor API. Buyer, Business y Storefront exportaron/compilaron. No se publicó la imagen ni se tocaron servicios del VPS.

@@ -151,4 +151,4 @@ El commit `ec0bd17` está en `main` y su CI [44066099747](https://github.com/Ern
 
 ## Addendum de build de imagen API — 17 de noviembre de 2026
 
-CI del commit `3444eef` [run 44067825900](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44067825900) terminó success e hizo build con el `Dockerfile.public` exacto, sin publicación. Se añadió a CI una prueba de migración y health en PostgreSQL/Redis desechables; todavía requiere ejecución verde antes de contarla como evidencia F2/F7.
+CI del commit `3444eef` [run 44067825900](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44067825900) terminó success e hizo build con el `Dockerfile.public` exacto, sin publicación. La extensión en `c9b7502` pasó CI [run 44068837811](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44068837811): migraciones en PostgreSQL efímero, runtime API con Redis efímero y respuesta `/health` correcta. Esto verifica build/runtime en CI aislado, no despliegue en VPS ni endpoints comerciales protegidos; por sí solo no cierra F2/F7.
