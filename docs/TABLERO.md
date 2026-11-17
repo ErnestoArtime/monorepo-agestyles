@@ -36,7 +36,7 @@ Estados: `pendiente` · `en curso` · `bloqueada` · `hecha · revisión pendien
 | ID | Tarea | Responsable | Estado | Siguiente paso |
 |---|---|---|---|---|
 | AG-01 | Desplegar la API con la tasa CUP y fijar la tasa | claude | en curso (17 nov, 21:40 UTC) | API desplegada (`9b16175`, `sha256:c3235c65…`); `/store/agestyles/exchange-rate` responde `null`. Falta fijar la tasa (decide: usuario: valor de elTOQUE o token de su API). |
-| AG-15 | Revisión conjunta del estado del plan: contrastar `STATUS_PLAN_MAESTRO.md` con el plan maestro, tablero, commits y evidencias actuales; proponer correcciones y criterios de cierre | codex; revisión de claude | en curso (17 nov 2026) | **Codex:** detectó que el encabezado/F3–F6 aún describen laboratorio o no migración, mientras el tablero y el handoff registran API pública y catálogo oficial en producción; también hay fechas/cortes y gates históricos mezclados con el snapshot actual. **Claude:** confirmar que su registro refleja el estado vigente de runtime, productos, dominios y CUP; señalar omisiones o datos desactualizados, sin editar `STATUS_PLAN_MAESTRO.md`. Después Codex consolida y Claude revisa. |
+| AG-15 | Revisión conjunta del estado del plan: contrastar `STATUS_PLAN_MAESTRO.md` con el plan maestro, tablero, commits y evidencias actuales; proponer correcciones y criterios de cierre | codex; revisión de claude | en curso (17 nov 2026) | **Codex:** detectó que el encabezado/F3–F6 aún describen laboratorio o no migración, mientras el tablero y el handoff registran API pública y catálogo oficial en producción; también hay fechas/cortes y gates históricos mezclados con el snapshot actual. **Claude (hecho, 17 nov 21:35 UTC):** estado vigente confirmado y omisiones señaladas en [reviews/2026-11-17-status-plan-maestro.md](./reviews/2026-11-17-status-plan-maestro.md) (§0 foto verificada, §1 datos desactualizados, §2 faltantes, §3 estructura, §4 estados de fase); sin editar `STATUS_PLAN_MAESTRO.md`. Después Codex consolida y Claude revisa. |
 
 ## Pendientes (por prioridad)
 
@@ -55,7 +55,6 @@ Estados: `pendiente` · `en curso` · `bloqueada` · `hecha · revisión pendien
 | AG-12 | P1 | Causa raíz del 500 de pedidos Kickz/B1 (antes OC-08) | codex | — | Diagnóstico estático hecho; falta captura del stack trace. |
 | AG-13 | P1 | Inspección visual clara/oscura de Buyer, Business y Catálogo (antes OC-09) | codex | — | Gates locales ya pasan. |
 | AG-14 | P1 | Builds nativos Android/iOS y TalkBack | codex | Espacio en disco y dispositivos | — |
-| AG-15 | P0 | Revisión conjunta de `STATUS_PLAN_MAESTRO.md`: datos desactualizados, riesgos, paridad con el legado y nueva estructura | codex (consolida) · claude (propuesta hecha) | — | Propuesta en [reviews/2026-11-17-status-plan-maestro.md](./reviews/2026-11-17-status-plan-maestro.md). Codex responde en su sección 5 y consolida. |
 | AG-16 | P0 | Disco del VPS al 99 % (3.0 GiB libres): plan de limpieza revisado de imágenes y builds sin uso | sin asignar | Revisión (decide: usuario) | Bloquea builds y despliegues. No borrar nada sin revisión. |
 
 ## Revisión cruzada pendiente

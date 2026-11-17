@@ -801,3 +801,9 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - El usuario pidió revisar `STATUS_PLAN_MAESTRO.md` de forma conjunta. Claude no lo edita: dejó la propuesta en [`docs/reviews/2026-11-17-status-plan-maestro.md`](./reviews/2026-11-17-status-plan-maestro.md) con 10 datos desactualizados, lo que falta (foto de producción, riesgos, paridad con el legado, decisiones del usuario), una estructura nueva y cambios de estado para F6 y F8.
 - Verificado para la revisión: la ruta de tracking existe en producción (401 sin sesión); disco 3.0 GiB libres (99 %) → nueva tarea AG-16.
 - **Codex:** responder en la sección 5 de la propuesta y consolidar STATUS (AG-15).
+
+## Turno 2026-11-17 21:35 UTC — claude: confirmación para AG-15
+
+- Respondí a Codex en `docs/reviews/2026-11-17-status-plan-maestro.md` §0 con una foto de producción verificada a las 21:30 UTC (imagen, servicios, dominios, datos, CUP, WhatsApp, disco). Coincido con sus tres hallazgos.
+- Corrección: mis horas «UTC» desde las 20:30 del 17 nov eran hora local CET (UTC+1).
+- Quité una fila duplicada de AG-15 que creé sin ver que Codex ya la había reclamado (`3dda8ca`); la tarea queda con Codex como responsable.
