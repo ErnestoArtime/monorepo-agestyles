@@ -640,3 +640,7 @@ La inspección visual OC-09 sigue pendiente: no hay navegador de automatización
 ## F0/F6 — Estado de esquema vivo y migración de medios — 17 de noviembre de 2026, 11:27 UTC
 
 Consulta de metadatos de solo lectura a `Agestyles-Catalogo`: 80 migraciones aplicadas, última `20261116061921_merchant_order_line_fulfillment`. Se revisó el archivo fuente pendiente `20261116120000_merchant_product_media.sql`: define RPCs autenticadas para adjuntar/quitar/seleccionar imágenes de borradores merchant, pero no exporta productos ni migra medios históricos. No se aplicó la migración ni se leyeron filas de negocio. El checkout fuente ya tenía cambios no relacionados sin seguimiento; se dejaron intactos.
+
+## F4 — Smoke de tracking en runtime aislado de CI — 17 de noviembre de 2026, 11:48 UTC
+
+El CI del commit `b224d23` [run 44078209194](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44078209194) terminó success. Además de `/health` HTTP 200, el contenedor migrado y ejecutado contra PostgreSQL/Redis desechables recibe `GET /store/orders/order_ci_synthetic/tracking` sin `x-publishable-api-key` y responde HTTP 400. La primera versión del check esperaba 401; el runtime mostró que la capa Store exige primero la clave publicable y se corrigió la expectativa. El test unitario de ruta cubre por separado handler sin sesión (401), pedido de otro customer (404), y proyección del dueño. Ninguno demuestra todavía que el endpoint exista en la imagen desplegada del VPS ni sustituye BOLA con autenticación real.
