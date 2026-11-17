@@ -1,6 +1,6 @@
 # Auditoría de cumplimiento del plan maestro AgeStyles 2.0
 
-**Corte:** 17 de noviembre de 2026, 05:19 UTC
+**Corte:** 17 de noviembre de 2026, 05:29 UTC
 **Alcance:** contraste de `AGESTYLES_2_0_PLAN_MAESTRO.md`, `STATUS_PLAN_MAESTRO.md`, `MATRIZ_REUTILIZACION.md`, `CODEX_HANDOFF.md` y el grafo de código del monorepo.
 **Conclusión:** el plan sigue en ejecución; ninguna de las fases F0–F8 puede marcarse completa con la evidencia disponible. F9 está correctamente diferida. El laboratorio de marketplace y varias verticales están avanzadas, pero siguen pendientes gates de datos, validación en dispositivos, QA, despliegue y cutover.
 
@@ -63,3 +63,9 @@ El grafo del monorepo está indexado. La arquitectura muestra apps `commerce-api
 - El tema claro/oscuro ahora tiene implementación en las rutas revisadas de Buyer y Business y en el storefront. No hay inspección visual reciente ni build móvil; el criterio visual de OC-09 sigue abierto.
 - La publicación tiene workflow manual por SHA y overrides Compose separados, validados mediante `docker compose config`. No se ha publicado el código local: remoto `main` sigue en `636a774`, los tres contenedores web usan imágenes antiguas y no se ejecutó Actions, pull o despliegue.
 - Límite operativo sin cambios: 3.5 GiB libres en el único disco. Sigue pendiente un destino externo cifrado; no se ejecutó prune, backup, restore, ETL ni cutover.
+
+## Addendum de publicación — 17 de noviembre de 2026, 05:29 UTC
+
+- Se subieron a `main` los cambios de temas (`162fbf4`), el lockfile corregido (`192122d`) y la localización española de rutas Buyer (`202eff8`). El CI completo de `192122d` y `202eff8` terminó success.
+- El pipeline CI de `202eff8` pasó lint, formato, tests, typecheck, exports web Buyer/Business y build SEO Next. Esto no equivale a imágenes runtime publicadas ni a deploy.
+- En esta comprobación, las webs públicas todavía usan imágenes anteriores. El siguiente paso del runbook requiere ejecutar `Publish frontend images` para un commit de `main` con CI exitoso y desplegar el tag inmutable por servicio.
