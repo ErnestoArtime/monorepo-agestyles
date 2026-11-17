@@ -123,3 +123,10 @@ El checkout fuente presenta cambios sin seguimiento en `.codex/`, `scripts/__pyc
 - `main` local y remoto siguen en `01f1f6a`; el commit está en GitHub. No hay evidencia de ejecución del workflow manual `Publish frontend images`; las webs públicas siguen usando imágenes anteriores `:local`. No se afirma que la UI/API reciente esté desplegada.
 - Se detectaron cambios locales sin commit en `apps/buyer-app/app/(drawer)/(tabs)/account/orders/[id].tsx` y `apps/buyer-app/lib/status-labels.ts`. Se preservaron sin incluirlos en el commit ni declararlos verificados/publicados.
 - La ruta de tracking continúa pendiente de despliegue e identificación de imagen de Commerce API, y de validación runtime con un pedido de fixture limpio. El test actual solo valida el handler contra `QUERY.graph` simulado.
+
+## Avance F5 — sesión buyer/member con un acceso — 17 de noviembre de 2026, 06:04 UTC
+
+- El login de negocio ahora autentica `member` y luego intenta autenticar `customer` con las mismas credenciales, escribiendo cada JWT en su almacenamiento de actor independiente. El buyer SDK se comparte entre el flujo de login y el modo Comprar; no se conserva la contraseña. Si el actor buyer no está vinculado/no autentica, el login de negocio continúa.
+- El test sintético del coordinador cubre éxito de ambos actores y fallos independientes. Test del paquete y typecheck de Business/`features-buyer` pasan; ESLint dirigido, Prettier y `git diff --check` pasan.
+- Aún no es aceptación end-to-end: falta comprobar una identidad enlazada desde la interfaz, volver de comprador a negocio, refresh, revocación y logout de un actor/todos. No se llamó API ni DB. Estas modificaciones siguen locales, pendientes de commit/CI.
+- El CI del commit documental `5b4e745` terminó `success` (run `44028059472`); este resultado no cubre los cambios F5 locales.

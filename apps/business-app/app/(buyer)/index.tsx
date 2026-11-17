@@ -1,12 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useRouter } from "expo-router";
-import Medusa from "@medusajs/js-sdk";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-  createBusinessBuyerSession,
-  createBuyerActorStorage,
-} from "../../../../packages/features-buyer/src/business-buyer-session";
 import { createBuyerCartFeature } from "../../../../packages/features-buyer/src/cart";
 import { listProductOffers } from "../../../../packages/api-client/src/offers";
 import {
@@ -16,6 +11,7 @@ import {
 import { listStoreProducts } from "../../../../packages/api-client/src/store";
 import { OperationList, Section } from "../../components/operation-list";
 import { useBusinessTheme } from "../../hooks/use-business-theme";
+import { buyerActorSession as buyer, buyerSdk } from "../../context/buyer-actor";
 
 type Offer = {
   id: string;
@@ -25,13 +21,6 @@ type Offer = {
 type Region = { id: string; currency_code: string };
 const money = (amount: number, currency: string) =>
   new Intl.NumberFormat("es-ES", { style: "currency", currency }).format(amount / 100);
-const customerStorage = createBuyerActorStorage(AsyncStorage);
-const buyerSdk = new Medusa({
-  baseUrl: process.env.EXPO_PUBLIC_MEDUSA_URL || "http://127.0.0.1:19081",
-  publishableKey: process.env.EXPO_PUBLIC_MEDUSA_PUBLISHABLE_API_KEY || "",
-  auth: { type: "jwt", jwtTokenStorageMethod: "custom", storage: customerStorage },
-});
-const buyer = createBusinessBuyerSession(buyerSdk);
 const buyerCart = createBuyerCartFeature(
   buyerSdk.client,
   AsyncStorage,

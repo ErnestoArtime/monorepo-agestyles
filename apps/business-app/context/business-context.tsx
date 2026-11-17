@@ -1,10 +1,17 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Medusa from "@medusajs/js-sdk";
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { loginBusinessAndBuyerActors } from "../../../packages/features-buyer/src/business-buyer-session";
+import { buyerSdk } from "./buyer-actor";
 
 export type Seller = { id: string; name: string; handle: string; role_id?: string };
 type Permission = "view" | "edit" | "manage" | "none";
-type Member = { id: string; is_owner?: boolean; role_id?: string; permissions?: Record<string, Permission> };
+type Member = {
+  id: string;
+  is_owner?: boolean;
+  role_id?: string;
+  permissions?: Record<string, Permission>;
+};
 type BusinessContextValue = {
   ready: boolean;
   loading: boolean;
@@ -47,25 +54,33 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
   const [seller, setSeller] = useState<Seller | null>(null);
   const [member, setMember] = useState<Member | null>(null);
 
-  const request = useCallback(async <T,>(path: string, method = "GET", body?: unknown) => {
-    if (!seller && path !== "/vendor/sellers") throw new Error("Selecciona una tienda para continuar.");
-    return unwrap<T>(await sdk.client.fetch(path, {
-      method,
-      ...(body === undefined ? {} : { body }),
-      headers: seller ? { "x-seller-id": seller.id } : {},
-    }));
-  }, [seller]);
+  const request = useCallback(
+    async <T,>(path: string, method = "GET", body?: unknown) => {
+      if (!seller && path !== "/vendor/sellers")
+        throw new Error("Selecciona una tienda para continuar.");
+      return unwrap<T>(
+        await sdk.client.fetch(path, {
+          method,
+          ...(body === undefined ? {} : { body }),
+          headers: seller ? { "x-seller-id": seller.id } : {},
+        }),
+      );
+    },
+    [seller],
+  );
 
   const reloadSellers = useCallback(async () => {
     const result: any = await sdk.client.fetch("/vendor/sellers?limit=50");
     const data = result?.data ?? result;
     const memberships = data?.seller_members ?? data?.members ?? [];
-    const choices = memberships.map((entry: any) => ({
-      id: entry.seller?.id ?? entry.seller_id,
-      name: entry.seller?.name ?? entry.seller?.handle ?? "Tienda",
-      handle: entry.seller?.handle ?? "",
-      role_id: entry.role_id,
-    })).filter((entry: Seller) => Boolean(entry.id));
+    const choices = memberships
+      .map((entry: any) => ({
+        id: entry.seller?.id ?? entry.seller_id,
+        name: entry.seller?.name ?? entry.seller?.handle ?? "Tienda",
+        handle: entry.seller?.handle ?? "",
+        role_id: entry.role_id,
+      }))
+      .filter((entry: Seller) => Boolean(entry.id));
     setSellers(choices);
     return choices;
   }, []);
@@ -74,11 +89,17 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     setError("");
     try {
-      await sdk.client.fetch("/vendor/sellers/select", { method: "POST", body: { seller_id: choice.id } });
-      setSeller(choice);
-      const result: any = await sdk.client.fetch("/vendor/members/me?fields=id,is_owner,role_id,permissions", {
-        headers: { "x-seller-id": choice.id },
+      await sdk.client.fetch("/vendor/sellers/select", {
+        method: "POST",
+        body: { seller_id: choice.id },
       });
+      setSeller(choice);
+      const result: any = await sdk.client.fetch(
+        "/vendor/members/me?fields=id,is_owner,role_id,permissions",
+        {
+          headers: { "x-seller-id": choice.id },
+        },
+      );
       const data = result?.data ?? result;
       setMember(data?.member ?? data);
     } catch (cause) {
@@ -99,39 +120,71 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
     setReady(false);
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
-    setLoading(true);
-    setError("");
-    try {
-      const result = await sdk.auth.login("member", "emailpass", { email, password });
-      if (typeof result !== "string") throw new Error("El inicio de sesión requiere un paso adicional.");
-      const choices = await reloadSellers();
-      setSeller(null);
-      setMember(null);
-      setReady(true);
-      if (choices.length === 1) await selectSeller(choices[0]);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "No se pudo iniciar sesión.");
-      throw cause;
-    } finally {
-      setLoading(false);
-    }
-  }, [reloadSellers, selectSeller]);
+  const login = useCallback(
+    async (email: string, password: string) => {
+      setLoading(true);
+      setError("");
+      try {
+        await loginBusinessAndBuyerActors(email, password, sdk, buyerSdk);
+        const choices = await reloadSellers();
+        setSeller(null);
+        setMember(null);
+        setReady(true);
+        if (choices.length === 1) await selectSeller(choices[0]);
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : "No se pudo iniciar sesión.");
+        throw cause;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [reloadSellers, selectSeller],
+  );
 
   useEffect(() => {
     let active = true;
-    sdk.client.fetch("/vendor/sellers?limit=50").then(async () => {
-      await reloadSellers();
-      if (active) setReady(true);
-    }).catch(() => {
-      if (active) setReady(true);
-    });
-    return () => { active = false; };
+    sdk.client
+      .fetch("/vendor/sellers?limit=50")
+      .then(async () => {
+        await reloadSellers();
+        if (active) setReady(true);
+      })
+      .catch(() => {
+        if (active) setReady(true);
+      });
+    return () => {
+      active = false;
+    };
   }, [reloadSellers]);
 
-  const value = useMemo(() => ({
-    ready, loading, error, sellers, seller, member, login, logout, selectSeller, request, reloadSellers,
-  }), [ready, loading, error, sellers, seller, member, login, logout, selectSeller, request, reloadSellers]);
+  const value = useMemo(
+    () => ({
+      ready,
+      loading,
+      error,
+      sellers,
+      seller,
+      member,
+      login,
+      logout,
+      selectSeller,
+      request,
+      reloadSellers,
+    }),
+    [
+      ready,
+      loading,
+      error,
+      sellers,
+      seller,
+      member,
+      login,
+      logout,
+      selectSeller,
+      request,
+      reloadSellers,
+    ],
+  );
 
   return <BusinessContext.Provider value={value}>{children}</BusinessContext.Provider>;
 }
