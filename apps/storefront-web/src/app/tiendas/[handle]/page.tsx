@@ -126,7 +126,9 @@ export default async function StorePage({ params }: PageProps) {
             <p>Vuelve pronto para descubrir sus productos.</p>
           </div>
         )}
-        <p className="beta-notice">Experiencia beta: productos y ofertas de prueba.</p>
+        <p className="beta-notice">
+          AgeStyles está en fase piloto. Los pedidos son reales; si algo falla, avísanos.
+        </p>
       </section>
 
       <footer className="site-footer">
@@ -142,7 +144,7 @@ export default async function StorePage({ params }: PageProps) {
         </div>
         <div className="wrap footer-bottom">
           <span>© 2026 AgeStyles</span>
-          <span>Experiencia beta · Productos y pedidos de prueba</span>
+          <span>AgeStyles en fase piloto</span>
           <a href={buyerAppUrl}>
             Conocer la app de compra <Icon name="arrowRight" size={12} />
           </a>

@@ -183,7 +183,7 @@ export default async function ProductPage({ params }: PageProps) {
           </div>
         )}
         <p className="beta-notice">
-          Experiencia beta: las opciones y pedidos actuales son de prueba.
+          AgeStyles está en fase piloto. Los pedidos son reales; si algo falla, avísanos.
         </p>
       </section>
       <footer className="site-footer">

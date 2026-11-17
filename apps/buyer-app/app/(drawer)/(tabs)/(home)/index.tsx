@@ -136,7 +136,7 @@ export default function HomeScreen() {
             <View style={[styles.betaNotice, { backgroundColor: colors.surfaceMuted }]}>
               <Icon name="help" size={16} color={colors.tint} />
               <Text style={[styles.betaCopy, { color: colors.text }]}>
-                El catálogo y los pedidos todavía usan datos de prueba.
+                AgeStyles está en fase piloto. Los pedidos son reales; si algo falla, avísanos.
               </Text>
             </View>
             <View style={[styles.hero, { backgroundColor: colors.tint }]}>
