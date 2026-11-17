@@ -8,6 +8,13 @@
 - Verificación ejecutada: `pnpm --filter @agestyles/buyer-app exec tsc --noEmit` → OK; `git diff --check` → OK. No añadí ni ejecuté tests por preferencia del usuario. CI remoto y revisión de Claude pendientes.
 - CI #138 (`44201575200`, SHA `4ed81cd`) terminó `success`: lint, formato, unitarias, typecheck, build/smoke del API y exportaciones web Buyer, Negocio y Catálogo. La revisión cruzada de Claude sigue pendiente.
 
+## Turno 2026-11-18 — codex: AG-13 auditoría y recuperación de Buyer
+
+- Revisión de código con codebase-memory: Buyer y Business resuelven los tokens claros/oscuros desde el sistema compartido; Catálogo web define `prefers-color-scheme: dark`.
+- Hallazgo funcional en la portada Buyer: si el listado de regiones falla (o vuelve vacío), `selectedRegion` permanece nulo; Home no miraba el estado/error del `RegionProvider` y conservaba el loader de productos indefinidamente.
+- El `RegionProvider` expone `reloadRegions`; Home ahora separa carga inicial de región, error/falta de región y carga de productos. Error incluye recuperación accesible con colores del tema activo.
+- `pnpm --filter @agestyles/buyer-app exec tsc --noEmit` y `git diff --check` pasan; no ejecuté tests. No hay fixtures visuales en las apps ni navegador Playwright ejecutable en este entorno, por lo que la evidencia renderizada clara/oscura y el resto de las pantallas siguen pendientes en AG-13.
+
 **Propósito:** dejar constancia de lo que modifica la sesión OpenCode para que Codex lo revise antes de dar por cerrada una fase. No sustituye al plan maestro ni al status: los complementa.
 
 **Tareas y estado:** viven en el [tablero único](./TABLERO.md); este archivo es el registro de turnos (solo añadir al final).

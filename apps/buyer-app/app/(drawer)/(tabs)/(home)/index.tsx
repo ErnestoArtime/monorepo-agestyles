@@ -25,7 +25,12 @@ import {
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
-  const { selectedRegion } = useRegion();
+  const {
+    selectedRegion,
+    loading: regionLoading,
+    error: regionError,
+    reloadRegions,
+  } = useRegion();
   const router = useRouter();
 
   const [products, setProducts] = useState<HttpTypes.StoreProduct[]>([]);
@@ -89,6 +94,39 @@ export default function HomeScreen() {
     setRefreshing(true);
     fetchProducts();
   };
+
+  if (regionLoading) {
+    return <Loading message="Preparando el catálogo…" />;
+  }
+
+  if (!selectedRegion || regionError) {
+    return (
+      <View style={[styles.centerContainer, { backgroundColor: colors.background }]}>
+        <View
+          style={[
+            styles.statePanel,
+            { backgroundColor: colors.cardBackground, borderColor: colors.border },
+          ]}
+        >
+          <Icon name="refresh" size={28} color={colors.tint} />
+          <Text style={[styles.stateTitle, { color: colors.text }]}>
+            No pudimos preparar la tienda
+          </Text>
+          <Text style={[styles.errorText, { color: colors.icon }]}>
+            {regionError ?? "No hay una región de compra disponible en este momento."}
+          </Text>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Volver a cargar las regiones"
+            onPress={() => void reloadRegions()}
+            style={[styles.retryButton, { backgroundColor: colors.tint }]}
+          >
+            <Text style={[styles.retryText, { color: colors.onTint }]}>Reintentar</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   if (loading) {
     return <Loading message="Cargando productos..." />;

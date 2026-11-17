@@ -8,6 +8,7 @@ interface RegionContextType {
   selectedRegion: HttpTypes.StoreRegion | null;
   selectedCountryCode: string | null;
   setSelectedRegion: (region: HttpTypes.StoreRegion, countryCode: string) => void;
+  reloadRegions: () => Promise<void>;
   loading: boolean;
   error: string | null;
 }
@@ -83,6 +84,7 @@ export function RegionProvider({ children }: { children: ReactNode }) {
         selectedRegion,
         selectedCountryCode,
         setSelectedRegion,
+        reloadRegions: loadRegions,
         loading,
         error,
       }}
