@@ -49,7 +49,12 @@ test("Commerce API runtime, gateways, healthcheck, image and runbook use one por
     ["buyer gateway", buyerGateway],
     ["seller gateway", sellerGateway],
   ]) {
-    assert.match(source, new RegExp(`port:\\s*${apiPort}\\b`), `${name} must target the API port`);
+    // Gateways default to the lab API port; production overrides UPSTREAM_PORT in its compose service.
+    assert.match(
+      source,
+      new RegExp(`UPSTREAM_PORT \\?\\? ${apiPort}\\b`),
+      `${name} must default to the API port`,
+    );
   }
   for (const [name, source] of [
     ["buyer SDK", buyerSdk],
