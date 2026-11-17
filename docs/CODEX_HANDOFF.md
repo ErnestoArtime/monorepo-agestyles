@@ -403,3 +403,5 @@ El handler de Mercur aplica permiso, validación de `vendorOrderQueryConfig.list
 | Web/APK: respuesta HTTP externa | `catalogo.eav-labs.com`, `tienda.eav-labs.com`, `negocio.eav-labs.com` y el APK publicado responden 200. El gateway no expone healthchecks bajo sus rutas públicas; no se toma un 404 a `/health` como fallo de producto. Esto no valida render visual ni compra. |
 
 `pnpm lint`, `pnpm format:check`, `pnpm test`, `pnpm typecheck`, `node --check` del probe y `git diff --check` pasan. No se hizo build ni despliegue por el espacio disponible. Las fases F0/F1/F2/F4/F7 siguen parciales; backup/restore, Android/iOS/TalkBack, 500 de Kickz/B1, tracking runtime, ETL, checkout UI, UAT y gates de producción permanecen abiertos. `references/` continúa excluida.
+
+**CI del commit:** GitHub Actions run [44014525470](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44014525470), SHA `332bda3`, terminó `success`: install frozen, lint, format-check, tests, typecheck y los tres builds web completados.
