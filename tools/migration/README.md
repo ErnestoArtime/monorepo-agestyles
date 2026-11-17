@@ -33,6 +33,8 @@ corepack pnpm migration:catalog:check tools/migration/fixtures/synthetic-catalog
 corepack pnpm migration:test
 ```
 
+El target `test` de migración está conectado a Nx; también se ejecuta como parte de `corepack pnpm test` en la raíz.
+
 El perfil `catalog-only` ignora el contenido de archivos para entidades fuera de alcance y devuelve únicamente los códigos/counts; no elimina archivos del bundle. El operador debe usar una carpeta privada y no entregar bundles con PII. Una exportación futura debe pasar por aprobación de esquema específica antes de transformar dinero/stock, escribir el mapa de IDs o conectar un importador a PostgreSQL. Este preflight no es respaldo ni evidencia de conciliación/restauración.
 
 ## Pendiente antes de un ETL real

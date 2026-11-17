@@ -1,0 +1,11 @@
+{
+  "name": "@agestyles/migration-tools",
+  "sourceRoot": "tools/migration",
+  "projectType": "library",
+  "targets": {
+    "test": {
+      "command": "pnpm migration:test"
+    }
+  },
+  "tags": ["scope:tooling", "type:utility"]
+}

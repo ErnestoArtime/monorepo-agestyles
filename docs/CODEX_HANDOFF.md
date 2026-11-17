@@ -482,9 +482,9 @@ OC-09 queda pendiente únicamente de inspección visual clara/oscura de rutas co
 
 ## Verificación ligera del grafo Nx — 17 de noviembre de 2026
 
-`corepack pnpm nx graph --file=/tmp/agestyles-nx-project-graph.json --open=false --watch=false --view=projects` generó correctamente el grafo sin compilar apps. El resumen verificó 12 proyectos y 16 dependencias. La inspección reveló que Nx no infería la relación Commerce API → `@agestyles/quotations`, porque Medusa carga ese módulo desde `medusa-config.ts`; `apps/commerce-api/package.json` ahora la declara en `nx.implicitDependencies`.
+`corepack pnpm nx graph --file=/tmp/agestyles-nx-project-graph.json --open=false --watch=false --view=projects` generó correctamente el grafo sin compilar apps. El resumen verificó 13 proyectos y 16 dependencias. La inspección reveló que Nx no infería la relación Commerce API → `@agestyles/quotations`, porque Medusa carga ese módulo desde `medusa-config.ts`; `apps/commerce-api/package.json` ahora la declara en `nx.implicitDependencies`.
 
-`corepack pnpm test` pasó 6 tareas (5 en caché); el verificador catálogo-only pasó 9/9 y el fixture incluido 4/4 entidades. No se generó build, no se inició navegador/Expo y no se desplegó. Los contenedores web locales son imágenes de horas anteriores, por lo que no prueban los cambios de esta rama; la revisión visual de F3/F4/F5 sigue pendiente.
+Se añadió `tools/migration/project.json`, de modo que Nx incluye el preflight en `pnpm test` sin agregarlo al workspace pnpm ni iniciar builds de apps. `corepack pnpm test` pasó 7 tareas (5 en caché); la suite migración pasó 9/9 y el fixture incluido cubre 4 entidades. No se generó build, no se inició navegador/Expo y no se desplegó. Los contenedores web locales son imágenes de horas anteriores, por lo que no prueban los cambios de esta rama; la revisión visual de F3/F4/F5 sigue pendiente.
 
 ## Preparación del release manual de Commerce API — 17 de noviembre de 2026
 
