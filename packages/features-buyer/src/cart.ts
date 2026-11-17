@@ -6,16 +6,14 @@ import {
   transferCart,
   updateCartLineItem,
   updateCartRegion,
-} from "@agestyles/api-client/store"
-import type { HttpTypes } from "@medusajs/types"
-import type { StoreClient } from "@agestyles/api-client/store"
-
-const CART_FIELDS = "+items.*"
+} from "@agestyles/api-client/store";
+import type { HttpTypes } from "@medusajs/types";
+import type { StoreClient } from "@agestyles/api-client/store";
 
 export interface BuyerCartStorage {
-  getItem(key: string): Promise<string | null>
-  setItem(key: string, value: string): Promise<void>
-  removeItem(key: string): Promise<void>
+  getItem(key: string): Promise<string | null>;
+  setItem(key: string, value: string): Promise<void>;
+  removeItem(key: string): Promise<void>;
 }
 
 export function createBuyerCartFeature(
@@ -24,27 +22,27 @@ export function createBuyerCartFeature(
   storageKey = "cart_id",
 ) {
   async function loadOrCreate(regionId: string): Promise<HttpTypes.StoreCart> {
-    const savedCartId = await storage.getItem(storageKey)
+    const savedCartId = await storage.getItem(storageKey);
     if (savedCartId) {
       try {
-        const { cart } = await retrieveCart(client, savedCartId)
-        return cart
+        const { cart } = await retrieveCart(client, savedCartId);
+        return cart;
       } catch {
-        await storage.removeItem(storageKey)
+        await storage.removeItem(storageKey);
       }
     }
 
-    const { cart } = await createCart(client, regionId)
-    await storage.setItem(storageKey, cart.id)
-    return cart
+    const { cart } = await createCart(client, regionId);
+    await storage.setItem(storageKey, cart.id);
+    return cart;
   }
 
   async function clear(regionId?: string): Promise<HttpTypes.StoreCart | null> {
-    await storage.removeItem(storageKey)
-    if (!regionId) return null
-    const { cart } = await createCart(client, regionId)
-    await storage.setItem(storageKey, cart.id)
-    return cart
+    await storage.removeItem(storageKey);
+    if (!regionId) return null;
+    const { cart } = await createCart(client, regionId);
+    await storage.setItem(storageKey, cart.id);
+    return cart;
   }
 
   return {
@@ -59,10 +57,10 @@ export function createBuyerCartFeature(
       (await deleteCartLineItem(client, cartId, itemId)).parent ?? null,
     refresh: async (cartId: string) => (await retrieveCart(client, cartId)).cart,
     transfer: async (cartId: string) => {
-      const { cart } = await transferCart(client, cartId)
-      await storage.setItem(storageKey, cart.id)
-      return cart
+      const { cart } = await transferCart(client, cartId);
+      await storage.setItem(storageKey, cart.id);
+      return cart;
     },
     clear,
-  }
+  };
 }
