@@ -36,17 +36,17 @@ Estados: `pendiente` · `en curso` · `bloqueada` · `hecha · revisión pendien
 | ID | Tarea | Responsable | Estado | Siguiente paso |
 |---|---|---|---|---|
 | AG-01 | Desplegar la API con la tasa CUP y fijar la tasa | claude | en curso (17 nov, 21:40 UTC) | API desplegada (`9b16175`, `sha256:c3235c65…`); `/store/agestyles/exchange-rate` responde `null`. Falta fijar la tasa (decide: usuario: valor de elTOQUE o token de su API). |
+| AG-03 | Historial de movimientos de inventario: altas, bajas, ajuste rápido con motivo obligatorio, filtros por producto/fecha/usuario y exportación CSV en Negocio | claude | en curso (17 nov 2026, 22:00 UTC) | Archivos: `packages/inventory-movements/**` (nuevo), `apps/commerce-api/src/api/vendor/agestyles/inventory-movements/**`, `apps/commerce-api/medusa-config.ts` (registro del módulo), `tools/scripts/seller-lab-gateway.mjs` (reglas), `apps/business-app/app/(tabs)/inventory.tsx` y pantallas nuevas de movimientos. |
 | AG-15 | Revisión conjunta del estado del plan: contrastar `STATUS_PLAN_MAESTRO.md` con el plan maestro, tablero, commits y evidencias actuales; proponer correcciones y criterios de cierre | codex; revisión de claude | hecha (17 nov 2026, 21:55 UTC) | Consolidado por codex (`0ffbc5a`) y revisado por claude: conforme, con 3 omisiones para la próxima consolidación (§6 de la [revisión](./reviews/2026-11-17-status-plan-maestro.md)). |
 
 ## Pendientes (por prioridad)
 
-| ID | Prioridad | Tarea | Responsable propuesto | Depende de | Notas |
+| ID | Prioridad | Tarea | Responsable | Depende de | Notas |
 |---|---|---|---|---|---|
 | AG-02 | P0 | Copia cifrada diaria de PostgreSQL de producción fuera del VPS y restauración probada en una base aislada | codex (ya era su tarea de F0) | Destino con capacidad (decide: usuario) | La base de producción no tiene ninguna copia. |
-| AG-03 | P1 | Historial de movimientos de inventario: altas, bajas, ajuste rápido con motivo obligatorio, filtros por producto/fecha/usuario y exportación CSV/Excel en Negocio | claude | — | Paridad con el módulo «Movimientos» del legado. Base para AG-06. |
-| AG-04 | P1 | Etapas de preparación del pedido: sin preparar → en preparación → listo → despachado → entregado, visibles en Negocio y en el seguimiento del comprador | codex | — | Codex hizo el flujo de preparación (fulfillment) en Negocio. |
-| AG-05 | P1 | Importar y corregir catálogo por CSV (altas y correcciones de fichas incompletas) desde Negocio o Admin | codex | — | Codex hizo las herramientas de migración (`tools/migration`). |
-| AG-06 | P2 | Gestores de venta y comisiones: rol, ventas propias, comisión por producto acumulable o no, efectivo/transferencia, reportes para administración | claude | AG-03; reglas de comisión (decide: usuario) | Lógica propia de AgeStyles → paquete nuevo en `packages/`. |
+| AG-04 | P1 | Etapas de preparación del pedido: sin preparar → en preparación → listo → despachado → entregado, visibles en Negocio y en el seguimiento del comprador | codex (confirmado por el usuario, 17 nov) | — | Codex hizo el flujo de preparación (fulfillment) en Negocio. |
+| AG-05 | P1 | Importar y corregir catálogo por CSV (altas y correcciones de fichas incompletas) desde Negocio o Admin | codex (confirmado por el usuario, 17 nov) | — | Codex hizo las herramientas de migración (`tools/migration`). |
+| AG-06 | P2 | Gestores de venta y comisiones: rol, ventas propias, comisión por producto acumulable o no, efectivo/transferencia, reportes para administración | claude (confirmado por el usuario, 17 nov) | AG-03; reglas de comisión (decide: usuario) | Lógica propia de AgeStyles → paquete nuevo en `packages/`. |
 | AG-07 | P1 | Textos de los avisos «beta / datos de prueba» en Tienda (portada) y Catálogo (pie) | sin asignar | Texto (decide: usuario) | La descripción del producto Nike (1015) es «prueba» desde el legado. |
 | AG-08 | P0 | Un solo sistema vendiendo: congelar o sincronizar el catálogo legado (Supabase) mientras la 2.0 vende | sin asignar | Decisión de negocio (decide: usuario) | Criterio 10 del piloto y F8. |
 | AG-10 | P2 | Gateway del laboratorio devuelve 502: reenvía a `19081` y la API del laboratorio escucha en `19080` | sin asignar | — | Afecta solo al laboratorio. |
