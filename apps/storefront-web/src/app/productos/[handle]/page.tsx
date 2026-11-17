@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { getCupRate, getProductByHandle } from "@/lib/catalog";
 import { formatCupEquivalent } from "@agestyles/api-client/exchange-rate";
 import { formatPrice, productPrice } from "@/lib/catalog-format";
+import { ProductComparisonBar, ProductComparisonToggle } from "@/components/product-comparison";
 
 type PageProps = { params: Promise<{ handle: string }> };
 
@@ -120,12 +121,14 @@ export default async function ProductPage({ params }: PageProps) {
           <a className="button button-dark" href="#tiendas">
             Comparar tiendas <Icon name="arrowDown" size={14} />
           </a>
+          <ProductComparisonToggle productId={product.id} />
           <p className="detail-note">
             La disponibilidad y el precio final dependen de la tienda y la variante elegida.
           </p>
         </div>
       </section>
       <section className="wrap seller-section" id="tiendas">
+        <ProductComparisonBar />
         <div className="section-heading">
           <div>
             <p className="eyebrow">COMPARA TUS OPCIONES</p>

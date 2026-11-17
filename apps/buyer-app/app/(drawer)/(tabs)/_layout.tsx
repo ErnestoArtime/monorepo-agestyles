@@ -39,6 +39,7 @@ export default function TabLayout() {
           href: null,
         }}
       />
+      <Tabs.Screen name="compare" options={{ href: null, title: "Comparar productos" }} />
       <Tabs.Screen
         name="(home)"
         options={{

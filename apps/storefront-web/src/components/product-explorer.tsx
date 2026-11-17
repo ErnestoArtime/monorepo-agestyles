@@ -7,6 +7,7 @@ import { useCallback, useMemo, useState } from "react";
 import type { HttpTypes } from "@medusajs/types";
 import type { PublicProductCategory } from "@/lib/catalog";
 import { formatPrice, productPrice } from "@/lib/catalog-format";
+import { ProductComparisonBar, ProductComparisonToggle } from "@/components/product-comparison";
 
 export function ProductExplorer({
   products,
@@ -107,6 +108,7 @@ export function ProductExplorer({
         {totalProducts === 1 ? "producto" : "productos"}
         {searchTerm ? ` para “${searchTerm}”` : " disponibles actualmente"}
       </p>
+      <ProductComparisonBar />
       {visible.length ? (
         <div className="product-grid">
           {visible.map((product, index) => {
@@ -142,6 +144,9 @@ export function ProductExplorer({
                   <Link href={`/productos/${handle}#tiendas`}>
                     Comparar tiendas <Icon name="arrowRight" size={12} />
                   </Link>
+                </div>
+                <div className="comparison-card-action">
+                  <ProductComparisonToggle productId={product.id} />
                 </div>
               </article>
             );

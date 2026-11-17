@@ -909,3 +909,11 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - Hallazgo funcional: `apps/business-app/app/movements.tsx` solo permite filtrar por tipo y periodos 7/30/todo. La API permite `actor_id`, y la lista muestra `actor_email`, pero falta selector de autor para cumplir el filtro por usuario del ticket. El filtro por producto existe al entrar desde el detalle de inventario.
 - Hallazgo operativo leído del estado compartido: la web Negocio publicada todavía usa escritura directa de stock, bloqueada ahora por el gateway (`404`); requiere publicar frontend compatible. No publiqué nada ni toqué producción.
 - AG-03 permanece en revisión pendiente hasta resolver ambos puntos; hallazgos registrados en `docs/TABLERO.md`.
+
+## Turno 2026-11-18 — codex: AG-17 comparador de productos
+
+- Añadí `compareStoreProducts` y su contrato tipado en `@agestyles/api-client/catalog-comparison`, consumiendo el endpoint público existente `/store/catalog-comparison` para 2–4 productos publicados.
+- Catálogo: tarjetas y detalle permiten guardar/quitar productos en una selección local de hasta cuatro; la barra abre `/comparar?ids=…`; nueva página compara atributos, informa fichas incompatibles/sin características y mantiene tabla desplazable en móvil.
+- Buyer: el detalle permite abrir un comparador, buscar productos publicados de la región y añadir/quitar hasta cuatro; tabla horizontal usa los tokens claro/oscuro existentes. Ruta oculta de navegación, no una pestaña nueva.
+- El gateway comprador aplica allowlist cerrada y no aceptaba la ruta: añadí únicamente `GET /store/catalog-comparison` a `tools/scripts/buyer-lab-gateway.mjs`.
+- `prettier --write` y `git diff --check` pasan. No ejecuté tests ni typechecks locales, por preferencia del usuario; el CI de `main` se observará tras el push. Sin publicación ni cambios de producción. La regla del gateway requerirá publicarse/reiniciarse con autorización del usuario antes de funcionar por internet.

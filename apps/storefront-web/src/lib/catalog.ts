@@ -1,6 +1,10 @@
 import Medusa from "@medusajs/js-sdk";
 import type { HttpTypes } from "@medusajs/types";
 import { listStoreOffers, listStoreProducts } from "@agestyles/api-client/store";
+import {
+  compareStoreProducts,
+  type CatalogComparisonResponse,
+} from "@agestyles/api-client/catalog-comparison";
 import { getCupExchangeRate } from "@agestyles/api-client/exchange-rate";
 
 const backendUrl = process.env.MEDUSA_BACKEND_URL || process.env.NEXT_PUBLIC_MEDUSA_URL;
@@ -261,6 +265,13 @@ export async function getProductByHandle(handle: string) {
   } catch {
     return undefined;
   }
+}
+
+export async function getCatalogComparison(
+  productIds: string[],
+): Promise<CatalogComparisonResponse> {
+  if (!sdk) throw new Error("La comparación no está disponible.");
+  return compareStoreProducts(sdk.client, productIds);
 }
 
 /** Informational CUP-per-USD rate; null when not configured or unreachable. */

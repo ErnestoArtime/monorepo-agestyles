@@ -13,7 +13,7 @@ import { formatCupEquivalent } from "@agestyles/api-client/exchange-rate";
 import { useCupRate } from "@/hooks/use-cup-rate";
 import { sdk } from "@/lib/sdk";
 import type { HttpTypes } from "@medusajs/types";
-import { useLocalSearchParams, useNavigation } from "expo-router";
+import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
@@ -24,6 +24,7 @@ export default function ProductDetailsScreen() {
   const { addToCart } = useCart();
   const { selectedRegion } = useRegion();
   const navigation = useNavigation();
+  const router = useRouter();
 
   const [product, setProduct] = useState<HttpTypes.StoreProduct | null>(null);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
@@ -333,6 +334,20 @@ export default function ProductDetailsScreen() {
           disabled={!isInStock}
           style={styles.addButton}
         />
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={`Comparar ${product.title} con otros productos`}
+          onPress={() =>
+            router.push({
+              pathname: "/(drawer)/(tabs)/compare" as any,
+              params: { productId: product.id },
+            })
+          }
+          style={[styles.compareButton, { borderColor: colors.border }]}
+        >
+          <Icon name="sliders" size={19} color={colors.tint} />
+          <Text style={[styles.compareButtonText, { color: colors.text }]}>Comparar producto</Text>
+        </TouchableOpacity>
       </View>
 
       <Toast
@@ -470,6 +485,20 @@ const styles = StyleSheet.create({
   },
   addButton: {
     marginTop: 8,
+  },
+  compareButton: {
+    minHeight: 48,
+    marginTop: 12,
+    borderWidth: 1,
+    borderRadius: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  compareButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
   },
   errorText: {
     fontSize: 16,
