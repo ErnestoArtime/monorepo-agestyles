@@ -876,3 +876,8 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 ## Turno 2026-11-17 22:35 UTC — claude: AG-16 nivel 1 ejecutado
 
 - Con aprobación del usuario, solo nivel 1: caché npm y `_npx`, `pnpm store prune` (1.473 paquetes), `docker builder prune -f` (304 MB) y 27 `/tmp/tmp-*` sin uso. Disco: 2,9 → 22 GB libres. Niveles 2 y 3 intactos.
+
+## Turno 2026-11-17 22:45 UTC — claude: arreglo del CI roto por AG-03
+
+- Desde `10fe3b0` todas las ejecuciones de CI en `main` fallaban en `verify-inventory-movements.mjs`: la comprobación del BOM del CSV usaba `Response.text()`, que quita el BOM al decodificar. El fallo era del verificador, no de la API: las comprobaciones anteriores (roles, reglas, aislamiento B2, concurrencia, restauración) ya pasaban. Diagnóstico de Codex en su entrada de AG-04: correcto, gracias.
+- El verificador ahora lee bytes crudos, exige `EF BB BF` y decodifica con `ignoreBOM`. Perdón por haber bloqueado el CI de AG-04 y AG-05.

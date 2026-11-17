@@ -206,15 +206,18 @@ try {
   assert.equal(restore.status, 201, restore.text);
   assert.equal(await levelOf(item.id, locationId), original);
 
-  // CSV export for spreadsheets.
-  const csv = await expectStatus(
-    `${movementsPath}/export?type=ajuste`,
-    { headers: reader.headers },
-    200,
-  );
-  assert.match(csv.headers.get("content-type") ?? "", /text\/csv/);
-  assert.ok(csv.text.startsWith("\uFEFFFecha (UTC);Tipo;Producto"));
-  assert.match(csv.text, /Restauración CI/);
+  // CSV export for spreadsheets. Read raw bytes: Response.text() strips the
+  // UTF-8 BOM that Excel needs, so it must be checked before decoding.
+  const csvResponse = await fetch(`${base}${movementsPath}/export?type=ajuste`, {
+    headers: { "x-publishable-api-key": key, ...reader.headers },
+  });
+  assert.equal(csvResponse.status, 200, "CSV export must succeed for read-only members");
+  assert.match(csvResponse.headers.get("content-type") ?? "", /text\/csv/);
+  const csvBytes = new Uint8Array(await csvResponse.arrayBuffer());
+  assert.deepEqual([...csvBytes.slice(0, 3)], [0xef, 0xbb, 0xbf], "CSV starts with a UTF-8 BOM");
+  const csvText = new TextDecoder("utf-8", { ignoreBOM: true }).decode(csvBytes.slice(3));
+  assert.ok(csvText.startsWith("Fecha (UTC);Tipo;Producto"));
+  assert.match(csvText, /Restauración CI/);
 
   console.log(
     "PASS: inventory movements enforce roles, stock rules and seller isolation; concurrency, history and CSV are consistent",
