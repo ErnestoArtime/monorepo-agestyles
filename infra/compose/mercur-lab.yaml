@@ -31,6 +31,41 @@ services:
       retries: 20
     mem_limit: 128m
 
+  minio:
+    image: quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z
+    profiles: ["media"]
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-}
+    ports:
+      - "127.0.0.1:19083:9000"
+      - "127.0.0.1:19084:9001"
+    volumes:
+      - minio-data:/data
+    mem_limit: 512m
+
+  minio-bucket:
+    image: quay.io/minio/mc:RELEASE.2025-04-16T18-13-26Z
+    profiles: ["media"]
+    depends_on:
+      minio:
+        condition: service_started
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-}
+      S3_BUCKET: ${S3_BUCKET:-agestyles-media}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - >-
+        until mc alias set lab http://minio:9000 "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}" && mc ready lab; do sleep 2; done;
+        mc mb --ignore-existing "lab/$${S3_BUCKET}";
+        mc anonymous set download "lab/$${S3_BUCKET}"
+    restart: "no"
+    mem_limit: 128m
+
 volumes:
   postgres-data:
   redis-data:
+  minio-data:
