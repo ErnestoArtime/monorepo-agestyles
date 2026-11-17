@@ -152,3 +152,7 @@ El commit `ec0bd17` está en `main` y su CI [44066099747](https://github.com/Ern
 ## Addendum de build de imagen API — 17 de noviembre de 2026
 
 CI del commit `3444eef` [run 44067825900](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44067825900) terminó success e hizo build con el `Dockerfile.public` exacto, sin publicación. La extensión en `c9b7502` pasó CI [run 44068837811](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44068837811): migraciones en PostgreSQL efímero, runtime API con Redis efímero y respuesta `/health` correcta. Esto verifica build/runtime en CI aislado, no despliegue en VPS ni endpoints comerciales protegidos; por sí solo no cierra F2/F7.
+
+## Addendum de pruebas del carrito Buyer — 17 de noviembre de 2026
+
+El commit `1038865` incorporó cobertura para el feature compartido de carrito: carrito guardado/obsoleto, limpieza y creación regional, transferencia y alta de una oferta de vendedor concreta. Sus 6 pruebas de paquete y los 8 targets Nx pasan; typecheck 12/12, lint 0 errores/19 warnings y formato PASS. CI [run 44070309096](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44070309096) terminó success. La validación no incluye UI/browser ni reemplaza el checkout de laboratorio; F4/F5/F7 permanecen parciales.

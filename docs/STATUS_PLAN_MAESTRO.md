@@ -217,3 +217,7 @@ El commit `ec0bd17` (`fix: align commerce API publish port`) está en `main`; CI
 ## Build de imagen API en CI — 17 de noviembre de 2026, 10:46 UTC
 
 El commit `3444eef` pasó CI [run 44067825900](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44067825900) construyendo `Dockerfile.public` con configuración BuildKit efímera y `push: false`. En `c9b7502` quedó añadido el smoke test de runtime; CI [run 44068837811](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44068837811) terminó success: migró PostgreSQL efímero, arrancó el API contra Redis efímero y obtuvo `/health` satisfactoria; exports Buyer/Business y build del Storefront también pasaron. La imagen no se publicó y el VPS no se modificó.
+
+## Cobertura del carrito compartido Buyer — 17 de noviembre de 2026, 11:03 UTC
+
+El commit `1038865` añade cinco casos sintéticos para persistencia/recuperación de carrito, selección seller-scoped de oferta y transferencia de actor buyer. `features-buyer` pasa sus 6 casos; Nx test 8/8, typecheck CI 12/12, lint sin errores (19 advertencias) y formato PASS. CI [run 44070309096](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44070309096) terminó success con además build de imagen, migraciones y health contra PostgreSQL/Redis de CI. Esto cubre contratos aislados, no el checkout UI ni una compra runtime nueva.

@@ -622,3 +622,7 @@ La cola `docs/OPEN_CODE_TASKS.md` confirma OC-01–OC-08 completadas. OC-09 sigu
 ## CI de imagen Commerce API — 17 de noviembre de 2026
 
 El commit `3444eef` está en `main`; CI [run 44067825900](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44067825900) terminó success con `Dockerfile.public` y `push: false`. El gate del commit `c9b7502` también terminó success en [run 44068837811](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44068837811): instaló las migraciones en PostgreSQL desechable, inició Commerce API conectado a Redis desechable y verificó `/health`; luego eliminó el contenedor API. Buyer, Business y Storefront exportaron/compilaron. No se publicó la imagen ni se tocaron servicios del VPS.
+
+## F4/F5 — Contrato del carrito comprador compartido — 17 de noviembre de 2026
+
+`packages/features-buyer/test/cart.test.ts` cubre carrito persistido válido, recuperación de ID obsoleto, `clear` con/sin región, transferencia de ID nuevo y envío de la oferta seller seleccionada. El paquete tiene 6 pruebas verdes (incluidas las 5 comprobaciones previas de sesión). `pnpm test` → 8/8 targets, `pnpm typecheck:quick` → 11/11, typecheck dirigido del paquete, ESLint dirigido, Prettier y `git diff --check` PASS. Se quitó una constante sin uso del módulo de carrito; el lint global queda en 0 errores/19 warnings preexistentes. CI del commit `1038865` [run 44070309096](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44070309096) terminó success. No se hicieron llamadas a API/DB ni se probaron credenciales reales.
