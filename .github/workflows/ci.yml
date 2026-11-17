@@ -46,6 +46,22 @@ jobs:
       - name: Type-check the API, application, and shared client
         run: pnpm typecheck
 
+      - name: Build isolated Medusa server
+        shell: bash
+        run: |
+          set -euo pipefail
+          db_password="$(openssl rand -hex 24)"
+          jwt_secret="$(openssl rand -hex 32)"
+          cookie_secret="$(openssl rand -hex 32)"
+          export DATABASE_URL="postgres://agestyles_lab:${db_password}@127.0.0.1:15472/agestyles_mercur_lab"
+          export REDIS_URL="redis://127.0.0.1:16392"
+          export JWT_SECRET="${jwt_secret}"
+          export COOKIE_SECRET="${cookie_secret}"
+          echo "::add-mask::${DATABASE_URL}"
+          echo "::add-mask::${JWT_SECRET}"
+          echo "::add-mask::${COOKIE_SECRET}"
+          pnpm --filter @agestyles/commerce-api exec medusa build
+
       - name: Export buyer app for web
         env:
           EXPO_PUBLIC_MEDUSA_URL: https://ci.invalid
