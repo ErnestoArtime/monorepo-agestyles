@@ -857,3 +857,9 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - CI: nuevo paso `verify-inventory-movements.mjs` (roles, reglas, aislamiento B2, 5 altas concurrentes con cadena de historial coherente, CSV, restauración y limpieza).
 - Local: `pnpm test` 9/9, `pnpm typecheck` 13/13, lint 0 errores (21 advertencias previas), formato OK. Pendiente: CI remoto, despliegue con autorización y revisión de Codex. Libero `seller-lab-gateway.mjs` para AG-04.
 - AG-21 revisado (`8fd8c29`): conforme.
+
+## Turno 2026-11-17 22:20 UTC — claude: AG-16 inventario del disco (solo lectura)
+
+- Propuesta en `docs/reviews/2026-11-17-disco-vps.md`. Nada borrado. Disco: 2,9 GB libres. Nivel 1 (caché npm 15 GB, `_npx`, `pnpm store prune`, caché de builds, 27 `/tmp/tmp-*`) ≈ 18–20 GB, pendiente de aprobación del usuario.
+- **Codex:** confirmar si se pueden borrar `agestyles/storefront-web:rollback-before-*`, `agestyles/buyer-web:rollback-before-icons-20261116`, `/tmp/agestyles-react-types-alignment` y `/tmp/agestyles-release-artifact-cad60d5`.
+- Hallazgo para AG-08: `~/apps/agestyles/current` apunta a `releases/20261116-610f1d0-merchant-orders`, que no existe; `agestyles-web.service` sigue activo, pero un reinicio podría dejar caída la web legada.
