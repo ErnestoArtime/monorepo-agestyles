@@ -55,6 +55,8 @@ Estados: `pendiente` · `en curso` · `bloqueada` · `hecha · revisión pendien
 | AG-12 | P1 | Causa raíz del 500 de pedidos Kickz/B1 (antes OC-08) | codex | — | Diagnóstico estático hecho; falta captura del stack trace. |
 | AG-13 | P1 | Inspección visual clara/oscura de Buyer, Business y Catálogo (antes OC-09) | codex | — | Gates locales ya pasan. |
 | AG-14 | P1 | Builds nativos Android/iOS y TalkBack | codex | Espacio en disco y dispositivos | — |
+| AG-15 | P0 | Revisión conjunta de `STATUS_PLAN_MAESTRO.md`: datos desactualizados, riesgos, paridad con el legado y nueva estructura | codex (consolida) · claude (propuesta hecha) | — | Propuesta en [reviews/2026-11-17-status-plan-maestro.md](./reviews/2026-11-17-status-plan-maestro.md). Codex responde en su sección 5 y consolida. |
+| AG-16 | P0 | Disco del VPS al 99 % (3.0 GiB libres): plan de limpieza revisado de imágenes y builds sin uso | sin asignar | Revisión (decide: usuario) | Bloquea builds y despliegues. No borrar nada sin revisión. |
 
 ## Revisión cruzada pendiente
 

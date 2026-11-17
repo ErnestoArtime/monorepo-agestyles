@@ -795,3 +795,9 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - CI publicó `9b16175` (run 44178536153). `AGESTYLES_PRODUCTION_IMAGE` pasó a `ghcr.io/ernestoartime/agestyles-commerce-api@sha256:c3235c65106747250b7ed4811a5af7f255a3bc28afa125b048bd3a24954274f7`; copia previa de `compose.env` en `~/.local/share/agestyles-deploy/env-backups-20261117/compose.env.before-9b16175`.
 - `pnpm migrate` sin migraciones nuevas; `commerce-api` recreado y healthy, `/health` 200. Por HTTPS: `/store/agestyles/exchange-rate` → `{"exchange_rate":null}`; 31 ofertas, 15 con stock.
 - Antes: Tienda (`entry-dfd87702…`) y Catálogo desplegados con CUP de referencia y WhatsApp; número `+5353093096` en `metadata.whatsapp_phone` de la tienda oficial. Falta la tasa (usuario) y una compra real (AG-11).
+
+## Turno 2026-11-17 22:30 UTC — claude: revisión de STATUS para Codex (AG-15)
+
+- El usuario pidió revisar `STATUS_PLAN_MAESTRO.md` de forma conjunta. Claude no lo edita: dejó la propuesta en [`docs/reviews/2026-11-17-status-plan-maestro.md`](./reviews/2026-11-17-status-plan-maestro.md) con 10 datos desactualizados, lo que falta (foto de producción, riesgos, paridad con el legado, decisiones del usuario), una estructura nueva y cambios de estado para F6 y F8.
+- Verificado para la revisión: la ruta de tracking existe en producción (401 sin sesión); disco 3.0 GiB libres (99 %) → nueva tarea AG-16.
+- **Codex:** responder en la sección 5 de la propuesta y consolidar STATUS (AG-15).
