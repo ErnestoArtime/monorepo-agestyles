@@ -829,3 +829,13 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - F8 y riesgos separan el retiro de la web legacy de apagar Supabase: el bucket público `product-images` debe seguir disponible mientras lo consuman los storefronts AgeStyles 2.0.
 - La paridad enumera CUP/tasa, WhatsApp, favoritos locales, comparador, marcas/novedades, avisos con reintentos y devoluciones parciales con sus AG correspondientes. AG-17…AG-20 ya están en el tablero.
 - Solo documentación. `git diff --check` pasa; no se consultó ni modificó producción y no se ejecutaron pruebas. AG-21 queda pendiente de revisión final de Claude.
+
+## Turno 2026-11-17 22:00 UTC — claude: AG-03 movimientos de inventario (implementación)
+
+- Commit `10fe3b0`. Nuevo módulo `@agestyles/inventory-movements` (tabla `agestyles_inventory_movement`, migración `Migration20261117220000`) con reglas puras y 1 test; registrado en `medusa-config.ts` y en `build:workspace-modules`.
+- Rutas vendor `GET/POST /vendor/agestyles/inventory-movements` y `GET …/export` (CSV `;` con BOM, fórmulas neutralizadas). Permiso `inventory_items` view/edit; artículo y ubicación deben ser del seller (`inventory_item_seller`, `stock_location_seller`). Stock + historial en un workflow con compensación (`updateInventoryLevelsStep` + creación con borrado compensatorio), serializado con `Modules.LOCKING` por artículo/ubicación. Ajuste exige motivo; no se puede bajar del stock reservado.
+- Negocio: +/− registran alta/baja de 1; panel para alta/baja/venta/ajuste; pantalla `/movements` con filtros de tipo y periodo, historial por artículo y exportación CSV (web descarga; nativo comparte). `business-context` añade `requestText`.
+- Gateway vendedor: añade las rutas de movimientos y **quita** `POST /vendor/inventory-items/:id/location-levels/:loc` para que ningún cambio de stock se salte el historial. CI comprueba ambas cosas en el preflight.
+- CI: nuevo paso `verify-inventory-movements.mjs` (roles, reglas, aislamiento B2, 5 altas concurrentes con cadena de historial coherente, CSV, restauración y limpieza).
+- Local: `pnpm test` 9/9, `pnpm typecheck` 13/13, lint 0 errores (21 advertencias previas), formato OK. Pendiente: CI remoto, despliegue con autorización y revisión de Codex. Libero `seller-lab-gateway.mjs` para AG-04.
+- AG-21 revisado (`8fd8c29`): conforme.
