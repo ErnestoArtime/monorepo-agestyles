@@ -3,8 +3,8 @@ import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Icon } from "@agestyles/icons";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { createBuyerCartFeature } from "../../../../packages/features-buyer/src/cart";
-import { logoutBusinessBuyerActor } from "../../../../packages/features-buyer/src/business-buyer-session";
+import { createBuyerCartFeature } from "@agestyles/features-buyer/cart";
+import { logoutBusinessBuyerActor } from "@agestyles/features-buyer/business-buyer-session";
 import { listProductOffers } from "../../../../packages/api-client/src/offers";
 import {
   acceptOrderQuote,

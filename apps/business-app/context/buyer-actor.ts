@@ -3,7 +3,7 @@ import Medusa from "@medusajs/js-sdk";
 import {
   createBusinessBuyerSession,
   createBuyerActorStorage,
-} from "../../../packages/features-buyer/src/business-buyer-session";
+} from "@agestyles/features-buyer/business-buyer-session";
 
 const storage = createBuyerActorStorage(AsyncStorage);
 

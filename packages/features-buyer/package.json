@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./business-buyer-session": "./src/business-buyer-session.ts",
     "./cart": "./src/cart.ts"
   },
   "scripts": {

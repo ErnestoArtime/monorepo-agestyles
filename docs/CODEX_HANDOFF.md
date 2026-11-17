@@ -563,3 +563,11 @@ Se amplió `tools/migration/project-catalog-projection.mjs`: la salida efímera 
 La suite de migración agregó una verificación sintética de conciliación y repetibilidad: dos bundles con el mismo export_id/proyección producen manifiestos y hashes iguales. `corepack pnpm migration:test` → 11/11; `corepack pnpm test` → 8/8 targets; `corepack pnpm typecheck` → 12/12; `corepack pnpm lint` → 0 errores/20 advertencias; `corepack pnpm format:check`, Prettier dirigido y `git diff --check` → PASS. No se consultó ni exportó Supabase, no se importó a Medusa y no se ejecutaron builds.
 
 Este avance solo mejora el preflight sintético. F0/F6 reales siguen bloqueadas por destino cifrado y restore, `pg_dump --schema-only` aprobado, y decisiones explícitas de seller, USD/CUP, stock y medios.
+
+CI del commit `c79f5f7` [run 44056377199](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44056377199) terminó success: lint, formato, tests, typecheck, build aislado de Medusa y exports web Buyer/Business/Storefront.
+
+## F5 — Exportación del actor comprador como paquete compartido — 17 de noviembre de 2026
+
+Business ahora declara `@agestyles/features-buyer` como dependencia workspace y consume `cart` y `business-buyer-session` por exports públicos del paquete, no por rutas internas a `packages/**/src`. Nx refleja la arista `@agestyles/business-app` → `@agestyles/features-buyer`. Se añadieron pruebas sintéticas para login customer, recuperación del customer, logout delegado al actor customer, desafío MFA sin lectura de customer y sesión expirada que devuelve `null`.
+
+Verificación: test de `features-buyer` PASS; typecheck del paquete y Business PASS; typecheck monorepo 12/12; tests Nx 8/8; grafo Nx 13 proyectos/18 dependencias y arista Business→Buyer features confirmada; ESLint/Prettier dirigidos y formato PASS. La revisión UI de login/alternancia y refresh/revocación sigue pendiente en navegador/dispositivo; no se usaron cuentas ni API real.

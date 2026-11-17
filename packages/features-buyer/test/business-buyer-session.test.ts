@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import {
   BUSINESS_BUYER_SESSION_PREFIX,
   createBuyerActorStorage,
+  createBusinessBuyerSession,
   loginBusinessAndBuyerActors,
   logoutBusinessBuyerActor,
 } from "../src/business-buyer-session.ts";
@@ -31,6 +32,86 @@ import {
 
   assert.equal(await customerStorage.getItem("token"), null);
   assert.equal(values.get("agestyles.business.actor.token"), "member-token");
+}
+
+{
+  const calls: string[] = [];
+  const customer = { id: "cus_test", email: "person@example.test" };
+  const session = createBusinessBuyerSession({
+    auth: {
+      async login(actor, provider, credentials) {
+        calls.push(`${actor}:${provider}:${credentials.email}`);
+        return "customer-token";
+      },
+      async logout() {
+        calls.push("customer-logout");
+      },
+    },
+    store: {
+      customer: {
+        async retrieve() {
+          calls.push("customer-retrieve");
+          return { customer };
+        },
+      },
+    },
+  });
+
+  assert.deepEqual(await session.login("person@example.test", "synthetic-password"), { customer });
+  assert.deepEqual(await session.getCustomer(), customer);
+  await session.logout();
+  assert.deepEqual(calls, [
+    "customer:emailpass:person@example.test",
+    "customer-retrieve",
+    "customer-retrieve",
+    "customer-logout",
+  ]);
+}
+
+{
+  let retrieved = false;
+  const session = createBusinessBuyerSession({
+    auth: {
+      async login() {
+        return { challenge: "multi-factor" };
+      },
+      async logout() {},
+    },
+    store: {
+      customer: {
+        async retrieve() {
+          retrieved = true;
+          return { customer: { id: "cus_test", email: "person@example.test" } };
+        },
+      },
+    },
+  });
+
+  await assert.rejects(
+    session.login("person@example.test", "synthetic-password"),
+    /paso adicional/,
+  );
+  assert.equal(retrieved, false);
+}
+
+{
+  const session = createBusinessBuyerSession({
+    auth: {
+      async login() {
+        return "customer-token";
+      },
+      async logout() {},
+    },
+    store: {
+      customer: {
+        async retrieve() {
+          throw new Error("expired customer actor");
+        },
+      },
+    },
+  });
+
+  assert.equal(await session.getCustomer(), null);
 }
 
 {

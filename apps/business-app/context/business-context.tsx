@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Medusa from "@medusajs/js-sdk";
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { loginBusinessAndBuyerActors } from "../../../packages/features-buyer/src/business-buyer-session";
+import { loginBusinessAndBuyerActors } from "@agestyles/features-buyer/business-buyer-session";
 import { buyerSdk } from "./buyer-actor";
 
 export type Seller = { id: string; name: string; handle: string; role_id?: string };
