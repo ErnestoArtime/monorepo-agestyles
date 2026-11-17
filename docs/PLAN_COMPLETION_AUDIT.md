@@ -122,6 +122,14 @@ El grafo del monorepo está indexado. La arquitectura muestra apps `commerce-api
 - Ninguna fase F0–F8 cierra sus criterios globales; F9 permanece diferida. Persisten los gates externos de backup/restore, datos/importación, dispositivo, QA/UAT y decisión de negocio.
 
 
+## Revalidación de checkout, permisos y API por defecto — 17 de noviembre de 2026
+
+- F4/F7, CI [run 44087586663](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44087586663), commit `44643fc`: checkout HTTP A2+B2 en API/PG/Redis efímeros, un grupo con dos pedidos hijos seller-scoped y lectura de tracking para el customer dueño; un segundo customer obtiene 404 sin datos. No crea fulfillment ni demuestra el runtime público.
+- F5/F7, CI [run 44085868401](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44085868401), commit `d6e76d2`: dueño crea solicitud de retiro de variante (202), gestor de inventario y solo lectura reciben 403. El mismo flujo confirma el preflight del gateway, que permite DELETE y rechaza POST en esa ruta.
+- F2/F4/F5, CI [run 44090686807](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44090686807), commit `0bd48a7`: los SDK Buyer/Business y ejemplos apuntan al puerto 19081 del API vigente; test de consistencia y exports web pasan. Esto corrige el fallback local, no valida la URL incorporada en APKs previas.
+- Los gates locales de este corte pasan: tests 8/8, typecheck 12/12, lint 0 errores/19 warnings, formato y `git diff --check` PASS. Siguen sin cierre F0/F1/F3/F4/F5/F6/F7/F8: backup/restore, diagnóstico Kickz/B1, UI/medios/fulfillment, runtime desplegado, inspección visual/dispositivos, ETL, carga/rollback/UAT y go/no-go.
+
+
 ## Addendum de permisos seller — 17 de noviembre de 2026
 
 El resolver `SellerPermissionsService` ahora tiene tests sintéticos ejecutados dentro del target de Commerce API: owner, inventory manager, viewer, admin, rol desconocido y mismatch de tienda/miembro. Resultado dirigido: 6/6 incluyendo tracking; Nx: 8/8 y typecheck: 12/12. La prueba usa un repositorio de membresías en memoria y no demuestra BOLA de ruta/DB, revocación runtime ni UI.
