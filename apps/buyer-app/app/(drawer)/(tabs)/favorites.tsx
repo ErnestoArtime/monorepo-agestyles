@@ -6,7 +6,7 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { sdk } from "@/lib/sdk";
 import { listStoreProducts } from "@agestyles/api-client/store";
 import type { HttpTypes } from "@medusajs/types";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -26,11 +26,14 @@ export default function FavoritesScreen() {
   const [products, setProducts] = useState<HttpTypes.StoreProduct[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
+  const requestId = useRef(0);
 
   const loadFavorites = useCallback(async () => {
+    const currentRequestId = ++requestId.current;
     if (!ready || !selectedRegion || favoriteIds.length === 0) {
       setProducts([]);
       setLoading(false);
+      setError(false);
       return;
     }
 
@@ -52,11 +55,13 @@ export default function FavoritesScreen() {
         offset += page.products.length;
         if (page.products.length === 0) break;
       }
+      if (currentRequestId !== requestId.current) return;
       setProducts(found);
     } catch {
+      if (currentRequestId !== requestId.current) return;
       setError(true);
     } finally {
-      setLoading(false);
+      if (currentRequestId === requestId.current) setLoading(false);
     }
   }, [favoriteIds, ready, selectedRegion]);
 
@@ -91,13 +96,32 @@ export default function FavoritesScreen() {
         }
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            {(!ready || loading) && <ActivityIndicator color={colors.tint} />}
+            {(!ready || loading) && (
+              <>
+                <ActivityIndicator color={colors.tint} />
+                <Text style={[styles.emptyText, { color: colors.icon }]}>
+                  Cargando tus favoritos…
+                </Text>
+              </>
+            )}
             {error ? (
-              <TouchableOpacity accessibilityRole="button" onPress={() => void loadFavorites()}>
-                <Text style={[styles.retryText, { color: colors.tint }]}>Reintentar</Text>
-              </TouchableOpacity>
+              <>
+                <Text style={[styles.emptyText, { color: colors.text }]}>
+                  No se pudieron cargar tus favoritos.
+                </Text>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel="Volver a cargar favoritos"
+                  onPress={() => void loadFavorites()}
+                  style={[styles.retryButton, { backgroundColor: colors.tint }]}
+                >
+                  <Text style={[styles.retryText, { color: colors.onTint }]}>Reintentar</Text>
+                </TouchableOpacity>
+              </>
             ) : null}
-            <Text style={[styles.emptyText, { color: colors.icon }]}>{message}</Text>
+            {!error && ready && !loading && (
+              <Text style={[styles.emptyText, { color: colors.icon }]}>{message}</Text>
+            )}
           </View>
         }
         renderItem={({ item }) => <ProductCard product={item} />}
@@ -116,5 +140,6 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 14, lineHeight: 21, marginTop: 5 },
   emptyState: { flex: 1, minHeight: 220, justifyContent: "center", alignItems: "center", gap: 14 },
   emptyText: { maxWidth: 280, textAlign: "center", fontSize: 15, lineHeight: 22 },
+  retryButton: { minHeight: 44, paddingHorizontal: 20, borderRadius: 22, justifyContent: "center" },
   retryText: { fontSize: 15, fontWeight: "600" },
 });

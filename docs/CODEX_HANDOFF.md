@@ -1,5 +1,12 @@
 # Registro de trabajo compartido con Codex
 
+## Turno 2026-11-18 — codex: AG-22 estados robustos de Favoritos Buyer
+
+- Reclamé AG-22 en `docs/TABLERO.md`; cambios limitados a la pantalla `apps/buyer-app/app/(drawer)/(tabs)/favorites.tsx`.
+- Añadí un identificador de petición para ignorar resultados y errores de cargas obsoletas cuando cambian favoritos o región, y limpiar correctamente el error al vaciar la lista.
+- Ordené los estados vacíos: carga con indicador y texto; error con mensaje separado y botón Reintentar accesible, usando colores de superficie/acción del tema claro u oscuro.
+- Verificación ejecutada: `pnpm --filter @agestyles/buyer-app exec tsc --noEmit` → OK; `git diff --check` → OK. No añadí ni ejecuté tests por preferencia del usuario. CI remoto y revisión de Claude pendientes.
+
 **Propósito:** dejar constancia de lo que modifica la sesión OpenCode para que Codex lo revise antes de dar por cerrada una fase. No sustituye al plan maestro ni al status: los complementa.
 
 **Tareas y estado:** viven en el [tablero único](./TABLERO.md); este archivo es el registro de turnos (solo añadir al final).
