@@ -3,14 +3,23 @@ import { Stack } from "expo-router";
 import { NotificationHeaderBell } from "../../../../components/notification-header-bell";
 import { Colors } from "../../../../constants/theme";
 import { useColorScheme } from "../../../../hooks/use-color-scheme";
+import { useResponsive } from "../../../../hooks/use-responsive";
+import {
+  webContentStyle,
+  webFormStyle,
+  webPageHeaderOption,
+} from "../../../../components/web-page-header";
 
 export default function AccountLayout() {
   const colorScheme = useColorScheme();
+  const { isWideWeb } = useResponsive();
   const colors = Colors[colorScheme ?? "light"];
 
   return (
     <Stack
       screenOptions={{
+        // Wide browsers: a page heading under the website top bar, not a second app bar.
+        ...webPageHeaderOption(isWideWeb),
         // In a browser the bar above the page belongs to the browser; Android Chrome still
         // reports a top safe-area inset, which doubled the header height (AG-24).
         ...(Platform.OS === "web" ? { headerStatusBarHeight: 0 } : {}),
@@ -18,16 +27,34 @@ export default function AccountLayout() {
         headerStyle: { backgroundColor: colors.cardBackground },
         headerTintColor: colors.text,
         headerShadowVisible: false,
-        contentStyle: { backgroundColor: colors.background },
+        contentStyle: [{ backgroundColor: colors.background }, isWideWeb ? webContentStyle : null],
       }}
     >
       <Stack.Screen
         name="index"
         options={{ title: "Cuenta", headerRight: () => <NotificationHeaderBell /> }}
       />
-      <Stack.Screen name="login" options={{ title: "Iniciar sesión" }} />
-      <Stack.Screen name="register" options={{ title: "Crear cuenta" }} />
-      <Stack.Screen name="forgot-password" options={{ title: "Recuperar contraseña" }} />
+      <Stack.Screen
+        name="login"
+        options={{
+          title: "Iniciar sesión",
+          ...(isWideWeb ? { contentStyle: webFormStyle(colors.background) } : {}),
+        }}
+      />
+      <Stack.Screen
+        name="register"
+        options={{
+          title: "Crear cuenta",
+          ...(isWideWeb ? { contentStyle: webFormStyle(colors.background) } : {}),
+        }}
+      />
+      <Stack.Screen
+        name="forgot-password"
+        options={{
+          title: "Recuperar contraseña",
+          ...(isWideWeb ? { contentStyle: webFormStyle(colors.background) } : {}),
+        }}
+      />
       <Stack.Screen name="orders" options={{ title: "Mis compras" }} />
       <Stack.Screen name="orders/[id]" options={{ title: "Detalles de compra" }} />
     </Stack>

@@ -8,6 +8,7 @@ import { Icon } from "@agestyles/icons";
 import { Colors } from "../../../constants/theme";
 import { useCart } from "../../../context/cart-context";
 import { useResponsive } from "../../../hooks/use-responsive";
+import { webContentStyle, webPageHeaderOption } from "../../../components/web-page-header";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -19,6 +20,8 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
+        // Wide browsers: a page heading under the website top bar, not a second app bar.
+        ...webPageHeaderOption(isWideWeb),
         // In a browser the bar above the page belongs to the browser; Android Chrome still
         // reports a top safe-area inset, which doubled the header height (AG-24).
         ...(Platform.OS === "web" ? { headerStatusBarHeight: 0 } : {}),
@@ -47,8 +50,22 @@ export default function TabLayout() {
           href: null,
         }}
       />
-      <Tabs.Screen name="compare" options={{ href: null, title: "Comparar productos" }} />
-      <Tabs.Screen name="stores" options={{ href: null, title: "Tiendas" }} />
+      <Tabs.Screen
+        name="compare"
+        options={{
+          href: null,
+          title: "Comparar productos",
+          ...(isWideWeb ? { sceneStyle: webContentStyle } : {}),
+        }}
+      />
+      <Tabs.Screen
+        name="stores"
+        options={{
+          href: null,
+          title: "Tiendas",
+          ...(isWideWeb ? { sceneStyle: webContentStyle } : {}),
+        }}
+      />
       <Tabs.Screen
         name="(home)"
         options={{

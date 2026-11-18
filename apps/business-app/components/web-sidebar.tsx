@@ -7,6 +7,7 @@ import { BrandLockup } from "./brand-lockup";
 import { useBusiness } from "../context/business-context";
 import { useBusinessTheme, type BusinessTheme } from "../hooks/use-business-theme";
 import { hasPermission } from "../lib/permissions";
+import { memberDisplayName, memberRoleLabel } from "../lib/roles";
 
 type Item = { label: string; icon: IconName; href: string; match: (path: string) => boolean };
 
@@ -169,6 +170,25 @@ export function WebSidebar() {
         ))}
       </ScrollView>
       <View style={styles.bottom}>
+        <View
+          style={styles.account}
+          accessibilityLabel={`Sesión de ${memberDisplayName(member)}, ${memberRoleLabel(member)}`}
+        >
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>
+              {memberDisplayName(member).slice(0, 1).toUpperCase()}
+            </Text>
+          </View>
+          <View style={styles.flex}>
+            <Text style={styles.storeName} numberOfLines={1}>
+              {memberDisplayName(member)}
+            </Text>
+            <Text style={styles.muted} numberOfLines={1}>
+              {memberRoleLabel(member)}
+              {member?.member?.email ? ` · ${member.member.email}` : ""}
+            </Text>
+          </View>
+        </View>
         <Pressable
           onPress={() => router.push("/tienda" as Href)}
           accessibilityRole="link"
@@ -247,6 +267,22 @@ const createStyles = (theme: BusinessTheme) =>
     itemActive: { backgroundColor: theme.selectedSurface },
     itemText: { color: theme.text, fontSize: 14 },
     itemTextActive: { color: theme.action, fontWeight: "600" },
+    account: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      paddingHorizontal: 8,
+      paddingVertical: 8,
+    },
+    avatar: {
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      backgroundColor: theme.selectedSurface,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    avatarText: { color: theme.action, fontSize: 15, fontWeight: "700" },
     bottom: {
       borderTopColor: theme.border,
       borderTopWidth: StyleSheet.hairlineWidth,

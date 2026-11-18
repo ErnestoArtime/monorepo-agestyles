@@ -1,4 +1,6 @@
 import { useColorScheme } from "../../../../hooks/use-color-scheme";
+import { useResponsive } from "../../../../hooks/use-responsive";
+import { webContentStyle, webPageHeaderOption } from "../../../../components/web-page-header";
 import { DrawerActions } from "@react-navigation/native";
 import { Stack, useNavigation } from "expo-router";
 import React from "react";
@@ -9,12 +11,16 @@ import { Colors } from "../../../../constants/theme";
 
 export default function CartStackLayout() {
   const colorScheme = useColorScheme();
+  const { isWideWeb } = useResponsive();
   const navigation = useNavigation();
   const colors = Colors[colorScheme ?? "light"];
 
   return (
     <Stack
       screenOptions={{
+        // Wide browsers: a page heading under the website top bar, not a second app bar.
+        ...webPageHeaderOption(isWideWeb),
+        ...(isWideWeb ? { contentStyle: webContentStyle } : {}),
         // In a browser the bar above the page belongs to the browser; Android Chrome still
         // reports a top safe-area inset, which doubled the header height (AG-24).
         ...(Platform.OS === "web" ? { headerStatusBarHeight: 0 } : {}),

@@ -13,6 +13,8 @@ type Member = {
   is_owner?: boolean;
   role_id?: string;
   permissions?: Record<string, Permission>;
+  /** The signed-in person, to show who is using Negocio and with which role. */
+  member?: { email?: string | null; first_name?: string | null; last_name?: string | null };
 };
 type BusinessContextValue = {
   ready: boolean;
@@ -153,7 +155,7 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
       });
       setSeller(choice);
       const result: any = await sdk.client.fetch(
-        "/vendor/members/me?fields=id,is_owner,role_id,permissions",
+        "/vendor/members/me?fields=id,is_owner,role_id,permissions,member.email,member.first_name,member.last_name",
         {
           headers: { "x-seller-id": choice.id },
         },

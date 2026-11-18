@@ -15,6 +15,8 @@ import { RegionProvider } from "../context/region-context";
 import { ThemePreferenceProvider } from "../context/theme-preference";
 import { UiThemeProvider } from "@agestyles/ui-native";
 import { useColorScheme } from "../hooks/use-color-scheme";
+import { useResponsive } from "../hooks/use-responsive";
+import { webContentStyle, webPageHeaderOption } from "../components/web-page-header";
 import { rememberAgentCode } from "../lib/agent-code";
 
 export default function RootLayout() {
@@ -27,6 +29,7 @@ export default function RootLayout() {
 
 function RootNavigation() {
   const colorScheme = useColorScheme();
+  const { isWideWeb } = useResponsive();
   // A sales agent's link (`?gestor=CODE`) is remembered and offered at checkout (AG-06).
   const { gestor } = useGlobalSearchParams<{ gestor?: string }>();
   useEffect(() => {
@@ -60,6 +63,8 @@ function RootNavigation() {
                   <NotificationsLayer>
                     <Stack
                       screenOptions={{
+                        // Wide browsers: a page heading under the website top bar, not a second app bar.
+                        ...webPageHeaderOption(isWideWeb),
                         // In a browser the bar above the page belongs to the browser; Android Chrome still
                         // reports a top safe-area inset, which doubled the header height (AG-24).
                         ...(Platform.OS === "web" ? { headerStatusBarHeight: 0 } : {}),
@@ -76,6 +81,14 @@ function RootNavigation() {
                         name="checkout"
                         options={{
                           headerShown: true,
+                          ...(isWideWeb
+                            ? {
+                                contentStyle: [
+                                  { backgroundColor: colors.background },
+                                  webContentStyle,
+                                ],
+                              }
+                            : {}),
                           title: "Finalizar compra",
                           presentation: "card",
                           headerBackButtonDisplayMode: "minimal",
@@ -85,6 +98,14 @@ function RootNavigation() {
                         name="notifications"
                         options={{
                           headerShown: true,
+                          ...(isWideWeb
+                            ? {
+                                contentStyle: [
+                                  { backgroundColor: colors.background },
+                                  webContentStyle,
+                                ],
+                              }
+                            : {}),
                           title: "Notificaciones",
                           headerBackButtonDisplayMode: "minimal",
                         }}
@@ -93,6 +114,14 @@ function RootNavigation() {
                         name="notification-preferences"
                         options={{
                           headerShown: true,
+                          ...(isWideWeb
+                            ? {
+                                contentStyle: [
+                                  { backgroundColor: colors.background },
+                                  webContentStyle,
+                                ],
+                              }
+                            : {}),
                           title: "Avisos",
                           headerBackButtonDisplayMode: "minimal",
                         }}
@@ -101,6 +130,14 @@ function RootNavigation() {
                         name="reset-password"
                         options={{
                           headerShown: true,
+                          ...(isWideWeb
+                            ? {
+                                contentStyle: [
+                                  { backgroundColor: colors.background },
+                                  webContentStyle,
+                                ],
+                              }
+                            : {}),
                           title: "Nueva contraseña",
                           headerBackButtonDisplayMode: "minimal",
                         }}
@@ -109,6 +146,14 @@ function RootNavigation() {
                         name="order-confirmation/[id]"
                         options={{
                           headerShown: true,
+                          ...(isWideWeb
+                            ? {
+                                contentStyle: [
+                                  { backgroundColor: colors.background },
+                                  webContentStyle,
+                                ],
+                              }
+                            : {}),
                           title: "Compra confirmada",
                           headerLeft: () => null,
                           gestureEnabled: false,

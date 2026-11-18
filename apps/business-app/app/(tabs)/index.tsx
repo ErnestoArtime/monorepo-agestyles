@@ -5,6 +5,7 @@ import { Icon, type IconName } from "@agestyles/icons";
 import { OperationList, Section, hasPermission } from "../../components/operation-list";
 import { useBusiness } from "../../context/business-context";
 import { useBusinessTheme, type BusinessTheme } from "../../hooks/use-business-theme";
+import { memberRoleLabel } from "../../lib/roles";
 
 type Order = {
   id: string;
@@ -200,20 +201,7 @@ export default function OverviewScreen() {
     href: "/(tabs)/more",
   });
 
-  const roleId = member?.role_id?.toLowerCase() ?? "";
-  const roleLabel = member?.is_owner
-    ? "Propietario"
-    : roleId.includes("inventory")
-      ? "Gestor de inventario"
-      : roleId.includes("order")
-        ? "Gestor de pedidos"
-        : roleId.includes("support")
-          ? "Solo lectura"
-          : roleId.includes("accounting")
-            ? "Contabilidad"
-            : roleId.includes("administration")
-              ? "Administración"
-              : "Equipo de tienda";
+  const roleLabel = memberRoleLabel(member);
 
   return (
     <OperationList

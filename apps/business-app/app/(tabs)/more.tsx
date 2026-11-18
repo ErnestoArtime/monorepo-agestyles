@@ -5,6 +5,7 @@ import { Icon } from "@agestyles/icons";
 import { OperationList, Row, Section } from "../../components/operation-list";
 import { Seller, useBusiness } from "../../context/business-context";
 import { useBusinessTheme } from "../../hooks/use-business-theme";
+import { memberDisplayName, memberRoleLabel } from "../../lib/roles";
 
 export default function MoreScreen() {
   const theme = useBusinessTheme();
@@ -23,13 +24,7 @@ export default function MoreScreen() {
     await logout();
     router.replace("/");
   }
-  const role = member?.is_owner
-    ? "Propietario"
-    : member?.role_id?.includes("INVENTORY") || member?.role_id?.includes("inventory")
-      ? "Gestor de inventario"
-      : member?.role_id?.toLowerCase().includes("support")
-        ? "Solo lectura"
-        : "Miembro";
+  const role = memberRoleLabel(member);
   return (
     <OperationList
       title="Más"
@@ -38,6 +33,10 @@ export default function MoreScreen() {
       error=""
     >
       <Section title="Sesión de negocio">
+        <Row
+          title={memberDisplayName(member)}
+          detail={`${member?.member?.email ?? ""}${member?.member?.email ? " · " : ""}${role}`}
+        />
         <Row
           title={seller?.name ?? "Tienda"}
           detail={`${role} · ${seller?.handle ? `@${seller.handle}` : "AgeStyles"}`}
