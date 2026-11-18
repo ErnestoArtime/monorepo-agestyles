@@ -369,6 +369,14 @@ export default function ProductsScreen() {
       ) : null}
       {canEdit ? (
         <Button
+          icon="plus"
+          title="Nuevo producto"
+          onPress={() => router.push("/product-new")}
+          style={styles.importButton}
+        />
+      ) : null}
+      {canEdit ? (
+        <Button
           icon="list"
           variant="secondary"
           title="Importar o corregir catálogo por CSV"

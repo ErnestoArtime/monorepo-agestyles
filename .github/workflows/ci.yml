@@ -315,6 +315,15 @@ jobs:
             --request OPTIONS 'http://127.0.0.1:19183/agestyles-seller/vendor/products?limit=1' \
             --header 'Origin: https://negocio.eav-labs.com' \
             --header 'Access-Control-Request-Method: GET')"
+          uploads_status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            --request OPTIONS http://127.0.0.1:19183/agestyles-seller/vendor/uploads \
+            --header 'Origin: https://negocio.eav-labs.com' \
+            --header 'Access-Control-Request-Method: POST')"
+          if [[ "${uploads_status}" != "204" ]]; then
+            echo "Expected the product photo upload preflight 204; got ${uploads_status}." >&2
+            cat /tmp/agestyles-seller-gateway-ci.log
+            exit 1
+          fi
           if [[ "${products_list_status}" != "204" ]]; then
             echo "Expected the product list GET preflight 204 (a POST-only rule must not shadow it); got ${products_list_status}." >&2
             cat /tmp/agestyles-seller-gateway-ci.log

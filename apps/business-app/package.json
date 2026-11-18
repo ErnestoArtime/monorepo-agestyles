@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@agestyles/design-tokens": "workspace:*",
+    "@agestyles/domain": "workspace:*",
     "@agestyles/features-buyer": "workspace:*",
     "@agestyles/icons": "workspace:*",
     "@agestyles/ui-native": "workspace:*",
@@ -23,6 +24,8 @@
     "@react-navigation/native": "^7.1.8",
     "expo": "~54.0.22",
     "expo-constants": "~18.0.10",
+    "expo-image-manipulator": "~14.0.8",
+    "expo-image-picker": "~17.0.11",
     "expo-linking": "~8.0.8",
     "expo-router": "~6.0.13",
     "expo-splash-screen": "~31.0.10",

@@ -25,6 +25,8 @@ type BusinessContextValue = {
   request: <T>(path: string, method?: string, body?: unknown) => Promise<T>;
   /** Non-JSON downloads (CSV exports) for the selected seller. */
   requestText: (path: string, accept?: string) => Promise<string>;
+  /** Multipart upload of product photos to Mercur's `/vendor/uploads` (AG-26). */
+  upload: (form: FormData) => Promise<{ files: { id: string; url: string }[] }>;
   reloadSellers: () => Promise<void>;
 };
 
@@ -79,6 +81,21 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
         headers: { "x-seller-id": seller.id, accept },
       });
       return response.text();
+    },
+    [seller],
+  );
+
+  const upload = useCallback(
+    async (form: FormData) => {
+      if (!seller) throw new Error("Selecciona una tienda para continuar.");
+      // A null content-type lets the runtime set the multipart boundary.
+      return unwrap<{ files: { id: string; url: string }[] }>(
+        await sdk.client.fetch("/vendor/uploads", {
+          method: "POST",
+          body: form,
+          headers: { "x-seller-id": seller.id, "content-type": null },
+        }),
+      );
     },
     [seller],
   );
@@ -185,6 +202,7 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
       selectSeller,
       request,
       requestText,
+      upload,
       reloadSellers,
     }),
     [
@@ -199,6 +217,7 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
       selectSeller,
       request,
       requestText,
+      upload,
       reloadSellers,
     ],
   );

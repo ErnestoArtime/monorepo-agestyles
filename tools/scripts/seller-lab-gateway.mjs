@@ -44,6 +44,8 @@ const rules = [
   ["GET", /^\/vendor\/members\/me$/],
   // One rule per path: the first path match decides, so GET and POST must share it.
   ["GET POST", /^\/vendor\/products$/],
+  // Product photos (AG-26): Mercur's multipart upload, gated by products/store edit rights.
+  ["POST", /^\/vendor\/uploads$/],
   ["GET", /^\/vendor\/(orders|inventory-items)$/],
   ["GET", /^\/vendor\/orders\/order_[a-z0-9_-]+$/i],
   ["GET", /^\/vendor\/stock-locations$/],
@@ -149,7 +151,8 @@ createServer({ requestTimeout: 30_000, headersTimeout: 10_000 }, (incoming, outg
 
   if (
     incoming.headers["transfer-encoding"] ||
-    Number(incoming.headers["content-length"]) > 65_536
+    Number(incoming.headers["content-length"]) >
+      (path === "/vendor/uploads" ? 8 * 1024 * 1024 : 65_536)
   ) {
     return reply(outgoing, 413, "Request body too large", corsHeaders);
   }
