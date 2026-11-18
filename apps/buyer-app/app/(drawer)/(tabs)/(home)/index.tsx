@@ -460,6 +460,7 @@ const styles = StyleSheet.create({
   },
   menuFilter: {
     alignSelf: "flex-start",
+    marginHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
     gap: 8,

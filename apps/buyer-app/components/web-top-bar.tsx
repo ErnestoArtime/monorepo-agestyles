@@ -1,7 +1,7 @@
 import { Icon, type IconName } from "@agestyles/icons";
 import { usePathname, useRouter, type Href } from "expo-router";
-import React, { useMemo } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { BrandLockup } from "@/components/brand-lockup";
 import { NotificationHeaderBell } from "@/components/notification-header-bell";
 import { Colors } from "@/constants/theme";
@@ -36,6 +36,23 @@ export function WebTopBar() {
   const { customer } = useCustomer();
   const { preference, setPreference } = useThemePreference();
   const categories = useTopCategories();
+  const [categoriesOpen, setCategoriesOpen] = useState(false);
+
+  // Escape closes the categories menu, as in any website dropdown.
+  useEffect(() => {
+    if (!categoriesOpen || Platform.OS !== "web" || typeof window === "undefined") return;
+    const onKey = (event: KeyboardEvent) => event.key === "Escape" && setCategoriesOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [categoriesOpen]);
+
+  const openCategory = (category: (typeof categories)[number]) => {
+    setCategoriesOpen(false);
+    router.push({
+      pathname: HOME,
+      params: { filtro: "categoria", nombre: category.name, ids: category.ids.join(",") },
+    } as Href);
+  };
   const itemCount = cart?.items?.reduce((sum, item) => sum + Number(item.quantity ?? 0), 0) ?? 0;
   const theme = NEXT_THEME[preference];
 
@@ -85,6 +102,14 @@ export function WebTopBar() {
 
   return (
     <View style={styles.bar} accessibilityRole="header">
+      {categoriesOpen ? (
+        // Click anywhere outside the menu to close it.
+        <Pressable
+          accessibilityLabel="Cerrar menú de categorías"
+          onPress={() => setCategoriesOpen(false)}
+          style={styles.backdrop}
+        />
+      ) : null}
       <View style={styles.inner}>
         <View style={styles.row}>
           <Pressable
@@ -102,6 +127,46 @@ export function WebTopBar() {
               { pathname: HOME, params: { filtro: "todos" } } as Href,
               false,
             )}
+            {categories.length ? (
+              <View style={styles.dropdownHost}>
+                <Pressable
+                  onPress={() => setCategoriesOpen((open) => !open)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Categorías"
+                  accessibilityState={{ expanded: categoriesOpen }}
+                  style={({ hovered, pressed }: { hovered?: boolean; pressed: boolean }) => [
+                    styles.link,
+                    styles.dropdownTrigger,
+                    (hovered || pressed || categoriesOpen) && {
+                      backgroundColor: colors.surfaceMuted,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.linkText, categoriesOpen && styles.linkActive]}>
+                    Categorías
+                  </Text>
+                  <Icon name="chevronDown" size={16} color={colors.icon} />
+                </Pressable>
+                {categoriesOpen ? (
+                  <View style={styles.dropdown} accessibilityLabel="Categorías de productos">
+                    {categories.map((category) => (
+                      <Pressable
+                        key={category.id}
+                        onPress={() => openCategory(category)}
+                        accessibilityRole="link"
+                        style={({ hovered }: { hovered?: boolean }) => [
+                          styles.dropdownItem,
+                          hovered && { backgroundColor: colors.surfaceMuted },
+                        ]}
+                      >
+                        <Text style={styles.dropdownText}>{category.name}</Text>
+                        <Icon name="chevronRight" size={16} color={colors.icon} />
+                      </Pressable>
+                    ))}
+                  </View>
+                ) : null}
+              </View>
+            ) : null}
             {link("Novedades", { pathname: HOME, params: { filtro: "novedades" } } as Href, false)}
             {link("Tiendas", "/stores" as Href, pathname.startsWith("/stores"))}
           </View>
@@ -128,32 +193,6 @@ export function WebTopBar() {
             )}
           </View>
         </View>
-        {categories.length ? (
-          <View style={styles.categories} accessibilityLabel="Categorías de productos">
-            {categories.map((category) => (
-              <Pressable
-                key={category.id}
-                onPress={() =>
-                  router.push({
-                    pathname: HOME,
-                    params: {
-                      filtro: "categoria",
-                      nombre: category.name,
-                      ids: category.ids.join(","),
-                    },
-                  } as Href)
-                }
-                accessibilityRole="link"
-                style={({ hovered }: { hovered?: boolean }) => [
-                  styles.category,
-                  hovered && { borderBottomColor: colors.tint },
-                ]}
-              >
-                <Text style={styles.categoryText}>{category.name}</Text>
-              </Pressable>
-            ))}
-          </View>
-        ) : null}
       </View>
     </View>
   );
@@ -162,11 +201,19 @@ export function WebTopBar() {
 const createStyles = (colors: (typeof Colors)[keyof typeof Colors]) =>
   StyleSheet.create({
     bar: {
+      position: "relative",
+      zIndex: 10,
       backgroundColor: colors.cardBackground,
       borderBottomColor: colors.border,
       borderBottomWidth: StyleSheet.hairlineWidth,
     },
-    inner: { width: "100%", maxWidth: CONTENT_MAX, alignSelf: "center", paddingHorizontal: 16 },
+    inner: {
+      width: "100%",
+      maxWidth: CONTENT_MAX,
+      alignSelf: "center",
+      paddingHorizontal: 16,
+      zIndex: 30,
+    },
     row: { minHeight: 64, flexDirection: "row", alignItems: "center", gap: 24 },
     brand: { paddingVertical: 8 },
     nav: { flexDirection: "row", alignItems: "center", gap: 4, flex: 1 },
@@ -198,12 +245,40 @@ const createStyles = (colors: (typeof Colors)[keyof typeof Colors]) =>
       justifyContent: "center",
     },
     badgeText: { color: colors.onTint, fontSize: 11, fontWeight: "700" },
-    categories: { flexDirection: "row", flexWrap: "wrap", gap: 20, paddingBottom: 2 },
-    category: {
-      minHeight: 40,
-      justifyContent: "center",
-      borderBottomWidth: 2,
-      borderBottomColor: "transparent",
+    dropdownHost: { position: "relative", zIndex: 30 },
+    dropdownTrigger: { flexDirection: "row", alignItems: "center", gap: 6 },
+    dropdown: {
+      position: "absolute",
+      top: 46,
+      left: 0,
+      minWidth: 260,
+      paddingVertical: 6,
+      borderRadius: 12,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+      backgroundColor: colors.cardBackground,
+      shadowColor: "#000",
+      shadowOpacity: 0.18,
+      shadowRadius: 18,
+      shadowOffset: { width: 0, height: 8 },
+      elevation: 8,
     },
-    categoryText: { color: colors.text, fontSize: 14 },
+    dropdownItem: {
+      minHeight: 44,
+      paddingHorizontal: 16,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 16,
+    },
+    dropdownText: { color: colors.text, fontSize: 15 },
+    backdrop: {
+      // Fixed on web so it covers the page under the bar, not only the bar.
+      position: (Platform.OS === "web" ? "fixed" : "absolute") as "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 20,
+    },
   });
