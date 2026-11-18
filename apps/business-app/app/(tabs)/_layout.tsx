@@ -1,7 +1,7 @@
 import { NotificationBell } from "@agestyles/features-notifications";
 import { Tabs, useRouter } from "expo-router";
 import { Icon, IconName } from "@agestyles/icons";
-import { View } from "react-native";
+import { Platform, View } from "react-native";
 import { hasPermission } from "../../components/operation-list";
 import { useBusiness } from "../../context/business-context";
 import { useBusinessTheme } from "../../hooks/use-business-theme";
@@ -28,6 +28,8 @@ export default function BusinessTabs() {
   return (
     <Tabs
       screenOptions={({ route }) => ({
+        // Browsers draw their own top bar; Android Chrome's safe-area inset doubled the header.
+        ...(Platform.OS === "web" ? { headerStatusBarHeight: 0 } : {}),
         headerStyle: { backgroundColor: theme.surface },
         headerTitleStyle: { color: theme.text, fontWeight: "600" },
         headerTintColor: theme.action,

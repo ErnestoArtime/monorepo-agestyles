@@ -1,4 +1,4 @@
-import { Icon } from "@agestyles/icons";
+import { Icon, type IconName } from "@agestyles/icons";
 import { DrawerContentComponentProps, DrawerContentScrollView } from "@react-navigation/drawer";
 import { useRouter, type Href } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
@@ -77,10 +77,10 @@ export function DrawerContent(props: DrawerContentComponentProps) {
     </Pressable>
   );
 
-  const themes: { value: ThemePreference; label: string }[] = [
-    { value: "system", label: "Sistema" },
-    { value: "light", label: "Claro" },
-    { value: "dark", label: "Oscuro" },
+  const themes: { value: ThemePreference; label: string; icon: IconName }[] = [
+    { value: "system", label: "Tema del sistema", icon: "monitor" },
+    { value: "light", label: "Tema claro", icon: "sun" },
+    { value: "dark", label: "Tema oscuro", icon: "moon" },
   ];
 
   return (
@@ -121,7 +121,7 @@ export function DrawerContent(props: DrawerContentComponentProps) {
 
         <View style={styles.section}>
           <Text style={styles.heading}>Apariencia</Text>
-          <View style={styles.chips} accessibilityRole="radiogroup" accessibilityLabel="Tema">
+          <View style={styles.segment} accessibilityRole="radiogroup" accessibilityLabel="Tema">
             {themes.map((theme) => {
               const selected = preference === theme.value;
               return (
@@ -129,12 +129,19 @@ export function DrawerContent(props: DrawerContentComponentProps) {
                   key={theme.value}
                   onPress={() => setPreference(theme.value)}
                   accessibilityRole="radio"
-                  accessibilityState={{ selected }}
-                  style={[styles.chip, selected && styles.chipSelected]}
+                  accessibilityLabel={theme.label}
+                  accessibilityState={{ selected, checked: selected }}
+                  style={({ pressed }) => [
+                    styles.segmentItem,
+                    selected && styles.segmentItemSelected,
+                    pressed && !selected && styles.segmentPressed,
+                  ]}
                 >
-                  <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
-                    {theme.label}
-                  </Text>
+                  <Icon
+                    name={theme.icon}
+                    size={20}
+                    color={selected ? colors.onTint : colors.icon}
+                  />
                 </Pressable>
               );
             })}
@@ -193,16 +200,24 @@ const createStyles = (colors: (typeof Colors)[keyof typeof Colors]) =>
       borderRadius: 10,
     },
     itemText: { color: colors.text, fontSize: 15 },
-    chips: { flexDirection: "row", gap: 8, paddingHorizontal: 8 },
-    chip: {
-      minHeight: 40,
-      paddingHorizontal: 14,
-      borderRadius: 20,
+    segment: {
+      flexDirection: "row",
+      alignSelf: "flex-start",
+      marginHorizontal: 8,
+      padding: 4,
+      gap: 4,
+      borderRadius: 14,
       borderWidth: 1,
       borderColor: colors.border,
+      backgroundColor: colors.background,
+    },
+    segmentItem: {
+      width: 48,
+      height: 40,
+      borderRadius: 10,
+      alignItems: "center",
       justifyContent: "center",
     },
-    chipSelected: { backgroundColor: colors.tint, borderColor: colors.tint },
-    chipText: { color: colors.text, fontSize: 13 },
-    chipTextSelected: { color: colors.onTint, fontWeight: "600" },
+    segmentItemSelected: { backgroundColor: colors.tint },
+    segmentPressed: { backgroundColor: colors.surfaceMuted },
   });

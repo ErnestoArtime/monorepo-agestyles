@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Tabs } from "expo-router";
 import React from "react";
@@ -16,6 +17,9 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
+        // In a browser the bar above the page belongs to the browser; Android Chrome still
+        // reports a top safe-area inset, which doubled the header height (AG-24).
+        ...(Platform.OS === "web" ? { headerStatusBarHeight: 0 } : {}),
         tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
         tabBarInactiveTintColor: Colors[colorScheme ?? "light"].tabIconDefault,
         tabBarStyle: {

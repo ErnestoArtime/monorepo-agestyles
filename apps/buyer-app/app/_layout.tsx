@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -53,6 +54,9 @@ function RootNavigation() {
                   <NotificationsLayer>
                     <Stack
                       screenOptions={{
+                        // In a browser the bar above the page belongs to the browser; Android Chrome still
+                        // reports a top safe-area inset, which doubled the header height (AG-24).
+                        ...(Platform.OS === "web" ? { headerStatusBarHeight: 0 } : {}),
                         headerShown: false,
                         headerStyle: { backgroundColor: colors.cardBackground },
                         headerTintColor: colors.text,

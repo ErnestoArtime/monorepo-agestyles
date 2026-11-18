@@ -2,7 +2,7 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { DrawerActions } from "@react-navigation/native";
 import { Stack, useNavigation } from "expo-router";
 import React from "react";
-import { TouchableOpacity } from "react-native";
+import { TouchableOpacity, Platform } from "react-native";
 
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { BrandLockup } from "@/components/brand-lockup";
@@ -17,6 +17,9 @@ export default function HomeStackLayout() {
   return (
     <Stack
       screenOptions={{
+        // In a browser the bar above the page belongs to the browser; Android Chrome still
+        // reports a top safe-area inset, which doubled the header height (AG-24).
+        ...(Platform.OS === "web" ? { headerStatusBarHeight: 0 } : {}),
         headerShown: true,
       }}
     >
