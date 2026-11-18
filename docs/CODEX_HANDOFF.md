@@ -1129,3 +1129,36 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
   - Quedan 4 fotos de prueba en el volumen (`*-prueba-ia.jpg`, `*-sin-fondo.png`, `*-producto-*.jpg`), sin producto asociado.
 - **Comisiones:** responde 200 en producción (reglas, retiros y gestores).
 - **Negocio:** republicado con «Nuevo producto» rediseñado (`556f283`, `entry-1bfb6258…`). Sin claves, `describe` responde «no configurado» desde `96001d1` (pendiente de la próxima imagen; la app oculta el botón).
+
+## 2026-11-18 · Claude · AG-19: reserva y diseño de notificaciones
+
+- Pedido del usuario: faltan las notificaciones de las apps. AG-19 («avisos al cliente») se amplía a **Notificaciones del ecosistema** y pasa a `en curso` (claude, revisión de codex). Reserva en `55037a1`, subida a la rama de la sesión `ccr-1a2bc70d-nc1skf` (esta sesión no puede empujar a `main`).
+- Diseño en `docs/design/AG-19-notificaciones.md`. Verificado en el código de los paquetes npm de las versiones pinadas (Medusa 2.22.3, Mercur 2.4.1, Expo 54): el Notification Module guarda estado de entrega pero **no reintenta**; el canal `feed` por defecto solo escribe en el log; el bus Redis de producción persiste eventos pero con `attempts: 1`; `order.placed` sale **por pedido hijo** y `order_group.created` por grupo; el push de Android no funciona en Expo Go desde SDK 53 (exige development build, AG-14); el push web es Web Push (VAPID), no un token Expo.
+- Decisión propuesta: módulo propio `packages/notifications` (bandeja, preferencias, dispositivos, cola de entregas), subscribers en `commerce-api`, entrega externa por el Notification Module con proveedores propios (push y correo) y job de reintentos con backoff. Sin tocar el core.
+- **Codex, para tu revisión:** (1) el diseño completo; (2) hallazgo por verificar: sin proveedor de correo ni subscriber de `auth.password_reset`, probablemente no llegan por correo el restablecimiento de contraseña ni las invitaciones de miembro; (3) al activar un proveedor de correo, el subscriber nativo `configurable-notifications` (`order.created`, plantilla `order-created-template`) podría enviar correos no deseados; (4) la ruta `fulfillments` de AG-04 es tuya: el diseño propone que emita un evento propio tras el workflow, para cubrir «listo», que Medusa no emite. No toqué código.
+- No verificado: payloads de `product.*` y `payout.*`, Resend con 2.22.3, la documentación oficial de Expo (bloqueada desde este entorno) y cualquier prueba en dispositivo. Sin código, sin despliegues ni cambios en producción.
+
+## 2026-11-18 · Claude · AG-19: notificaciones implementadas (N1, N2 y N3)
+
+- Por orden del usuario («empieza por N1 y N2, adelanta el correo») se implementó el diseño de `docs/design/AG-19-notificaciones.md`. Todo está en la rama `ccr-1a2bc70d-nc1skf` (esta sesión no puede empujar a `main`): `e0195ed` módulo, API, subscribers, cola, push y correo; `a5473c9` verificador, ganchos de prueba y CI; `b30ac80` cliente y paquete compartido de apps; `5d574b3` cableado de Tienda y Negocio; `d95e41d` formato. Sin despliegue ni cambios en producción.
+- **Backend:** `packages/notifications` (4 tablas, migración `Migration20261118180000`, reglas puras, cliente de Expo Push), rutas Store y Vendor, subscribers de `order_group.created`, `order.placed`, `order.canceled`, etapas, pagos manuales, retiros, productos y `auth.password_reset`; jobs de entregas (1 min), recibos (10 min), stock bajo (30 min) y purga; script `run-notification-deliveries.ts`. SendGrid solo si hay `SENDGRID_API_KEY` y `SENDGRID_FROM_EMAIL`.
+- **Apps:** `@agestyles/api-client/notifications` y `@agestyles/features-notifications` (provider, campana, bandeja, preferencias, registro de push); Tienda y Negocio con campana, bandeja, preferencias y pantallas de olvidar/restablecer contraseña.
+- **Verificación local** (Postgres 16 y Redis desechables, API compilada): migraciones completas; `verify-notifications.mjs` pasa dos veces con un checkout real de dos tiendas y las cuatro etapas; `pnpm test` 12/12; `pnpm typecheck` 17/17; `pnpm lint` sin errores; `format:check` contra `origin/main` limpio; `expo export --platform web` de ambas apps. **La CI remota no ha corrido** (solo se dispara en PR o `main`).
+- **Hallazgos:** (1) antes de esto no había subscriber de `auth.password_reset` ni proveedor de correo, así que el restablecimiento de contraseña y los correos de invitación no funcionaban; además los gateways no exponían `reset-password` ni `update` (ahora sí, para `customer` y `member`). (2) Un proceso antiguo de la API en el puerto 19081 hizo que una primera prueba corriera contra código viejo: al reiniciar, matar el proceso `cli.js start`, no solo `pnpm start`. (3) El bug de `order-quotes/[id]/accept` (`release` sobre `undefined` y doble respuesta) se reproduce en el log local; sigue sin arreglar.
+- **Para tu revisión, Codex:** la emisión de eventos que añadí en `fulfillments` (AG-04), pagos manuales y retiros de AG-06; `jobOptions` del bus Redis; las reglas de gateway; y que `format:check` obligó a reformatear `manual-payments/*` y `customer-context.tsx` (diff mayor que el cambio funcional).
+- **No verificado:** push y correo reales, las pantallas en dispositivo o navegador, el aviso al tocar un push con la app cerrada. Requisitos para producción en el runbook (SendGrid, EAS, Firebase, Apple Developer).
+
+## 2026-11-18 · Claude · Integración de la rama AG-19 (notificaciones) en `main`
+
+- A petición del usuario se fusionó `origin/ccr-1a2bc70d-nc1skf` (9 commits de AG-19, con base en `f639d6b`) sobre `main` (`286dae8`).
+- Conflictos de «ambos añaden», resueltos conservando las dos partes:
+  - `medusa-config.ts`: módulos `ai-studio` y `notifications` y el proveedor de correo.
+  - `apps/commerce-api/package.json`: `build:workspace-modules` construye los dos paquetes.
+  - Tablero y handoff: se mantienen las filas AG-26/AG-27 actualizadas y se añade AG-19.
+- El gateway de vendedores se fusionó sin conflicto. El orden de reglas se comprobó: `/vendor/products` GET POST, `uploads`, `ai-studio` y notificaciones.
+- Checks del resultado:
+  - `pnpm typecheck` OK.
+  - Tests de `notifications`, `ai-studio` y `domain/product-copy` OK.
+  - `pnpm lint` sin errores (22 avisos previos).
+  - Prettier OK.
+- AG-19 **no** está desplegado: tiene migración propia (`Migration20261118180000`) y configuración de producción (push/correo), pendientes de revisión de codex y de la autorización del usuario.

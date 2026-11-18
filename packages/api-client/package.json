@@ -11,10 +11,12 @@
     "./order-tracking": "./src/order-tracking.ts",
     "./exchange-rate": "./src/exchange-rate.ts",
     "./seller-contacts": "./src/seller-contacts.ts",
-    "./catalog-comparison": "./src/catalog-comparison.ts"
+    "./catalog-comparison": "./src/catalog-comparison.ts",
+    "./notifications": "./src/notifications.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node test/notifications.test.ts"
   },
   "dependencies": {
     "@agestyles/domain": "workspace:*",

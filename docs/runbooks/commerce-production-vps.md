@@ -38,3 +38,35 @@ docker compose --env-file /ruta/privada/compose.env -f infra/compose/commerce-pr
 ```
 
 Ruta en el túnel Cloudflare compartido (gestionado desde el panel, modo token): hostname `agestyles-api.eav-labs.com`, sin ruta, servicio `http://127.0.0.1:19186`. Negocio usa el mismo hostname con el prefijo `/negocio`: el servicio `seller-gateway` reutiliza `tools/scripts/seller-lab-gateway.mjs` con `GATEWAY_PREFIX=/negocio`, `GATEWAY_PORT=19187`, `UPSTREAM_PORT=19085` y origen `https://negocio.eav-labs.com`. Necesita su propio prefijo porque además de `/vendor/*` usa `/auth/member/*` y rutas Store del modo Comprar. En el túnel, la entrada `agestyles-api.eav-labs.com` con ruta `^/negocio/` hacia `http://127.0.0.1:19187` debe quedar por encima de la entrada sin ruta. Las webs usan `https://agestyles-api.eav-labs.com` con la clave publicable de producción.
+
+## Notificaciones (AG-19)
+
+El módulo `@agestyles/notifications` crea cuatro tablas (`agestyles_notification`, `agestyles_notification_delivery`, `agestyles_device_token`, `agestyles_notification_preference`) con `pnpm migrate`. Ese paso entra en el despliegue de la API que incluya AG-19 y requiere autorización explícita del usuario, como cualquier migración de producción. Sin las variables de abajo la bandeja dentro de la app funciona igual; solo los avisos por correo se omiten (`skipped`) y el push depende de que la app tenga proyecto EAS.
+
+Variables del entorno privado de la API (`api.env`):
+
+| Variable | Para qué | Notas |
+|---|---|---|
+| `SENDGRID_API_KEY` y `SENDGRID_FROM_EMAIL` | Correo transaccional con el proveedor oficial `@medusajs/notification-sendgrid` | Van juntas: con solo una la API no arranca. El remitente debe estar verificado en SendGrid (idealmente con SPF/DKIM del dominio). Mercur usa el mismo proveedor para las invitaciones de tienda. |
+| `AGESTYLES_STORE_WEB_URL` | Enlace de «Elegir una contraseña nueva» y botón de los correos a clientes | `https://tienda.eav-labs.com`, sin barra final. Sin ella no se envía el correo de restablecimiento. |
+| `AGESTYLES_BUSINESS_WEB_URL` | Lo mismo para miembros de tienda | `https://negocio.eav-labs.com`. |
+| `EXPO_ACCESS_TOKEN` | Seguridad ampliada del servicio de push de Expo | Opcional. |
+| `AGESTYLES_LOW_STOCK_THRESHOLD` | Unidades a partir de las que se avisa de stock bajo | Por defecto 3. Como máximo un aviso por producto y semana. |
+
+`AGESTYLES_EXPO_API_URL` y `AGESTYLES_NOTIFICATIONS_QUIET_HOURS=off` existen solo para datos desechables (la CI apunta el push a un servidor local y desactiva las horas silenciosas). **No definirlas en producción**: el push saldría a una URL ajena y se enviaría de madrugada.
+
+Requisitos para que llegue el push al móvil (no se pueden hacer desde el repositorio):
+
+1. Cuenta Expo/EAS y un `extra.eas.projectId` en `app.json` de Tienda y de Negocio. Sin él la app muestra «aún no disponible» en Avisos.
+2. Android: proyecto Firebase con clave de cuenta de servicio FCM v1 subida a EAS y `google-services.json` referenciado en `android.googleServicesFile`.
+3. iOS: Apple Developer Program (la clave APNs la gestiona EAS).
+4. Una development build o build de producción: el push remoto de Android no funciona en Expo Go.
+5. Probar en un móvil real conectado desde Cuba antes de prometerlo: depende de FCM y de los servicios de Google del dispositivo.
+
+Operación:
+
+- La cola se procesa cada minuto (`agestyles-deliver-notifications`); los recibos de Expo se leen cada 10 minutos y revocan los tokens de dispositivos que ya no existen. Cada entrega se reintenta con 1 min, 5 min, 30 min, 2 h y 12 h y después queda `failed`.
+- Para vaciar la cola al momento (por ejemplo tras una caída): `docker compose … run --rm commerce-api pnpm exec medusa exec ./src/scripts/run-notification-deliveries.ts`. Usa el mismo bloqueo que el job.
+- Estado de las entregas: `select status, error_code, count(*) from agestyles_notification_delivery group by 1, 2;`. Códigos: `no_device` (sin móvil registrado), `email_provider_off`, `no_email`, `notification_missing`, `email_failed` y los de Expo (`MessageTooBig`, `InvalidCredentials`…).
+- Retención: la bandeja se conserva 90 días y las entregas 30 (job diario a las 04:30).
+- El bus de eventos reintenta hasta 3 veces un subscriber que falle (`jobOptions` en `medusa-config.ts`); los subscribers de notificaciones son idempotentes.

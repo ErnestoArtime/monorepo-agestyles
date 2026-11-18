@@ -1,5 +1,7 @@
-import { Tabs } from "expo-router";
+import { NotificationBell } from "@agestyles/features-notifications";
+import { Tabs, useRouter } from "expo-router";
 import { Icon, IconName } from "@agestyles/icons";
+import { View } from "react-native";
 import { hasPermission } from "../../components/operation-list";
 import { useBusiness } from "../../context/business-context";
 import { useBusinessTheme } from "../../hooks/use-business-theme";
@@ -22,12 +24,18 @@ const labels: Record<string, string> = {
 export default function BusinessTabs() {
   const { member } = useBusiness();
   const theme = useBusinessTheme();
+  const router = useRouter();
   return (
     <Tabs
       screenOptions={({ route }) => ({
         headerStyle: { backgroundColor: theme.surface },
         headerTitleStyle: { color: theme.text, fontWeight: "600" },
         headerTintColor: theme.action,
+        headerRight: () => (
+          <View style={{ marginRight: 8 }}>
+            <NotificationBell onPress={() => router.push("/notifications")} />
+          </View>
+        ),
         tabBarActiveTintColor: theme.action,
         tabBarInactiveTintColor: theme.muted,
         tabBarStyle: {

@@ -90,6 +90,13 @@ export default function LoginScreen() {
             disabled={!email.trim() || !password}
             onPress={handleLogin}
           />
+          <Link
+            href="/(drawer)/(tabs)/account/forgot-password"
+            accessibilityRole="link"
+            style={[styles.forgot, { color: colors.tint }]}
+          >
+            ¿Olvidaste tu contraseña?
+          </Link>
         </View>
 
         <Text style={[styles.footer, { color: colors.icon }]}>
@@ -111,5 +118,6 @@ const styles = StyleSheet.create({
   description: { fontSize: 15, lineHeight: 22 },
   form: { gap: 18 },
   error: { fontSize: 14, lineHeight: 20 },
+  forgot: { fontSize: 14, textAlign: "center" },
   footer: { fontSize: 14, textAlign: "center" },
 });

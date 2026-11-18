@@ -134,6 +134,36 @@ function localMediaModule() {
   };
 }
 
+/**
+ * Transactional email (AG-19): SendGrid's official provider, enabled only when both variables
+ * are set. Without it the delivery queue marks email deliveries as skipped.
+ */
+function notificationModule() {
+  const { SENDGRID_API_KEY, SENDGRID_FROM_EMAIL } = process.env;
+  if (!SENDGRID_API_KEY?.trim() && !SENDGRID_FROM_EMAIL?.trim()) return null;
+  if (!SENDGRID_API_KEY?.trim() || !SENDGRID_FROM_EMAIL?.trim()) {
+    throw new Error("Email needs both SENDGRID_API_KEY and SENDGRID_FROM_EMAIL.");
+  }
+  return {
+    resolve: "@medusajs/medusa/notification",
+    options: {
+      providers: [
+        {
+          resolve: "@medusajs/medusa/notification-sendgrid",
+          id: "sendgrid",
+          options: {
+            channels: ["email"],
+            api_key: SENDGRID_API_KEY.trim(),
+            from: SENDGRID_FROM_EMAIL.trim(),
+          },
+        },
+      ],
+    },
+  };
+}
+
+const emailModule = notificationModule();
+
 module.exports = withMercur({
   // The isolated lab uses Mercur's graph query path until its index engine is
   // proven to refresh newly approved sellers and offers consistently.
@@ -160,10 +190,20 @@ module.exports = withMercur({
     { resolve: "../../packages/inventory-movements" },
     { resolve: "../../packages/sales-commissions" },
     { resolve: "../../packages/ai-studio" },
+    { resolve: "../../packages/notifications" },
+    ...(emailModule ? [emailModule] : []),
     { resolve: "@mercurjs/core/modules/admin-ui", options: { disable: true } },
     { resolve: "@mercurjs/core/modules/vendor-ui", options: { disable: true } },
     { resolve: "@medusajs/medusa/cache-redis", options: { redisUrl: REDIS_URL } },
-    { resolve: "@medusajs/medusa/event-bus-redis", options: { redisUrl: REDIS_URL } },
+    {
+      resolve: "@medusajs/medusa/event-bus-redis",
+      options: {
+        redisUrl: REDIS_URL,
+        // A failed subscriber is retried (only that one: BullMQ remembers which already
+        // completed). Notification subscribers are idempotent by dedupe key.
+        jobOptions: { attempts: 3, backoff: { type: "exponential", delay: 5000 } },
+      },
+    },
     {
       resolve: "@medusajs/medusa/workflow-engine-redis",
       options: { redis: { redisUrl: REDIS_URL } },

@@ -15,6 +15,7 @@ import {
   toNumber,
   type CommissionRequest,
 } from "../../../../lib/vendor-commissions";
+import { AGESTYLES_EVENTS, emitAgestylesEventSafely } from "../../../../lib/notifications";
 
 /** Agents list their withdrawals; managers list the store's (optionally by agent or status). */
 export async function GET(req: CommissionRequest, res: MedusaResponse) {
@@ -66,5 +67,9 @@ export async function POST(req: CommissionRequest, res: MedusaResponse) {
     },
     { timeout: 10 },
   );
+  await emitAgestylesEventSafely(req.scope, AGESTYLES_EVENTS.WITHDRAWAL_REQUESTED, {
+    withdrawal_id: withdrawal.id,
+    seller_id: actor.sellerId,
+  });
   res.status(201).json({ commission_withdrawal: withdrawal });
 }

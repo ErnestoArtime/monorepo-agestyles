@@ -1,0 +1,32 @@
+{
+  "name": "@agestyles/notifications",
+  "version": "0.0.0",
+  "private": true,
+  "description": "AgeStyles notifications module for Medusa v2: per-actor inbox, delivery queue with retries, push device tokens and channel preferences; pure rules for events, texts, retries and quiet hours",
+  "keywords": [
+    "agestyles",
+    "medusa-module",
+    "notifications"
+  ],
+  "medusaModule": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./rules": {
+      "types": "./dist/rules.d.ts",
+      "default": "./dist/rules.js"
+    }
+  },
+  "peerDependencies": {
+    "@medusajs/framework": "2.22.3"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "node test/notifications.test.ts"
+  }
+}

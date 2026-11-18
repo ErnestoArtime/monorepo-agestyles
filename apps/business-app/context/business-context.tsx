@@ -2,6 +2,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import Medusa from "@medusajs/js-sdk";
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { loginBusinessAndBuyerActors } from "@agestyles/features-buyer/business-buyer-session";
+import { unregisterThisDevice } from "@agestyles/features-notifications";
+import { toFetcher } from "../lib/notifications";
 import { buyerSdk } from "./buyer-actor";
 
 export type Seller = { id: string; name: string; handle: string; role_id?: string };
@@ -45,6 +47,31 @@ const sdk: any = new Medusa({
 });
 
 const BusinessContext = createContext<BusinessContextValue | null>(null);
+
+/** `expired`: the emailed link is invalid, already used or too old. */
+export class PasswordResetError extends Error {
+  constructor(readonly kind: "expired" | "failed") {
+    super(kind);
+    this.name = "PasswordResetError";
+  }
+}
+
+/**
+ * Asks for the reset email. The server answers the same whether or not the account exists, so
+ * only a failure to reach it is reported.
+ */
+export async function requestPasswordReset(email: string): Promise<void> {
+  await sdk.auth.resetPassword("member", "emailpass", { identifier: email.trim() });
+}
+
+export async function completePasswordReset(token: string, password: string): Promise<void> {
+  try {
+    await sdk.auth.updateProvider("member", "emailpass", { password }, token);
+  } catch (cause) {
+    const status = (cause as { status?: number } | null)?.status;
+    throw new PasswordResetError(status === 401 || status === 403 ? "expired" : "failed");
+  }
+}
 
 async function unwrap<T>(result: any): Promise<T> {
   return (result?.data ?? result) as T;
@@ -145,12 +172,20 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
+    // Before the session is dropped: the device removal needs the selected store.
+    if (seller) {
+      try {
+        await unregisterThisDevice(toFetcher(request), "vendor");
+      } catch {
+        // Signing out must never depend on the push token being removed.
+      }
+    }
     await sdk.auth.logout();
     setSeller(null);
     setMember(null);
     setSellers([]);
     setReady(false);
-  }, []);
+  }, [request, seller]);
 
   const login = useCallback(
     async (email: string, password: string) => {

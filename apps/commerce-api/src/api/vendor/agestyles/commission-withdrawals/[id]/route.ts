@@ -9,6 +9,7 @@ import {
   toNumber,
   type CommissionRequest,
 } from "../../../../../lib/vendor-commissions";
+import { AGESTYLES_EVENTS, emitAgestylesEventSafely } from "../../../../../lib/notifications";
 
 /**
  * The owner confirms that the cash was handed over (`paid`), which debits the
@@ -71,5 +72,15 @@ export async function POST(req: CommissionRequest, res: MedusaResponse) {
     },
     { timeout: 10 },
   );
+  const [agent] = await commissionsService(req).listSalesAgents({
+    id: withdrawal.agent_id,
+    seller_id: actor.sellerId,
+  });
+  await emitAgestylesEventSafely(req.scope, AGESTYLES_EVENTS.WITHDRAWAL_RESOLVED, {
+    withdrawal_id: withdrawal.id,
+    seller_id: actor.sellerId,
+    status: body.status,
+    agent_member_id: agent?.member_id,
+  });
   res.json({ commission_withdrawal: updated });
 }
