@@ -40,7 +40,11 @@ export default defineConfig([
     },
   },
   {
-    files: ["apps/buyer-app/**/*.{js,jsx,ts,tsx}", "apps/business-app/**/*.{js,jsx,ts,tsx}"],
+    files: [
+      "apps/buyer-app/**/*.{js,jsx,ts,tsx}",
+      "apps/business-app/**/*.{js,jsx,ts,tsx}",
+      "packages/buyer-experience/**/*.{js,jsx,ts,tsx}",
+    ],
     extends: [expoConfig],
     rules: {
       // Expo's import resolver does not read these apps' tsconfig path aliases.

@@ -1,8 +1,2 @@
-import { Redirect } from 'expo-router';
-import React from 'react';
-
-const MainScreen = () => {
-  return <Redirect href="/(drawer)/(tabs)/(home)" />;
-};
-
-export default MainScreen;
+// Shared with the buyer mode of Negocio (AG-31): the screen lives in @agestyles/buyer-experience.
+export { default } from "@agestyles/buyer-experience/routes/(drawer)/(tabs)/index";

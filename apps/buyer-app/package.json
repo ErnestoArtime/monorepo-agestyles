@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@agestyles/api-client": "workspace:*",
+    "@agestyles/buyer-experience": "workspace:*",
     "@agestyles/design-tokens": "workspace:*",
     "@agestyles/features-buyer": "workspace:*",
     "@agestyles/features-notifications": "workspace:*",
