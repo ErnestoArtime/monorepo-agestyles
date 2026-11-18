@@ -1257,3 +1257,19 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
   - SendGrid (correo).
   - Limpieza de disco AG-16 (96 %).
   - Escrituras de datos de AG-28 (familias), AG-29 (b) (SKU a variantes) y fechas de alta del legado para Novedades.
+
+## 2026-11-18 · Claude · APK 1.1.0 publicada (petición del usuario)
+
+- Paquete `com.eavlabs.agestyles.buyerlab`, versión 1.1.0 (`versionCode` 2), ARM64, Android 7.0+, API de producción, bytecode Hermes.
+  - Firmada con la misma clave que la 1.0.0 (certificado SHA-256 `a58cfbf4…`), así que se instala encima.
+  - `zipalign` OK. SHA-256 del APK `268e5c5a…`.
+- **Cómo se compiló en el VPS:** Gradle muere por falta de memoria cuando Metro empaqueta dentro de `createBundleReleaseJsAndAssets`. Solución:
+  1. `expo export:embed` con Node solo (bundle + assets + sourcemap en la carpeta temporal de la sesión).
+  2. `cliFile` de `android/app/build.gradle` (generado, ignorado por git) apunta a un script que solo copia ese bundle.
+  3. `assembleRelease` con `--max-workers=1`, `-Xmx1536m` y Kotlin dentro del proceso; tarda unos 5 min.
+  Un `expo prebuild --clean` deshace el cambio de `cliFile`.
+- **Publicación:**
+  - `docker cp` de la APK y su `.sha256` a `utilitaria-downloads:/usr/share/nginx/html/releases/`.
+  - Tarjeta del índice actualizada a «AgeStyles · versión 1.1.0 · fase piloto». Copia del índice anterior en la carpeta temporal de la sesión.
+  - Como antes, son copias dentro del contenedor: si se recrea desde su imagen (proyecto Utilitaria, `download-site`), hay que volver a copiarlas.
+- **Tienda:** `BUYER_WEB_ANDROID_APK_URL` apunta a la 1.1.0 (copia previa de `.env.buyer-web` en `env-backups-20261118-0802`) y el banner dice «Versión 1.1.0 · Android 7.0 o superior» (`b3ae864`). Tienda republicada.
