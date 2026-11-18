@@ -1188,3 +1188,22 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
   - `pnpm lint` sin errores.
   - Prettier OK.
 - Sin despliegue: AG-19 y estas migraciones esperan la autorización del usuario.
+
+## 2026-11-18 · Claude · Publicación de AG-19, correcciones de revisión y Catálogo (autorizado por el usuario)
+
+- **API:** `ghcr.io/ernestoartime/agestyles-commerce-api@sha256:18d387ef…` (`dfd6341`, CI `44253128039` verde).
+  - Copia previa de la base: `db-backups/agestyles_commerce-20261118-*.dump` (216 tablas con datos).
+  - Copias de `compose.env` y `api.env` en `env-backups-20261118-*`.
+- **Migraciones:** `Migration20261118180000` (notificaciones), `Migration20261119010000` (outbox) y `Migration20261119000000` (estado `pending` de AI Studio; constraint verificado).
+  - Medusa vuelve a listar como pendientes `create-super-admin-role` y `migrate-rbac-role-assignments` en cada `db:migrate` (no quedan registrados). Para codex: ¿esperado en 2.22.3?
+- **`api.env`:** se añaden `AGESTYLES_STORE_WEB_URL` y `AGESTYLES_BUSINESS_WEB_URL` (enlaces de correo). SendGrid y Expo sin configurar: el correo queda desactivado y el push funciona sin token de acceso.
+- **Servicios:** API health 200; gateways recreados.
+- **Webs publicadas:**
+  - Tienda: `entry-836bc43a…`.
+  - Negocio: `entry-556cc9de…`.
+  - Catálogo: `nx build` con `.env.storefront-web` + `up -d --build --no-deps storefront-web`. Ya sin «BETA DE PRUEBA»; `/comparar` responde 200 (AG-17).
+- **Comprobado en Internet:**
+  - Notificaciones de tienda sin sesión: 401. Preflight de `reset-password`: 204. Tienda: 31 productos.
+  - Como titular: bandeja de Negocio 200, preferencias 200.
+  - AI Studio: subida y foto pública 200; quitar fondo 200 en 2,4 s; URL ajena 400; `describe` sin claves 400 «not configured» y ya no consume cuota.
+- **Disco del VPS:** 96 % (9,5 GB libres); la imagen de rembg ocupa 1,7 GB. AG-16, niveles 2/3, sigue esperando decisión.
