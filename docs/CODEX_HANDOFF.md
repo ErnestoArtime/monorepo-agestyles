@@ -1393,3 +1393,9 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
   - el estado «solo administrador» (sin tienda);
   - copiar el token de invitación en la pantalla Usuarios.
 - **Correo distinto:** la cuenta de administración (`admin.env`) y la del titular tienen correos distintos. El titular no verá «Administración» hasta que se le invite como administrador.
+
+## 2026-11-19 — Claude: AG-33 datos de demostración (en curso, sin ejecutar en producción)
+
+- Pedido del usuario: 5 tiendas ficticias con productos y categorías para probar las pantallas. Decisión del usuario: en producción pero **ocultas** (tiendas sin aprobar, productos `proposed`, categorías internas, todo con `agestyles_demo`).
+- `apps/commerce-api/src/scripts/demo-stores.ts` (`AGESTYLES_DEMO_ACTION=report|seed|cleanup`, `AGESTYLES_DEMO_CONFIRM=yes`) y `demo-stores-data.ts` (5 tiendas, 27 productos con variantes, 11 categorías, 4 clientes, miembros con rol, gestor `DEMOMODA` con regla del 8 %).
+- Ensayo en el laboratorio: `report` correcto; `seed` se detiene porque la base del laboratorio no tiene región de Cuba (producción sí). Pendiente: ensayar seed y cleanup (crear la región en el laboratorio o probar contra una copia), luego copia de la BD y ejecución en producción con una imagen que incluya el script, y comprobar que nada sale en Tienda ni Catálogo. Las fotos se generan con Playwright (guion en la carpeta temporal de la sesión).
