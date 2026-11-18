@@ -1060,3 +1060,4 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - La pantalla actual solo enseña si endpoints responden («Disponible/Sin acceso»); el dashboard necesita cifras reales y acciones respetando permisos y tema claro/oscuro.
 - AG-24 de Claude reserva `apps/business-app/**` y está trabajando en la fase 3. AG-25 queda pendiente hasta liberar los archivos para evitar editar el mismo código.
 - Se preparó una propuesta local, luego retirada para no interferir con AG-24. No queda cambio de interfaz ni pruebas ejecutadas. Requisitos y responsable Codex constan en `docs/TABLERO.md`.
+- El usuario pidió continuar pese a la reserva amplia de AG-24. Claude tiene su worktree limpio en `de84765`; Codex limitará el cambio a `app/(tabs)/index.tsx` para reducir solapamientos y dejó constancia en el tablero.
