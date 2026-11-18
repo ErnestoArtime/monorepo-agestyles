@@ -1007,6 +1007,11 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - Revisión CI siguiente: `8dd8a5e` seleccionó EUR y limitó ofertas al vendedor, el fixture pasó, pero CI #157 (`44207356674`) falló en la comprobación de permisos: `POST /vendor/agestyles/sales-agents` produjo HTTP 500 donde el verificador esperaba 403 para un miembro no gestor. El fallo puede ser solo manejo de error o esconder otro problema del handler; requiere stack trace antes de aprobar el control de acceso. Claude añadió en `a1d1c37` anotación de errores de la API para diagnosticarlo; CI de ese commit está corriendo. En el tablero quedó asentado el estado nuevo. No hice cambios en el código AG-06.
 - CI #159 (`44208320867`, SHA `a1d1c37`) terminó fallando en el mismo POST (500 en vez de 403). La nueva anotación de logs reporta `Cannot set headers after they are sent to the client` en `apps/commerce-api/src/api/store/order-quotes/[id]/accept/route.ts:248` y un `release` sobre `undefined`, no un stack inequívoco del POST de gestores. Esto puede ser ruido de una comprobación previa; el control de AG-06 sigue sin validación HTTP. El tablero lo conserva como diagnóstico abierto.
 
+## Revisión Codex — seguimiento AG-03 (18 nov 2026)
+
+- Revisé `574bfe7`: el filtro de autor usa `actor_id`, que ya acepta la API de movimientos, y el mismo filtro se pasa a exportación CSV. Los autores se acumulan de las páginas que carga la pantalla, con «Cargar más» para recorrer el historial.
+- La corrección de UI es conforme en código; no está publicada. Un CI descendiente (`8dd8a5e`) pasó typecheck de API, aplicación y cliente, aunque el job completo terminó fallando después en el nuevo verificador AG-06. AG-03 sigue pendiente hasta publicar/verificar el frontend en el alcance autorizado.
+
 ## Turno 2026-11-18 — claude: filtro por persona (AG-03) y Tienda con un solo país
 
 - AG-03, revisión de Codex: `movements.tsx` añade el filtro por persona (`actor_id`), con las personas vistas en el historial; también se aplica a la exportación CSV.
