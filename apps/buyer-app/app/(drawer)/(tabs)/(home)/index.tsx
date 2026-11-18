@@ -9,7 +9,7 @@ import { Icon } from "@agestyles/icons";
 import { sdk } from "@/lib/sdk";
 import type { HttpTypes } from "@medusajs/types";
 import { Image } from "expo-image";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   FlatList,
@@ -34,6 +34,55 @@ export default function HomeScreen() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  // Filters opened from the side menu (categories with their subcategories, a store, novelties).
+  const params = useLocalSearchParams<{
+    filtro?: string;
+    nombre?: string;
+    ids?: string;
+    tienda?: string;
+  }>();
+  const [storeProductIds, setStoreProductIds] = useState<Set<string> | null>(null);
+  const menuFilter = useMemo(() => {
+    if (params.filtro === "categoria" && params.ids) {
+      return {
+        kind: "categoria" as const,
+        label: params.nombre ?? "Categoría",
+        ids: new Set(params.ids.split(",")),
+      };
+    }
+    if (params.filtro === "tienda" && params.tienda) {
+      return { kind: "tienda" as const, label: params.nombre ?? "Tienda", seller: params.tienda };
+    }
+    if (params.filtro === "novedades") return { kind: "novedades" as const, label: "Novedades" };
+    return null;
+  }, [params.filtro, params.ids, params.nombre, params.tienda]);
+
+  useEffect(() => {
+    // Opening a page from the menu starts from a clean list.
+    setSelectedCategory(null);
+    setSearchTerm("");
+  }, [params.filtro, params.ids, params.tienda]);
+
+  useEffect(() => {
+    if (menuFilter?.kind !== "tienda" || !selectedRegion) {
+      setStoreProductIds(null);
+      return;
+    }
+    let active = true;
+    sdk.client
+      .fetch<{ offers: { product_id: string }[] }>("/store/offers", {
+        query: { region_id: selectedRegion.id, seller_id: menuFilter.seller, limit: 100 },
+      })
+      .then(({ offers }) => {
+        if (active) setStoreProductIds(new Set(offers.map((offer) => offer.product_id)));
+      })
+      .catch(() => {
+        if (active) setStoreProductIds(new Set());
+      });
+    return () => {
+      active = false;
+    };
+  }, [menuFilter, selectedRegion]);
 
   const categories = useMemo(() => {
     const names = products.flatMap(
@@ -44,15 +93,26 @@ export default function HomeScreen() {
 
   const visibleProducts = useMemo(() => {
     const query = searchTerm.trim().toLocaleLowerCase();
-    return products.filter((product) => {
+    const filtered = products.filter((product) => {
       const searchableText = String(product.title) + " " + String(product.description ?? "");
       const matchesQuery = !query || searchableText.toLocaleLowerCase().includes(query);
       const matchesCategory =
         !selectedCategory ||
         product.categories?.some((category) => category.name === selectedCategory);
-      return matchesQuery && matchesCategory;
+      const matchesMenu =
+        menuFilter?.kind === "categoria"
+          ? product.categories?.some((category) => menuFilter.ids.has(category.id))
+          : menuFilter?.kind === "tienda"
+            ? !storeProductIds || storeProductIds.has(product.id)
+            : true;
+      return matchesQuery && matchesCategory && matchesMenu;
     });
-  }, [products, searchTerm, selectedCategory]);
+    return menuFilter?.kind === "novedades"
+      ? [...filtered].sort(
+          (a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime(),
+        )
+      : filtered;
+  }, [menuFilter, products, searchTerm, selectedCategory, storeProductIds]);
 
   const fetchProducts = useCallback(async () => {
     if (!selectedRegion) {
@@ -231,6 +291,26 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               ) : null}
             </View>
+            {menuFilter ? (
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={`Quitar filtro ${menuFilter.label}`}
+                onPress={() =>
+                  router.setParams({
+                    filtro: undefined,
+                    ids: undefined,
+                    nombre: undefined,
+                    tienda: undefined,
+                  })
+                }
+                style={[styles.menuFilter, { backgroundColor: colors.tint }]}
+              >
+                <Text style={[styles.categoryText, { color: colors.onTint }]}>
+                  {menuFilter.label}
+                </Text>
+                <Icon name="close" size={16} color={colors.onTint} />
+              </TouchableOpacity>
+            ) : null}
             {categories.length > 0 ? (
               <ScrollView
                 horizontal
@@ -268,9 +348,11 @@ export default function HomeScreen() {
             ) : null}
             <View style={styles.sectionHeading}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                {searchTerm || selectedCategory
-                  ? "Resultados del catálogo"
-                  : "Descubre algo especial"}
+                {menuFilter
+                  ? menuFilter.label
+                  : searchTerm || selectedCategory
+                    ? "Resultados del catálogo"
+                    : "Descubre algo especial"}
               </Text>
               <Text style={[styles.resultCount, { color: colors.icon }]}>
                 {visibleProducts.length} {visibleProducts.length === 1 ? "producto" : "productos"}
@@ -390,6 +472,16 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 4,
     gap: 8,
+  },
+  menuFilter: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    minHeight: 40,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    marginBottom: 10,
   },
   categoryChip: {
     minHeight: 40,

@@ -1017,3 +1017,10 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - AG-03, revisión de Codex: `movements.tsx` añade el filtro por persona (`actor_id`), con las personas vistas en el historial; también se aplica a la exportación CSV.
 - Tienda: con un solo país disponible (producción: solo Cuba) se ocultan el botón del menú lateral en Inicio y Carrito y el gesto de abrirlo, porque su único contenido era «Selecciona un país». Vuelve solo si hay más de un país (`useHasCountryChoice` en `region-context.tsx`). A petición del usuario: «todo sería aquí en Cuba».
 - Typecheck de Business y Buyer y ESLint de los archivos tocados OK. Sin publicar.
+
+## Turno 2026-11-18 — claude: menú lateral de Tienda (AG-23) y hallazgo en cotizaciones
+
+- El usuario pidió **mantener el menú lateral** con el mismo contenido que agestyles.eav-labs.com. Revertí la ocultación de `574bfe7` (el revert de los tres `_layout.tsx` viajó, sin mencionarlo en el mensaje, en el commit de CI `c79d1d4`).
+- AG-23: menú con Inicio, Todos los productos, Novedades (más recientes primero), Tiendas (pantalla nueva `(tabs)/stores.tsx`), Categorías raíz (abren Inicio filtrado por la categoría y sus subcategorías), Apariencia (Sistema/Claro/Oscuro, persistido; `use-color-scheme` respeta la preferencia) y Tu cuenta (Favoritos, Mis pedidos, Iniciar sesión o Mi cuenta). Selector de país solo con más de un país.
+- **Codex, posible bug en AG-02/quotes:** las anotaciones de CI muestran en `order-quotes/[id]/accept/route.ts:248` `TypeError: Cannot read properties of undefined (reading 'release')` seguido de `Cannot set headers after they are sent`. No afecta al resultado de esa prueba, pero sugiere un `finally` que libera un bloqueo inexistente y responde dos veces.
+- CI: el paso «Report Commerce API errors» ahora une los últimos errores en una sola anotación (GitHub solo guarda 10 por paso).

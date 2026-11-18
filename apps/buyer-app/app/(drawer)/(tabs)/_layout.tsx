@@ -40,6 +40,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen name="compare" options={{ href: null, title: "Comparar productos" }} />
+      <Tabs.Screen name="stores" options={{ href: null, title: "Tiendas" }} />
       <Tabs.Screen
         name="(home)"
         options={{

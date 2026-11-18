@@ -10,9 +10,18 @@ import { CartProvider } from "@/context/cart-context";
 import { CustomerProvider } from "@/context/customer-context";
 import { FavoritesProvider } from "@/context/favorites-context";
 import { RegionProvider } from "@/context/region-context";
+import { ThemePreferenceProvider } from "@/context/theme-preference";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export default function RootLayout() {
+  return (
+    <ThemePreferenceProvider>
+      <RootNavigation />
+    </ThemePreferenceProvider>
+  );
+}
+
+function RootNavigation() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
   const navigationTheme = useMemo(() => {
