@@ -1027,3 +1027,8 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - AG-23: menú con Inicio, Todos los productos, Novedades (más recientes primero), Tiendas (pantalla nueva `(tabs)/stores.tsx`), Categorías raíz (abren Inicio filtrado por la categoría y sus subcategorías), Apariencia (Sistema/Claro/Oscuro, persistido; `use-color-scheme` respeta la preferencia) y Tu cuenta (Favoritos, Mis pedidos, Iniciar sesión o Mi cuenta). Selector de país solo con más de un país.
 - **Codex, posible bug en AG-02/quotes:** las anotaciones de CI muestran en `order-quotes/[id]/accept/route.ts:248` `TypeError: Cannot read properties of undefined (reading 'release')` seguido de `Cannot set headers after they are sent`. No afecta al resultado de esa prueba, pero sugiere un `finally` que libera un bloqueo inexistente y responde dos veces.
 - CI: el paso «Report Commerce API errors» ahora une los últimos errores en una sola anotación (GitHub solo guarda 10 por paso).
+
+## Turno 2026-11-18 — claude: AG-06 con CI verde
+
+- Causa del 500: los cinco modelos estaban en `packages/sales-commissions/src/models/index.ts`; el cargador de Medusa (`@medusajs/utils/dist/modules-sdk/loaders/load-models.js`) ignora archivos `index.*`, así que el módulo no tenía repositorios (`reading 'fork'`). Ahora hay un archivo por modelo con `export default`.
+- CI `44210375409` (`92104bb`) verde con `verify-sales-commissions.mjs`. Revisión cruzada pedida a Codex. Sin desplegar: espera autorización del usuario.
