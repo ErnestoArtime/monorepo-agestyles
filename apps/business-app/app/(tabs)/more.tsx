@@ -4,6 +4,7 @@ import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { Icon } from "@agestyles/icons";
 import { OperationList, Row, Section } from "../../components/operation-list";
 import { Seller, useBusiness } from "../../context/business-context";
+import { useAdmin } from "../../context/admin-context";
 import { useBusinessTheme } from "../../hooks/use-business-theme";
 import { memberDisplayName, memberRoleLabel } from "../../lib/roles";
 
@@ -13,6 +14,7 @@ export default function MoreScreen() {
   const router = useRouter();
   const { seller, sellers, member, selectSeller, logout } = useBusiness();
   const unread = useOptionalNotifications()?.unreadCount ?? 0;
+  const { admin } = useAdmin();
   async function switchTo(item: Seller) {
     try {
       await selectSeller(item);
@@ -59,6 +61,30 @@ export default function MoreScreen() {
           action={() => void signOut()}
         />
       </Section>
+      {admin ? (
+        <Section title="Administración del marketplace">
+          <Row
+            title="Usuarios"
+            detail="Administradores, clientes y miembros de todas las tiendas."
+            action={() => router.push("/admin/usuarios")}
+          />
+          <Row
+            title="Tiendas"
+            detail="Estado, equipo y aprobación de cada tienda."
+            action={() => router.push("/admin/tiendas")}
+          />
+          <Row
+            title="Pedidos del marketplace"
+            detail="Todos los pedidos y los pagos por verificar."
+            action={() => router.push("/admin/pedidos")}
+          />
+          <Row
+            title="Productos en revisión"
+            detail="Altas y cambios de producto pendientes de aprobar."
+            action={() => router.push("/admin/revision")}
+          />
+        </Section>
+      ) : null}
       <Section title="Avisos">
         <Row
           title="Notificaciones"

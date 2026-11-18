@@ -4,6 +4,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { loginBusinessAndBuyerActors } from "@agestyles/features-buyer/business-buyer-session";
 import { unregisterThisDevice } from "@agestyles/features-notifications";
 import { toFetcher } from "../lib/notifications";
+import { useAdmin } from "./admin-context";
 import { buyerSdk } from "./buyer-actor";
 
 export type Seller = { id: string; name: string; handle: string; role_id?: string };
@@ -86,6 +87,7 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [seller, setSeller] = useState<Seller | null>(null);
   const [member, setMember] = useState<Member | null>(null);
+  const { loginAdmin, logoutAdmin } = useAdmin();
 
   const request = useCallback(
     async <T,>(path: string, method = "GET", body?: unknown) => {
@@ -183,21 +185,36 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
       }
     }
     await sdk.auth.logout();
+    await logoutAdmin();
     setSeller(null);
     setMember(null);
     setSellers([]);
     setReady(false);
-  }, [request, seller]);
+  }, [logoutAdmin, request, seller]);
 
   const login = useCallback(
     async (email: string, password: string) => {
       setLoading(true);
       setError("");
       try {
-        await loginBusinessAndBuyerActors(email, password, sdk, buyerSdk);
-        const choices = await reloadSellers();
+        // The same credentials may also open the marketplace administration (AG-32).
+        const [business, isAdmin] = await Promise.all([
+          loginBusinessAndBuyerActors(email, password, sdk, buyerSdk).then(
+            () => null,
+            (cause: unknown) => cause ?? new Error("member sign-in failed"),
+          ),
+          loginAdmin(email, password).catch(() => false),
+        ]);
+        if (business && !isAdmin) throw business;
         setSeller(null);
         setMember(null);
+        if (business) {
+          // Administrator without a store: only the administration section is available.
+          setSellers([]);
+          setReady(true);
+          return;
+        }
+        const choices = await reloadSellers();
         setReady(true);
         if (choices.length === 1) await selectSeller(choices[0]);
       } catch (cause) {
@@ -207,7 +224,7 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       }
     },
-    [reloadSellers, selectSeller],
+    [loginAdmin, reloadSellers, selectSeller],
   );
 
   useEffect(() => {

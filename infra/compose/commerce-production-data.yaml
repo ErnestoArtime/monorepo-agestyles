@@ -66,6 +66,25 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  admin-gateway:
+    # Marketplace administration for Negocio (AG-32): a closed list of admin routes, from
+    # https://negocio.eav-labs.com only. Public route: agestyles-api.eav-labs.com/admin-app/
+    image: node:24-bookworm-slim
+    network_mode: host
+    working_dir: /app
+    command: ["node", "/app/admin-gateway.mjs"]
+    environment:
+      GATEWAY_PREFIX: /admin-app
+      GATEWAY_PORT: "19188"
+      UPSTREAM_PORT: "19085"
+      ALLOWED_ORIGINS: https://negocio.eav-labs.com
+    volumes:
+      - ../../tools/scripts/admin-gateway.mjs:/app/admin-gateway.mjs:ro
+    depends_on:
+      commerce-api:
+        condition: service_healthy
+    restart: unless-stopped
+
   media-files:
     image: nginx:1.28.0-alpine
     network_mode: host

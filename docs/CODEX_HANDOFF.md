@@ -1383,3 +1383,13 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
   - Guion reutilizable de esta sesión: `prebuild --clean` → `export:embed` con Node → `cliFile` que copia el bundle → `local.properties` con `sdk.dir` → `assembleRelease` con `--max-workers=1` y `-Xmx1536m`, una app detrás de otra.
 - **Tienda republicada** (`entry-4ef57a7f…`) con `BUYER_WEB_ANDROID_APK_URL` a la 1.2.0 (copia previa de `.env.buyer-web` en `env-backups-<fecha>/env.buyer-web.before-120`).
 - **Restos de compilación borrados:** carpetas `android/` generadas de Tienda y Negocio (ignoradas por git, se regeneran con `prebuild`) y bundles intermedios. Libres al final: 14 GB (94 %). Se conserva `~/.gradle`.
+
+## 2026-11-19 — Claude: AG-32 fases A y B (administración del marketplace en Negocio)
+
+- Detalle en `docs/design/AG-32-superadmin-marketplace.md` («Fases A y B — implementación»). Sin desplegar.
+- **Para revisión de codex (seguridad):**
+  - lista de rutas de `tools/scripts/admin-gateway.mjs`;
+  - el login doble en `business-context.tsx` (`Promise.all` de member+customer y user);
+  - el estado «solo administrador» (sin tienda);
+  - copiar el token de invitación en la pantalla Usuarios.
+- **Correo distinto:** la cuenta de administración (`admin.env`) y la del titular tienen correos distintos. El titular no verá «Administración» hasta que se le invite como administrador.

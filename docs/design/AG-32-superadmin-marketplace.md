@@ -1,6 +1,6 @@
 # AG-32 — Superadministrador del marketplace en la app de Negocio
 
-**Estado:** propuesta (claude, 18 nov 2026) · **Decide:** usuario · **Revisión cruzada:** codex.
+**Estado:** fases A y B hechas en código (claude, 19 nov 2026, sin desplegar); C y D esperan al usuario · **Revisión cruzada:** codex.
 
 ## Pedido del usuario
 
@@ -68,3 +68,19 @@ Recomendación: **archivo de solo lectura**, no recrear los pedidos en Medusa.
 | B | Pedidos de todo el marketplace y productos en revisión |
 | C | Migración de usuarios (export de solo lectura, mapeo, invitaciones), con informe de recuentos |
 | D | Archivo de pedidos antiguos y su visualización |
+
+## Fases A y B — implementación (19 nov 2026)
+
+El usuario confirmó al pedirlo que la administración va dentro de Negocio. Hecho en código, sin desplegar:
+
+- **Sesión de administrador:** `apps/business-app/context/admin-actor.ts` (actor `user`, almacenamiento propio `agestyles.business.admin.actor.*`, URL del gateway de administración) y `context/admin-context.tsx`. El login de Negocio prueba a la vez `member` (+ `customer`) y `user` con las mismas credenciales. Si solo existe el administrador, se entra sin tienda y se va a `/admin`. Al cerrar sesión se cierran todas.
+- **Gateway de administración** `tools/scripts/admin-gateway.mjs` (prefijo `/admin-app`, puerto 19188, solo origen `https://negocio.eav-labs.com`, 5 intentos de acceso y 90 peticiones por minuto). Lista cerrada: acceso y registro de `user`, aceptar invitación, `users`, `invites`, `customers`, `members`, `sellers` (+ approve/suspend/unsuspend, miembros e invitación), `orders`, `manual-payments` (+ verify/reject) y `product-changes` (+ confirm/cancel). Servicio `admin-gateway` añadido a `infra/compose/commerce-production-data.yaml`.
+- **Pantallas** (`app/admin/`):
+  - **Usuarios:** administradores, invitaciones con «Copiar enlace» mientras no haya correo, clientes y miembros.
+  - **Tiendas:** estado, ficha con equipo y roles, invitar con rol, aprobar, suspender y reactivar con confirmación.
+  - **Pedidos:** todos los pedidos y los pagos manuales por verificar o rechazar (con motivo).
+  - **Productos en revisión:** bandeja de Mercur con aprobar o rechazar. Mercur solo admite `internal_note`.
+  - **Invitación:** `app/aceptar-invitacion.tsx`.
+  - **Navegación:** menú lateral «Administración» en escritorio, pestañas arriba en móvil y sección en «Más». La cuenta se muestra como «Superadministrador».
+- **Probado** con la cuenta de administrador existente a través del gateway local, en solo lectura: las cuatro pantallas con datos reales (1 administrador, 1 tienda, 1 miembro, 0 pedidos y 0 solicitudes). El gateway cierra las rutas fuera de la lista (404), pide sesión (401) y rechaza orígenes ajenos (403). El titular sigue entrando con normalidad.
+- **Para desplegar:** (1) ruta de Cloudflare `agestyles-api.eav-labs.com/admin-app/` → `http://127.0.0.1:19188`; (2) `docker compose … up -d admin-gateway`; (3) publicar la web de Negocio. Después, el administrador existente invita al correo del titular desde Usuarios para que tenga las dos funciones en una sola cuenta.

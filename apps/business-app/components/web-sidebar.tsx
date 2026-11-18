@@ -4,6 +4,7 @@ import { usePathname, useRouter, type Href } from "expo-router";
 import { useMemo } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { BrandLockup } from "./brand-lockup";
+import { useAdmin } from "../context/admin-context";
 import { useBusiness } from "../context/business-context";
 import { useBusinessTheme, type BusinessTheme } from "../hooks/use-business-theme";
 import { hasPermission } from "../lib/permissions";
@@ -23,8 +24,9 @@ export function WebSidebar() {
   const pathname = usePathname();
   const { seller, sellers, member, logout } = useBusiness();
   const unread = useOptionalNotifications()?.unreadCount ?? 0;
+  const { admin } = useAdmin();
 
-  const groups: { title?: string; items: Item[] }[] = [
+  const storeGroups: { title?: string; items: Item[] }[] = [
     {
       items: [
         { label: "Resumen", icon: "home", href: "/(tabs)", match: (p) => p === "/" || p === "" },
@@ -112,6 +114,45 @@ export function WebSidebar() {
       ],
     },
   ];
+  const adminGroup: { title?: string; items: Item[] } = {
+    title: "Administración",
+    items: [
+      {
+        label: "Usuarios",
+        icon: "userCircle",
+        href: "/admin/usuarios",
+        match: (p) => p.startsWith("/admin/usuarios"),
+      },
+      {
+        label: "Tiendas",
+        icon: "store",
+        href: "/admin/tiendas",
+        match: (p) => p.startsWith("/admin/tiendas"),
+      },
+      {
+        label: "Pedidos del marketplace",
+        icon: "list",
+        href: "/admin/pedidos",
+        match: (p) => p.startsWith("/admin/pedidos"),
+      },
+      {
+        label: "Productos en revisión",
+        icon: "shieldCheck",
+        href: "/admin/revision",
+        match: (p) => p.startsWith("/admin/revision"),
+      },
+    ],
+  };
+  // The store sections need a selected store; the administration needs an administrator.
+  const groups = [...(seller ? storeGroups : []), ...(admin ? [adminGroup] : [])];
+  const accountName =
+    memberDisplayName(member) === "Tu cuenta" && admin
+      ? [admin.first_name, admin.last_name].filter(Boolean).join(" ") || admin.email
+      : memberDisplayName(member);
+  const accountRole = [admin ? "Superadministrador" : null, seller ? memberRoleLabel(member) : null]
+    .filter(Boolean)
+    .join(" · ");
+  const accountEmail = member?.member?.email ?? admin?.email ?? "";
 
   return (
     <View style={styles.sidebar} role="navigation" accessibilityLabel="Menú de Negocio">
@@ -119,28 +160,30 @@ export function WebSidebar() {
         <BrandLockup />
         <NotificationBell onPress={() => router.push("/notifications")} />
       </View>
-      <Pressable
-        onPress={() => router.push("/(tabs)/more" as Href)}
-        accessibilityRole="button"
-        accessibilityLabel={
-          sellers.length > 1 ? `Tienda ${seller?.name ?? ""}, cambiar de tienda` : "Tu tienda"
-        }
-        style={({ hovered }: { hovered?: boolean }) => [
-          styles.store,
-          hovered && { backgroundColor: theme.selectedSurface },
-        ]}
-      >
-        <View style={styles.flex}>
-          <Text style={styles.storeName} numberOfLines={1}>
-            {seller?.name ?? "Tienda"}
-          </Text>
-          <Text style={styles.muted} numberOfLines={1}>
-            {seller?.handle ? `@${seller.handle}` : "AgeStyles"}
-            {sellers.length > 1 ? " · cambiar" : ""}
-          </Text>
-        </View>
-        {sellers.length > 1 ? <Icon name="chevronDown" size={16} color={theme.muted} /> : null}
-      </Pressable>
+      {seller ? (
+        <Pressable
+          onPress={() => router.push("/(tabs)/more" as Href)}
+          accessibilityRole="button"
+          accessibilityLabel={
+            sellers.length > 1 ? `Tienda ${seller?.name ?? ""}, cambiar de tienda` : "Tu tienda"
+          }
+          style={({ hovered }: { hovered?: boolean }) => [
+            styles.store,
+            hovered && { backgroundColor: theme.selectedSurface },
+          ]}
+        >
+          <View style={styles.flex}>
+            <Text style={styles.storeName} numberOfLines={1}>
+              {seller?.name ?? "Tienda"}
+            </Text>
+            <Text style={styles.muted} numberOfLines={1}>
+              {seller?.handle ? `@${seller.handle}` : "AgeStyles"}
+              {sellers.length > 1 ? " · cambiar" : ""}
+            </Text>
+          </View>
+          {sellers.length > 1 ? <Icon name="chevronDown" size={16} color={theme.muted} /> : null}
+        </Pressable>
+      ) : null}
       <ScrollView style={styles.flex} contentContainerStyle={styles.groups}>
         {groups.map((group, index) => (
           <View key={group.title ?? index} style={styles.group}>
@@ -172,20 +215,18 @@ export function WebSidebar() {
       <View style={styles.bottom}>
         <View
           style={styles.account}
-          accessibilityLabel={`Sesión de ${memberDisplayName(member)}, ${memberRoleLabel(member)}`}
+          accessibilityLabel={`Sesión de ${accountName}, ${accountRole}`}
         >
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {memberDisplayName(member).slice(0, 1).toUpperCase()}
-            </Text>
+            <Text style={styles.avatarText}>{accountName.slice(0, 1).toUpperCase()}</Text>
           </View>
           <View style={styles.flex}>
             <Text style={styles.storeName} numberOfLines={1}>
-              {memberDisplayName(member)}
+              {accountName}
             </Text>
             <Text style={styles.muted} numberOfLines={1}>
-              {memberRoleLabel(member)}
-              {member?.member?.email ? ` · ${member.member.email}` : ""}
+              {accountRole}
+              {accountEmail ? ` · ${accountEmail}` : ""}
             </Text>
           </View>
         </View>

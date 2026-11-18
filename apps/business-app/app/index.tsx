@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { Icon } from "@agestyles/icons";
 import { BrandLockup } from "../components/brand-lockup";
+import { useAdmin } from "../context/admin-context";
 import { Seller, useBusiness } from "../context/business-context";
 import { useBusinessTheme } from "../hooks/use-business-theme";
 
@@ -23,9 +24,12 @@ export default function EntryScreen() {
   const [password, setPassword] = useState("");
   const [localError, setLocalError] = useState("");
 
+  const { admin } = useAdmin();
   useEffect(() => {
     if (seller) router.replace("/(tabs)");
-  }, [seller, router]);
+    // An administrator without stores goes straight to the administration (AG-32).
+    else if (admin && ready && !loading && sellers.length === 0) router.replace("/admin");
+  }, [admin, loading, ready, seller, sellers.length, router]);
 
   async function onLogin() {
     setLocalError("");
