@@ -1112,3 +1112,20 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
   - Ruta del túnel `agestyles-api.eav-labs.com` + `^/agestyles-product-media/` → `http://127.0.0.1:19088`.
   - Claves `GEMINI_API_KEY` / `OPENROUTER_API_KEY` / `GROQ_API_KEY` en `api.env`.
 - **Para codex — revisión cruzada:** cambios de infraestructura (compose, nginx, gateway), el nuevo módulo y la corrección de una línea en AG-25 (`4fec12d`).
+
+## 2026-11-18 · Claude · Despliegue de AG-06, AG-26 y AG-27 (autorizado por el usuario)
+
+- **API:** imagen `ghcr.io/ernestoartime/agestyles-commerce-api@sha256:14bd90d9…` (de `6ef648b`; la ejecución de publicación lanzada por `210990a` etiqueta con el SHA de la CI que la dispara). Copia de `compose.env` en `env-backups-20261118-0623`.
+- **Migraciones:**
+  - `medusa db:migrate` con `run --rm --no-deps`: existen las tablas `agestyles_sales_agent`, `agestyles_commission_*`, `agestyles_agent_sale` y `agestyles_ai_request`.
+  - Medusa ejecutó además sus scripts `create-super-admin-role` y `migrate-rbac-role-assignments`, que estaban pendientes.
+- **Servicios:** API health 200; buyer y seller gateway recreados; Tienda con 31 productos.
+- **Ruta del túnel** `^/agestyles-product-media/` → `127.0.0.1:19088`, añadida por el usuario (configuración del túnel en la versión 30).
+- **Prueba de punta a punta en producción como titular:**
+  - Subida 200 y foto pública 200 (image/jpeg).
+  - Quitar fondo 200 en 3,8 s, con PNG público 200.
+  - Una URL ajena se rechaza con 400.
+  - Uso registrado.
+  - Quedan 4 fotos de prueba en el volumen (`*-prueba-ia.jpg`, `*-sin-fondo.png`, `*-producto-*.jpg`), sin producto asociado.
+- **Comisiones:** responde 200 en producción (reglas, retiros y gestores).
+- **Negocio:** republicado con «Nuevo producto» rediseñado (`556f283`, `entry-1bfb6258…`). Sin claves, `describe` responde «no configurado» desde `96001d1` (pendiente de la próxima imagen; la app oculta el botón).
