@@ -35,11 +35,11 @@ Encaja con la dirección «Modern Luxury» (blanco, negro/grafito, neutros cáli
 
 No se incorpora NativeWind/Tailwind: añadiría un segundo sistema de estilos; seguimos con `StyleSheet` y tokens.
 
-## Decisiones del usuario
+## Decisiones del usuario (18 nov 2026)
 
-1. ¿Ficha de producto como **hoja inferior** (como la referencia) o pantalla completa?
-2. ¿Se quita el bloque grande de la portada y el banner de la APK?
-3. Reparto con Codex: propuesta en el tablero (AG-24).
+1. **Ficha de producto:** hoja inferior, como la referencia.
+2. **Portada:** en el **navegador** se ven el bloque de bienvenida y el banner de la APK de Android; dentro de la **app instalada** (Android/iOS) se mantiene el bloque y **no** aparece la APK.
+3. **Reparto:** lo hace todo claude; codex revisa.
 
 ## Plan
 
