@@ -1,4 +1,5 @@
 import type { MedusaResponse } from "@medusajs/framework/http";
+import { MedusaError } from "@medusajs/framework/utils";
 import { describeProduct, type CopyTone } from "@agestyles/ai-studio";
 import {
   logAiRequest,
@@ -23,7 +24,12 @@ export async function POST(req: AiStudioRequest, res: MedusaResponse) {
   const actor = await requireAiAccess(req);
   const body = (req.body ?? {}) as Body;
   const providers = textProviders();
-  if (!providers.length) throw toMedusaError(new Error("not configured"));
+  if (!providers.length) {
+    throw new MedusaError(
+      MedusaError.Types.NOT_ALLOWED,
+      "AI Studio text provider is not configured.",
+    );
+  }
   const photo = body.image_url ? await readOwnMedia(body.image_url) : null;
   try {
     const result = await describeProduct(
