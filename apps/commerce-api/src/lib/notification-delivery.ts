@@ -7,6 +7,7 @@ import {
   encodeTicketRef,
   isQuietHour,
   nextAllowedPushTime,
+  quietHoursFromEnv,
   renderEmail,
   retryDelayMs,
   type DeliveryRecord,
@@ -26,7 +27,10 @@ export type DeliverySummary = { sent: number; skipped: number; retried: number; 
 type Logger = { info(message: string): void; warn(message: string): void };
 
 function expoClient() {
-  return new ExpoPushClient({ accessToken: process.env.EXPO_ACCESS_TOKEN?.trim() || null });
+  return new ExpoPushClient({
+    accessToken: process.env.EXPO_ACCESS_TOKEN?.trim() || null,
+    baseUrl: process.env.AGESTYLES_EXPO_API_URL?.trim() || undefined,
+  });
 }
 
 /** The web page a button in an email should open for a recipient type. */
@@ -90,6 +94,7 @@ async function deliverPush(
   summary: DeliverySummary,
 ) {
   const service = notificationsService(container);
+  const quiet = quietHoursFromEnv(process.env.AGESTYLES_NOTIFICATIONS_QUIET_HOURS);
   const prepared: { delivery: DeliveryRecord; devices: DeviceRecord[]; messages: PushMessage[] }[] =
     [];
 
@@ -99,11 +104,11 @@ async function deliverPush(
       await skip(container, delivery, "notification_missing", summary);
       continue;
     }
-    if (isQuietHour(now)) {
+    if (quiet && isQuietHour(now, quiet)) {
       await service.finishDelivery(delivery.id, {
         status: "pending",
         attempts: delivery.attempts,
-        next_attempt_at: nextAllowedPushTime(now),
+        next_attempt_at: nextAllowedPushTime(now, quiet),
       });
       continue;
     }

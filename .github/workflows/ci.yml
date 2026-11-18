@@ -151,6 +151,8 @@ jobs:
             --env REDIS_URL=redis://127.0.0.1:16392 \
             --env JWT_SECRET=ci_jwt_0123456789abcdef0123456789abcdef \
             --env COOKIE_SECRET=ci_cookie_0123456789abcdef0123456789abcdef \
+            --env AGESTYLES_EXPO_API_URL=http://127.0.0.1:19290/--/api/v2 \
+            --env AGESTYLES_NOTIFICATIONS_QUIET_HOURS=off \
             agestyles/commerce-api:ci
           health_status="000"
           for attempt in $(seq 1 90); do
@@ -237,6 +239,15 @@ jobs:
           AGESTYLES_CI_DISPOSABLE: "true"
           AGESTYLES_LAB_SEEDED_PASSWORD: ci_lab_password_0123456789
         run: node apps/commerce-api/scripts/verify-sales-commissions.mjs
+
+      - name: Verify notifications over HTTP on disposable data
+        env:
+          EXPO_PUBLIC_MEDUSA_URL: http://127.0.0.1:19081
+          AGESTYLES_CI_DISPOSABLE: "true"
+          AGESTYLES_LAB_SEEDED_PASSWORD: ci_lab_password_0123456789
+          AGESTYLES_EXPO_API_URL: http://127.0.0.1:19290/--/api/v2
+          AGESTYLES_NOTIFICATIONS_QUIET_HOURS: "off"
+        run: node apps/commerce-api/scripts/verify-notifications.mjs
 
       - name: Verify variant removal permissions over HTTP on disposable data
         env:
@@ -337,6 +348,39 @@ jobs:
           if [[ "${fulfillment_status}" != "204" || "${locations_status}" != "204" || "${upstream_fulfillment_status}" != "404" ]]; then
             echo "Expected custom fulfillment/location preflights 204 and blocked upstream fulfillment route 404; got ${fulfillment_status}/${locations_status}/${upstream_fulfillment_status}." >&2
             cat /tmp/agestyles-seller-gateway-ci.log
+            exit 1
+          fi
+          preflight() {
+            curl --silent --output /dev/null --write-out '%{http_code}' --request OPTIONS \
+              "http://127.0.0.1:19183/agestyles-seller$1" \
+              --header 'Origin: https://negocio.eav-labs.com' \
+              --header "Access-Control-Request-Method: $2"
+          }
+          notification_routes="$(for route in \
+            "/vendor/agestyles/notifications GET" \
+            "/vendor/agestyles/notifications/read POST" \
+            "/vendor/agestyles/devices POST" \
+            "/vendor/agestyles/devices/adevice_ci1 DELETE" \
+            "/vendor/agestyles/notification-preferences GET" \
+            "/vendor/agestyles/notification-preferences POST" \
+            "/store/agestyles/notifications GET" \
+            "/store/agestyles/notifications/read POST" \
+            "/store/agestyles/devices POST" \
+            "/store/agestyles/notification-preferences GET" \
+            "/auth/member/emailpass/reset-password POST" \
+            "/auth/member/emailpass/update POST"; do
+            set -- ${route}
+            echo "$1 $2 $(preflight "$1" "$2")"
+          done)"
+          if echo "${notification_routes}" | grep -qv ' 204$'; then
+            echo "Expected 204 preflights for the notification and password-reset routes; got:" >&2
+            echo "${notification_routes}" >&2
+            cat /tmp/agestyles-seller-gateway-ci.log
+            exit 1
+          fi
+          device_patch_status="$(preflight /vendor/agestyles/devices/adevice_ci1 PATCH)"
+          if [[ "${device_patch_status}" != "403" ]]; then
+            echo "Expected an unsupported device method to be refused with 403; got ${device_patch_status}." >&2
             exit 1
           fi
 

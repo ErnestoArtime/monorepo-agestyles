@@ -7,6 +7,7 @@ import {
   EVENTS,
   NotificationValidationError,
   nextAllowedPushTime,
+  quietHoursFromEnv,
   renderNotification,
   resolveDeliveryChannels,
   type DeliveryChannel,
@@ -148,6 +149,7 @@ class NotificationsService extends MedusaService({
       actor_id: input.recipient_id,
     });
     const channels = resolveDeliveryChannels(definition, preferences);
+    const quiet = quietHoursFromEnv(process.env.AGESTYLES_NOTIFICATIONS_QUIET_HOURS);
     const existing = (await this.listNotificationDeliveries({
       notification_id: notification.id,
     })) as unknown as DeliveryRecord[];
@@ -159,7 +161,7 @@ class NotificationsService extends MedusaService({
           channel,
           status: "pending",
           attempts: 0,
-          next_attempt_at: channel === "push" ? nextAllowedPushTime(now) : now,
+          next_attempt_at: channel === "push" && quiet ? nextAllowedPushTime(now, quiet) : now,
         });
       } catch (error) {
         const [again] = await this.listNotificationDeliveries({

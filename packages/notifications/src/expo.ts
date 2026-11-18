@@ -21,8 +21,9 @@ export function classifyPushError(code: string | null | undefined): PushErrorAct
   }
 }
 
-export const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
-export const EXPO_RECEIPTS_URL = "https://exp.host/--/api/v2/push/getReceipts";
+export const EXPO_API_URL = "https://exp.host/--/api/v2";
+export const EXPO_PUSH_URL = `${EXPO_API_URL}/push/send`;
+export const EXPO_RECEIPTS_URL = `${EXPO_API_URL}/push/getReceipts`;
 export const SEND_BATCH = 100;
 export const RECEIPT_BATCH = 300;
 
@@ -59,9 +60,19 @@ export class ExpoPushClient {
   private readonly fetchImpl: FetchLike;
   private readonly accessToken: string | null;
 
-  constructor(options: { fetch?: FetchLike; accessToken?: string | null } = {}) {
+  private readonly sendUrl: string;
+  private readonly receiptsUrl: string;
+
+  /** `baseUrl` exists so tests can point the client at a local stand-in; it must be https or loopback. */
+  constructor(options: { fetch?: FetchLike; accessToken?: string | null; baseUrl?: string } = {}) {
     this.fetchImpl = options.fetch ?? (globalThis.fetch as unknown as FetchLike);
     this.accessToken = options.accessToken ?? null;
+    const base = (options.baseUrl ?? EXPO_API_URL).replace(/\/+$/, "");
+    if (!/^https:\/\//.test(base) && !/^http:\/\/127\.0\.0\.1(?::\d+)?(?:\/|$)/.test(base)) {
+      throw new ExpoRequestError("invalid_base_url");
+    }
+    this.sendUrl = `${base}/push/send`;
+    this.receiptsUrl = `${base}/push/getReceipts`;
   }
 
   private async post(url: string, payload: unknown): Promise<unknown> {
@@ -94,7 +105,7 @@ export class ExpoPushClient {
     for (let start = 0; start < messages.length; start += SEND_BATCH) {
       const batch = messages.slice(start, start + SEND_BATCH);
       const body = (await this.post(
-        EXPO_PUSH_URL,
+        this.sendUrl,
         batch.map((message) => ({
           to: message.to,
           title: message.title,
@@ -124,7 +135,7 @@ export class ExpoPushClient {
     const outcome = new Map<string, PushResult>();
     for (let start = 0; start < ticketIds.length; start += RECEIPT_BATCH) {
       const batch = ticketIds.slice(start, start + RECEIPT_BATCH);
-      const body = (await this.post(EXPO_RECEIPTS_URL, { ids: batch })) as {
+      const body = (await this.post(this.receiptsUrl, { ids: batch })) as {
         data?: Record<string, RawTicket>;
       };
       if (!body.data || typeof body.data !== "object")

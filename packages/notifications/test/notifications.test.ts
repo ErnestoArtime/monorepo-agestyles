@@ -11,6 +11,7 @@ import {
   memberReceives,
   nextAllowedPushTime,
   parseDeviceInput,
+  quietHoursFromEnv,
   parsePreferencesInput,
   preferencesMatrix,
   renderEmail,
@@ -224,6 +225,12 @@ assert.ok(night.getTime() >= at("2026-11-19T12:00:00Z").getTime());
 assert.ok(night.getTime() < at("2026-11-19T12:15:00Z").getTime());
 assert.equal(isQuietHour(night), false);
 
+// Quiet hours can be switched off for disposable test data, nothing else disables them
+assert.equal(quietHoursFromEnv("off"), null);
+assert.equal(quietHoursFromEnv(" OFF "), null);
+assert.deepEqual(quietHoursFromEnv(undefined), DEFAULT_QUIET_HOURS);
+assert.deepEqual(quietHoursFromEnv("false"), DEFAULT_QUIET_HOURS);
+
 // Email
 const email = renderEmail({
   subject: "Hola",
@@ -356,5 +363,22 @@ assert.deepEqual(decodeTicketRef("adevice_1=t1,adevice_2=t2"), [
 ]);
 assert.deepEqual(decodeTicketRef(null), []);
 assert.deepEqual(decodeTicketRef("broken,=x,y="), []);
+
+// The Expo base URL is https or loopback only
+assert.throws(
+  () => new ExpoPushClient({ baseUrl: "http://exp.host/--/api/v2" }),
+  (error: unknown) => error instanceof ExpoRequestError && error.message === "invalid_base_url",
+);
+assert.throws(
+  () => new ExpoPushClient({ baseUrl: "http://evil.example/--/api/v2" }),
+  ExpoRequestError,
+);
+calls.length = 0;
+const loopback = new ExpoPushClient({
+  baseUrl: "http://127.0.0.1:19290/--/api/v2/",
+  fetch: fakeFetch(() => ({ data: [{ status: "ok", id: "t" }] })),
+});
+await loopback.send([messages[0]]);
+assert.equal(calls[0].url, "http://127.0.0.1:19290/--/api/v2/push/send");
 
 console.log("notifications expo client: ok");

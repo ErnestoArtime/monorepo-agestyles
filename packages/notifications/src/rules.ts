@@ -459,6 +459,11 @@ export const DEFAULT_QUIET_HOURS: QuietHours = {
   endHour: 7,
 };
 
+/** `AGESTYLES_NOTIFICATIONS_QUIET_HOURS=off` disables the pause (used by disposable test data). */
+export function quietHoursFromEnv(value: string | undefined): QuietHours | null {
+  return value?.trim().toLowerCase() === "off" ? null : DEFAULT_QUIET_HOURS;
+}
+
 function localHour(date: Date, timeZone: string): number {
   const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone,

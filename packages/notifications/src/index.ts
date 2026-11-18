@@ -5,6 +5,7 @@ export const AGESTYLES_NOTIFICATIONS_MODULE = "agestylesNotifications";
 
 export { NotificationsService };
 export {
+  EXPO_API_URL,
   EXPO_PUSH_URL,
   EXPO_RECEIPTS_URL,
   ExpoPushClient,
@@ -40,6 +41,7 @@ export {
   parseDeviceInput,
   parsePreferencesInput,
   preferencesMatrix,
+  quietHoursFromEnv,
   renderEmail,
   renderEventEmail,
   renderNotification,
