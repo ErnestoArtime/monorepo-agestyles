@@ -644,7 +644,7 @@ export default function NewProductScreen() {
           <View style={styles.row}>
             <Button
               variant="secondary"
-              title="Mantener original"
+              title="No, mantener"
               onPress={() => setCutout(null)}
               style={styles.flex}
             />
