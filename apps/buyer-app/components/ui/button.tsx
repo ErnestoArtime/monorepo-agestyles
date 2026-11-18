@@ -1,83 +1,18 @@
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Button as UiButton } from "@agestyles/ui-native";
 import React from "react";
-import {
-  ActivityIndicator,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  TouchableOpacityProps,
-} from "react-native";
+import type { StyleProp, ViewStyle } from "react-native";
 
-interface ButtonProps extends TouchableOpacityProps {
+interface ButtonProps {
   title: string;
   variant?: "primary" | "secondary";
   loading?: boolean;
+  disabled?: boolean;
+  onPress?: () => void;
+  style?: StyleProp<ViewStyle>;
+  accessibilityLabel?: string;
 }
 
-export function Button({
-  title,
-  variant = "primary",
-  loading = false,
-  disabled,
-  style,
-  ...props
-}: ButtonProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
-
-  const isPrimary = variant === "primary";
-  const isDisabled = disabled || loading;
-
-  const primaryBgColor = colors.tint;
-  const primaryTextColor = colors.onTint;
-
-  return (
-    <TouchableOpacity
-      style={[
-        styles.button,
-        isPrimary
-          ? { backgroundColor: primaryBgColor }
-          : [
-              styles.secondaryButton,
-              { backgroundColor: colors.cardBackground, borderColor: colors.border },
-            ],
-        isDisabled && styles.disabled,
-        style,
-      ]}
-      disabled={isDisabled}
-      {...props}
-    >
-      {loading ? (
-        <ActivityIndicator color={isPrimary ? primaryTextColor : colors.tint} />
-      ) : (
-        <Text
-          style={[styles.text, isPrimary ? { color: primaryTextColor } : { color: colors.text }]}
-        >
-          {title}
-        </Text>
-      )}
-    </TouchableOpacity>
-  );
+/** App-wide button; delegates to the shared ui-native button so every screen matches (AG-24). */
+export function Button(props: ButtonProps) {
+  return <UiButton {...props} />;
 }
-
-const styles = StyleSheet.create({
-  button: {
-    paddingVertical: 15,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 48,
-  },
-  secondaryButton: {
-    borderWidth: 1,
-  },
-  text: {
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  disabled: {
-    opacity: 0.5,
-  },
-});

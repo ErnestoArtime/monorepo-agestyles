@@ -1,12 +1,10 @@
-import { IconSymbol } from "@/components/ui/icon-symbol";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { formatPrice } from "@/lib/format-price";
 import { Icon } from "@agestyles/icons";
+import { Stepper, useUiTheme } from "@agestyles/ui-native";
 import type { HttpTypes } from "@medusajs/types";
 import { Image } from "expo-image";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 interface CartItemProps {
   item: HttpTypes.StoreCartLineItem;
@@ -15,73 +13,59 @@ interface CartItemProps {
   onRemove: () => void;
 }
 
+/** Cart row (reference POS style): thumbnail, name, variant, price and compact stepper. */
 export const CartItem = React.memo(function CartItem({
   item,
   currencyCode,
   onUpdateQuantity,
   onRemove,
 }: CartItemProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
-
+  const { color } = useUiTheme();
+  const title = item.product_title || item.title;
   const thumbnail = item.thumbnail || item.variant?.product?.thumbnail;
-  const total = item.subtotal || 0;
+  const variant =
+    item.variant_title && item.variant_title !== "Default" ? item.variant_title : null;
 
   return (
-    <View style={[styles.container, { borderBottomColor: colors.icon + "30" }]}>
-      <Image
-        source={{ uri: thumbnail || "https://via.placeholder.com/80" }}
-        style={[styles.image, { backgroundColor: colors.imagePlaceholder }]}
-        contentFit="cover"
-      />
-      <View style={styles.content}>
-        <View style={styles.info}>
-          <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
-            {item.product_title || item.title}
+    <View style={[styles.row, { borderBottomColor: color.border }]}>
+      <View style={[styles.thumb, { backgroundColor: color.placeholder }]}>
+        {thumbnail ? (
+          <Image source={{ uri: thumbnail }} style={StyleSheet.absoluteFill} contentFit="cover" />
+        ) : (
+          <Icon name="package" size={22} color={color.muted} />
+        )}
+      </View>
+      <View style={styles.info}>
+        <View style={styles.topLine}>
+          <Text style={[styles.title, { color: color.text }]} numberOfLines={2}>
+            {title}
           </Text>
-          {item.variant_title && (
-            <Text style={[styles.variant, { color: colors.icon }]}>{item.variant_title}</Text>
-          )}
-          <Text style={[styles.price, { color: colors.text }]}>
-            {formatPrice(total, currencyCode)}
+          <Text style={[styles.price, { color: color.text }]}>
+            {formatPrice(item.subtotal || 0, currencyCode)}
           </Text>
         </View>
+        {variant ? (
+          <Text style={[styles.variant, { color: color.muted }]}>
+            Variante: <Text style={{ color: color.text, fontWeight: "600" }}>{variant}</Text>
+          </Text>
+        ) : null}
         <View style={styles.actions}>
-          <View style={styles.quantityContainer}>
-            <TouchableOpacity
-              style={[styles.quantityButton, { borderColor: colors.icon }]}
-              hitSlop={8}
-              onPress={() => onUpdateQuantity(Math.max(1, item.quantity - 1))}
-              accessibilityRole="button"
-              accessibilityLabel={`Quitar una unidad de ${item.product_title || item.title}`}
-            >
-              <Icon name="minus" size={20} color={colors.text} />
-            </TouchableOpacity>
-            <Text
-              style={[styles.quantity, { color: colors.text }]}
-              accessibilityLabel={`Cantidad: ${item.quantity}`}
-            >
-              {item.quantity}
-            </Text>
-            <TouchableOpacity
-              style={[styles.quantityButton, { borderColor: colors.icon }]}
-              hitSlop={8}
-              onPress={() => onUpdateQuantity(item.quantity + 1)}
-              accessibilityRole="button"
-              accessibilityLabel={`Añadir una unidad de ${item.product_title || item.title}`}
-            >
-              <Icon name="plus" size={20} color={colors.text} />
-            </TouchableOpacity>
-          </View>
-          <TouchableOpacity
+          <Stepper
+            compact
+            value={item.quantity}
+            min={1}
+            onChange={onUpdateQuantity}
+            label={`Cantidad de ${title}`}
+          />
+          <Pressable
             onPress={onRemove}
-            style={styles.removeButton}
-            hitSlop={8}
             accessibilityRole="button"
-            accessibilityLabel={`Quitar ${item.product_title || item.title} del carrito`}
+            accessibilityLabel={`Quitar ${title} del carrito`}
+            hitSlop={8}
+            style={styles.remove}
           >
-            <IconSymbol size={20} name="trash" color={colors.text} />
-          </TouchableOpacity>
+            <Icon name="close" size={18} color={color.muted} />
+          </Pressable>
         </View>
       </View>
     </View>
@@ -89,64 +73,25 @@ export const CartItem = React.memo(function CartItem({
 });
 
 const styles = StyleSheet.create({
-  container: {
+  row: {
     flexDirection: "row",
-    padding: 16,
-    borderBottomWidth: 1,
+    gap: 12,
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  image: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
-  },
-  content: {
-    flex: 1,
-    marginLeft: 12,
-    justifyContent: "space-between",
-  },
-  info: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  variant: {
-    fontSize: 12,
-    marginBottom: 4,
-  },
-  price: {
-    fontSize: 14,
-    fontWeight: "700",
-    marginTop: 4,
-  },
-  actions: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 8,
-  },
-  quantityContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  quantityButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 1,
+  thumb: {
+    width: 64,
+    height: 64,
+    borderRadius: 10,
+    overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
   },
-  quantity: {
-    marginHorizontal: 12,
-    fontSize: 14,
-    fontWeight: "600",
-    minWidth: 20,
-    textAlign: "center",
-  },
-  removeButton: {
-    padding: 4,
-  },
+  info: { flex: 1, gap: 6 },
+  topLine: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
+  title: { flex: 1, fontSize: 15, fontWeight: "600" },
+  price: { fontSize: 15, fontWeight: "600" },
+  variant: { fontSize: 13 },
+  actions: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  remove: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
 });

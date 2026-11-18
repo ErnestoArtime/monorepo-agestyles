@@ -1,6 +1,8 @@
 import { Colors } from "@/constants/theme";
 import { useCustomer } from "@/context/customer-context";
 import { formatPrice } from "@/lib/format-price";
+import { fulfillmentStatusView } from "@/lib/order-status";
+import { Card, KeyValueRow, StatusBadge } from "@agestyles/ui-native";
 import { sdk } from "@/lib/sdk";
 import { getBuyerOrderGroup, BuyerOrderGroupDetail } from "@agestyles/api-client/buyer-orders";
 import { getOrderTracking, OrderTracking } from "@agestyles/api-client/order-tracking";
@@ -98,34 +100,42 @@ export default function PurchaseDetailsScreen() {
       style={{ backgroundColor: colors.background }}
       contentContainerStyle={styles.content}
     >
-      <View style={[styles.summary, { borderBottomColor: colors.border }]}>
-        <Text style={[styles.title, { color: colors.text }]}>
+      <View style={styles.summary}>
+        <Text accessibilityRole="header" style={[styles.title, { color: colors.text }]}>
           Compra #{group.display_id ?? group.id}
         </Text>
-        <Text style={{ color: colors.icon }}>
-          {new Intl.DateTimeFormat("es", { dateStyle: "long" }).format(new Date(group.created_at))}
-        </Text>
-        <Text style={[styles.total, { color: colors.text }]}>
-          {formatPrice(group.total, currency)}
-        </Text>
+        <KeyValueRow
+          label="Fecha"
+          value={new Intl.DateTimeFormat("es-ES", { dateStyle: "long" }).format(
+            new Date(group.created_at),
+          )}
+        />
+        <KeyValueRow label="Total" value={formatPrice(group.total, currency)} emphasis />
       </View>
 
       {group.orders.map((order) => (
-        <View key={order.id} style={[styles.sellerSection, { borderBottomColor: colors.border }]}>
+        <Card key={order.id} style={styles.sellerSection}>
           <View style={styles.sellerHeading}>
             <Text style={[styles.sellerName, { color: colors.text }]}>
               {order.seller?.name ?? "Tienda"}
             </Text>
             <Text style={[styles.muted, { color: colors.icon }]}>Orden #{order.display_id}</Text>
           </View>
-          <Text style={[styles.status, { color: colors.icon }]}>
-            {getStatusLabel(
-              trackingByOrder[order.id]?.status ?? order.fulfillment_status ?? order.status,
-            )}
-            {order.payment_status
-              ? ` · ${getStatusLabel(order.payment_status, PAYMENT_STATUS_LABELS)}`
-              : ""}
-          </Text>
+          <View style={styles.badges}>
+            {(() => {
+              const view = fulfillmentStatusView(
+                trackingByOrder[order.id]?.status ?? order.fulfillment_status ?? order.status,
+              );
+              return <StatusBadge label={view.label} tone={view.tone} icon={view.icon} />;
+            })()}
+            {order.payment_status ? (
+              <StatusBadge
+                label={getStatusLabel(order.payment_status, PAYMENT_STATUS_LABELS)}
+                tone={order.payment_status === "captured" ? "success" : "neutral"}
+                icon="creditCard"
+              />
+            ) : null}
+          </View>
           {order.items.map((item) => (
             <View key={item.id} style={styles.item}>
               <Text style={[styles.itemTitle, { color: colors.text }]}>{item.title}</Text>
@@ -153,7 +163,7 @@ export default function PurchaseDetailsScreen() {
               </View>
             </View>
           ))}
-        </View>
+        </Card>
       ))}
     </ScrollView>
   );
@@ -216,10 +226,10 @@ function TrackingLine({
 
 const styles = StyleSheet.create({
   content: { padding: 20, gap: 8 },
-  summary: { gap: 10, paddingBottom: 20, borderBottomWidth: StyleSheet.hairlineWidth },
-  title: { fontSize: 21, fontWeight: "700" },
-  total: { fontSize: 18, fontWeight: "600", marginTop: 4 },
-  sellerSection: { gap: 12, paddingVertical: 18, borderBottomWidth: StyleSheet.hairlineWidth },
+  summary: { gap: 6, paddingBottom: 16 },
+  title: { fontSize: 30, fontWeight: "700", letterSpacing: -0.4, marginBottom: 6 },
+  sellerSection: { marginBottom: 12 },
+  badges: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   sellerHeading: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -228,7 +238,6 @@ const styles = StyleSheet.create({
   },
   sellerName: { fontSize: 17, fontWeight: "600" },
   muted: { fontSize: 14 },
-  status: { fontSize: 14, textTransform: "capitalize" },
   item: { flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" },
   itemTitle: { flex: 1, minWidth: 120, fontSize: 15 },
   itemTracking: { width: "100%", gap: 4, paddingTop: 4 },

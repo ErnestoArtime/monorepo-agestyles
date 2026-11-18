@@ -1,182 +1,120 @@
 import { CartItem } from "@/components/cart-item";
 import { Loading } from "@/components/loading";
-import { Button } from "@/components/ui/button";
-import { Colors } from "@/constants/theme";
 import { useCart } from "@/context/cart-context";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useCupRate } from "@/hooks/use-cup-rate";
 import { formatPrice } from "@/lib/format-price";
-import { useRouter } from "expo-router";
+import { formatCupEquivalent } from "@agestyles/api-client/exchange-rate";
 import { Icon } from "@agestyles/icons";
+import { Button, KeyValueRow, LargeTitle, useUiTheme } from "@agestyles/ui-native";
+import { useRouter } from "expo-router";
 import React from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
-import { formatCupEquivalent } from "@agestyles/api-client/exchange-rate";
-import { useCupRate } from "@/hooks/use-cup-rate";
 
+/** Cart (reference POS style): line rows, totals pinned at the bottom with two actions. */
 export default function CartScreen() {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { color } = useUiTheme();
   const router = useRouter();
   const { cart, updateItemQuantity, removeItem, loading } = useCart();
   const cupRate = useCupRate();
 
-  const isEmpty = !cart?.items || cart.items.length === 0;
+  if (loading && !cart) return <Loading message="Cargando carrito…" />;
 
-  if (loading && !cart) {
-    return <Loading message="Cargando carrito..." />;
-  }
-
-  if (isEmpty) {
+  if (!cart?.items?.length) {
     return (
-      <View style={[styles.emptyContainer, { backgroundColor: colors.background }]}>
-        <View style={[styles.emptyMark, { backgroundColor: colors.cardBackground }]}>
-          <Icon name="shoppingBag" size={32} color={colors.tint} />
+      <View style={[styles.empty, { backgroundColor: color.background }]}>
+        <View style={[styles.emptyMark, { backgroundColor: color.surface }]}>
+          <Icon name="shoppingBag" size={32} color={color.action} />
         </View>
-        <Text style={[styles.emptyTitle, { color: colors.text }]}>Tu carrito está vacío</Text>
-        <Text style={[styles.emptyText, { color: colors.icon }]}>
-          Agrega productos para comenzar
+        <Text style={[styles.emptyTitle, { color: color.text }]}>Tu carrito está vacío</Text>
+        <Text style={[styles.emptyText, { color: color.muted }]}>
+          Añade productos desde el catálogo para empezar.
         </Text>
-        <Button
-          title="Explorar productos"
-          onPress={() => router.push("/")}
-          style={styles.browseButton}
-        />
+        <Button title="Explorar productos" onPress={() => router.push("/")} />
       </View>
     );
   }
 
+  const currency = cart.currency_code;
+  const cup = formatCupEquivalent(cart.total, currency, cupRate);
+  const units = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.screen, { backgroundColor: color.background }]}>
       <FlatList
         data={cart.items}
         keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.list}
+        ListHeaderComponent={
+          <LargeTitle
+            title="Carrito"
+            subtitle={`${units} ${units === 1 ? "artículo" : "artículos"}`}
+          />
+        }
         renderItem={({ item }) => (
           <CartItem
             item={item}
-            currencyCode={cart.currency_code}
+            currencyCode={currency}
             onUpdateQuantity={(quantity) => updateItemQuantity(item.id, quantity)}
             onRemove={() => removeItem(item.id)}
           />
         )}
-        contentContainerStyle={styles.listContent}
       />
-
       <View
-        style={[
-          styles.footer,
-          { backgroundColor: colors.cardBackground, borderTopColor: colors.border },
-        ]}
+        style={[styles.footer, { backgroundColor: color.surface, borderTopColor: color.border }]}
       >
-        <View style={styles.totals}>
-          <View style={styles.totalRow}>
-            <Text style={[styles.totalLabel, { color: colors.text }]}>Subtotal</Text>
-            <Text style={[styles.totalValue, { color: colors.text }]}>
-              {formatPrice(cart.item_subtotal, cart.currency_code)}
-            </Text>
-          </View>
-          {cart.tax_total !== undefined && cart.tax_total > 0 && (
-            <View style={styles.totalRow}>
-              <Text style={[styles.totalLabel, { color: colors.text }]}>Impuestos</Text>
-              <Text style={[styles.totalValue, { color: colors.text }]}>
-                {formatPrice(cart.tax_total, cart.currency_code)}
-              </Text>
-            </View>
-          )}
-          {cart.shipping_total !== undefined && cart.shipping_total > 0 && (
-            <View style={styles.totalRow}>
-              <Text style={[styles.totalLabel, { color: colors.text }]}>Envío</Text>
-              <Text style={[styles.totalValue, { color: colors.text }]}>
-                {formatPrice(cart.shipping_total, cart.currency_code)}
-              </Text>
-            </View>
-          )}
-          <View style={[styles.totalRow, styles.grandTotalRow, { borderTopColor: colors.border }]}>
-            <Text style={[styles.grandTotalLabel, { color: colors.text }]}>Total</Text>
-            <Text style={[styles.grandTotalValue, { color: colors.tint }]}>
-              {formatPrice(cart.total, cart.currency_code)}
-            </Text>
-          </View>
-          {!!formatCupEquivalent(cart.total, cart.currency_code, cupRate) && (
-            <Text style={[styles.cupEquivalent, { color: colors.icon }]}>
-              {formatCupEquivalent(cart.total, cart.currency_code, cupRate)} · referencia, se cobra
-              en USD
-            </Text>
-          )}
+        <KeyValueRow label="Subtotal" value={formatPrice(cart.item_subtotal, currency)} />
+        {cart.shipping_total ? (
+          <KeyValueRow label="Envío" value={formatPrice(cart.shipping_total, currency)} />
+        ) : null}
+        {cart.tax_total ? (
+          <KeyValueRow label="Impuestos" value={formatPrice(cart.tax_total, currency)} />
+        ) : null}
+        <KeyValueRow label="Total" value={formatPrice(cart.total, currency)} emphasis />
+        {cup ? (
+          <Text style={[styles.cup, { color: color.muted }]}>
+            {cup} · referencia, se cobra en USD
+          </Text>
+        ) : null}
+        <View style={styles.actions}>
+          <Button
+            title="Seguir comprando"
+            variant="secondary"
+            onPress={() => router.push("/")}
+            style={styles.action}
+          />
+          <Button
+            title="Ir a pagar"
+            onPress={() => router.push("/checkout")}
+            loading={loading}
+            style={styles.action}
+          />
         </View>
-        <Button title="Ir a pagar" onPress={() => router.push("/checkout")} loading={loading} />
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  cupEquivalent: { fontSize: 13, textAlign: "right", marginTop: 4 },
-  container: {
-    flex: 1,
+  screen: { flex: 1 },
+  list: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 24 },
+  footer: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 20,
+    gap: 2,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 40,
-  },
-  emptyTitle: {
-    fontSize: 24,
-    fontWeight: "600",
-    letterSpacing: -0.35,
-    marginBottom: 12,
-  },
-  emptyText: {
-    fontSize: 16,
-    textAlign: "center",
-    marginBottom: 32,
-  },
-  browseButton: {
-    minWidth: 200,
-  },
+  cup: { fontSize: 12, textAlign: "right", marginBottom: 4 },
+  actions: { flexDirection: "row", gap: 12, marginTop: 10 },
+  action: { flex: 1 },
+  empty: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24, gap: 12 },
   emptyMark: {
     width: 72,
     height: 72,
     borderRadius: 36,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 8,
   },
-  listContent: {
-    paddingBottom: 20,
-  },
-  footer: {
-    paddingHorizontal: 20,
-    paddingTop: 18,
-    paddingBottom: 20,
-    borderTopWidth: 1,
-  },
-  totals: {
-    marginBottom: 14,
-  },
-  totalRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  totalLabel: {
-    fontSize: 14,
-  },
-  totalValue: {
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  grandTotalRow: {
-    marginTop: 8,
-    paddingTop: 12,
-    borderTopWidth: 1,
-  },
-  grandTotalLabel: {
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  grandTotalValue: {
-    fontSize: 20,
-    fontWeight: "700",
-  },
+  emptyTitle: { fontSize: 22, fontWeight: "700" },
+  emptyText: { fontSize: 15, textAlign: "center", marginBottom: 8 },
 });

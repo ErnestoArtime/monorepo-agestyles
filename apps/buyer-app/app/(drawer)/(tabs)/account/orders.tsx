@@ -1,7 +1,10 @@
+import { Icon } from "@agestyles/icons";
 import { Button } from "@/components/ui/button";
 import { Colors } from "@/constants/theme";
 import { useCustomer } from "@/context/customer-context";
 import { formatPrice } from "@/lib/format-price";
+import { groupStatusView } from "@/lib/order-status";
+import { Card, LargeTitle, StatusBadge, useUiTheme } from "@agestyles/ui-native";
 import { sdk } from "@/lib/sdk";
 import { listBuyerOrderGroups } from "@agestyles/api-client/buyer-orders";
 import type { BuyerOrderGroup } from "@agestyles/api-client/buyer-orders";
@@ -10,7 +13,6 @@ import { router } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -86,6 +88,7 @@ export default function OrdersScreen() {
         />
       }
     >
+      <LargeTitle title="Mis pedidos" />
       {error ? (
         <View style={styles.section}>
           <Text accessibilityRole="alert" style={{ color: colors.error }}>
@@ -108,13 +111,7 @@ export default function OrdersScreen() {
       ) : (
         <View style={styles.list}>
           {orders.map((group) => (
-            <OrderGroupRow
-              key={group.id}
-              group={group}
-              color={colors.text}
-              muted={colors.icon}
-              border={colors.border}
-            />
+            <OrderGroupRow key={group.id} group={group} />
           ))}
         </View>
       )}
@@ -122,48 +119,44 @@ export default function OrdersScreen() {
   );
 }
 
-function OrderGroupRow({
-  group,
-  color,
-  muted,
-  border,
-}: {
-  group: BuyerOrderGroup;
-  color: string;
-  muted: string;
-  border: string;
-}) {
+/** Order card (reference POS style): number, date, stores, total and a status badge. */
+function OrderGroupRow({ group }: { group: BuyerOrderGroup }) {
+  const { color } = useUiTheme();
   const currency = group.orders[0]?.currency_code;
+  const status = groupStatusView(group.orders.map((order) => order.fulfillment_status));
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={`Compra ${group.display_id ?? group.id}, ${group.seller_count} tiendas, ${formatPrice(group.total, currency)}`}
+    <Card
+      accessibilityLabel={`Compra ${group.display_id ?? group.id}, ${status.label}, ${formatPrice(group.total, currency)}`}
       onPress={() =>
         router.push({ pathname: "/(drawer)/(tabs)/account/orders/[id]", params: { id: group.id } })
       }
-      style={({ pressed }) => [
-        styles.row,
-        { borderBottomColor: border, opacity: pressed ? 0.65 : 1 },
-      ]}
     >
       <View style={styles.rowHeading}>
-        <Text style={[styles.orderName, { color }]}>Compra #{group.display_id ?? group.id}</Text>
-        <Text style={[styles.total, { color }]}>{formatPrice(group.total, currency)}</Text>
+        <Text style={[styles.orderName, { color: color.text }]}>
+          Compra #{group.display_id ?? group.id}
+        </Text>
+        <Text style={{ color: color.muted }}>{formatDate(group.created_at)}</Text>
       </View>
-      <Text style={{ color: muted }}>
-        {formatDate(group.created_at)} · {group.seller_count}{" "}
-        {group.seller_count === 1 ? "tienda" : "tiendas"}
-      </Text>
-      <Text style={{ color: muted }}>
-        {group.orders.map((order) => order.seller?.name ?? "Tienda").join(" · ")}
-      </Text>
-    </Pressable>
+      <View style={styles.rowLine}>
+        <Icon name="store" size={16} color={color.muted} />
+        <Text style={{ color: color.text, flexShrink: 1 }} numberOfLines={1}>
+          {group.orders.map((order) => order.seller?.name ?? "Tienda").join(" · ")}
+        </Text>
+      </View>
+      <View style={styles.rowHeading}>
+        <Text style={[styles.total, { color: color.text }]}>
+          {formatPrice(group.total, currency)}
+        </Text>
+        <StatusBadge label={status.label} tone={status.tone} icon={status.icon} />
+      </View>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
   content: { flexGrow: 1, padding: 20 },
-  list: { gap: 4 },
+  list: { gap: 12 },
+  rowLine: { flexDirection: "row", alignItems: "center", gap: 6 },
   row: { gap: 8, paddingVertical: 18, borderBottomWidth: StyleSheet.hairlineWidth },
   rowHeading: {
     flexDirection: "row",

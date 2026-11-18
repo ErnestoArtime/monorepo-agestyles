@@ -1,50 +1,57 @@
-import { Button } from "@/components/ui/button";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useCustomer } from "@/context/customer-context";
 import { orderWhatsAppLinks } from "@/lib/order-whatsapp";
 import { Icon } from "@agestyles/icons";
-import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { Linking, StyleSheet, Text, View } from "react-native";
+import { Button, Card, KeyValueRow, useUiTheme } from "@agestyles/ui-native";
+import { Stack, useLocalSearchParams, useRouter, type Href } from "expo-router";
+import { Linking, ScrollView, StyleSheet, Text, View } from "react-native";
 
+/** Purchase confirmation (reference POS style): success notice, reference and next actions. */
 export default function MarketplaceConfirmation() {
   const { groupId, orderCount } = useLocalSearchParams<{ groupId: string; orderCount: string }>();
-  const colors = Colors[useColorScheme() ?? "light"];
+  const { color } = useUiTheme();
   const router = useRouter();
+  const { customer } = useCustomer();
   const whatsappLinks = orderWhatsAppLinks(groupId);
+  const stores = Number(orderCount) || 1;
 
   return (
-    <View style={[styles.screen, { backgroundColor: colors.background }]}>
+    <ScrollView
+      style={{ backgroundColor: color.background }}
+      contentContainerStyle={styles.content}
+    >
       <Stack.Screen options={{ title: "Compra confirmada" }} />
-      <View style={styles.content}>
-        <View style={[styles.successMark, { backgroundColor: colors.success }]}>
-          <Icon name="check" size={28} color={colors.onSuccess} />
-        </View>
-        <Text style={[styles.heading, { color: colors.text }]}>Tu compra ha sido confirmada</Text>
-        <Text style={[styles.description, { color: colors.icon }]}>
-          Tu pedido se ha separado por tienda para que cada vendedor pueda preparar su parte.
+      <Card style={styles.card}>
+        <Text accessibilityRole="header" style={[styles.heading, { color: color.text }]}>
+          ¡Pedido confirmado!
         </Text>
         <View
-          style={[
-            styles.summary,
-            { backgroundColor: colors.cardBackground, borderColor: colors.border },
-          ]}
+          accessibilityRole="alert"
+          style={[styles.notice, { backgroundColor: color.successSoft }]}
         >
-          <Text style={[styles.summaryLabel, { color: colors.icon }]}>Referencia del pedido</Text>
-          <Text selectable style={[styles.reference, { color: colors.text }]}>
+          <Text style={[styles.noticeText, { color: color.success }]}>
+            Tu pedido se registró correctamente.
+            {stores > 1
+              ? ` Se separó en ${stores} pedidos, uno por tienda, para que cada una prepare su parte.`
+              : " La tienda lo preparará en breve."}
+          </Text>
+          <Icon name="check" size={18} color={color.success} />
+        </View>
+        <KeyValueRow label="Referencia">
+          <Text selectable style={[styles.reference, { color: color.text }]}>
             {groupId}
           </Text>
-          <View style={[styles.divider, { backgroundColor: colors.border }]} />
-          <Text style={[styles.summaryLabel, { color: colors.icon }]}>Órdenes de la tienda</Text>
-          <Text style={[styles.count, { color: colors.text }]}>{orderCount}</Text>
-        </View>
-        {whatsappLinks.length > 0 && (
-          <View style={styles.whatsapp}>
-            <Text style={[styles.description, { color: colors.icon }]}>
+        </KeyValueRow>
+        <KeyValueRow label="Tiendas" value={String(stores)} />
+
+        {whatsappLinks.length > 0 ? (
+          <View style={styles.block}>
+            <Text style={[styles.help, { color: color.muted }]}>
               Escribe a la tienda por WhatsApp para confirmar disponibilidad y forma de pago.
             </Text>
             {whatsappLinks.map((link) => (
               <Button
                 key={link.sellerId}
+                icon="send"
                 title={
                   whatsappLinks.length > 1
                     ? `Consultar a ${link.sellerName} por WhatsApp`
@@ -57,40 +64,34 @@ export default function MarketplaceConfirmation() {
               />
             ))}
           </View>
-        )}
-        <Button
-          variant={whatsappLinks.length > 0 ? "secondary" : "primary"}
-          title="Continuar comprando"
-          onPress={() => router.replace("/(drawer)/(tabs)/(home)")}
-        />
-      </View>
-    </View>
+        ) : null}
+
+        <View style={styles.block}>
+          {customer ? (
+            <Button
+              title="Ver mis pedidos"
+              variant={whatsappLinks.length ? "secondary" : "primary"}
+              onPress={() => router.replace("/(drawer)/(tabs)/account/orders" as Href)}
+            />
+          ) : null}
+          <Button
+            title="Seguir comprando"
+            variant="secondary"
+            onPress={() => router.replace("/(drawer)/(tabs)/(home)" as Href)}
+          />
+        </View>
+      </Card>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, justifyContent: "center", padding: 24 },
-  content: { width: "100%", maxWidth: 480, alignSelf: "center", gap: 16 },
-  successMark: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 8,
-  },
-  heading: { fontSize: 28, lineHeight: 34, fontWeight: "600", letterSpacing: -0.45 },
-  description: { fontSize: 15, lineHeight: 22, marginBottom: 8 },
-  summary: {
-    padding: 18,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 14,
-    gap: 8,
-    marginBottom: 8,
-  },
-  summaryLabel: { fontSize: 12 },
-  reference: { fontSize: 14, fontWeight: "600" },
-  divider: { height: StyleSheet.hairlineWidth, marginVertical: 8 },
-  count: { fontSize: 16, fontWeight: "600" },
-  whatsapp: { gap: 12 },
+  content: { flexGrow: 1, justifyContent: "center", padding: 16 },
+  card: { width: "100%", maxWidth: 480, alignSelf: "center", padding: 18, gap: 14 },
+  heading: { fontSize: 22, fontWeight: "700" },
+  notice: { flexDirection: "row", gap: 10, borderRadius: 12, padding: 14 },
+  noticeText: { flex: 1, fontSize: 14, lineHeight: 20 },
+  reference: { fontSize: 13, fontWeight: "600", flexShrink: 1, textAlign: "right" },
+  block: { gap: 10, marginTop: 4 },
+  help: { fontSize: 14, lineHeight: 20 },
 });

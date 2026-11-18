@@ -19,6 +19,8 @@ import { Alert, StyleSheet, Text, View } from "react-native";
 
 type CheckoutStep = "delivery" | "shipping" | "payment";
 
+const STEP_ORDER: CheckoutStep[] = ["delivery", "shipping", "payment"];
+
 const STEP_LABELS: Record<CheckoutStep, string> = {
   delivery: "Entrega",
   shipping: "Envío",
@@ -312,45 +314,28 @@ export default function CheckoutScreen() {
     );
   }
 
-  // Active step uses inverted colors: white bg with dark text in dark mode, tint bg with white text in light mode
-  const activeStepBg = colors.tint;
-  const activeStepText = colors.onTint;
+  const stepIndex = STEP_ORDER.indexOf(currentStep);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.steps, { borderBottomColor: colors.border }]}>
-        {(["delivery", "shipping", "payment"] as CheckoutStep[]).map((step, index) => (
-          <View key={step} style={styles.stepIndicator}>
+      <View
+        style={[styles.steps, { borderBottomColor: colors.border }]}
+        accessibilityRole="progressbar"
+        accessibilityLabel={`Paso ${stepIndex + 1} de 3: ${STEP_LABELS[currentStep]}`}
+      >
+        <Text style={[styles.stepCaption, { color: colors.icon }]}>Paso {stepIndex + 1} de 3</Text>
+        <Text style={[styles.stepTitle, { color: colors.text }]}>{STEP_LABELS[currentStep]}</Text>
+        <View style={styles.segments}>
+          {STEP_ORDER.map((step, index) => (
             <View
+              key={step}
               style={[
-                styles.stepCircle,
-                {
-                  backgroundColor: currentStep === step ? activeStepBg : colors.icon + "30",
-                },
+                styles.segment,
+                { backgroundColor: index <= stepIndex ? colors.tint : colors.border },
               ]}
-            >
-              <Text
-                style={[
-                  styles.stepNumber,
-                  { color: currentStep === step ? activeStepText : colors.icon },
-                ]}
-              >
-                {index + 1}
-              </Text>
-            </View>
-            <Text
-              style={[
-                styles.stepLabel,
-                {
-                  color: currentStep === step ? colors.text : colors.icon,
-                  fontWeight: currentStep === step ? "600" : "400",
-                },
-              ]}
-            >
-              {STEP_LABELS[step]}
-            </Text>
-          </View>
-        ))}
+            />
+          ))}
+        </View>
       </View>
 
       <View style={styles.content}>
@@ -415,29 +400,16 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   steps: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    padding: 20,
-    borderBottomWidth: 1,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 14,
+    gap: 4,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  stepIndicator: {
-    alignItems: "center",
-  },
-  stepCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 8,
-  },
-  stepNumber: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  stepLabel: {
-    fontSize: 12,
-  },
+  stepCaption: { fontSize: 13 },
+  stepTitle: { fontSize: 28, fontWeight: "700", letterSpacing: -0.4 },
+  segments: { flexDirection: "row", gap: 6, marginTop: 8 },
+  segment: { flex: 1, height: 4, borderRadius: 2 },
   content: {
     flex: 1,
   },
