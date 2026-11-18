@@ -7,6 +7,8 @@ import {
   resolveRule,
   roundMoney,
   type CommissionRule,
+  parseSalesFilters,
+  salesServiceFilters,
 } from "@agestyles/sales-commissions";
 import {
   asInvalidData,
@@ -30,14 +32,18 @@ type OfferRow = {
 };
 type SaleLine = { product_id: string; quantity: number };
 
-/** Agents list their own sales; managers list the store's, optionally for one agent. */
+/**
+ * Agents list their own sales; managers list the store's, optionally for one agent.
+ * Optional filters: `from`/`to` (YYYY-MM-DD, UTC) and `payment_method`.
+ */
 export async function GET(req: CommissionRequest, res: MedusaResponse) {
   const actor = await resolveCommissionActor(req);
   const agentId = scopedAgentId(actor, req.query.agent_id);
   const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 100);
   const offset = Math.max(Number(req.query.offset) || 0, 0);
+  const filters = parseSalesFilters(req.query as Record<string, unknown>);
   const [sales, count] = await commissionsService(req).listAndCountAgentSales(
-    { seller_id: actor.sellerId, ...(agentId ? { agent_id: agentId } : {}) },
+    salesServiceFilters(actor.sellerId, filters, agentId),
     { order: { created_at: "DESC" }, take: limit, skip: offset },
   );
   res.json({ agent_sales: sales, count, limit, offset });

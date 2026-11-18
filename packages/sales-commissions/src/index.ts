@@ -19,6 +19,14 @@ export {
   unitsToNextThreshold,
   validateWithdrawal,
 } from "./rules";
+export {
+  buildSalesReport,
+  MAX_REPORT_DAYS,
+  parseSalesFilters,
+  salesServiceFilters,
+  salesToCsv,
+} from "./reports";
+export type { SaleRecord, SalesFilters, SalesReport } from "./reports";
 export type {
   AgentSaleInput,
   CommissionLine,

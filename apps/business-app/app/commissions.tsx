@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { OperationList, Section } from "../components/operation-list";
 import { Button, PillGroup, StatusBadge, type BadgeTone } from "@agestyles/ui-native";
+import { deliverCsv } from "../lib/inventory-movements";
 import { useBusiness } from "../context/business-context";
 import { useBusinessTheme } from "../hooks/use-business-theme";
 import {
@@ -24,11 +25,42 @@ import {
 type Member = { id: string; member?: { id?: string; email?: string } };
 type Product = { id: string; title?: string };
 
+type ReportPeriod = "7" | "30" | "90";
+const REPORT_PERIODS: { value: ReportPeriod; label: string }[] = [
+  { value: "7", label: "7 días" },
+  { value: "30", label: "30 días" },
+  { value: "90", label: "90 días" },
+];
+const COMMISSIONS_REPORT = "/vendor/agestyles/commissions/report";
+const COMMISSIONS_EXPORT = "/vendor/agestyles/agent-sales/export";
+
+type SalesReport = {
+  totals: { count: number; total: number; commission: number };
+  days: { date: string; count: number; total: number }[];
+  agents: { agent_id: string; count: number; total: number; commission: number }[];
+  products: { product_id: string; title: string | null; units: number; total: number }[];
+};
+
+/** `from`/`to` (UTC dates) for the last N days, today included. */
+function periodQuery(period: ReportPeriod) {
+  const to = new Date();
+  const from = new Date(to.getTime() - (Number(period) - 1) * 24 * 60 * 60 * 1000);
+  return `from=${from.toISOString().slice(0, 10)}&to=${to.toISOString().slice(0, 10)}`;
+}
+
+function shortDay(date: string) {
+  return new Intl.DateTimeFormat("es-ES", {
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  }).format(new Date(`${date}T12:00:00Z`));
+}
+
 export default function CommissionsScreen() {
   const theme = useBusinessTheme();
   const styles = createStyles(theme);
   const router = useRouter();
-  const { request, seller } = useBusiness();
+  const { request, requestText, seller } = useBusiness();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -52,6 +84,10 @@ export default function CommissionsScreen() {
   const [ruleKind, setRuleKind] = useState<"percent" | "fixed">("fixed");
   const [ruleValue, setRuleValue] = useState("");
   const [ruleThreshold, setRuleThreshold] = useState("");
+  // Manager report (AG-06 phase 3)
+  const [period, setPeriod] = useState<ReportPeriod>("30");
+  const [salesReport, setSalesReport] = useState<SalesReport | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   const productTitle = useMemo(
     () => new Map(products.map((product) => [product.id, product.title ?? "Producto"])),
@@ -140,24 +176,31 @@ export default function CommissionsScreen() {
         )
         .slice(0, 6)
     : [];
-  const since = Date.now() - 30 * 24 * 60 * 60 * 1000;
-  const report = agents.map((agent) => {
-    const recent = sales.filter(
-      (sale) =>
-        sale.agent_id === agent.id &&
-        sale.status === "paid" &&
-        new Date(sale.created_at).getTime() >= since,
-    );
-    return {
-      agent,
-      count: recent.length,
-      total: recent.reduce((sum, sale) => sum + Number(sale.total), 0),
-      commission: recent.reduce(
-        (sum, sale) => sum + sale.lines.reduce((acc, line) => acc + Number(line.commission), 0),
-        0,
-      ),
+  useEffect(() => {
+    if (!isManager || !seller) return;
+    let current = true;
+    request<{ report: SalesReport }>(`${COMMISSIONS_REPORT}?${periodQuery(period)}`)
+      .then((data) => current && setSalesReport(data.report))
+      .catch(() => current && setSalesReport(null));
+    return () => {
+      current = false;
     };
-  });
+  }, [isManager, period, request, seller, sales]);
+
+  async function exportSales() {
+    setExporting(true);
+    setError("");
+    try {
+      const csv = await requestText(`${COMMISSIONS_EXPORT}?${periodQuery(period)}`);
+      await deliverCsv(csv, `ventas-gestores-${new Date().toISOString().slice(0, 10)}.csv`);
+    } catch (cause) {
+      setError(commissionError(cause, "No se pudo exportar las ventas."));
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  const bestDay = Math.max(1, ...(salesReport?.days ?? []).map((day) => day.total));
 
   return (
     <OperationList
@@ -330,24 +373,107 @@ export default function CommissionsScreen() {
             )}
           </Section>
 
-          <Section title="Ventas de los últimos 30 días">
-            {report.length ? (
-              report.map((item) => (
-                <View key={item.agent.id} style={styles.row}>
-                  <View style={styles.flex}>
-                    <Text style={styles.rowTitle}>
-                      {item.agent.member_email ?? item.agent.code}
-                    </Text>
-                    <Text style={styles.muted}>
-                      {item.count} ventas · {money(item.total)}
-                    </Text>
-                  </View>
-                  <Text style={styles.rowTitle}>{money(item.commission)}</Text>
+          <Section title="Informe de ventas">
+            <View style={styles.block}>
+              <PillGroup
+                accessibilityLabel="Periodo del informe"
+                value={period}
+                onChange={setPeriod}
+                options={REPORT_PERIODS}
+              />
+              {salesReport ? (
+                <View style={styles.figures}>
+                  <Figure label="Ventas" value={String(salesReport.totals.count)} styles={styles} />
+                  <Figure
+                    label="Ingresos"
+                    value={money(salesReport.totals.total)}
+                    styles={styles}
+                    strong
+                  />
+                  <Figure
+                    label="Comisiones"
+                    value={money(salesReport.totals.commission)}
+                    styles={styles}
+                  />
                 </View>
-              ))
-            ) : (
-              <Text style={[styles.muted, styles.pad]}>Todavía no hay gestores.</Text>
-            )}
+              ) : (
+                <Text style={styles.muted}>Cargando el informe…</Text>
+              )}
+              <Button
+                icon="arrowDown"
+                variant="secondary"
+                title={exporting ? "Exportando…" : "Exportar ventas (CSV)"}
+                disabled={exporting}
+                onPress={() => void exportSales()}
+              />
+            </View>
+            {salesReport?.days.length ? (
+              <View style={styles.block}>
+                <Text style={styles.label}>Ingresos por día</Text>
+                {salesReport.days
+                  .slice(-14)
+                  .reverse()
+                  .map((day) => (
+                    <View
+                      key={day.date}
+                      style={styles.dayRow}
+                      accessibilityLabel={`${shortDay(day.date)}: ${money(day.total)} en ${day.count} ventas`}
+                    >
+                      <Text style={[styles.muted, styles.dayLabel]}>{shortDay(day.date)}</Text>
+                      <View style={styles.barTrack}>
+                        <View
+                          style={[
+                            styles.bar,
+                            { width: `${Math.max(4, (day.total / bestDay) * 100)}%` },
+                          ]}
+                        />
+                      </View>
+                      <Text style={[styles.rowTitle, styles.dayValue]}>{money(day.total)}</Text>
+                    </View>
+                  ))}
+              </View>
+            ) : null}
+            {salesReport ? (
+              <View style={styles.block}>
+                <Text style={styles.label}>Ranking de gestores</Text>
+                {salesReport.agents.length ? (
+                  salesReport.agents.map((row, index) => (
+                    <View key={row.agent_id} style={styles.rankRow}>
+                      <Text style={styles.rank}>{index + 1}</Text>
+                      <View style={styles.flex}>
+                        <Text style={styles.rowTitle}>
+                          {agentEmail.get(row.agent_id) ?? "Gestor"}
+                        </Text>
+                        <Text style={styles.muted}>
+                          {row.count} ventas · {money(row.total)}
+                        </Text>
+                      </View>
+                      <Text style={styles.rowTitle}>{money(row.commission)}</Text>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={styles.muted}>Sin ventas en este periodo.</Text>
+                )}
+                <Text style={[styles.label, styles.spaced]}>Productos más vendidos</Text>
+                {salesReport.products.length ? (
+                  salesReport.products.map((row, index) => (
+                    <View key={row.product_id} style={styles.rankRow}>
+                      <Text style={styles.rank}>{index + 1}</Text>
+                      <View style={styles.flex}>
+                        <Text style={styles.rowTitle}>
+                          {row.title ?? productTitle.get(row.product_id) ?? "Producto"}
+                        </Text>
+                        <Text style={styles.muted}>
+                          {row.units} uds · {money(row.total)}
+                        </Text>
+                      </View>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={styles.muted}>Sin ventas en este periodo.</Text>
+                )}
+              </View>
+            ) : null}
           </Section>
 
           <Section title="Gestores de venta">
@@ -670,4 +796,18 @@ const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
       borderBottomWidth: StyleSheet.hairlineWidth,
     },
     rowTitle: { color: theme.text, fontSize: 14, fontWeight: "500" },
+    spaced: { marginTop: 12 },
+    dayRow: { flexDirection: "row", alignItems: "center", gap: 8, minHeight: 28 },
+    dayLabel: { width: 56 },
+    dayValue: { width: 76, textAlign: "right" },
+    barTrack: {
+      flex: 1,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: theme.background,
+      overflow: "hidden",
+    },
+    bar: { height: 10, borderRadius: 5, backgroundColor: theme.action },
+    rankRow: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 48 },
+    rank: { width: 22, color: theme.muted, fontSize: 14, fontWeight: "700", textAlign: "center" },
   });

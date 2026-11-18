@@ -311,6 +311,42 @@ try {
   );
   assert.equal(foreignSales.length, 0, "B2 must not list A2 sales");
 
+  // Phase 3 reports: managers only, scoped to the store, CSV for spreadsheets.
+  const today = new Date().toISOString().slice(0, 10);
+  const { report } = await expectStatus(
+    `/vendor/agestyles/commissions/report?from=${today}&to=${today}`,
+    { headers: ownerA },
+    200,
+  );
+  assert.ok(report.totals.count >= 1, "the report counts today's sales");
+  assert.ok(report.products.length >= 1, "the report ranks products");
+  assert.ok(
+    report.agents.some((row) => row.agent_id === salesAgent.id),
+    "the report ranks the agent",
+  );
+  await expectStatus("/vendor/agestyles/commissions/report", { headers: agent.headers }, 403);
+  const { report: foreignReport } = await expectStatus(
+    "/vendor/agestyles/commissions/report",
+    { headers: ownerB },
+    200,
+  );
+  assert.equal(foreignReport.totals.count, 0, "B2 must not see A2 sales in reports");
+  const csv = await request(`/vendor/agestyles/agent-sales/export?from=${today}`, {
+    headers: ownerA,
+  });
+  assert.equal(csv.status, 200, `CSV export: ${csv.status}`);
+  assert.ok(csv.text.includes("Fecha (UTC);Venta;Gestor"), "CSV header in Spanish");
+  await expectStatus("/vendor/agestyles/agent-sales/export", { headers: agent.headers }, 403);
+  const { agent_sales: cashSales } = await expectStatus(
+    "/vendor/agestyles/agent-sales?payment_method=transfer",
+    { headers: ownerA },
+    200,
+  );
+  assert.ok(
+    cashSales.every((sale) => sale.payment_method === "transfer"),
+    "payment_method filter applies",
+  );
+
   console.log(
     "PASS: sales agents and commissions enforce roles and store isolation; thresholds, stock, balance and withdrawals are consistent",
   );

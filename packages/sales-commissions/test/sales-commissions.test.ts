@@ -164,4 +164,90 @@ invalid(
   /una vez/,
 );
 
+// Reports (AG-06 phase 3)
+{
+  const { buildSalesReport, parseSalesFilters, salesServiceFilters, salesToCsv } =
+    await import("../src/reports.ts");
+  const sales = [
+    {
+      id: "s1",
+      agent_id: "a1",
+      source: "manual",
+      payment_method: "cash",
+      status: "paid",
+      currency_code: "usd",
+      total: "30",
+      created_at: "2026-11-17T10:00:00Z",
+      lines: [
+        {
+          product_id: "p1",
+          title: "Camiseta",
+          sku: "C-1",
+          quantity: 2,
+          unit_price: 15,
+          commission: 1.5,
+        },
+      ],
+    },
+    {
+      id: "s2",
+      agent_id: "a2",
+      source: "manual",
+      payment_method: "transfer",
+      status: "paid",
+      currency_code: "usd",
+      total: 12,
+      created_at: "2026-11-17T22:00:00Z",
+      lines: [
+        {
+          product_id: "p2",
+          title: "=SUMA(A1)",
+          sku: null,
+          quantity: 1,
+          unit_price: 12,
+          commission: 0.6,
+        },
+      ],
+    },
+    {
+      id: "s3",
+      agent_id: "a1",
+      source: "manual",
+      payment_method: "cash",
+      status: "reversed",
+      currency_code: "usd",
+      total: 99,
+      created_at: "2026-11-18T09:00:00Z",
+      lines: [{ product_id: "p1", quantity: 9, unit_price: 11 }],
+    },
+  ];
+  const report = buildSalesReport(sales);
+  assert.deepEqual(report.totals, { count: 2, total: 42, commission: 2.1 });
+  assert.deepEqual(report.days, [{ date: "2026-11-17", count: 2, total: 42 }]);
+  assert.equal(report.agents[0].agent_id, "a1");
+  assert.equal(report.products[0].product_id, "p1");
+  assert.equal(report.products[0].units, 2);
+
+  const filters = parseSalesFilters({
+    from: "2026-11-18",
+    to: "2026-11-01",
+    payment_method: "cash",
+  });
+  assert.equal(filters.from?.toISOString(), "2026-11-01T00:00:00.000Z");
+  assert.equal(filters.to?.toISOString(), "2026-11-18T23:59:59.999Z");
+  assert.deepEqual(parseSalesFilters({ from: "18/11/2026", payment_method: "x" }), {});
+  assert.deepEqual(Object.keys(salesServiceFilters("sel", filters, "a1")).sort(), [
+    "agent_id",
+    "created_at",
+    "payment_method",
+    "seller_id",
+  ]);
+
+  const csv = salesToCsv(sales, new Map([["a1", "ana@tienda.com"]]));
+  assert.ok(csv.startsWith("\uFEFFFecha (UTC);Venta;Gestor"));
+  assert.match(csv, /ana@tienda\.com;Efectivo;Cobrada;Camiseta;C-1;2;15\.00;30\.00;1\.50;USD/);
+  assert.match(csv, /'=SUMA\(A1\)/);
+  assert.match(csv, /Revertida/);
+}
+
 console.log("sales-commissions rules: ok");
