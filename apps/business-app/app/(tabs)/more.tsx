@@ -48,6 +48,11 @@ export default function MoreScreen() {
           />
         ) : null}
         <Row
+          title="Comisiones"
+          detail="Gestores de venta, ventas registradas, saldo y retiros."
+          action={() => router.push("/commissions")}
+        />
+        <Row
           title="Cerrar sesión"
           detail="Salir de la cuenta de negocio"
           action={() => void signOut()}
