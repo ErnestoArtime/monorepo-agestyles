@@ -1282,3 +1282,15 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - **Negocio:** `entry-de892fcd…` (incluye «Informe de ventas» y SKU de ofertas), apunta a `/negocio`.
 - **Catálogo:** `/`, `/novedades`, `/comparar` y `/sitemap.xml` 200; título «Novedades | AgeStyles».
 - Pendiente de revisión cruzada (Codex): AG-06 fase 3, AG-29 (a), AG-18 Novedades ya en producción.
+
+## 2026-11-18 — Claude: AG-06 fase 4 (ventas online con código de gestor y anulaciones)
+
+- Commit `13b54bd` (sin desplegar). Detalle en `docs/design/AG-06-gestores-y-comisiones.md` («Fase 4 — implementación»).
+- **API:** `lib/agent-online-sales.ts`; workflow `settle-agent-sale.ts`; subscribers `agent-sale-order-placed` (`order.placed`), `agent-sale-payment` (`agestyles.manual_payment.verified`, `payment.captured`) y `agent-sale-order-canceled` (`order.canceled`); rutas `GET /store/agestyles/sales-agents/:code` y `POST /vendor/agestyles/agent-sales/:id/reverse` (solo titular/administración). Sin migración.
+- **Paquete:** `packages/sales-commissions/src/online.ts` + `test/online.test.ts` (líneas del pedido, reversión idempotente por producto, nota).
+- **Gateways:** comprador `GET /store/agestyles/sales-agents/[a-z0-9]{4,12}`; vendedor `POST /vendor/agestyles/agent-sales/asale_*/reverse`.
+- **Tienda:** campo «Código de gestor» en el paso de pago (`components/checkout/agent-code-field.tsx`, `lib/agent-code.ts`); `?gestor=CODIGO` se recuerda en el dispositivo.
+- **Negocio:** código y enlace del gestor («Copiar/Compartir enlace»), sección «Ventas de la tienda» con estado y «Anular» con confirmación.
+- **Verificador:** `verify-sales-commissions.mjs` comprueba la consulta pública del código (mayúsculas indiferentes, sin email), 404 de código inexistente, anulación 403 gestor / 404 otra tienda / 200 titular, segunda anulación 400 y saldo −2 tras anular una venta ya retirada.
+- Comprobado en local: tests del paquete, `tsc` de API, Tienda y Negocio, eslint y prettier. La compra online completa con código queda para AG-11.
+- **Para revisión de codex:** atribución solo a la tienda del gestor; acreditación al verificarse/capturarse el pago; saldo negativo permitido tras anular; stock no se repone al anular.
