@@ -6,6 +6,7 @@ import {
   updateFulfillmentWorkflow,
 } from "@medusajs/medusa/core-flows";
 import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils";
+import { AGESTYLES_EVENTS, emitAgestylesEventSafely } from "../../../../../../lib/notifications";
 
 type SellerRequest = AuthenticatedMedusaRequest & {
   seller_context?: { seller_id?: string };
@@ -192,6 +193,11 @@ export async function POST(req: SellerRequest, res: MedusaResponse) {
         input: { orderId, fulfillmentId: fulfillment.id, no_notification: false },
       });
     }
+    await emitAgestylesEventSafely(req.scope, AGESTYLES_EVENTS.ORDER_STAGE, {
+      order_id: orderId,
+      fulfillment_id: fulfillment.id,
+      action: body.action,
+    });
     return res.status(200).json({ ok: true, action: body.action, fulfillment_id: fulfillment.id });
   }
 
@@ -246,6 +252,11 @@ export async function POST(req: SellerRequest, res: MedusaResponse) {
   // until the seller explicitly advances the order to "ready".
   const { result: preparingFulfillment } = await updateFulfillmentWorkflow(req.scope).run({
     input: { id: fulfillment.id, packed_at: null },
+  });
+  await emitAgestylesEventSafely(req.scope, AGESTYLES_EVENTS.ORDER_STAGE, {
+    order_id: orderId,
+    fulfillment_id: fulfillment.id,
+    action: "start",
   });
   return res.status(201).json({ fulfillment: preparingFulfillment });
 }

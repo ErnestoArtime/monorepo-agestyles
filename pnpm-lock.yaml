@@ -261,6 +261,9 @@ importers:
       '@agestyles/manual-payments':
         specifier: workspace:*
         version: link:../../packages/manual-payments
+      '@agestyles/notifications':
+        specifier: workspace:*
+        version: link:../../packages/notifications
       '@agestyles/sales-commissions':
         specifier: workspace:*
         version: link:../../packages/sales-commissions
@@ -405,6 +408,12 @@ importers:
         version: 2.22.3(@medusajs/cli@2.22.3(@types/node@26.6.6))(@types/node@26.6.6)(ioredis@5.11.1)(vite@7.3.8(@types/node@26.6.6)(jiti@1.21.7)(lightningcss@1.33.0)(terser@5.51.2)(yaml@2.9.0))(zod@4.6.6)
 
   packages/manual-payments:
+    dependencies:
+      '@medusajs/framework':
+        specifier: 2.22.3
+        version: 2.22.3(@medusajs/cli@2.22.3(@types/node@26.6.6))(@types/node@26.6.6)(ioredis@5.11.1)(vite@7.3.8(@types/node@26.6.6)(jiti@1.21.7)(lightningcss@1.33.0)(terser@5.51.2)(yaml@2.9.0))(zod@4.6.6)
+
+  packages/notifications:
     dependencies:
       '@medusajs/framework':
         specifier: 2.22.3
@@ -11047,7 +11056,7 @@ snapshots:
       wrap-ansi: 7.0.0
       ws: 8.23.0
     optionalDependencies:
-      expo-router: 6.0.24(5dbf6488a442dabda9cc46c93efbd5c1)
+      expo-router: 6.0.24(4855cc8077d10ae5a842267c4ddb751f)
       react-native: 0.81.5(@babel/core@7.29.13)(@types/react@19.1.17)(react@19.1.0)
     transitivePeerDependencies:
       - bufferutil

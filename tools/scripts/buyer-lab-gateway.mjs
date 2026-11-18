@@ -38,9 +38,17 @@ const rules = [
   ["POST DELETE", /^\/store\/carts\/cart_[a-z0-9]+\/line-items\/cali_[a-z0-9]+$/i],
   ["POST", /^\/store\/payment-collections(?:\/pay_col_[a-z0-9]+\/payment-sessions)?$/i],
   ["POST", /^\/auth\/customer\/emailpass(?:\/register)?$/],
+  // Choose a new password from the emailed link (AG-19); the token travels as a bearer.
+  ["POST", /^\/auth\/customer\/emailpass\/(reset-password|update)$/],
   ["GET", /^\/store\/customers\/me$/],
   ["GET", /^\/store\/order-groups(?:\/og_[a-z0-9]+)?$/i],
   ["GET", /^\/store\/orders\/order_[a-z0-9]+\/tracking$/i],
+  // Notifications (AG-19): inbox, push devices and channel preferences of the signed-in customer.
+  ["GET", /^\/store\/agestyles\/notifications$/],
+  ["POST", /^\/store\/agestyles\/notifications\/read$/],
+  ["POST", /^\/store\/agestyles\/devices$/],
+  ["DELETE", /^\/store\/agestyles\/devices\/adevice_[a-z0-9]+$/i],
+  ["GET POST", /^\/store\/agestyles\/notification-preferences$/],
   ["POST", /^\/store\/order-quotes$/],
   ["POST", /^\/store\/order-quotes\/[a-z0-9_-]+\/accept$/i],
 ];

@@ -29,6 +29,8 @@ reset.unref();
 const rules = [
   ["POST", /^\/auth\/member\/emailpass$/],
   ["POST", /^\/auth\/customer\/emailpass$/],
+  // Choose a new password from the emailed link (AG-19); the token travels as a bearer.
+  ["POST", /^\/auth\/(member|customer)\/emailpass\/(reset-password|update)$/],
   ["GET", /^\/store\/regions$/],
   ["GET", /^\/store\/products$/],
   ["GET", /^\/store\/offers$/],
@@ -37,6 +39,12 @@ const rules = [
   ["POST", /^\/store\/carts\/[a-z0-9_-]+\/line-items$/i],
   ["POST", /^\/store\/carts\/[a-z0-9_-]+\/transfer$/i],
   ["GET", /^\/store\/customers\/me$/],
+  // Notifications of the buyer mode (AG-19).
+  ["GET", /^\/store\/agestyles\/notifications$/],
+  ["POST", /^\/store\/agestyles\/notifications\/read$/],
+  ["POST", /^\/store\/agestyles\/devices$/],
+  ["DELETE", /^\/store\/agestyles\/devices\/adevice_[a-z0-9]+$/i],
+  ["GET POST", /^\/store\/agestyles\/notification-preferences$/],
   ["POST", /^\/store\/order-quotes$/],
   ["POST", /^\/store\/order-quotes\/[a-z0-9_-]+\/accept$/i],
   ["GET", /^\/vendor\/sellers$/],
@@ -66,6 +74,12 @@ const rules = [
   ["GET", /^\/vendor\/agestyles\/commissions\/balance$/],
   ["GET POST", /^\/vendor\/agestyles\/commission-withdrawals$/],
   ["POST", /^\/vendor\/agestyles\/commission-withdrawals\/cwdraw_[a-z0-9]+$/i],
+  // Notifications of the selected store (AG-19); authorization is enforced by the API.
+  ["GET", /^\/vendor\/agestyles\/notifications$/],
+  ["POST", /^\/vendor\/agestyles\/notifications\/read$/],
+  ["POST", /^\/vendor\/agestyles\/devices$/],
+  ["DELETE", /^\/vendor\/agestyles\/devices\/adevice_[a-z0-9]+$/i],
+  ["GET POST", /^\/vendor\/agestyles\/notification-preferences$/],
   ["GET POST", /^\/vendor\/sellers\/sel_[a-z0-9]+\/members$/i],
   ["POST DELETE", /^\/vendor\/sellers\/sel_[a-z0-9]+\/members\/[a-z0-9_-]+$/i],
 ];
