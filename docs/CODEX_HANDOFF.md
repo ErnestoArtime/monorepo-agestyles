@@ -1235,3 +1235,25 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
   Las tres son escrituras de datos en producción y esperan autorización.
 - **Checks:** `pnpm typecheck` OK; tests de `sales-commissions` OK; lint sin errores; prettier OK.
 - **Listo para desplegar** (con autorización del usuario): API con AG-06 fase 3 (sin migraciones), reinicio del gateway de vendedores, Negocio y Catálogo.
+
+## 2026-11-18 · Claude · Pasada programada de repaso (6:10 Cuba)
+
+- **Revisión de la pasada de las 5:10:** todos los commits están en `main`.
+  - La CI de `7398287` falló solo en «Check formatting of changed files» (`sitemap.ts` sin Prettier). Corregido en `f6a86cd`.
+  - La CI de `63f7314`, que incluye todo, está verde y publicó imagen de la API.
+- **APK 1.1.0:** los tres intentos con Gradle murieron por falta de memoria en `createBundleReleaseJsAndAssets` (Metro + JVM a la vez). Nuevo método:
+  - `expo export:embed` con Node solo, y compilación a bytecode con `hermesc`.
+  - Después `assembleRelease -x createBundleReleaseJsAndAssets` con `-Xmx1536m` y Kotlin dentro del proceso.
+  - En curso; después se firma con la clave de `~/.config/agestyles-buyer-signing` (mismo paquete, así se actualiza sobre la anterior).
+- **AG-10:** diagnosticado (detalle en el tablero); sin tocar contenedores.
+- **Listo para desplegar con autorización del usuario:**
+  1. API de `63f7314` o posterior (AG-06 fase 3 y AG-29 en Negocio; sin migraciones) + reinicio del gateway de vendedores (rutas de informe y CSV).
+  2. Webs de Negocio (informe de comisiones, SKU desde ofertas) y Catálogo (`/novedades`).
+  3. APK 1.1.0 en descargas, cuando termine.
+- **Decisiones del usuario pendientes:**
+  - Clave S3 de Supabase (fotos al bucket `product-images`).
+  - Claves de IA de Coliseo.
+  - Token de elTOQUE (CUP).
+  - SendGrid (correo).
+  - Limpieza de disco AG-16 (96 %).
+  - Escrituras de datos de AG-28 (familias), AG-29 (b) (SKU a variantes) y fechas de alta del legado para Novedades.
