@@ -1,129 +1,74 @@
-import { Colors } from "@/constants/theme";
-import { useRegion } from "@/context/region-context";
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import { formatPrice } from "@/lib/format-price";
 import { useFavorites } from "@/context/favorites-context";
+import { useRegion } from "@/context/region-context";
+import { useCupRate } from "@/hooks/use-cup-rate";
+import { formatPrice } from "@/lib/format-price";
+import { formatCupEquivalent } from "@agestyles/api-client/exchange-rate";
 import { Icon } from "@agestyles/icons";
+import { ProductTile, useUiTheme } from "@agestyles/ui-native";
 import type { HttpTypes } from "@medusajs/types";
-import { Image } from "expo-image";
-import { useRouter } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
 interface ProductCardProps {
   product: HttpTypes.StoreProduct;
+  /** Opens the product in the catalog's bottom sheet; without it, opens the product page. */
+  onOpen?: (product: HttpTypes.StoreProduct) => void;
 }
 
-export const ProductCard = React.memo(function ProductCard({ product }: ProductCardProps) {
+/** Grid tile (reference POS style) with favourite toggle and CUP reference price. */
+export const ProductCard = React.memo(function ProductCard({ product, onOpen }: ProductCardProps) {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { color } = useUiTheme();
   const { selectedRegion } = useRegion();
+  const cupRate = useCupRate();
   const { isFavorite, toggleFavorite, ready } = useFavorites();
+  const favorite = isFavorite(product.id);
 
-  const thumbnail = product.thumbnail || product.images?.[0]?.url;
-  const variant = product.variants?.[0];
-
-  // Get price from calculated_price.calculated_amount
-  const priceAmount = variant?.calculated_price?.calculated_amount || 0;
-
-  // Use selected region's currency code
-  const currencyCode = selectedRegion?.currency_code;
+  const imageUrl = product.thumbnail || product.images?.[0]?.url;
+  const amount = product.variants?.[0]?.calculated_price?.calculated_amount ?? undefined;
+  const currency = selectedRegion?.currency_code;
 
   return (
-    <View style={styles.cardShell}>
-      <TouchableOpacity
-        style={[
-          styles.card,
-          { backgroundColor: colors.cardBackground, borderColor: colors.border },
-        ]}
-        accessibilityRole="button"
-        accessibilityLabel={`${product.title}, ${formatPrice(priceAmount, currencyCode)}`}
+    <View style={styles.cell}>
+      <ProductTile
+        title={product.title ?? "Producto"}
+        price={amount === undefined ? "Consultar precio" : formatPrice(amount, currency)}
+        secondaryPrice={formatCupEquivalent(amount, currency, cupRate)}
+        imageUrl={imageUrl}
         onPress={() =>
-          router.push({
-            pathname: `/(home)/product/${product.id}` as any,
-            params: { title: product.title },
-          })
+          onOpen
+            ? onOpen(product)
+            : router.push({
+                pathname: `/(home)/product/${product.id}`,
+                params: { title: product.title },
+              } as unknown as Href)
         }
-        activeOpacity={0.7}
-      >
-        <Image
-          source={thumbnail ? { uri: thumbnail } : undefined}
-          style={[styles.image, { backgroundColor: colors.imagePlaceholder }]}
-          contentFit="cover"
-        />
-        <View style={styles.content}>
-          <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
-            {product.title}
-          </Text>
-          <View style={styles.priceRow}>
-            <Text style={[styles.price, { color: colors.text }]}>
-              {formatPrice(priceAmount, currencyCode)}
-            </Text>
-          </View>
-        </View>
-      </TouchableOpacity>
-      <TouchableOpacity
-        accessibilityRole="button"
-        accessibilityLabel={
-          isFavorite(product.id)
-            ? `Quitar ${product.title} de favoritos`
-            : `Guardar ${product.title} en favoritos`
+        accessory={
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={
+              favorite
+                ? `Quitar ${product.title} de favoritos`
+                : `Guardar ${product.title} en favoritos`
+            }
+            accessibilityState={{ selected: favorite }}
+            disabled={!ready}
+            onPress={() => void toggleFavorite(product.id).catch(() => undefined)}
+            hitSlop={6}
+            style={[styles.favorite, { backgroundColor: color.surface, borderColor: color.border }]}
+          >
+            <Icon name="heart" size={18} color={favorite ? color.action : color.muted} />
+          </Pressable>
         }
-        accessibilityState={{ selected: isFavorite(product.id) }}
-        disabled={!ready}
-        onPress={() => void toggleFavorite(product.id).catch(() => undefined)}
-        style={[
-          styles.favoriteButton,
-          { backgroundColor: colors.cardBackground, borderColor: colors.border },
-        ]}
-      >
-        <Icon name="heart" size={19} color={isFavorite(product.id) ? colors.tint : colors.icon} />
-      </TouchableOpacity>
+      />
     </View>
   );
 });
 
 const styles = StyleSheet.create({
-  cardShell: {
-    flex: 1,
-    margin: 5,
-    position: "relative",
-  },
-  card: {
-    flex: 1,
-    overflow: "hidden",
-    borderRadius: 14,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  image: {
-    width: "100%",
-    height: 184,
-  },
-  content: {
-    paddingHorizontal: 10,
-    paddingVertical: 12,
-  },
-  title: {
-    fontSize: 13,
-    fontWeight: "500",
-    marginBottom: 8,
-  },
-  priceRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-  },
-  price: {
-    fontSize: 15,
-    fontWeight: "600",
-    flex: 1,
-  },
-  favoriteButton: {
-    position: "absolute",
-    top: 10,
-    right: 10,
+  cell: { flex: 1, maxWidth: "50%", padding: 6 },
+  favorite: {
     width: 36,
     height: 36,
     borderRadius: 18,

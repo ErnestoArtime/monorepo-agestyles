@@ -1,5 +1,7 @@
 import { Loading } from "@/components/loading";
 import { ProductCard } from "@/components/product-card";
+import { ProductDetail } from "@/components/product-detail";
+import { PillGroup, SearchField } from "@agestyles/ui-native";
 import { AndroidAppLink } from "@/components/android-app-link";
 import { listStoreProducts } from "@agestyles/api-client/store";
 import { Colors } from "@/constants/theme";
@@ -17,7 +19,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -34,6 +35,8 @@ export default function HomeScreen() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  // Product opened in the bottom sheet (reference POS behaviour).
+  const [sheetProductId, setSheetProductId] = useState<string | null>(null);
   // Filters opened from the side menu (categories with their subcategories, a store, novelties).
   const params = useLocalSearchParams<{
     filtro?: string;
@@ -250,12 +253,7 @@ export default function HomeScreen() {
                 <TouchableOpacity
                   accessibilityRole="button"
                   accessibilityLabel={"Ver " + products[0].title}
-                  onPress={() =>
-                    router.push({
-                      pathname: "/(drawer)/(tabs)/(home)/product/[id]",
-                      params: { id: products[0].id, title: products[0].title },
-                    })
-                  }
+                  onPress={() => setSheetProductId(products[0].id)}
                   style={styles.heroImageFrame}
                 >
                   <Image
@@ -267,31 +265,12 @@ export default function HomeScreen() {
               ) : null}
             </View>
             <AndroidAppLink />
-            <View
-              style={[
-                styles.searchBox,
-                { backgroundColor: colors.cardBackground, borderColor: colors.border },
-              ]}
-            >
-              <Icon name="search" size={19} color={colors.icon} />
-              <TextInput
-                accessibilityLabel="Buscar productos"
+            <View style={styles.searchArea}>
+              <SearchField
                 value={searchTerm}
                 onChangeText={setSearchTerm}
                 placeholder="Buscar productos"
-                placeholderTextColor={colors.icon}
-                returnKeyType="search"
-                style={[styles.searchInput, { color: colors.text }]}
               />
-              {searchTerm ? (
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  accessibilityLabel="Borrar búsqueda"
-                  onPress={() => setSearchTerm("")}
-                >
-                  <Icon name="close" size={18} color={colors.icon} />
-                </TouchableOpacity>
-              ) : null}
             </View>
             {menuFilter ? (
               <TouchableOpacity
@@ -319,33 +298,15 @@ export default function HomeScreen() {
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.categoryList}
               >
-                {[null, ...categories].map((category) => {
-                  const active = selectedCategory === category;
-                  return (
-                    <TouchableOpacity
-                      key={category ?? "all"}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected: active }}
-                      onPress={() => setSelectedCategory(category)}
-                      style={[
-                        styles.categoryChip,
-                        {
-                          backgroundColor: active ? colors.tint : colors.cardBackground,
-                          borderColor: active ? colors.tint : colors.border,
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.categoryText,
-                          { color: active ? colors.onTint : colors.text },
-                        ]}
-                      >
-                        {category ?? "Todos los productos"}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
+                <PillGroup
+                  accessibilityLabel="Categorías"
+                  value={selectedCategory ?? "__all__"}
+                  onChange={(value) => setSelectedCategory(value === "__all__" ? null : value)}
+                  options={[
+                    { value: "__all__", label: "Todos los productos" },
+                    ...categories.map((category) => ({ value: category, label: category })),
+                  ]}
+                />
               </ScrollView>
             ) : null}
             <View style={styles.sectionHeading}>
@@ -362,7 +323,9 @@ export default function HomeScreen() {
             </View>
           </View>
         }
-        renderItem={({ item }) => <ProductCard product={item} />}
+        renderItem={({ item }) => (
+          <ProductCard product={item} onOpen={(product) => setSheetProductId(product.id)} />
+        )}
         contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.tint} />
@@ -377,6 +340,11 @@ export default function HomeScreen() {
             </Text>
           </View>
         }
+      />
+      <ProductDetail
+        layout="sheet"
+        productId={sheetProductId}
+        onClose={() => setSheetProductId(null)}
       />
     </View>
   );
@@ -396,6 +364,7 @@ const styles = StyleSheet.create({
     width: "100%",
     paddingBottom: 8,
   },
+  searchArea: { marginHorizontal: 16, marginBottom: 12 },
   betaNotice: {
     marginHorizontal: 16,
     marginTop: 14,
@@ -453,22 +422,6 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
-  searchBox: {
-    minHeight: 50,
-    marginHorizontal: 16,
-    marginTop: 20,
-    paddingHorizontal: 14,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 12,
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 10,
-  },
-  searchInput: {
-    flex: 1,
-    minHeight: 48,
-    fontSize: 15,
-  },
   categoryList: {
     paddingHorizontal: 16,
     paddingTop: 16,
@@ -484,14 +437,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: 20,
     marginBottom: 10,
-  },
-  categoryChip: {
-    minHeight: 40,
-    paddingHorizontal: 15,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
   },
   categoryText: {
     fontSize: 13,
