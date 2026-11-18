@@ -1,11 +1,11 @@
-import type { MetadataRoute } from "next"
-import { getCatalog, getSellerDirectory } from "@/lib/catalog"
+import type { MetadataRoute } from "next";
+import { getCatalog, getSellerDirectory } from "@/lib/catalog";
 
-export const dynamic = "force-dynamic"
+export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const siteUrl = process.env.SITE_URL || "https://catalogo.eav-labs.com"
-  const [{ products }, sellers] = await Promise.all([getCatalog(), getSellerDirectory()])
+  const siteUrl = process.env.SITE_URL || "https://catalogo.eav-labs.com";
+  const [{ products }, sellers] = await Promise.all([getCatalog(), getSellerDirectory()]);
   return [
     { url: siteUrl, changeFrequency: "daily", priority: 1 },
     { url: `${siteUrl}/tiendas`, changeFrequency: "daily", priority: 0.8 },
@@ -25,5 +25,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         changeFrequency: "weekly" as const,
         priority: 0.8,
       })),
-  ]
+  ];
 }
