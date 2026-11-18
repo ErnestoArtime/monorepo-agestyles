@@ -14,10 +14,16 @@ interface ProductCardProps {
   product: HttpTypes.StoreProduct;
   /** Opens the product in the catalog's bottom sheet; without it, opens the product page. */
   onOpen?: (product: HttpTypes.StoreProduct) => void;
+  /** Columns of the grid this tile sits in (2 on phones, more on wide screens). */
+  columns?: number;
 }
 
 /** Grid tile (reference POS style) with favourite toggle and CUP reference price. */
-export const ProductCard = React.memo(function ProductCard({ product, onOpen }: ProductCardProps) {
+export const ProductCard = React.memo(function ProductCard({
+  product,
+  onOpen,
+  columns = 2,
+}: ProductCardProps) {
   const router = useRouter();
   const { color } = useUiTheme();
   const { selectedRegion } = useRegion();
@@ -30,7 +36,7 @@ export const ProductCard = React.memo(function ProductCard({ product, onOpen }: 
   const currency = selectedRegion?.currency_code;
 
   return (
-    <View style={styles.cell}>
+    <View style={[styles.cell, { maxWidth: `${100 / columns}%` }]}>
       <ProductTile
         title={product.title ?? "Producto"}
         price={amount === undefined ? "Consultar precio" : formatPrice(amount, currency)}
@@ -67,7 +73,7 @@ export const ProductCard = React.memo(function ProductCard({ product, onOpen }: 
 });
 
 const styles = StyleSheet.create({
-  cell: { flex: 1, maxWidth: "50%", padding: 6 },
+  cell: { flex: 1, padding: 6 },
   favorite: {
     width: 36,
     height: 36,

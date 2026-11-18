@@ -1,22 +1,15 @@
 import { Icon, type IconName } from "@agestyles/icons";
 import { DrawerContentComponentProps, DrawerContentScrollView } from "@react-navigation/drawer";
 import { useRouter, type Href } from "expo-router";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Colors } from "@/constants/theme";
 import { useCustomer } from "@/context/customer-context";
 import { useHasCountryChoice } from "@/context/region-context";
 import { useThemePreference, type ThemePreference } from "@/context/theme-preference";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { sdk } from "@/lib/sdk";
+import { useTopCategories } from "@/hooks/use-top-categories";
 import { RegionSelector } from "./region-selector";
-
-type Category = {
-  id: string;
-  name: string;
-  parent_category_id?: string | null;
-  category_children?: { id: string }[];
-};
 
 const HOME = "/(drawer)/(tabs)/(home)";
 
@@ -28,37 +21,7 @@ export function DrawerContent(props: DrawerContentComponentProps) {
   const { customer } = useCustomer();
   const { preference, setPreference } = useThemePreference();
   const hasCountryChoice = useHasCountryChoice();
-  const [categories, setCategories] = useState<Category[]>([]);
-
-  useEffect(() => {
-    sdk.client
-      .fetch<{ product_categories: Category[] }>("/store/product-categories", {
-        query: { limit: 100, fields: "id,name,parent_category_id,category_children.id" },
-      })
-      .then(({ product_categories }) => setCategories(product_categories))
-      .catch(() => setCategories([]));
-  }, []);
-
-  // Top-level categories, each opening its products and those of its subcategories.
-  const topCategories = useMemo(() => {
-    const byParent = new Map<string, string[]>();
-    for (const category of categories) {
-      if (category.parent_category_id) {
-        byParent.set(category.parent_category_id, [
-          ...(byParent.get(category.parent_category_id) ?? []),
-          category.id,
-        ]);
-      }
-    }
-    const descendants = (id: string): string[] => [
-      id,
-      ...(byParent.get(id) ?? []).flatMap((child) => descendants(child)),
-    ];
-    return categories
-      .filter((category) => !category.parent_category_id)
-      .sort((a, b) => a.name.localeCompare(b.name, "es"))
-      .map((category) => ({ ...category, ids: descendants(category.id) }));
-  }, [categories]);
+  const topCategories = useTopCategories();
 
   function go(href: Href) {
     props.navigation.closeDrawer();

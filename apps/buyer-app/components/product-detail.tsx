@@ -1,6 +1,8 @@
 import { ProductImageSlider } from "@/components/product-image-slider";
 import { ProductSkeleton } from "@/components/product-skeleton";
 import { Toast } from "@/components/ui/toast";
+import { WebFooter } from "@/components/web-footer";
+import { CONTENT_MAX, useResponsive } from "@/hooks/use-responsive";
 import { useCart } from "@/context/cart-context";
 import { useRegion } from "@/context/region-context";
 import { useCupRate } from "@/hooks/use-cup-rate";
@@ -40,6 +42,9 @@ export function ProductDetail(
   const { selectedRegion } = useRegion();
   const cupRate = useCupRate();
   const productId = props.productId;
+  const { isWideWeb } = useResponsive();
+  // A wide browser shows the product page in two columns, like a web shop.
+  const wide = props.layout === "screen" && isWideWeb;
 
   const [product, setProduct] = useState<HttpTypes.StoreProduct | null>(null);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
@@ -158,13 +163,20 @@ export function ProductDetail(
       <Text style={[styles.error, { color: color.text }]}>{error ?? "Producto no encontrado"}</Text>
       <Button title="Reintentar" variant="secondary" onPress={() => void fetchProduct()} />
     </View>
-  ) : (
-    <View style={styles.body}>
-      <View style={[styles.gallery, { backgroundColor: color.placeholder }]}>
-        <ProductImageSlider images={images} />
-      </View>
+  ) : null;
+
+  const gallery = (
+    <View style={[styles.gallery, { backgroundColor: color.placeholder }]}>
+      <ProductImageSlider images={images} square={wide} thumbnails={wide} />
+    </View>
+  );
+
+  const info = product ? (
+    <>
       <View style={styles.titleRow}>
-        <Text style={[styles.title, { color: color.text }]}>{product.title}</Text>
+        <Text style={[styles.title, wide && styles.titleWide, { color: color.text }]}>
+          {product.title}
+        </Text>
         <View style={styles.priceBlock}>
           <Text style={[styles.price, { color: color.text }]}>
             {price === undefined ? "—" : formatPrice(price, currency)}
@@ -239,6 +251,13 @@ export function ProductDetail(
         <Icon name="sliders" size={18} color={color.action} />
         <Text style={[styles.compareText, { color: color.action }]}>Comparar producto</Text>
       </Pressable>
+    </>
+  ) : null;
+
+  const content = body ?? (
+    <View style={styles.body}>
+      {gallery}
+      {info}
     </View>
   );
 
@@ -268,14 +287,46 @@ export function ProductDetail(
   if (props.layout === "sheet") {
     return (
       <BottomSheet visible={!!props.productId} onClose={props.onClose} footer={purchaseBar}>
-        {body}
+        {content}
         {toastView}
       </BottomSheet>
     );
   }
+  if (wide) {
+    return (
+      <View style={[styles.screen, { backgroundColor: color.background }]}>
+        <ScrollView>
+          <View style={styles.widePage}>
+            <Pressable
+              onPress={() =>
+                router.canGoBack() ? router.back() : router.push("/(drawer)/(tabs)/(home)" as Href)
+              }
+              accessibilityRole="link"
+              style={styles.back}
+            >
+              <Icon name="arrowLeft" size={18} color={color.action} />
+              <Text style={[styles.compareText, { color: color.action }]}>Volver al catálogo</Text>
+            </Pressable>
+            {body ?? (
+              <View style={styles.wideColumns}>
+                <View style={styles.wideGallery}>{gallery}</View>
+                <View style={styles.wideInfo}>
+                  {info}
+                  {purchaseBar ? <View style={styles.wideBuy}>{purchaseBar}</View> : null}
+                </View>
+              </View>
+            )}
+          </View>
+          <WebFooter />
+        </ScrollView>
+        {toastView}
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.screen, { backgroundColor: color.background }]}>
-      <ScrollView contentContainerStyle={styles.screenContent}>{body}</ScrollView>
+      <ScrollView contentContainerStyle={styles.screenContent}>{content}</ScrollView>
       {purchaseBar ? (
         <View
           style={[
@@ -330,4 +381,18 @@ const styles = StyleSheet.create({
   compare: { minHeight: 44, flexDirection: "row", alignItems: "center", gap: 8 },
   compareText: { fontSize: 14, fontWeight: "600" },
   addButton: { flex: 1 },
+  widePage: {
+    width: "100%",
+    maxWidth: CONTENT_MAX,
+    alignSelf: "center",
+    paddingHorizontal: 16,
+    paddingTop: 20,
+    gap: 16,
+  },
+  back: { minHeight: 40, flexDirection: "row", alignItems: "center", gap: 8 },
+  wideColumns: { flexDirection: "row", alignItems: "flex-start", gap: 48 },
+  wideGallery: { flex: 11, maxWidth: 640 },
+  wideInfo: { flex: 9, gap: 16, paddingTop: 4 },
+  titleWide: { fontSize: 30, lineHeight: 36, fontWeight: "700", letterSpacing: -0.5 },
+  wideBuy: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 8 },
 });

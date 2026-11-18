@@ -1294,3 +1294,11 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - **Verificador:** `verify-sales-commissions.mjs` comprueba la consulta pública del código (mayúsculas indiferentes, sin email), 404 de código inexistente, anulación 403 gestor / 404 otra tienda / 200 titular, segunda anulación 400 y saldo −2 tras anular una venta ya retirada.
 - Comprobado en local: tests del paquete, `tsc` de API, Tienda y Negocio, eslint y prettier. La compra online completa con código queda para AG-11.
 - **Para revisión de codex:** atribución solo a la tienda del gestor; acreditación al verificarse/capturarse el pago; saldo negativo permitido tras anular; stock no se repone al anular.
+
+## 2026-11-18 — Claude: Tienda web con aspecto de web en pantallas anchas (AG-24, pedido del usuario)
+
+- Una sola implementación para la APK y la web. `hooks/use-responsive.ts`: desde 900 px en navegador («modo web ancho») la Tienda usa la barra superior `components/web-top-bar.tsx` (marca, Inicio, Todos los productos, Novedades, Tiendas, fila de categorías, tema, campana, Favoritos, Cuenta y Carrito con contador) y el pie `components/web-footer.tsx`; se ocultan la barra de pestañas, la cabecera de la app y el gesto del menú lateral. En móvil y APK no cambia nada.
+- Columnas de productos según el ancho (2/3/4/5, contenido centrado a 1240 px), también en tabletas; aplicado en Inicio y Favoritos (`ProductCard` recibe `columns`).
+- Ficha de producto en escritorio: dos columnas (galería cuadrada con miniaturas, datos y «Añadir al carrito» en línea), «Volver al catálogo» y pie. En escritorio el catálogo abre la ficha como página (URL compartible) en lugar de la hoja inferior. `ProductImageSlider` mide su contenedor en vez de usar el ancho de la ventana.
+- Categorías compartidas entre menú lateral y barra superior: `hooks/use-top-categories.ts`.
+- Comprobado: `tsc`, eslint y prettier de `apps/buyer-app`; capturas con Playwright a 1440×900 (claro y oscuro) y 412×915 (móvil sin cambios). **Sin publicar**: espera autorización del usuario.
