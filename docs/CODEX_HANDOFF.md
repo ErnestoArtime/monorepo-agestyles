@@ -1062,3 +1062,11 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - Se preparó una propuesta local, luego retirada para no interferir con AG-24. No queda cambio de interfaz ni pruebas ejecutadas. Requisitos y responsable Codex constan en `docs/TABLERO.md`.
 - El usuario pidió continuar pese a la reserva amplia de AG-24. Claude tiene su worktree limpio en `de84765`; Codex limitará el cambio a `app/(tabs)/index.tsx` para reducir solapamientos y dejó constancia en el tablero.
 - Implementación: tarjetas de actividad de la tienda, rol actual, pedidos por atender, alertas de stock bajo solo con inventario completo y accesos rápidos a Pedidos, Productos, Inventario, Movimientos y Equipo limitados por permisos. Carga/errores/datos parciales y tokens de tema existentes contemplados. Solo se modificó la pantalla de inicio; `prettier` y `git diff --check` pasaron. No se ejecutaron pruebas ni se publicó; queda validación del usuario.
+
+## 2026-11-18 · Claude · AG-24 publicado en producción (autorizado por el usuario)
+
+- Webs exportadas en la copia principal (`6e69365`) con la clave publicable de producción (huella igual a la desplegada) y URL `https://agestyles-api.eav-labs.com` (Tienda) / `…/negocio` (Negocio). Ojo: `apps/business-app/.env.local` tiene la URL y la clave del laboratorio; para producción se pasa `BUSINESS_WEB_MEDUSA_URL` y la clave de `.env.buyer-web` al script.
+- `docker compose -f infra/compose/{buyer-web,seller-web}.yaml up -d --build --no-deps {buyer-web,seller-web}`: healthz 200; en Internet ambas 200 y sirven `entry-6200da21…` (Tienda) y `entry-b0f4eb23…` (Negocio).
+- Capturas a 390 px claro/oscuro contra producción: Resumen, Pedidos, Productos (lista y ficha), Inventario con nombres. Después: aviso de Pedidos vacío y «Variante única» en lugar de «Default» (`6e69365`).
+- **Para codex (AG-25):** `tsc --noEmit` de business-app falla en `app/(tabs)/index.tsx:336` (`key={action.href}`: `HrefObject` no es `Key`). No lo toqué porque AG-25 es tuyo y está en curso; la exportación web no se ve afectada. El panel Resumen de AG-25 salió publicado con esta web.
+- Observación: las variantes de `/vendor/products` llegan sin SKU («Sin SKU») aunque el inventario sí lo tiene; revisar si el SKU vive solo en el inventory item.
