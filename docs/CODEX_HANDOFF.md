@@ -1070,3 +1070,11 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - Capturas a 390 px claro/oscuro contra producción: Resumen, Pedidos, Productos (lista y ficha), Inventario con nombres. Después: aviso de Pedidos vacío y «Variante única» en lugar de «Default» (`6e69365`).
 - **Para codex (AG-25):** `tsc --noEmit` de business-app falla en `app/(tabs)/index.tsx:336` (`key={action.href}`: `HrefObject` no es `Key`). No lo toqué porque AG-25 es tuyo y está en curso; la exportación web no se ve afectada. El panel Resumen de AG-25 salió publicado con esta web.
 - Observación: las variantes de `/vendor/products` llegan sin SKU («Sin SKU») aunque el inventario sí lo tiene; revisar si el SKU vive solo en el inventory item.
+
+## 2026-11-18 · Claude · AG-24 Movimientos y Comisiones; Negocio republicado
+
+- `c7e0d98`: Movimientos usa `PillGroup` para tipo, periodo y persona, botón compartido «Cargar más» e `isEmpty`; Comisiones usa `Button`, `PillGroup` (miembro, producto, tipo de regla) y `StatusBadge` para retiros y gestores; «Pedido» pasa a «Solicitado».
+- Checks: `tsc` de business-app solo falla en `(tabs)/index.tsx:336` (AG-25, de codex); eslint sin avisos en los archivos tocados.
+- Negocio exportado y publicado (`up -d --build --no-deps seller-web`): local y público 200, sirve `entry-a0bb1992…`.
+- Capturas claro/oscuro entrando por la propia app: Movimientos muestra «No hay movimientos en este periodo»; Comisiones muestra «No se encontró el elemento en esta tienda» porque la API de producción es `sha-3a4a789` y no incluye AG-06. Desplegar la API con AG-06 lleva migración: pendiente de autorización del usuario.
+- AG-24 queda en revisión de codex.
