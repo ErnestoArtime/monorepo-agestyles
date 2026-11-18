@@ -74,6 +74,21 @@ services:
       - product-media:/srv/media:ro
     restart: unless-stopped
 
+  background-remover:
+    # Self-hosted background removal for AI Studio (AG-27): one model kept in memory, one
+    # photo at a time, loopback only. Pinned to the image digest measured on 18 nov 2026.
+    image: danielgatis/rembg@sha256:e2777d3b3f9ebcdaf32f2b167f6db8e3a4a07a4b49a3ac2e93f0c89a55e29644
+    entrypoint: ["python", "/app/background-remover.py"]
+    environment:
+      MODEL: isnet-general-use
+      PORT: "19089"
+    network_mode: host
+    mem_limit: 2500m
+    volumes:
+      - ../../tools/scripts/background-remover.py:/app/background-remover.py:ro
+      - background-models:/root/.u2net
+    restart: unless-stopped
+
   media-public:
     profiles: ["local-media"]
     image: nginx:1.28.0-alpine
@@ -140,3 +155,4 @@ volumes:
   redis-data:
   media-data:
   product-media:
+  background-models:

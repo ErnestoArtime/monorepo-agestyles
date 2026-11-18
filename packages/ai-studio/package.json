@@ -1,0 +1,28 @@
+{
+  "name": "@agestyles/ai-studio",
+  "version": "0.0.0",
+  "private": true,
+  "description": "AgeStyles AI Studio module for Medusa v2: product copy drafts from a photo through a provider chain (Gemini, OpenRouter, Groq), background removal through a self-hosted service, and a per-store usage log with monthly quota",
+  "keywords": [
+    "agestyles",
+    "medusa-module",
+    "ai"
+  ],
+  "medusaModule": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "peerDependencies": {
+    "@medusajs/framework": "2.22.3"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "node test/ai-studio.test.ts"
+  }
+}

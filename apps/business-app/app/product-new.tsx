@@ -4,18 +4,38 @@ import {
   buildProductTitleDraft,
   type ProductCopyTone,
 } from "@agestyles/domain/product-copy";
-import { Button, Card, PillGroup } from "@agestyles/ui-native";
+import { BottomSheet, Button, Card, PillGroup } from "@agestyles/ui-native";
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Image, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { hasPermission, OperationList } from "../components/operation-list";
 import { useBusiness } from "../context/business-context";
 import { useBusinessTheme } from "../hooks/use-business-theme";
 
-/** Prepared photo: resized and compressed on the device before it is uploaded. */
+/** Prepared photo: resized and compressed on the device, then uploaded right away. */
 type Photo = { uri: string; width: number; height: number };
+/** Uploaded photo: `url` is the public address used by the product and by AI Studio. */
+type StoredPhoto = { uri: string; url: string };
+
+/** What the server says AI Studio can do for this member (AG-27). */
+type AiStatus = {
+  allowed: boolean;
+  describe: boolean;
+  remove_background: boolean;
+  used: number;
+  limit: number;
+};
+
+function aiErrorMessage(cause: unknown, fallback: string) {
+  const message = String((cause as { message?: string })?.message ?? "");
+  if (message.includes("quota")) return "Se alcanzó el límite mensual de la IA para esta tienda.";
+  if (message.includes("not configured")) return "La IA todavía no está activada en el servidor.";
+  if (message.includes("owner"))
+    return "La IA está disponible para el titular y la administración.";
+  return fallback;
+}
 
 type MaxEdge = "800" | "1200" | "1600" | "2048";
 const MAX_EDGE_OPTIONS: { value: MaxEdge; label: string }[] = [
@@ -52,7 +72,7 @@ export default function NewProductScreen() {
   const theme = useBusinessTheme();
   const styles = createStyles(theme);
   const router = useRouter();
-  const { request, upload, member } = useBusiness();
+  const { request, upload, member, seller } = useBusiness();
   const canEdit = hasPermission(member, "products", "edit");
 
   const [title, setTitle] = useState("");
@@ -63,7 +83,75 @@ export default function NewProductScreen() {
   const [sku, setSku] = useState("");
   const [tone, setTone] = useState<ProductCopyTone>("commercial");
   const [maxEdge, setMaxEdge] = useState<MaxEdge>("1600");
-  const [photos, setPhotos] = useState<Photo[]>([]);
+  const [photos, setPhotos] = useState<StoredPhoto[]>([]);
+  const [ai, setAi] = useState<AiStatus | null>(null);
+  const [aiBusy, setAiBusy] = useState<string | null>(null);
+  const [aiNotice, setAiNotice] = useState("");
+  const [suggestion, setSuggestion] = useState<{ title: string; description: string } | null>(null);
+  const [cutout, setCutout] = useState<{ index: number; original: string; url: string } | null>(
+    null,
+  );
+
+  useEffect(() => {
+    if (!seller) return;
+    // AI Studio is optional: any error simply hides its buttons.
+    request<AiStatus>("/vendor/agestyles/ai-studio")
+      .then(setAi)
+      .catch(() => setAi(null));
+  }, [request, seller]);
+  const aiLeft = ai ? Math.max(ai.limit - ai.used, 0) : 0;
+  const canDescribe = !!ai?.allowed && ai.describe && aiLeft > 0;
+  const canCutout = !!ai?.allowed && ai.remove_background && aiLeft > 0;
+
+  async function suggestWithAi() {
+    setAiBusy("describe");
+    setAiNotice("");
+    try {
+      const result = await request<{
+        draft: { title: string; description: string };
+        used_image: boolean;
+      }>("/vendor/agestyles/ai-studio/describe", "POST", {
+        title,
+        brand,
+        category,
+        tone,
+        ...(description.trim() ? { notes: description.trim() } : {}),
+        ...(photos[0] ? { image_url: photos[0].url } : {}),
+      });
+      setSuggestion(result.draft);
+      if (photos[0] && !result.used_image) {
+        setAiNotice("La IA no pudo leer la foto; la propuesta usa solo los datos de la ficha.");
+      }
+      setAi((current) => (current ? { ...current, used: current.used + 1 } : current));
+    } catch (cause) {
+      setAiNotice(
+        aiErrorMessage(cause, "La IA no pudo preparar la propuesta. Inténtalo más tarde."),
+      );
+      setAi((current) => (current ? { ...current, used: current.used + 1 } : current));
+    } finally {
+      setAiBusy(null);
+    }
+  }
+
+  async function removeBackground(index: number) {
+    const photo = photos[index];
+    if (!photo) return;
+    setAiBusy(`cutout-${index}`);
+    setAiNotice("");
+    try {
+      const result = await request<{ url: string }>(
+        "/vendor/agestyles/ai-studio/remove-background",
+        "POST",
+        { image_url: photo.url },
+      );
+      setCutout({ index, original: photo.url, url: result.url });
+    } catch (cause) {
+      setAiNotice(aiErrorMessage(cause, "No se pudo quitar el fondo de esta foto."));
+    } finally {
+      setAi((current) => (current ? { ...current, used: current.used + 1 } : current));
+      setAiBusy(null);
+    }
+  }
   const [preparing, setPreparing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -99,9 +187,15 @@ export default function NewProductScreen() {
           .slice(0, MAX_PHOTOS - photos.length)
           .map((asset) => preparePhoto(asset, Number(maxEdge))),
       );
-      setPhotos((current) => [...current, ...prepared].slice(0, MAX_PHOTOS));
+      const urls = await uploadPhotos(prepared);
+      setPhotos((current) =>
+        [...current, ...prepared.map((photo, i) => ({ uri: photo.uri, url: urls[i]! }))].slice(
+          0,
+          MAX_PHOTOS,
+        ),
+      );
     } catch {
-      setError("No se pudo preparar la foto. Prueba con otra imagen.");
+      setError("No se pudo preparar o subir la foto. Revisa la conexión y prueba otra vez.");
     } finally {
       setPreparing(false);
     }
@@ -112,10 +206,10 @@ export default function NewProductScreen() {
     setPhotos((current) => [current[index]!, ...current.filter((_, i) => i !== index)]);
   }
 
-  async function uploadPhotos(): Promise<string[]> {
-    if (!photos.length) return [];
+  async function uploadPhotos(prepared: Photo[]): Promise<string[]> {
+    if (!prepared.length) return [];
     const form = new FormData();
-    for (const [index, photo] of photos.entries()) {
+    for (const [index, photo] of prepared.entries()) {
       const name = `producto-${Date.now()}-${index + 1}.jpg`;
       if (Platform.OS === "web") {
         const blob = await (await fetch(photo.uri)).blob();
@@ -125,6 +219,7 @@ export default function NewProductScreen() {
       }
     }
     const result = await upload(form);
+    if (result.files.length !== prepared.length) throw new Error("upload mismatch");
     return result.files.map((file) => file.url);
   }
 
@@ -137,7 +232,7 @@ export default function NewProductScreen() {
     setSaving(true);
     setError("");
     try {
-      const urls = await uploadPhotos();
+      const urls = photos.map((photo) => photo.url);
       await request("/vendor/products", "POST", {
         title: name,
         ...(description.trim() ? { description: description.trim() } : {}),
@@ -152,11 +247,7 @@ export default function NewProductScreen() {
       });
       setDone(true);
     } catch {
-      setError(
-        photos.length
-          ? "No se pudo crear el producto. Revisa la conexión; si persiste, prueba con menos fotos."
-          : "No se pudo crear el producto. Revisa la conexión e inténtalo de nuevo.",
-      );
+      setError("No se pudo crear el producto. Revisa la conexión e inténtalo de nuevo.");
     } finally {
       setSaving(false);
     }
@@ -255,6 +346,19 @@ export default function NewProductScreen() {
                   >
                     <Icon name="close" size={16} color="#ffffff" />
                   </Pressable>
+                  {canCutout ? (
+                    <Pressable
+                      onPress={() => void removeBackground(index)}
+                      disabled={!!aiBusy}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Quitar el fondo de la foto ${index + 1}`}
+                      style={styles.cutoutAction}
+                    >
+                      <Text style={styles.coverActionText}>
+                        {aiBusy === `cutout-${index}` ? "…" : "Sin fondo"}
+                      </Text>
+                    </Pressable>
+                  ) : null}
                 </View>
               ))}
             </View>
@@ -366,6 +470,46 @@ export default function NewProductScreen() {
                 )
               }
             />
+            {canDescribe ? (
+              <Button
+                icon="send"
+                title={aiBusy === "describe" ? "La IA está escribiendo…" : "Sugerir con IA"}
+                loading={aiBusy === "describe"}
+                disabled={!title.trim() || !!aiBusy}
+                onPress={() => void suggestWithAi()}
+              />
+            ) : null}
+            {ai?.allowed && (ai.describe || ai.remove_background) ? (
+              <Text style={styles.help}>
+                La IA usa la portada y los datos de la ficha. Quedan {aiLeft} usos este mes.
+              </Text>
+            ) : null}
+            {aiNotice ? (
+              <Text accessibilityRole="alert" style={styles.aiNotice}>
+                {aiNotice}
+              </Text>
+            ) : null}
+            {suggestion ? (
+              <Card style={styles.suggestion}>
+                <Text style={styles.label}>Propuesta de la IA · revisa antes de usar</Text>
+                <Text style={styles.suggestionTitle}>{suggestion.title}</Text>
+                <Text style={styles.suggestionText}>{suggestion.description}</Text>
+                <View style={styles.row}>
+                  <Button
+                    variant="secondary"
+                    title="Usar título"
+                    onPress={() => setTitle(suggestion.title)}
+                    style={styles.flex}
+                  />
+                  <Button
+                    variant="secondary"
+                    title="Usar descripción"
+                    onPress={() => setDescription(suggestion.description)}
+                    style={styles.flex}
+                  />
+                </View>
+              </Card>
+            ) : null}
           </View>
 
           <Text style={styles.section}>Variante</Text>
@@ -406,6 +550,58 @@ export default function NewProductScreen() {
           </Text>
         </View>
       ) : null}
+      <BottomSheet
+        visible={!!cutout}
+        onClose={() => setCutout(null)}
+        title="Comparar fondo"
+        footer={
+          <View style={styles.row}>
+            <Button
+              variant="secondary"
+              title="Mantener original"
+              onPress={() => setCutout(null)}
+              style={styles.flex}
+            />
+            <Button
+              title="Usar sin fondo"
+              onPress={() => {
+                if (!cutout) return;
+                setPhotos((current) =>
+                  current.map((photo, i) =>
+                    i === cutout.index ? { uri: cutout.url, url: cutout.url } : photo,
+                  ),
+                );
+                setCutout(null);
+              }}
+              style={styles.flex}
+            />
+          </View>
+        }
+      >
+        {cutout ? (
+          <View style={styles.compare}>
+            <View style={styles.flex}>
+              <Text style={styles.label}>Original</Text>
+              <Image
+                source={{ uri: cutout.original }}
+                style={styles.compareImage}
+                resizeMode="contain"
+              />
+            </View>
+            <View style={styles.flex}>
+              <Text style={styles.label}>Sin fondo</Text>
+              <Image
+                source={{ uri: cutout.url }}
+                style={[styles.compareImage, styles.compareCutout]}
+                resizeMode="contain"
+              />
+            </View>
+          </View>
+        ) : null}
+        <Text style={styles.help}>
+          Revisa bordes y textos: la herramienta puede dejar restos o recortar detalles finos.
+        </Text>
+      </BottomSheet>
     </OperationList>
   );
 }
@@ -505,6 +701,29 @@ const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
       backgroundColor: theme.surface,
     },
     assistantTitle: { color: theme.text, fontSize: 15, fontWeight: "700" },
+    aiNotice: { color: theme.text, fontSize: 13, lineHeight: 18 },
+    suggestion: { gap: 8 },
+    suggestionTitle: { color: theme.text, fontSize: 16, fontWeight: "700" },
+    suggestionText: { color: theme.text, fontSize: 14, lineHeight: 20 },
+    cutoutAction: {
+      position: "absolute",
+      left: 6,
+      top: 6,
+      backgroundColor: "rgba(0,0,0,0.55)",
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 6,
+    },
+    compare: { flexDirection: "row", gap: 10 },
+    compareImage: {
+      width: "100%",
+      aspectRatio: 1,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: theme.border,
+      marginTop: 6,
+    },
+    compareCutout: { backgroundColor: "#ffffff" },
     doneCard: { gap: 14, alignItems: "stretch" },
     doneIcon: {
       width: 48,

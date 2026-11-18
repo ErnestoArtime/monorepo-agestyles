@@ -46,6 +46,9 @@ const rules = [
   ["GET POST", /^\/vendor\/products$/],
   // Product photos (AG-26): Mercur's multipart upload, gated by products/store edit rights.
   ["POST", /^\/vendor\/uploads$/],
+  // AI Studio (AG-27): status, copy drafts and background removal; owner-only on the server.
+  ["GET", /^\/vendor\/agestyles\/ai-studio$/],
+  ["POST", /^\/vendor\/agestyles\/ai-studio\/(describe|remove-background)$/],
   ["GET", /^\/vendor\/(orders|inventory-items)$/],
   ["GET", /^\/vendor\/orders\/order_[a-z0-9_-]+$/i],
   ["GET", /^\/vendor\/stock-locations$/],

@@ -51,3 +51,27 @@ Estado: decisión de proveedores tomada por el usuario el 18 nov 2026. Sin códi
   - Registro de uso y aprobación explícita antes de publicar.
   - Se reutilizan los patrones de Lavía.
 - **Después:** fondos generativos con Replicate (AI-03) y generación por lotes (AI-05). Sin fecha.
+
+## Implementación (18 nov 2026)
+
+- **Fotos:**
+  - Las imágenes de MinIO ya no se pueden descargar (quay.io y Docker Hub las rechazan).
+  - Producción guarda las fotos con el proveedor local de Medusa en el volumen `product-media` (`AGESTYLES_MEDIA_DIR=/var/lib/agestyles/media`).
+  - `media-files` (nginx, `127.0.0.1:19088`) sirve solo nombres planos de imagen en `/agestyles-product-media/`.
+  - Falta la ruta pública del túnel: `agestyles-api.eav-labs.com` + `^/agestyles-product-media/` → `http://127.0.0.1:19088`.
+- **Quitar fondos:**
+  - Servicio `background-remover`: imagen `danielgatis/rembg` fijada por digest, con `tools/scripts/background-remover.py`.
+  - Usa el modelo `isnet-general-use`, una foto cada vez, límite de 2,5 GB de RAM y solo `127.0.0.1:19089`.
+  - Medido en el VPS: el modelo carga en ~7 s y cada foto tarda 2–6 s.
+  - El servidor HTTP de rembg que trae la imagen se quedó sin memoria con 2,5 GB; por eso hay un servicio mínimo con un solo modelo.
+  - En fotos promocionales con texto deja restos borrosos. La app siempre muestra el antes/después y el gestor decide.
+- **Texto:**
+  - `describeProduct` prueba Gemini → OpenRouter → Groq, primero con la portada y, si todos fallan, una vez solo con texto.
+  - No hay reintentos.
+  - El prompt prohíbe inventar materiales, medidas, tallas, garantías o precios, e ignora el texto promocional de la foto.
+- **Control:**
+  - Solo el titular y la administración de la tienda pueden usarla.
+  - Cuota mensual por tienda (`AGESTYLES_AI_MONTHLY_LIMIT`, 100 por defecto), en la que también cuentan los fallos.
+  - Registro en `agestyles_ai_request`, sin imágenes.
+  - La API solo lee fotos de nuestro propio volumen: nunca descarga direcciones arbitrarias.
+- **Claves:** `GEMINI_API_KEY`, `OPENROUTER_API_KEY` y `GROQ_API_KEY` (y, opcionalmente, `AGESTYLES_AI_*_MODEL`) en el `api.env` privado de producción. Sin claves, el botón «Sugerir con IA» no aparece.
