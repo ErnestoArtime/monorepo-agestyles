@@ -137,10 +137,11 @@ export async function POST(req: CommissionRequest, res: MedusaResponse) {
         }
       }
 
-      const stock = [];
-      const movements = [];
-      const entries = [];
-      const saleLines = [];
+      const stock: { inventory_item_id: string; location_id: string; stocked_quantity: number }[] =
+        [];
+      const movements: Record<string, unknown>[] = [];
+      const entries: { amount: number; [key: string]: unknown }[] = [];
+      const saleLines: { quantity: number; unit_price: number; [key: string]: unknown }[] = [];
       for (const line of lines) {
         const [level] = await inventory.listInventoryLevels({
           inventory_item_id: line.inventory_item_id,
@@ -152,7 +153,7 @@ export async function POST(req: CommissionRequest, res: MedusaResponse) {
             "A product has no stock at that location.",
           );
         }
-        let effect;
+        let effect: ReturnType<typeof applyMovement>;
         try {
           effect = applyMovement(
             { type: "venta", quantity: line.quantity },
