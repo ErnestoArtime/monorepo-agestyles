@@ -7,6 +7,7 @@ import { useMemo } from "react";
 
 import { Colors } from "@/constants/theme";
 import { CartProvider } from "@/context/cart-context";
+import { NotificationsLayer } from "@/components/notifications-layer";
 import { CustomerProvider } from "@/context/customer-context";
 import { FavoritesProvider } from "@/context/favorites-context";
 import { RegionProvider } from "@/context/region-context";
@@ -49,38 +50,64 @@ function RootNavigation() {
             <CartProvider>
               <FavoritesProvider>
                 <CustomerProvider>
-                  <Stack
-                    screenOptions={{
-                      headerShown: false,
-                      headerStyle: { backgroundColor: colors.cardBackground },
-                      headerTintColor: colors.text,
-                      headerTitleStyle: { color: colors.text },
-                      headerShadowVisible: false,
-                      contentStyle: { backgroundColor: colors.background },
-                    }}
-                  >
-                    <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
-                    <Stack.Screen
-                      name="checkout"
-                      options={{
-                        headerShown: true,
-                        title: "Finalizar compra",
-                        presentation: "card",
-                        headerBackButtonDisplayMode: "minimal",
+                  <NotificationsLayer>
+                    <Stack
+                      screenOptions={{
+                        headerShown: false,
+                        headerStyle: { backgroundColor: colors.cardBackground },
+                        headerTintColor: colors.text,
+                        headerTitleStyle: { color: colors.text },
+                        headerShadowVisible: false,
+                        contentStyle: { backgroundColor: colors.background },
                       }}
-                    />
-                    <Stack.Screen
-                      name="order-confirmation/[id]"
-                      options={{
-                        headerShown: true,
-                        title: "Compra confirmada",
-                        headerLeft: () => null,
-                        gestureEnabled: false,
-                        headerBackVisible: false,
-                      }}
-                    />
-                  </Stack>
-                  <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+                    >
+                      <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
+                      <Stack.Screen
+                        name="checkout"
+                        options={{
+                          headerShown: true,
+                          title: "Finalizar compra",
+                          presentation: "card",
+                          headerBackButtonDisplayMode: "minimal",
+                        }}
+                      />
+                      <Stack.Screen
+                        name="notifications"
+                        options={{
+                          headerShown: true,
+                          title: "Notificaciones",
+                          headerBackButtonDisplayMode: "minimal",
+                        }}
+                      />
+                      <Stack.Screen
+                        name="notification-preferences"
+                        options={{
+                          headerShown: true,
+                          title: "Avisos",
+                          headerBackButtonDisplayMode: "minimal",
+                        }}
+                      />
+                      <Stack.Screen
+                        name="reset-password"
+                        options={{
+                          headerShown: true,
+                          title: "Nueva contraseña",
+                          headerBackButtonDisplayMode: "minimal",
+                        }}
+                      />
+                      <Stack.Screen
+                        name="order-confirmation/[id]"
+                        options={{
+                          headerShown: true,
+                          title: "Compra confirmada",
+                          headerLeft: () => null,
+                          gestureEnabled: false,
+                          headerBackVisible: false,
+                        }}
+                      />
+                    </Stack>
+                    <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+                  </NotificationsLayer>
                 </CustomerProvider>
               </FavoritesProvider>
             </CartProvider>

@@ -6,6 +6,7 @@ import { TouchableOpacity } from "react-native";
 
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { BrandLockup } from "@/components/brand-lockup";
+import { NotificationHeaderBell } from "@/components/notification-header-bell";
 import { Colors } from "@/constants/theme";
 
 export default function HomeStackLayout() {
@@ -26,6 +27,7 @@ export default function HomeStackLayout() {
           headerStyle: { backgroundColor: colors.cardBackground },
           headerTintColor: colors.text,
           headerShadowVisible: false,
+          headerRight: () => <NotificationHeaderBell />,
           headerLeft: () => (
             <TouchableOpacity
               onPress={() => navigation.dispatch(DrawerActions.openDrawer())}

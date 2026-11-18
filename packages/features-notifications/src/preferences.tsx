@@ -75,7 +75,10 @@ export function NotificationPreferences({ app }: { app: AppName }) {
 
   return (
     <View style={styles.container}>
-      <LargeTitle title="Avisos" subtitle="Elige cómo quieres enterarte de las novedades." />
+      <LargeTitle
+        title="Preferencias de avisos"
+        subtitle="Elige cómo quieres enterarte de las novedades."
+      />
 
       <Card style={styles.card}>
         <View style={styles.pushHead}>

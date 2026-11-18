@@ -125,6 +125,14 @@ export default function EntryScreen() {
               <Text style={styles.primaryText}>Continuar</Text>
             )}
           </Pressable>
+          <Pressable
+            onPress={() => router.push("/forgot-password")}
+            accessibilityRole="button"
+            accessibilityLabel="¿Olvidaste tu contraseña? Recupérala"
+            style={({ pressed }) => [styles.link, pressed && styles.pressed]}
+          >
+            <Text style={styles.linkText}>¿Olvidaste tu contraseña?</Text>
+          </Pressable>
         </View>
       )}
       {error || localError ? (
@@ -193,6 +201,8 @@ const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
     },
     primaryText: { color: theme.onAction, fontSize: 16, fontWeight: "600" },
     disabled: { opacity: 0.45 },
+    link: { minHeight: 44, alignItems: "center", justifyContent: "center", marginTop: 4 },
+    linkText: { color: theme.action, fontSize: 15, fontWeight: "500" },
     seller: {
       minHeight: 76,
       borderWidth: 1,

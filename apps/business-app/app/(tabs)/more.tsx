@@ -1,3 +1,4 @@
+import { useOptionalNotifications } from "@agestyles/features-notifications";
 import { useRouter } from "expo-router";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { Icon } from "@agestyles/icons";
@@ -10,6 +11,7 @@ export default function MoreScreen() {
   const styles = createStyles(theme);
   const router = useRouter();
   const { seller, sellers, member, selectSeller, logout } = useBusiness();
+  const unread = useOptionalNotifications()?.unreadCount ?? 0;
   async function switchTo(item: Seller) {
     try {
       await selectSeller(item);
@@ -56,6 +58,19 @@ export default function MoreScreen() {
           title="Cerrar sesión"
           detail="Salir de la cuenta de negocio"
           action={() => void signOut()}
+        />
+      </Section>
+      <Section title="Avisos">
+        <Row
+          title="Notificaciones"
+          detail="Novedades de los pedidos, pagos e inventario de tu tienda."
+          trailing={unread > 0 ? `${unread} sin leer` : undefined}
+          action={() => router.push("/notifications")}
+        />
+        <Row
+          title="Avisos"
+          detail="Elige qué avisos recibes y cómo."
+          action={() => router.push("/notification-preferences")}
         />
       </Section>
       <Section title="Experiencia AgeStyles">
