@@ -322,6 +322,16 @@ jobs:
             exit 1
           fi
 
+      - name: Report Commerce API errors as annotations when a check fails
+        if: failure()
+        run: |
+          # Job logs need authentication; annotations are readable by every agent.
+          docker logs agestyles-commerce-api-ci 2>&1 \
+            | grep -iE 'error|exception|at .*\.(js|ts):' \
+            | grep -vE 'TypeError: fetch failed' \
+            | tail -n 25 \
+            | sed -e 's/%/%25/g' -e 's/^/::error title=commerce-api log::/' || true
+
       - name: Stop disposable Commerce API smoke test
         if: always()
         run: docker rm --force agestyles-commerce-api-ci || true
