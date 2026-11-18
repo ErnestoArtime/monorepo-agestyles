@@ -1,4 +1,5 @@
 import { ProductCard } from "@/components/product-card";
+import { ProductDetail } from "@/components/product-detail";
 import { CONTENT_MAX, useResponsive } from "@/hooks/use-responsive";
 import { Colors } from "@/constants/theme";
 import { useFavorites } from "@/context/favorites-context";
@@ -26,6 +27,8 @@ export default function FavoritesScreen() {
   const { favoriteIds, ready } = useFavorites();
   const { selectedRegion } = useRegion();
   const [products, setProducts] = useState<HttpTypes.StoreProduct[]>([]);
+  // Quick view, as in the catalog.
+  const [sheetProductId, setSheetProductId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const requestId = useRef(0);
@@ -127,7 +130,18 @@ export default function FavoritesScreen() {
             )}
           </View>
         }
-        renderItem={({ item }) => <ProductCard product={item} columns={columns} />}
+        renderItem={({ item }) => (
+          <ProductCard
+            product={item}
+            columns={columns}
+            onOpen={(product) => setSheetProductId(product.id)}
+          />
+        )}
+      />
+      <ProductDetail
+        layout="sheet"
+        productId={sheetProductId}
+        onClose={() => setSheetProductId(null)}
       />
     </View>
   );

@@ -8,7 +8,7 @@ import { ProductTile, useUiTheme } from "@agestyles/ui-native";
 import type { HttpTypes } from "@medusajs/types";
 import { useRouter, type Href } from "expo-router";
 import React from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 interface ProductCardProps {
   product: HttpTypes.StoreProduct;
@@ -34,6 +34,13 @@ export const ProductCard = React.memo(function ProductCard({
   const imageUrl = product.thumbnail || product.images?.[0]?.url;
   const amount = product.variants?.[0]?.calculated_price?.calculated_amount ?? undefined;
   const currency = selectedRegion?.currency_code;
+  const open = () =>
+    onOpen
+      ? onOpen(product)
+      : router.push({
+          pathname: `/(home)/product/${product.id}`,
+          params: { title: product.title },
+        } as unknown as Href);
 
   return (
     <View style={[styles.cell, { maxWidth: `${100 / columns}%` }]}>
@@ -42,14 +49,7 @@ export const ProductCard = React.memo(function ProductCard({
         price={amount === undefined ? "Consultar precio" : formatPrice(amount, currency)}
         secondaryPrice={formatCupEquivalent(amount, currency, cupRate)}
         imageUrl={imageUrl}
-        onPress={() =>
-          onOpen
-            ? onOpen(product)
-            : router.push({
-                pathname: `/(home)/product/${product.id}`,
-                params: { title: product.title },
-              } as unknown as Href)
-        }
+        onPress={open}
         accessory={
           <Pressable
             accessibilityRole="button"
@@ -68,12 +68,39 @@ export const ProductCard = React.memo(function ProductCard({
           </Pressable>
         }
       />
+      {/* Same as the Catálogo: «Agregar» opens the quick view to choose store, variant and quantity. */}
+      <Pressable
+        onPress={open}
+        accessibilityRole="button"
+        accessibilityLabel={`Agregar ${product.title ?? "producto"} al carrito`}
+        style={({ pressed }: { pressed: boolean }) => [
+          styles.add,
+          {
+            borderColor: color.border,
+            backgroundColor: pressed ? color.placeholder : color.surface,
+          },
+        ]}
+      >
+        <Icon name="shoppingBag" size={16} color={color.text} />
+        <Text style={[styles.addText, { color: color.text }]}>Agregar</Text>
+      </Pressable>
     </View>
   );
 });
 
 const styles = StyleSheet.create({
   cell: { flex: 1, padding: 6 },
+  add: {
+    marginTop: 8,
+    minHeight: 40,
+    borderRadius: 10,
+    borderWidth: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  addText: { fontSize: 14, fontWeight: "600" },
   favorite: {
     width: 36,
     height: 36,

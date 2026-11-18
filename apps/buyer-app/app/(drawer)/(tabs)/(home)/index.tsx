@@ -31,10 +31,8 @@ export default function HomeScreen() {
   const { selectedRegion, loading: regionLoading, error: regionError, reloadRegions } = useRegion();
   const router = useRouter();
   const { isWideWeb, columns } = useResponsive();
-  // Phones open products in a bottom sheet; a wide browser opens the product page (shareable URL).
-  const openProduct = isWideWeb
-    ? undefined
-    : (product: HttpTypes.StoreProduct) => setSheetProductId(product.id);
+  // Quick view: a bottom sheet on phones, a centred dialog in a wide browser; both link to the page.
+  const openProduct = (product: HttpTypes.StoreProduct) => setSheetProductId(product.id);
 
   const [products, setProducts] = useState<HttpTypes.StoreProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -277,11 +275,7 @@ export default function HomeScreen() {
                 <TouchableOpacity
                   accessibilityRole="button"
                   accessibilityLabel={"Ver " + products[0].title}
-                  onPress={() =>
-                    openProduct
-                      ? openProduct(products[0])
-                      : router.push(`/(drawer)/(tabs)/(home)/product/${products[0].id}` as never)
-                  }
+                  onPress={() => openProduct(products[0])}
                   style={[styles.heroImageFrame, isWideWeb && styles.heroImageFrameWide]}
                 >
                   <Image
