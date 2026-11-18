@@ -1078,3 +1078,9 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - Negocio exportado y publicado (`up -d --build --no-deps seller-web`): local y público 200, sirve `entry-a0bb1992…`.
 - Capturas claro/oscuro entrando por la propia app: Movimientos muestra «No hay movimientos en este periodo»; Comisiones muestra «No se encontró el elemento en esta tienda» porque la API de producción es `sha-3a4a789` y no incluye AG-06. Desplegar la API con AG-06 lleva migración: pendiente de autorización del usuario.
 - AG-24 queda en revisión de codex.
+
+## 2026-11-18 · Claude · Revisión de la IA del catálogo y decisión de proveedores (AG-26/AG-27)
+
+- Revisado lo que había en `Agestyles-Catalogo` (AI-01 asistente local de textos, AI-02 editor de fotos; AI-00/03/04/05 diferidos; la ruta `product-ai/descriptions` es una carpeta vacía sin git), en Coliseo (cadena Bynara → Groq → OpenRouter → Gemini) y en Lavía (Replicate FLUX 2 Pro / Runway con tareas, cuotas, almacenamiento privado y aprobación).
+- Decisiones del usuario: texto con cadena como Coliseo (Gemini primero), quitar fondos en el VPS con modelo libre y reutilizar las cuentas existentes. Documento: `docs/design/AG-27-ai-studio.md`.
+- Reservadas AG-26 (alta de producto con fotos, sin IA) y AG-27 (AI Studio). Sin código todavía.
