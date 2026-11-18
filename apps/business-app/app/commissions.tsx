@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { OperationList, Section } from "../components/operation-list";
+import { Button, PillGroup, StatusBadge, type BadgeTone } from "@agestyles/ui-native";
 import { useBusiness } from "../context/business-context";
 import { useBusinessTheme } from "../hooks/use-business-theme";
 import {
@@ -197,15 +198,13 @@ export default function CommissionsScreen() {
                   strong
                 />
                 <Figure label="Saldo" value={money(balance.balance)} styles={styles} />
-                <Figure label="Pedido" value={money(balance.requested)} styles={styles} />
+                <Figure label="Solicitado" value={money(balance.requested)} styles={styles} />
               </View>
-              <Pressable
+              <Button
+                icon="shoppingCart"
+                title="Registrar venta"
                 onPress={() => router.push("/agent-sale")}
-                accessibilityRole="button"
-                style={styles.primary}
-              >
-                <Text style={styles.primaryText}>Registrar venta</Text>
-              </Pressable>
+              />
               <Text style={styles.label}>Retirar en efectivo (USD)</Text>
               <View style={styles.inline}>
                 <TextInput
@@ -259,10 +258,14 @@ export default function CommissionsScreen() {
             <Section title="Mis retiros">
               {ownWithdrawals.map((item) => (
                 <View key={item.id} style={styles.row}>
-                  <Text style={styles.rowTitle}>{money(item.amount)}</Text>
-                  <Text style={styles.muted}>
-                    {WITHDRAWAL_LABEL[item.status]} · {shortDate(item.created_at)}
-                  </Text>
+                  <View style={styles.flex}>
+                    <Text style={styles.rowTitle}>{money(item.amount)}</Text>
+                    <Text style={styles.muted}>{shortDate(item.created_at)}</Text>
+                  </View>
+                  <StatusBadge
+                    label={WITHDRAWAL_LABEL[item.status]}
+                    tone={WITHDRAWAL_TONE[item.status]}
+                  />
                 </View>
               ))}
             </Section>
@@ -352,9 +355,11 @@ export default function CommissionsScreen() {
               <View key={agent.id} style={styles.row}>
                 <View style={styles.flex}>
                   <Text style={styles.rowTitle}>{agent.member_email ?? "Miembro"}</Text>
-                  <Text style={styles.muted}>
-                    Código {agent.code} · {agent.active ? "Activo" : "Inactivo"}
-                  </Text>
+                  <StatusBadge
+                    label={agent.active ? "Activo" : "Inactivo"}
+                    tone={agent.active ? "success" : "neutral"}
+                  />
+                  <Text style={styles.muted}>Código {agent.code}</Text>
                 </View>
                 <Pressable
                   disabled={!!busy}
@@ -378,30 +383,23 @@ export default function CommissionsScreen() {
             ))}
             <View style={styles.block}>
               <Text style={styles.label}>Nuevo gestor (miembro de la tienda)</Text>
-              <View style={styles.chips}>
-                {memberOptions.length ? (
-                  memberOptions.map((person) => {
-                    const selected = newMemberId === person.member?.id;
-                    return (
-                      <Pressable
-                        key={person.id}
-                        onPress={() => setNewMemberId(person.member?.id ?? "")}
-                        accessibilityRole="radio"
-                        accessibilityState={{ selected }}
-                        style={[styles.chip, selected && styles.chipSelected]}
-                      >
-                        <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
-                          {person.member?.email ?? "Miembro"}
-                        </Text>
-                      </Pressable>
-                    );
-                  })
-                ) : (
-                  <Text style={styles.muted}>
-                    Invita primero a la persona desde Equipo y permisos.
-                  </Text>
-                )}
-              </View>
+              {memberOptions.length ? (
+                <PillGroup
+                  accessibilityLabel="Miembro que será gestor"
+                  value={newMemberId}
+                  onChange={setNewMemberId}
+                  options={memberOptions
+                    .filter((person) => person.member?.id)
+                    .map((person) => ({
+                      value: person.member?.id ?? "",
+                      label: person.member?.email ?? "Miembro",
+                    }))}
+                />
+              ) : (
+                <Text style={styles.muted}>
+                  Invita primero a la persona desde Equipo y permisos.
+                </Text>
+              )}
               <TextInput
                 value={newCode}
                 onChangeText={(text) => setNewCode(text.toUpperCase())}
@@ -412,7 +410,8 @@ export default function CommissionsScreen() {
                 placeholderTextColor={theme.placeholderText}
                 style={styles.input}
               />
-              <Pressable
+              <Button
+                title="Añadir gestor"
                 disabled={!newMemberId || busy === "agent"}
                 onPress={async () => {
                   if (
@@ -431,11 +430,7 @@ export default function CommissionsScreen() {
                     setNewCode("");
                   }
                 }}
-                accessibilityRole="button"
-                style={[styles.primary, (!newMemberId || busy === "agent") && styles.disabled]}
-              >
-                <Text style={styles.primaryText}>Añadir gestor</Text>
-              </Pressable>
+              />
             </View>
           </Section>
 
@@ -515,42 +510,26 @@ export default function CommissionsScreen() {
                 placeholderTextColor={theme.placeholderText}
                 style={styles.input}
               />
-              <View style={styles.chips}>
-                {matchingProducts.map((product) => {
-                  const selected = ruleProductId === product.id;
-                  return (
-                    <Pressable
-                      key={product.id}
-                      onPress={() => setRuleProductId(product.id)}
-                      accessibilityRole="radio"
-                      accessibilityState={{ selected }}
-                      style={[styles.chip, selected && styles.chipSelected]}
-                    >
-                      <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
-                        {product.title ?? "Producto"}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-              <View style={styles.chips}>
-                {(["fixed", "percent"] as const).map((kind) => {
-                  const selected = ruleKind === kind;
-                  return (
-                    <Pressable
-                      key={kind}
-                      onPress={() => setRuleKind(kind)}
-                      accessibilityRole="radio"
-                      accessibilityState={{ selected }}
-                      style={[styles.chip, selected && styles.chipSelected]}
-                    >
-                      <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
-                        {kind === "fixed" ? "Importe por unidad" : "Porcentaje"}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
+              {matchingProducts.length ? (
+                <PillGroup
+                  accessibilityLabel="Producto"
+                  value={ruleProductId}
+                  onChange={setRuleProductId}
+                  options={matchingProducts.map((product) => ({
+                    value: product.id,
+                    label: product.title ?? "Producto",
+                  }))}
+                />
+              ) : null}
+              <PillGroup
+                accessibilityLabel="Tipo de comisión"
+                value={ruleKind}
+                onChange={setRuleKind}
+                options={[
+                  { value: "fixed", label: "Importe por unidad" },
+                  { value: "percent", label: "Porcentaje" },
+                ]}
+              />
               <TextInput
                 value={ruleValue}
                 onChangeText={setRuleValue}
@@ -573,7 +552,8 @@ export default function CommissionsScreen() {
                   style={styles.input}
                 />
               ) : null}
-              <Pressable
+              <Button
+                title="Guardar comisión del producto"
                 disabled={!ruleProductId || busy === "rule"}
                 onPress={async () => {
                   if (
@@ -597,11 +577,7 @@ export default function CommissionsScreen() {
                     setRuleThreshold("");
                   }
                 }}
-                accessibilityRole="button"
-                style={[styles.primary, (!ruleProductId || busy === "rule") && styles.disabled]}
-              >
-                <Text style={styles.primaryText}>Guardar comisión del producto</Text>
-              </Pressable>
+              />
             </View>
           </Section>
         </>
@@ -650,6 +626,12 @@ function SaleRow({ sale, styles }: { sale: AgentSale; styles: Styles }) {
   );
 }
 
+const WITHDRAWAL_TONE: Record<Withdrawal["status"], BadgeTone> = {
+  requested: "warning",
+  paid: "success",
+  rejected: "error",
+};
+
 const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
   StyleSheet.create({
     back: { minHeight: 44, flexDirection: "row", alignItems: "center", gap: 6 },
@@ -675,30 +657,8 @@ const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
       backgroundColor: theme.surface,
       fontSize: 15,
     },
-    primary: {
-      minHeight: 48,
-      borderRadius: 12,
-      backgroundColor: theme.action,
-      alignItems: "center",
-      justifyContent: "center",
-      marginTop: 4,
-    },
-    primaryText: { color: theme.onAction, fontSize: 15, fontWeight: "600" },
     secondary: { minHeight: 44, paddingHorizontal: 10, justifyContent: "center" },
     disabled: { opacity: 0.45 },
-    chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-    chip: {
-      minHeight: 40,
-      paddingHorizontal: 14,
-      borderRadius: 20,
-      borderWidth: 1,
-      borderColor: theme.border,
-      backgroundColor: theme.surface,
-      justifyContent: "center",
-    },
-    chipSelected: { backgroundColor: theme.action, borderColor: theme.action },
-    chipText: { color: theme.text, fontSize: 13 },
-    chipTextSelected: { color: theme.onAction, fontWeight: "600" },
     row: {
       minHeight: 60,
       paddingHorizontal: 14,

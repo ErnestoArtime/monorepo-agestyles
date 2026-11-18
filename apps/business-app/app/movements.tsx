@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { OperationList, Section } from "../components/operation-list";
+import { Button, PillGroup } from "@agestyles/ui-native";
 import { useBusiness } from "../context/business-context";
 import { useBusinessTheme } from "../hooks/use-business-theme";
 import {
@@ -98,6 +99,7 @@ export default function MovementsScreen() {
       loading={loading && !movements.length}
       error={error}
       empty="No hay movimientos en este periodo."
+      isEmpty={!movements.length}
       onRefresh={() => void load(0)}
     >
       <View style={styles.toolbar}>
@@ -123,70 +125,31 @@ export default function MovementsScreen() {
         </Pressable>
       </View>
 
-      <View
-        style={styles.filters}
-        accessibilityRole="radiogroup"
-        accessibilityLabel="Tipo de movimiento"
-      >
-        {[{ value: undefined, label: "Todos" }, ...MOVEMENT_TYPE_OPTIONS].map((option) => {
-          const selected = type === option.value;
-          return (
-            <Pressable
-              key={option.label}
-              onPress={() => setType(option.value)}
-              accessibilityRole="radio"
-              accessibilityState={{ selected }}
-              style={[styles.chip, selected && styles.chipSelected]}
-            >
-              <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
-                {option.label}
-              </Text>
-            </Pressable>
-          );
-        })}
+      <View style={styles.filters}>
+        <PillGroup
+          accessibilityLabel="Tipo de movimiento"
+          value={type ?? "all"}
+          onChange={(value) => setType(value === "all" ? undefined : (value as MovementType))}
+          options={[{ value: "all", label: "Todos" }, ...MOVEMENT_TYPE_OPTIONS]}
+        />
+        <PillGroup
+          accessibilityLabel="Periodo"
+          value={period}
+          onChange={setPeriod}
+          options={PERIOD_OPTIONS}
+        />
+        {actors.size > 1 || actorId ? (
+          <PillGroup
+            accessibilityLabel="Persona"
+            value={actorId ?? "all"}
+            onChange={(value) => setActorId(value === "all" ? undefined : value)}
+            options={[
+              { value: "all", label: "Todas las personas" },
+              ...[...actors].map(([id, label]) => ({ value: id, label })),
+            ]}
+          />
+        ) : null}
       </View>
-      <View style={styles.filters} accessibilityRole="radiogroup" accessibilityLabel="Periodo">
-        {PERIOD_OPTIONS.map((option) => {
-          const selected = period === option.value;
-          return (
-            <Pressable
-              key={option.value}
-              onPress={() => setPeriod(option.value)}
-              accessibilityRole="radio"
-              accessibilityState={{ selected }}
-              style={[styles.chip, selected && styles.chipSelected]}
-            >
-              <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
-                {option.label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
-
-      {actors.size > 1 || actorId ? (
-        <View style={styles.filters} accessibilityRole="radiogroup" accessibilityLabel="Usuario">
-          {[
-            { id: undefined as string | undefined, label: "Todas las personas" },
-            ...[...actors].map(([id, label]) => ({ id: id as string | undefined, label })),
-          ].map((option) => {
-            const selected = actorId === option.id;
-            return (
-              <Pressable
-                key={option.id ?? "all"}
-                onPress={() => setActorId(option.id)}
-                accessibilityRole="radio"
-                accessibilityState={{ selected }}
-                style={[styles.chip, selected && styles.chipSelected]}
-              >
-                <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
-                  {option.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      ) : null}
       {movements.length ? (
         <Section title={`${count} movimientos`}>
           {movements.map((movement) => (
@@ -219,14 +182,13 @@ export default function MovementsScreen() {
             </View>
           ))}
           {movements.length < count ? (
-            <Pressable
+            <Button
+              variant="secondary"
+              title="Cargar más"
+              loading={loading}
               onPress={() => void load(movements.length)}
-              disabled={loading}
-              accessibilityRole="button"
-              style={[styles.more, loading && styles.disabled]}
-            >
-              <Text style={styles.toolbarText}>{loading ? "Cargando…" : "Cargar más"}</Text>
-            </Pressable>
+              style={styles.more}
+            />
           ) : null}
         </Section>
       ) : null}
@@ -246,19 +208,7 @@ const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
     },
     toolbarText: { color: theme.action, fontSize: 14, fontWeight: "500" },
     disabled: { opacity: 0.5 },
-    filters: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 10 },
-    chip: {
-      minHeight: 40,
-      paddingHorizontal: 14,
-      borderRadius: 20,
-      borderWidth: 1,
-      borderColor: theme.border,
-      backgroundColor: theme.surface,
-      justifyContent: "center",
-    },
-    chipSelected: { backgroundColor: theme.action, borderColor: theme.action },
-    chipText: { color: theme.text, fontSize: 13 },
-    chipTextSelected: { color: theme.onAction, fontWeight: "600" },
+    filters: { gap: 10, marginBottom: 6 },
     row: {
       minHeight: 64,
       paddingHorizontal: 14,
@@ -275,5 +225,5 @@ const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
     delta: { fontSize: 16, fontWeight: "600" },
     positive: { color: theme.success },
     negative: { color: theme.error },
-    more: { minHeight: 48, alignItems: "center", justifyContent: "center" },
+    more: { margin: 12 },
   });
