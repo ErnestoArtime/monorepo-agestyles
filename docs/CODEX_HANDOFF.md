@@ -1046,3 +1046,10 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - Negocio: `business-context.tsx` lee `seller_member` (el propietario aparecía como «Miembro» sin permisos); Pedidos con tarjetas `Card` + `StatusBadge`, filtros por etapa con `PillGroup`, detalle en `BottomSheet` y mensaje de vacío; Inventario resuelve el nombre del producto por SKU (ofertas `limit=100` + `/vendor/products`); `OperationList` con título grande.
 - Checks: `tsc --noEmit` de business-app OK; prettier OK; `node --check` del gateway OK; YAML de CI válido.
 - Pendiente con autorización del usuario: reiniciar `seller-gateway` de producción con esta versión y publicar las webs.
+
+## 2026-11-18 · Claude · AG-24: gateway reiniciado en producción y Productos de Negocio
+
+- Con autorización del usuario se recreó `seller-gateway` de producción (`up -d --no-deps --force-recreate`; un `restart` no basta porque el montaje de un solo archivo conserva el inodo anterior tras `git pull`). Comprobado: preflight GET de `/vendor/products`, `orders` e `inventory-items` = 204 local y público; `GET /negocio/vendor/products` sin sesión = 401 (antes 404).
+- Productos de Negocio: buscador por nombre/SKU, filtros por estado, tarjetas con foto e insignia, ficha en `BottomSheet` con edición y variantes; retirar variante usa `ConfirmDialog` (`Alert.alert` no hace nada en la web). `OperationList` cuenta los hijos que realmente se pintan y acepta `isEmpty`, así que los mensajes de vacío vuelven a salir.
+- Checks: `tsc --noEmit` de business-app OK; prettier OK. Sin capturas todavía.
+- Pendiente: Movimientos y Comisiones, capturas claro/oscuro y publicar las webs de Tienda y Negocio (autorizado por el usuario).

@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { Children, ReactNode } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -18,6 +18,7 @@ export function OperationList({
   loading,
   error,
   empty,
+  isEmpty,
   onRefresh,
   children,
 }: {
@@ -26,11 +27,17 @@ export function OperationList({
   loading: boolean;
   error: string;
   empty?: string;
+  /** Whether the screen has no records; defaults to "no rendered children". */
+  isEmpty?: boolean;
   onRefresh?: () => void;
   children?: ReactNode;
 }) {
   const theme = useBusinessTheme();
   const styles = createStyles(theme);
+  // Children are often a list of conditionals (`cond ? <X/> : null`), which is truthy even
+  // when every branch rendered nothing, so count what actually renders.
+  const nothingRendered = Children.toArray(children).length === 0;
+  const showEmpty = isEmpty ?? nothingRendered;
 
   return (
     <ScrollView
@@ -44,7 +51,7 @@ export function OperationList({
     >
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.subtitle}>{subtitle}</Text>
-      {loading && !children ? (
+      {loading && nothingRendered ? (
         <ActivityIndicator style={{ marginTop: 28 }} color={theme.action} />
       ) : null}
       {error ? (
@@ -53,7 +60,7 @@ export function OperationList({
           <Text style={styles.error}>{error}</Text>
         </View>
       ) : null}
-      {!loading && !error && !children && empty ? (
+      {!loading && !error && showEmpty && empty ? (
         <View style={styles.message}>
           <Text style={styles.empty}>{empty}</Text>
         </View>

@@ -1,9 +1,19 @@
-import { useCallback, useEffect, useState } from "react";
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Image, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { router } from "expo-router";
 import { Icon } from "@agestyles/icons";
 import { useBusiness } from "../../context/business-context";
-import { hasPermission, OperationList, Row, Section } from "../../components/operation-list";
+import { hasPermission, OperationList } from "../../components/operation-list";
+import {
+  BottomSheet,
+  Button,
+  Card,
+  ConfirmDialog,
+  PillGroup,
+  SearchField,
+  StatusBadge,
+  type BadgeTone,
+} from "@agestyles/ui-native";
 import { useBusinessTheme } from "../../hooks/use-business-theme";
 import { productStatusLabel } from "../../lib/status-labels";
 import {
@@ -18,7 +28,25 @@ type SellerProduct = {
   title: string;
   description?: string | null;
   status?: string;
+  thumbnail?: string | null;
   variants?: SellerVariant[];
+};
+
+type StatusFilter = "all" | "published" | "proposed" | "draft" | "rejected";
+
+const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
+  { value: "all", label: "Todos" },
+  { value: "published", label: "Publicados" },
+  { value: "proposed", label: "En revisión" },
+  { value: "draft", label: "Borradores" },
+  { value: "rejected", label: "Rechazados" },
+];
+
+const STATUS_TONE: Record<string, BadgeTone> = {
+  published: "success",
+  proposed: "warning",
+  draft: "neutral",
+  rejected: "error",
 };
 
 type SellerVariant = {
@@ -59,6 +87,12 @@ export default function ProductsScreen() {
   const [loadedVariantsByProduct, setLoadedVariantsByProduct] = useState<
     Record<string, SellerVariant[]>
   >({});
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [removal, setRemoval] = useState<{ item: SellerProduct; variant: SellerVariant } | null>(
+    null,
+  );
   const canEdit = hasPermission(member, "products", "edit");
   const canManageProducts = hasPermission(member, "products", "manage");
 
@@ -68,7 +102,7 @@ export default function ProductsScreen() {
     setError("");
     try {
       const data = await request<{ products?: SellerProduct[] }>(
-        "/vendor/products?limit=50&fields=id,title,description,status,variants.id,variants.title,variants.sku",
+        "/vendor/products?limit=100&fields=id,title,description,status,thumbnail,variants.id,variants.title,variants.sku",
       );
       setItems(data?.products ?? []);
     } catch {
@@ -190,35 +224,29 @@ export default function ProductsScreen() {
 
   function confirmVariantRemoval(item: SellerProduct, variant: SellerVariant) {
     if (!canManageProducts || deletingVariantId) return;
-    Alert.alert(
-      "Retirar variante",
-      `Se enviará a revisión la solicitud para retirar “${variant.title ?? "esta variante"}”. Seguirá disponible hasta que AgeStyles apruebe el cambio.`,
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Enviar solicitud",
-          style: "destructive",
-          onPress: () => {
-            setDeletingVariantId(variant.id);
-            setError("");
-            setNotice("");
-            void request<ProductChangeResponse>(
-              `/vendor/products/${item.id}/variants/${variant.id}`,
-              "DELETE",
-            )
-              .then((result) => {
-                setNotice(
-                  result?.product_change?.id
-                    ? "Solicitud enviada a AgeStyles para revisión. La variante actual sigue disponible hasta su aprobación."
-                    : "La solicitud para retirar la variante se envió para revisión.",
-                );
-              })
-              .catch((cause) => setError("No se pudo solicitar el retiro de la variante."))
-              .finally(() => setDeletingVariantId(null));
-          },
-        },
-      ],
-    );
+    setRemoval({ item, variant });
+  }
+
+  function submitVariantRemoval() {
+    if (!removal) return;
+    const { item, variant } = removal;
+    setRemoval(null);
+    setDeletingVariantId(variant.id);
+    setError("");
+    setNotice("");
+    void request<ProductChangeResponse>(
+      `/vendor/products/${item.id}/variants/${variant.id}`,
+      "DELETE",
+    )
+      .then((result) => {
+        setNotice(
+          result?.product_change?.id
+            ? "Solicitud enviada a AgeStyles para revisión. La variante actual sigue disponible hasta su aprobación."
+            : "La solicitud para retirar la variante se envió para revisión.",
+        );
+      })
+      .catch(() => setError("No se pudo solicitar el retiro de la variante."))
+      .finally(() => setDeletingVariantId(null));
   }
 
   async function beginAddVariant(item: SellerProduct) {
@@ -301,6 +329,25 @@ export default function ProductsScreen() {
     }
   }
 
+  const visibleItems = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return items.filter(
+      (item) =>
+        (statusFilter === "all" || (item.status ?? "").toLowerCase() === statusFilter) &&
+        (!needle ||
+          item.title?.toLowerCase().includes(needle) ||
+          item.variants?.some((variant) => variant.sku?.toLowerCase().includes(needle))),
+    );
+  }, [items, query, statusFilter]);
+  const openItem = items.find((item) => item.id === openId) ?? null;
+
+  function closeSheet() {
+    setOpenId(null);
+    cancelEdit();
+    cancelVariantEdit();
+    cancelAddVariant();
+  }
+
   return (
     <OperationList
       title="Productos"
@@ -310,328 +357,467 @@ export default function ProductsScreen() {
           : "Consulta el catálogo disponible para tu rol."
       }
       loading={loading}
-      error={error}
+      error={error && !openItem ? error : ""}
       empty="Esta tienda todavía no tiene productos visibles."
+      isEmpty={!items.length}
       onRefresh={() => void load()}
     >
-      {notice ? (
+      {notice && !openItem ? (
         <Text accessibilityRole="alert" style={styles.notice}>
           {notice}
         </Text>
       ) : null}
       {canEdit ? (
-        <Pressable
+        <Button
+          icon="list"
+          variant="secondary"
+          title="Importar o corregir catálogo por CSV"
           onPress={() => router.push("/catalog-import")}
-          accessibilityRole="button"
-          style={({ pressed }) => [styles.importButton, pressed && styles.pressed]}
-        >
-          <Text style={styles.primaryText}>Importar o corregir catálogo por CSV</Text>
-        </Pressable>
+          style={styles.importButton}
+        />
       ) : null}
       {items.length ? (
-        <Section title={`${items.length} productos`}>
-          {items.map((item) => (
-            <View key={item.id} style={styles.product}>
-              <Row
-                title={item.title ?? "Producto sin título"}
-                detail={`${item.variants?.length ?? 0} variantes · ${productStatusLabel(item.status)}`}
-                action={canEdit ? () => beginEdit(item) : undefined}
-              />
-              {item.variants?.length ? (
-                <View style={styles.variants}>
-                  {item.variants.map((variant) => (
-                    <View key={variant.id} style={styles.variant}>
-                      {editingVariantId === variant.id ? (
-                        <View style={styles.variantEditor}>
-                          <Text style={styles.label}>Nombre de la variante</Text>
-                          <TextInput
-                            accessibilityLabel={`Nombre de la variante ${variant.title ?? ""}`}
-                            value={variantTitle}
-                            onChangeText={setVariantTitle}
-                            editable={savingVariantId !== variant.id}
-                            maxLength={200}
-                            placeholder="Nombre de la variante"
-                            placeholderTextColor={theme.placeholderText}
-                            style={styles.input}
-                          />
-                          <Text style={styles.label}>SKU</Text>
-                          <TextInput
-                            accessibilityLabel={`SKU de la variante ${variant.title ?? ""}`}
-                            value={variantSku}
-                            onChangeText={setVariantSku}
-                            editable={savingVariantId !== variant.id}
-                            maxLength={100}
-                            autoCapitalize="characters"
-                            placeholder="Sin SKU"
-                            placeholderTextColor={theme.placeholderText}
-                            style={styles.input}
-                          />
-                          <View style={styles.actions}>
-                            <Pressable
-                              onPress={cancelVariantEdit}
-                              disabled={savingVariantId === variant.id}
-                              accessibilityRole="button"
-                              style={({ pressed }) => [
-                                styles.secondaryButton,
-                                pressed && styles.pressed,
-                                savingVariantId === variant.id && styles.disabled,
-                              ]}
-                            >
-                              <Text style={styles.secondaryText}>Cancelar</Text>
-                            </Pressable>
-                            <Pressable
-                              onPress={() => void submitVariantChange(item, variant)}
-                              disabled={savingVariantId === variant.id || !variantTitle.trim()}
-                              accessibilityRole="button"
-                              style={({ pressed }) => [
-                                styles.primaryButton,
-                                pressed && styles.pressed,
-                                (savingVariantId === variant.id || !variantTitle.trim()) &&
-                                  styles.disabled,
-                              ]}
-                            >
-                              <Text style={styles.primaryText}>
-                                {savingVariantId === variant.id ? "Enviando…" : "Enviar a revisión"}
-                              </Text>
-                            </Pressable>
-                          </View>
-                        </View>
-                      ) : (
-                        <View style={styles.variantSummary}>
-                          <View style={styles.variantText}>
-                            <Text style={styles.variantTitle}>{variant.title ?? "Variante"}</Text>
-                            <Text style={styles.variantSku}>{variant.sku || "Sin SKU"}</Text>
-                          </View>
-                          {canEdit ? (
-                            <Pressable
-                              onPress={() => beginVariantEdit(variant)}
-                              accessibilityRole="button"
-                              accessibilityLabel={`Editar variante ${variant.title ?? ""}`}
-                              style={({ pressed }) => [
-                                styles.variantAction,
-                                pressed && styles.pressed,
-                              ]}
-                            >
-                              <Text style={styles.variantActionText}>Editar</Text>
-                            </Pressable>
-                          ) : null}
-                          {canManageProducts ? (
-                            <Pressable
-                              onPress={() => confirmVariantRemoval(item, variant)}
-                              disabled={deletingVariantId === variant.id}
-                              accessibilityRole="button"
-                              accessibilityLabel={`Solicitar retiro de variante ${variant.title ?? ""}`}
-                              accessibilityHint="AgeStyles debe aprobar el cambio antes de retirar la variante del catálogo."
-                              style={({ pressed }) => [
-                                styles.variantAction,
-                                pressed && styles.pressed,
-                                deletingVariantId === variant.id && styles.disabled,
-                              ]}
-                            >
-                              <Icon name="trash" color={theme.error} size={20} />
-                              <Text style={styles.dangerActionText}>
-                                {deletingVariantId === variant.id ? "Enviando…" : "Retirar"}
-                              </Text>
-                            </Pressable>
-                          ) : null}
-                        </View>
-                      )}
-                    </View>
-                  ))}
-                </View>
-              ) : null}
-              {canEdit ? (
-                <View style={styles.addVariantArea}>
-                  {addingVariantProductId === item.id ? (
-                    <View style={styles.variantEditor}>
-                      <Text style={styles.label}>Nueva variante</Text>
-                      <TextInput
-                        accessibilityLabel="Nombre de la nueva variante"
-                        value={newVariantTitle}
-                        onChangeText={setNewVariantTitle}
-                        editable={savingNewVariantFor !== item.id}
-                        maxLength={200}
-                        placeholder="Nombre de la variante"
-                        placeholderTextColor={theme.placeholderText}
-                        style={styles.input}
+        <View style={styles.toolbar}>
+          <SearchField
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Buscar por nombre o SKU"
+          />
+          <PillGroup
+            accessibilityLabel="Filtrar por estado"
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={STATUS_FILTERS}
+          />
+          <Text style={styles.count}>
+            {visibleItems.length === items.length
+              ? `${items.length} productos`
+              : `${visibleItems.length} de ${items.length} productos`}
+          </Text>
+        </View>
+      ) : null}
+      {items.length && !visibleItems.length ? (
+        <Text style={styles.readOnlyNote}>Ningún producto coincide con la búsqueda.</Text>
+      ) : null}
+      {visibleItems.length ? (
+        <View style={styles.cards}>
+          {visibleItems.map((item) => {
+            const variants = item.variants?.length ?? 0;
+            return (
+              <Card
+                key={item.id}
+                onPress={() => {
+                  setError("");
+                  setNotice("");
+                  setOpenId(item.id);
+                }}
+                accessibilityLabel={`${item.title ?? "Producto"}, ${productStatusLabel(item.status)}`}
+              >
+                <View style={styles.cardRow}>
+                  <View style={styles.thumb}>
+                    {item.thumbnail ? (
+                      <Image
+                        source={{ uri: item.thumbnail }}
+                        style={StyleSheet.absoluteFill}
+                        resizeMode="cover"
+                        accessibilityIgnoresInvertColors
                       />
-                      <TextInput
-                        accessibilityLabel="SKU de la nueva variante"
-                        value={newVariantSku}
-                        onChangeText={setNewVariantSku}
-                        editable={savingNewVariantFor !== item.id}
-                        maxLength={100}
-                        autoCapitalize="characters"
-                        placeholder="SKU (opcional)"
-                        placeholderTextColor={theme.placeholderText}
-                        style={styles.input}
-                      />
-                      {variantAxes.map((axis) => (
-                        <View key={axis.title} style={styles.optionAxis}>
-                          <Text style={styles.label}>{axis.title}</Text>
-                          <View style={styles.optionValues}>
-                            {axis.values.map((value) => {
-                              const selected = selectedVariantOptions[axis.title] === value;
-                              return (
-                                <Pressable
-                                  key={`${axis.title}-${value}`}
-                                  onPress={() =>
-                                    setSelectedVariantOptions((current) => ({
-                                      ...current,
-                                      [axis.title]: value,
-                                    }))
-                                  }
-                                  disabled={savingNewVariantFor === item.id}
-                                  accessibilityRole="radio"
-                                  accessibilityLabel={`${axis.title}: ${value}`}
-                                  accessibilityState={{ checked: selected }}
-                                  style={({ pressed }) => [
-                                    styles.optionChip,
-                                    selected && styles.optionChipSelected,
-                                    pressed && styles.pressed,
-                                  ]}
-                                >
-                                  <Text
-                                    style={[
-                                      styles.optionChipText,
-                                      selected && styles.optionChipTextSelected,
-                                    ]}
-                                  >
-                                    {value}
-                                  </Text>
-                                </Pressable>
-                              );
-                            })}
-                          </View>
-                        </View>
-                      ))}
-                      <Text style={styles.variantHelp}>
-                        Solo puedes elegir opciones ya usadas por este producto. La variante se
-                        enviará para aprobación y necesitará inventario antes de venderse.
-                      </Text>
-                      <View style={styles.actions}>
-                        <Pressable
-                          onPress={cancelAddVariant}
-                          disabled={savingNewVariantFor === item.id}
-                          accessibilityRole="button"
-                          style={({ pressed }) => [
-                            styles.secondaryButton,
-                            pressed && styles.pressed,
-                            savingNewVariantFor === item.id && styles.disabled,
-                          ]}
-                        >
-                          <Text style={styles.secondaryText}>Cancelar</Text>
-                        </Pressable>
-                        <Pressable
-                          onPress={() => void submitNewVariant(item)}
-                          disabled={savingNewVariantFor === item.id || !newVariantTitle.trim()}
-                          accessibilityRole="button"
-                          style={({ pressed }) => [
-                            styles.primaryButton,
-                            pressed && styles.pressed,
-                            (savingNewVariantFor === item.id || !newVariantTitle.trim()) &&
-                              styles.disabled,
-                          ]}
-                        >
-                          <Text style={styles.primaryText}>
-                            {savingNewVariantFor === item.id ? "Enviando…" : "Enviar a revisión"}
-                          </Text>
-                        </Pressable>
-                      </View>
-                    </View>
-                  ) : (
-                    <Pressable
-                      onPress={() => void beginAddVariant(item)}
-                      disabled={loadingVariantOptionsFor === item.id}
-                      accessibilityRole="button"
-                      style={({ pressed }) => [
-                        styles.addVariantButton,
-                        pressed && styles.pressed,
-                        loadingVariantOptionsFor === item.id && styles.disabled,
-                      ]}
-                    >
-                      <Text style={styles.variantActionText}>
-                        {loadingVariantOptionsFor === item.id
-                          ? "Cargando opciones…"
-                          : "Añadir variante"}
-                      </Text>
-                    </Pressable>
-                  )}
-                </View>
-              ) : null}
-              {editingId === item.id ? (
-                <View style={styles.editor}>
-                  <Text style={styles.label}>Nombre del producto</Text>
-                  <TextInput
-                    accessibilityLabel="Nombre del producto"
-                    value={title}
-                    onChangeText={setTitle}
-                    editable={!saving}
-                    maxLength={200}
-                    placeholder="Nombre del producto"
-                    placeholderTextColor={theme.placeholderText}
-                    style={styles.input}
-                  />
-                  <Text style={styles.label}>Descripción</Text>
-                  <TextInput
-                    accessibilityLabel="Descripción del producto"
-                    value={description}
-                    onChangeText={setDescription}
-                    editable={!saving}
-                    multiline
-                    maxLength={5000}
-                    textAlignVertical="top"
-                    placeholder="Describe el producto"
-                    placeholderTextColor={theme.placeholderText}
-                    style={[styles.input, styles.description]}
-                  />
-                  <View style={styles.actions}>
-                    <Pressable
-                      onPress={cancelEdit}
-                      disabled={saving}
-                      accessibilityRole="button"
-                      style={({ pressed }) => [
-                        styles.secondaryButton,
-                        pressed && styles.pressed,
-                        saving && styles.disabled,
-                      ]}
-                    >
-                      <Text style={styles.secondaryText}>Cancelar</Text>
-                    </Pressable>
-                    <Pressable
-                      onPress={() => void submitChange(item)}
-                      disabled={saving || !title.trim()}
-                      accessibilityRole="button"
-                      style={({ pressed }) => [
-                        styles.primaryButton,
-                        pressed && styles.pressed,
-                        (saving || !title.trim()) && styles.disabled,
-                      ]}
-                    >
-                      <Text style={styles.primaryText}>
-                        {saving ? "Enviando…" : "Enviar a revisión"}
-                      </Text>
-                    </Pressable>
+                    ) : (
+                      <Icon name="package" size={22} color={theme.muted} />
+                    )}
                   </View>
+                  <View style={styles.cardText}>
+                    <Text style={styles.cardTitle} numberOfLines={2}>
+                      {item.title ?? "Producto sin título"}
+                    </Text>
+                    <Text style={styles.cardDetail}>
+                      {variants === 1 ? "1 variante" : `${variants} variantes`}
+                    </Text>
+                    <StatusBadge
+                      label={productStatusLabel(item.status)}
+                      tone={STATUS_TONE[(item.status ?? "").toLowerCase()] ?? "neutral"}
+                    />
+                  </View>
+                  <Icon name="chevronRight" size={20} color={theme.muted} />
                 </View>
-              ) : null}
-            </View>
-          ))}
-        </Section>
+              </Card>
+            );
+          })}
+        </View>
       ) : null}
       {!canEdit && items.length ? (
         <Text style={styles.readOnlyNote}>
           Tu rol permite consultar productos, pero no enviar cambios.
         </Text>
       ) : null}
+      <BottomSheet visible={!!openItem} onClose={closeSheet} title={openItem?.title ?? "Producto"}>
+        {openItem
+          ? (() => {
+              const item = openItem;
+              return (
+                <View style={styles.sheet}>
+                  <StatusBadge
+                    label={productStatusLabel(item.status)}
+                    tone={STATUS_TONE[(item.status ?? "").toLowerCase()] ?? "neutral"}
+                  />
+                  {notice ? (
+                    <Text accessibilityRole="alert" style={styles.notice}>
+                      {notice}
+                    </Text>
+                  ) : null}
+                  {error ? (
+                    <Text accessibilityRole="alert" style={styles.sheetError}>
+                      {error}
+                    </Text>
+                  ) : null}
+                  {editingId === item.id ? null : (
+                    <>
+                      <Text style={item.description ? styles.descriptionText : styles.readOnlyNote}>
+                        {item.description || "Sin descripción."}
+                      </Text>
+                      {canEdit ? (
+                        <Button
+                          icon="sliders"
+                          variant="secondary"
+                          title="Editar nombre y descripción"
+                          onPress={() => beginEdit(item)}
+                        />
+                      ) : null}
+                    </>
+                  )}
+                  <View style={styles.product}>
+                    <Text style={styles.sheetSection}>Variantes</Text>
+                    {item.variants?.length ? (
+                      <View style={styles.variants}>
+                        {item.variants.map((variant) => (
+                          <View key={variant.id} style={styles.variant}>
+                            {editingVariantId === variant.id ? (
+                              <View style={styles.variantEditor}>
+                                <Text style={styles.label}>Nombre de la variante</Text>
+                                <TextInput
+                                  accessibilityLabel={`Nombre de la variante ${variant.title ?? ""}`}
+                                  value={variantTitle}
+                                  onChangeText={setVariantTitle}
+                                  editable={savingVariantId !== variant.id}
+                                  maxLength={200}
+                                  placeholder="Nombre de la variante"
+                                  placeholderTextColor={theme.placeholderText}
+                                  style={styles.input}
+                                />
+                                <Text style={styles.label}>SKU</Text>
+                                <TextInput
+                                  accessibilityLabel={`SKU de la variante ${variant.title ?? ""}`}
+                                  value={variantSku}
+                                  onChangeText={setVariantSku}
+                                  editable={savingVariantId !== variant.id}
+                                  maxLength={100}
+                                  autoCapitalize="characters"
+                                  placeholder="Sin SKU"
+                                  placeholderTextColor={theme.placeholderText}
+                                  style={styles.input}
+                                />
+                                <View style={styles.actions}>
+                                  <Pressable
+                                    onPress={cancelVariantEdit}
+                                    disabled={savingVariantId === variant.id}
+                                    accessibilityRole="button"
+                                    style={({ pressed }) => [
+                                      styles.secondaryButton,
+                                      pressed && styles.pressed,
+                                      savingVariantId === variant.id && styles.disabled,
+                                    ]}
+                                  >
+                                    <Text style={styles.secondaryText}>Cancelar</Text>
+                                  </Pressable>
+                                  <Pressable
+                                    onPress={() => void submitVariantChange(item, variant)}
+                                    disabled={
+                                      savingVariantId === variant.id || !variantTitle.trim()
+                                    }
+                                    accessibilityRole="button"
+                                    style={({ pressed }) => [
+                                      styles.primaryButton,
+                                      pressed && styles.pressed,
+                                      (savingVariantId === variant.id || !variantTitle.trim()) &&
+                                        styles.disabled,
+                                    ]}
+                                  >
+                                    <Text style={styles.primaryText}>
+                                      {savingVariantId === variant.id
+                                        ? "Enviando…"
+                                        : "Enviar a revisión"}
+                                    </Text>
+                                  </Pressable>
+                                </View>
+                              </View>
+                            ) : (
+                              <View style={styles.variantSummary}>
+                                <View style={styles.variantText}>
+                                  <Text style={styles.variantTitle}>
+                                    {variant.title ?? "Variante"}
+                                  </Text>
+                                  <Text style={styles.variantSku}>{variant.sku || "Sin SKU"}</Text>
+                                </View>
+                                {canEdit ? (
+                                  <Pressable
+                                    onPress={() => beginVariantEdit(variant)}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={`Editar variante ${variant.title ?? ""}`}
+                                    style={({ pressed }) => [
+                                      styles.variantAction,
+                                      pressed && styles.pressed,
+                                    ]}
+                                  >
+                                    <Text style={styles.variantActionText}>Editar</Text>
+                                  </Pressable>
+                                ) : null}
+                                {canManageProducts ? (
+                                  <Pressable
+                                    onPress={() => confirmVariantRemoval(item, variant)}
+                                    disabled={deletingVariantId === variant.id}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={`Solicitar retiro de variante ${variant.title ?? ""}`}
+                                    accessibilityHint="AgeStyles debe aprobar el cambio antes de retirar la variante del catálogo."
+                                    style={({ pressed }) => [
+                                      styles.variantAction,
+                                      pressed && styles.pressed,
+                                      deletingVariantId === variant.id && styles.disabled,
+                                    ]}
+                                  >
+                                    <Icon name="trash" color={theme.error} size={20} />
+                                    <Text style={styles.dangerActionText}>
+                                      {deletingVariantId === variant.id ? "Enviando…" : "Retirar"}
+                                    </Text>
+                                  </Pressable>
+                                ) : null}
+                              </View>
+                            )}
+                          </View>
+                        ))}
+                      </View>
+                    ) : null}
+                    {canEdit ? (
+                      <View style={styles.addVariantArea}>
+                        {addingVariantProductId === item.id ? (
+                          <View style={styles.variantEditor}>
+                            <Text style={styles.label}>Nueva variante</Text>
+                            <TextInput
+                              accessibilityLabel="Nombre de la nueva variante"
+                              value={newVariantTitle}
+                              onChangeText={setNewVariantTitle}
+                              editable={savingNewVariantFor !== item.id}
+                              maxLength={200}
+                              placeholder="Nombre de la variante"
+                              placeholderTextColor={theme.placeholderText}
+                              style={styles.input}
+                            />
+                            <TextInput
+                              accessibilityLabel="SKU de la nueva variante"
+                              value={newVariantSku}
+                              onChangeText={setNewVariantSku}
+                              editable={savingNewVariantFor !== item.id}
+                              maxLength={100}
+                              autoCapitalize="characters"
+                              placeholder="SKU (opcional)"
+                              placeholderTextColor={theme.placeholderText}
+                              style={styles.input}
+                            />
+                            {variantAxes.map((axis) => (
+                              <View key={axis.title} style={styles.optionAxis}>
+                                <Text style={styles.label}>{axis.title}</Text>
+                                <View style={styles.optionValues}>
+                                  {axis.values.map((value) => {
+                                    const selected = selectedVariantOptions[axis.title] === value;
+                                    return (
+                                      <Pressable
+                                        key={`${axis.title}-${value}`}
+                                        onPress={() =>
+                                          setSelectedVariantOptions((current) => ({
+                                            ...current,
+                                            [axis.title]: value,
+                                          }))
+                                        }
+                                        disabled={savingNewVariantFor === item.id}
+                                        accessibilityRole="radio"
+                                        accessibilityLabel={`${axis.title}: ${value}`}
+                                        accessibilityState={{ checked: selected }}
+                                        style={({ pressed }) => [
+                                          styles.optionChip,
+                                          selected && styles.optionChipSelected,
+                                          pressed && styles.pressed,
+                                        ]}
+                                      >
+                                        <Text
+                                          style={[
+                                            styles.optionChipText,
+                                            selected && styles.optionChipTextSelected,
+                                          ]}
+                                        >
+                                          {value}
+                                        </Text>
+                                      </Pressable>
+                                    );
+                                  })}
+                                </View>
+                              </View>
+                            ))}
+                            <Text style={styles.variantHelp}>
+                              Solo puedes elegir opciones ya usadas por este producto. La variante
+                              se enviará para aprobación y necesitará inventario antes de venderse.
+                            </Text>
+                            <View style={styles.actions}>
+                              <Pressable
+                                onPress={cancelAddVariant}
+                                disabled={savingNewVariantFor === item.id}
+                                accessibilityRole="button"
+                                style={({ pressed }) => [
+                                  styles.secondaryButton,
+                                  pressed && styles.pressed,
+                                  savingNewVariantFor === item.id && styles.disabled,
+                                ]}
+                              >
+                                <Text style={styles.secondaryText}>Cancelar</Text>
+                              </Pressable>
+                              <Pressable
+                                onPress={() => void submitNewVariant(item)}
+                                disabled={
+                                  savingNewVariantFor === item.id || !newVariantTitle.trim()
+                                }
+                                accessibilityRole="button"
+                                style={({ pressed }) => [
+                                  styles.primaryButton,
+                                  pressed && styles.pressed,
+                                  (savingNewVariantFor === item.id || !newVariantTitle.trim()) &&
+                                    styles.disabled,
+                                ]}
+                              >
+                                <Text style={styles.primaryText}>
+                                  {savingNewVariantFor === item.id
+                                    ? "Enviando…"
+                                    : "Enviar a revisión"}
+                                </Text>
+                              </Pressable>
+                            </View>
+                          </View>
+                        ) : (
+                          <Pressable
+                            onPress={() => void beginAddVariant(item)}
+                            disabled={loadingVariantOptionsFor === item.id}
+                            accessibilityRole="button"
+                            style={({ pressed }) => [
+                              styles.addVariantButton,
+                              pressed && styles.pressed,
+                              loadingVariantOptionsFor === item.id && styles.disabled,
+                            ]}
+                          >
+                            <Text style={styles.variantActionText}>
+                              {loadingVariantOptionsFor === item.id
+                                ? "Cargando opciones…"
+                                : "Añadir variante"}
+                            </Text>
+                          </Pressable>
+                        )}
+                      </View>
+                    ) : null}
+                    {editingId === item.id ? (
+                      <View style={styles.editor}>
+                        <Text style={styles.label}>Nombre del producto</Text>
+                        <TextInput
+                          accessibilityLabel="Nombre del producto"
+                          value={title}
+                          onChangeText={setTitle}
+                          editable={!saving}
+                          maxLength={200}
+                          placeholder="Nombre del producto"
+                          placeholderTextColor={theme.placeholderText}
+                          style={styles.input}
+                        />
+                        <Text style={styles.label}>Descripción</Text>
+                        <TextInput
+                          accessibilityLabel="Descripción del producto"
+                          value={description}
+                          onChangeText={setDescription}
+                          editable={!saving}
+                          multiline
+                          maxLength={5000}
+                          textAlignVertical="top"
+                          placeholder="Describe el producto"
+                          placeholderTextColor={theme.placeholderText}
+                          style={[styles.input, styles.description]}
+                        />
+                        <View style={styles.actions}>
+                          <Pressable
+                            onPress={cancelEdit}
+                            disabled={saving}
+                            accessibilityRole="button"
+                            style={({ pressed }) => [
+                              styles.secondaryButton,
+                              pressed && styles.pressed,
+                              saving && styles.disabled,
+                            ]}
+                          >
+                            <Text style={styles.secondaryText}>Cancelar</Text>
+                          </Pressable>
+                          <Pressable
+                            onPress={() => void submitChange(item)}
+                            disabled={saving || !title.trim()}
+                            accessibilityRole="button"
+                            style={({ pressed }) => [
+                              styles.primaryButton,
+                              pressed && styles.pressed,
+                              (saving || !title.trim()) && styles.disabled,
+                            ]}
+                          >
+                            <Text style={styles.primaryText}>
+                              {saving ? "Enviando…" : "Enviar a revisión"}
+                            </Text>
+                          </Pressable>
+                        </View>
+                      </View>
+                    ) : null}
+                  </View>
+                </View>
+              );
+            })()
+          : null}
+      </BottomSheet>
+      <ConfirmDialog
+        visible={!!removal}
+        tone="warning"
+        title="Retirar variante"
+        message={`Se enviará a revisión la solicitud para retirar «${removal?.variant.title ?? "esta variante"}». Seguirá disponible hasta que AgeStyles apruebe el cambio.`}
+        primary={{ label: "Enviar solicitud", onPress: submitVariantRemoval }}
+        secondary={{ label: "Cancelar", onPress: () => setRemoval(null) }}
+        onClose={() => setRemoval(null)}
+      />
     </OperationList>
   );
 }
 
 const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
   StyleSheet.create({
-    product: { borderBottomWidth: 1, borderBottomColor: theme.border },
-    variants: { paddingHorizontal: 15, paddingBottom: 10 },
+    toolbar: { gap: 12, marginBottom: 14 },
+    count: { color: theme.muted, fontSize: 13 },
+    cards: { gap: 10 },
+    cardRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+    thumb: {
+      width: 64,
+      height: 64,
+      borderRadius: 10,
+      overflow: "hidden",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.background,
+    },
+    cardText: { flex: 1, gap: 4, alignItems: "flex-start" },
+    cardTitle: { color: theme.text, fontSize: 15, fontWeight: "600" },
+    cardDetail: { color: theme.muted, fontSize: 13 },
+    sheet: { gap: 14 },
+    sheetSection: { color: theme.text, fontSize: 17, fontWeight: "700", marginBottom: 4 },
+    sheetError: { color: theme.error, fontSize: 14, lineHeight: 20 },
+    descriptionText: { color: theme.text, fontSize: 15, lineHeight: 22 },
+    product: { gap: 4 },
+    variants: {},
     variant: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.border },
     variantSummary: {
       minHeight: 58,
@@ -658,7 +844,7 @@ const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
     variantActionText: { color: theme.action, fontSize: 13, fontWeight: "600" },
     dangerActionText: { color: theme.error, fontSize: 13, fontWeight: "600" },
     variantEditor: { flex: 1, gap: 9, paddingVertical: 14 },
-    addVariantArea: { paddingHorizontal: 15, paddingBottom: 14 },
+    addVariantArea: { paddingTop: 6 },
     addVariantButton: {
       minHeight: 42,
       justifyContent: "center",
@@ -681,7 +867,7 @@ const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
     optionChipText: { color: theme.text, fontSize: 13 },
     optionChipTextSelected: { color: theme.action, fontWeight: "600" },
     variantHelp: { color: theme.muted, fontSize: 12, lineHeight: 17 },
-    editor: { gap: 9, paddingHorizontal: 15, paddingBottom: 16 },
+    editor: { gap: 9, paddingTop: 6 },
     label: { color: theme.text, fontSize: 13, fontWeight: "600" },
     input: {
       minHeight: 46,
@@ -709,15 +895,7 @@ const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
       paddingHorizontal: 16,
       backgroundColor: theme.action,
     },
-    importButton: {
-      minHeight: 46,
-      justifyContent: "center",
-      alignItems: "center",
-      borderRadius: 12,
-      paddingHorizontal: 16,
-      backgroundColor: theme.action,
-      marginBottom: 12,
-    },
+    importButton: { marginBottom: 14 },
     primaryText: { color: theme.onAction, fontSize: 14, fontWeight: "700" },
     secondaryButton: {
       minHeight: 44,
