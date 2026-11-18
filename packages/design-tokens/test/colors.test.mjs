@@ -28,6 +28,9 @@ for (const [mode, tokenSet] of Object.entries(colors)) {
     [tokenSet.onAction, tokenSet.action],
     [tokenSet.onError, tokenSet.error],
     [tokenSet.onSuccess, tokenSet.success],
+    [tokenSet.success, tokenSet.successSoft],
+    [tokenSet.error, tokenSet.errorSoft],
+    [tokenSet.warning, tokenSet.warningSoft],
   ]) {
     assert.ok(
       contrastRatio(foreground, background) >= 4.5,
@@ -47,6 +50,9 @@ for (const [mode, tokenSet] of Object.entries(colors)) {
     "on-error": tokenSet.onError,
     success: tokenSet.success,
     "on-success": tokenSet.onSuccess,
+    "success-soft": tokenSet.successSoft,
+    "error-soft": tokenSet.errorSoft,
+    "warning-soft": tokenSet.warningSoft,
   })) {
     assert.match(
       css,

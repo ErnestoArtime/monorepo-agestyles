@@ -17,6 +17,9 @@
   --as-color-warning: #a15c00;
   --as-color-success: #287a46;
   --as-color-on-success: #ffffff;
+  --as-color-success-soft: #e7f4ec;
+  --as-color-error-soft: #fdecea;
+  --as-color-warning-soft: #fef3e2;
   --as-font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --as-font-serif: Georgia, "Times New Roman", serif;
   --as-space-xs: 4px;
@@ -51,6 +54,9 @@
   --as-color-warning: #fdb022;
   --as-color-success: #75c99a;
   --as-color-on-success: #10251a;
+  --as-color-success-soft: #1c2e24;
+  --as-color-error-soft: #3a1e1c;
+  --as-color-warning-soft: #3a2e14;
 }
 
 @media (prefers-reduced-motion: reduce) {

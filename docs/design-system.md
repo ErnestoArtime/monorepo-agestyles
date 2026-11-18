@@ -36,3 +36,13 @@ La tienda, la app compradora, la app de negocio y los paneles web comparten una 
 - references/mobile/medusa-pos-starter: organización clara de tareas y controles de operación; su Admin API no se usa con credenciales globales en apps móviles.
 - references/mobile/ecommerce-mobile-template: inspiración de catálogo, producto y presentación visual; no fuente de lógica comercial.
 - Las referencias se adaptan a los contratos y controles de AgeStyles. No se mezclan sus sistemas de identidad, tokens administrativos o bases de datos.
+
+## Componentes compartidos de React Native (`@agestyles/ui-native`, AG-24)
+
+Tienda (`apps/buyer-app`) y Negocio (`apps/business-app`) comparten un paquete de componentes inspirado en la experiencia de [medusa-pos-starter](https://github.com/Agilo/medusa-pos-starter) (MIT), reimplementado con nuestros tokens, iconos y textos en español. Ver [la propuesta](./design/AG-24-ui-ux-pos.md).
+
+- **Tema:** cada app envuelve su raíz con `<UiThemeProvider scheme={…}>` usando el esquema que ya decide (en Tienda, la preferencia «Apariencia» del menú; en Negocio, el del dispositivo). Los componentes solo leen tokens semánticos con `useUiTheme()`.
+- **Componentes:** `LargeTitle`, `SearchField`, `Button` (`primary`, `secondary`, `danger`), `PillGroup`, `Stepper`, `StatusBadge` (`success`, `error`, `warning`, `neutral`), `Card`, `KeyValueRow`, `ProductTile`, `BottomSheet` y `ConfirmDialog`.
+- **Insignias de estado:** usan los tokens `successSoft`, `errorSoft` y `warningSoft`; el test de `design-tokens` exige contraste AA del texto de estado sobre ellos en claro y oscuro.
+- **Accesibilidad:** objetivos táctiles de 44 px como mínimo (botones de 48 px), roles y estados (`radio`/`selected`, `adjustable`, `busy`) y etiquetas en español.
+- No se usa NativeWind/Tailwind: un solo sistema de estilos (`StyleSheet` + tokens).

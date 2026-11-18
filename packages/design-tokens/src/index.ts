@@ -32,6 +32,10 @@ export const colors = {
     warning: palette.warning,
     success: palette.success,
     onSuccess: palette.white,
+    /** Soft backgrounds for status badges; success/error/warning text stays AA on them. */
+    successSoft: "#E7F4EC",
+    errorSoft: "#FDECEA",
+    warningSoft: "#FEF3E2",
   },
   dark: {
     text: "#F4F2EE",
@@ -51,6 +55,9 @@ export const colors = {
     warning: "#FDB022",
     success: "#75C99A",
     onSuccess: "#10251A",
+    successSoft: "#1C2E24",
+    errorSoft: "#3A1E1C",
+    warningSoft: "#3A2E14",
   },
 } as const;
 

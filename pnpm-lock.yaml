@@ -52,6 +52,9 @@ importers:
       '@agestyles/icons':
         specifier: workspace:*
         version: link:../../packages/icons
+      '@agestyles/ui-native':
+        specifier: workspace:*
+        version: link:../../packages/ui-native
       '@medusajs/js-sdk':
         specifier: 2.22.3
         version: 2.22.3
@@ -140,6 +143,9 @@ importers:
       '@agestyles/icons':
         specifier: workspace:*
         version: link:../../packages/icons
+      '@agestyles/ui-native':
+        specifier: workspace:*
+        version: link:../../packages/ui-native
       '@medusajs/js-sdk':
         specifier: 2.22.3
         version: 2.22.3
@@ -406,6 +412,25 @@ importers:
       '@medusajs/framework':
         specifier: 2.22.3
         version: 2.22.3(@medusajs/cli@2.22.3(@types/node@26.6.6))(@types/node@26.6.6)(ioredis@5.11.1)(vite@7.3.8(@types/node@26.6.6)(jiti@1.21.7)(lightningcss@1.33.0)(terser@5.51.2)(yaml@2.9.0))(zod@4.6.6)
+
+  packages/ui-native:
+    dependencies:
+      '@agestyles/design-tokens':
+        specifier: workspace:*
+        version: link:../design-tokens
+      '@agestyles/icons':
+        specifier: workspace:*
+        version: link:../icons
+      react:
+        specifier: 19.1.0
+        version: 19.1.0
+      react-native:
+        specifier: 0.81.5
+        version: 0.81.5(@babel/core@7.29.13)(@types/react@19.1.17)(react@19.1.0)
+    devDependencies:
+      '@types/react':
+        specifier: 19.1.17
+        version: 19.1.17
 
 packages:
 

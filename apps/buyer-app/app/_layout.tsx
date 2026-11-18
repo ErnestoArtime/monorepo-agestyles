@@ -11,6 +11,7 @@ import { CustomerProvider } from "@/context/customer-context";
 import { FavoritesProvider } from "@/context/favorites-context";
 import { RegionProvider } from "@/context/region-context";
 import { ThemePreferenceProvider } from "@/context/theme-preference";
+import { UiThemeProvider } from "@agestyles/ui-native";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export default function RootLayout() {
@@ -41,49 +42,51 @@ function RootNavigation() {
   }, [colorScheme, colors]);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider value={navigationTheme}>
-        <RegionProvider>
-          <CartProvider>
-            <FavoritesProvider>
-              <CustomerProvider>
-                <Stack
-                  screenOptions={{
-                    headerShown: false,
-                    headerStyle: { backgroundColor: colors.cardBackground },
-                    headerTintColor: colors.text,
-                    headerTitleStyle: { color: colors.text },
-                    headerShadowVisible: false,
-                    contentStyle: { backgroundColor: colors.background },
-                  }}
-                >
-                  <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
-                  <Stack.Screen
-                    name="checkout"
-                    options={{
-                      headerShown: true,
-                      title: "Finalizar compra",
-                      presentation: "card",
-                      headerBackButtonDisplayMode: "minimal",
+    <UiThemeProvider scheme={colorScheme === "dark" ? "dark" : "light"}>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <ThemeProvider value={navigationTheme}>
+          <RegionProvider>
+            <CartProvider>
+              <FavoritesProvider>
+                <CustomerProvider>
+                  <Stack
+                    screenOptions={{
+                      headerShown: false,
+                      headerStyle: { backgroundColor: colors.cardBackground },
+                      headerTintColor: colors.text,
+                      headerTitleStyle: { color: colors.text },
+                      headerShadowVisible: false,
+                      contentStyle: { backgroundColor: colors.background },
                     }}
-                  />
-                  <Stack.Screen
-                    name="order-confirmation/[id]"
-                    options={{
-                      headerShown: true,
-                      title: "Compra confirmada",
-                      headerLeft: () => null,
-                      gestureEnabled: false,
-                      headerBackVisible: false,
-                    }}
-                  />
-                </Stack>
-                <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-              </CustomerProvider>
-            </FavoritesProvider>
-          </CartProvider>
-        </RegionProvider>
-      </ThemeProvider>
-    </GestureHandlerRootView>
+                  >
+                    <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
+                    <Stack.Screen
+                      name="checkout"
+                      options={{
+                        headerShown: true,
+                        title: "Finalizar compra",
+                        presentation: "card",
+                        headerBackButtonDisplayMode: "minimal",
+                      }}
+                    />
+                    <Stack.Screen
+                      name="order-confirmation/[id]"
+                      options={{
+                        headerShown: true,
+                        title: "Compra confirmada",
+                        headerLeft: () => null,
+                        gestureEnabled: false,
+                        headerBackVisible: false,
+                      }}
+                    />
+                  </Stack>
+                  <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+                </CustomerProvider>
+              </FavoritesProvider>
+            </CartProvider>
+          </RegionProvider>
+        </ThemeProvider>
+      </GestureHandlerRootView>
+    </UiThemeProvider>
   );
 }
