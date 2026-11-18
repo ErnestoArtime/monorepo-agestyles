@@ -1303,3 +1303,11 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - Categorías compartidas entre menú lateral y barra superior: `hooks/use-top-categories.ts`.
 - Comprobado: `tsc`, eslint y prettier de `apps/buyer-app`; capturas con Playwright a 1440×900 (claro y oscuro) y 412×915 (móvil sin cambios). **Sin publicar**: espera autorización del usuario.
 - Ajuste pedido por el usuario: la fila de categorías bajo la cabecera se sustituyó por un desplegable «Categorías» en la navegación (se cierra al elegir, al pulsar fuera o con Escape). Capturas: abierto y tras elegir «Ferretería» (filtra 16 productos).
+
+## 2026-11-18 — Claude: despliegue de AG-06 fase 4 y Tienda web (autorizado por el usuario: «si publicala»)
+
+- **API:** `ghcr.io/ernestoartime/agestyles-commerce-api@sha256:ca97da39…` (de `b36e373`, publicación `44348124483`, CI `44346233458` verde; `86d839b` solo cambia la Tienda). Copia de `compose.env` en `env-backups-<fecha>/compose.env.before-b36e373`; volcado `db-backups/before-b36e373-*.dump` validado (1541 entradas). `db:migrate` sin migraciones nuevas.
+- **Gateways** de compradores y vendedores recreados con `--force-recreate`. Comprobado: `GET /store/agestyles/sales-agents/ZZZZ9999` 404 con la clave publicable; preflight de `agent-sales/:id/reverse` 204 desde Negocio y 401 sin sesión. Sin errores en los logs de la API.
+- **Tienda:** `entry-2821b215…` en https://tienda.eav-labs.com (cabecera web con desplegable «Categorías», 5 columnas en escritorio, ficha a dos columnas, campo «Código de gestor»). Captura de producción a 1440×900 correcta. Ojo: `infra/compose/buyer-web.yaml` incluye la API del laboratorio; hay que nombrar el servicio (`up -d --build --no-deps buyer-web`), sin nombre no recrea la web.
+- **Negocio:** `entry-a509b8c8…` (código y enlace del gestor, «Ventas de la tienda» con «Anular»).
+- Pendiente: prueba de compra real con código de gestor y pago verificado (AG-11); revisión de codex de la fase 4 y del diseño web de Tienda.
