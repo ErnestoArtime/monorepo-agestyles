@@ -42,8 +42,9 @@ const rules = [
   ["GET", /^\/vendor\/sellers$/],
   ["POST", /^\/vendor\/sellers\/select$/],
   ["GET", /^\/vendor\/members\/me$/],
-  ["POST", /^\/vendor\/products$/],
-  ["GET", /^\/vendor\/(products|orders|inventory-items)$/],
+  // One rule per path: the first path match decides, so GET and POST must share it.
+  ["GET POST", /^\/vendor\/products$/],
+  ["GET", /^\/vendor\/(orders|inventory-items)$/],
   ["GET", /^\/vendor\/orders\/order_[a-z0-9_-]+$/i],
   ["GET", /^\/vendor\/stock-locations$/],
   ["POST", /^\/vendor\/agestyles\/orders\/order_[a-z0-9_-]+\/fulfillments$/i],

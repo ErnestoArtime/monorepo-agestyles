@@ -5,6 +5,15 @@ import { hasPermission, OperationList, Row, Section } from "../../components/ope
 import { useBusiness } from "../../context/business-context";
 import { useBusinessTheme } from "../../hooks/use-business-theme";
 import { orderStatusLabel } from "../../lib/status-labels";
+import {
+  BottomSheet,
+  Button,
+  Card,
+  PillGroup,
+  StatusBadge,
+  type BadgeTone,
+} from "@agestyles/ui-native";
+import type { IconName } from "@agestyles/icons";
 
 type Order = {
   id: string;
@@ -37,13 +46,49 @@ type OrderDetails = Order & {
 
 type StockLocation = { id: string; name: string };
 
-function progressLabel(order: Order) {
+type Stage = "pending" | "preparing" | "ready" | "dispatched" | "delivered" | "other";
+
+/** Stage, Spanish label, badge tone and icon of an order (AG-04 lifecycle). */
+function progressView(order: Order): {
+  stage: Stage;
+  label: string;
+  tone: BadgeTone;
+  icon: IconName;
+} {
   const active = (order.fulfillments ?? []).filter((fulfillment) => !fulfillment.canceled_at);
-  if (active.some((fulfillment) => fulfillment.delivered_at)) return "Entregado";
-  if (active.some((fulfillment) => fulfillment.shipped_at)) return "Despachado";
-  if (active.some((fulfillment) => fulfillment.packed_at)) return "Listo para envío";
-  if (active.length) return "En preparación";
-  return orderStatusLabel(order.fulfillment_status ?? order.status);
+  if (active.some((fulfillment) => fulfillment.delivered_at))
+    return { stage: "delivered", label: "Entregado", tone: "success", icon: "check" };
+  if (active.some((fulfillment) => fulfillment.shipped_at))
+    return { stage: "dispatched", label: "Despachado", tone: "neutral", icon: "truck" };
+  if (active.some((fulfillment) => fulfillment.packed_at))
+    return { stage: "ready", label: "Listo para envío", tone: "neutral", icon: "package" };
+  if (active.length)
+    return { stage: "preparing", label: "En preparación", tone: "warning", icon: "package" };
+  if (order.status === "canceled")
+    return { stage: "other", label: "Cancelado", tone: "error", icon: "close" };
+  return {
+    stage: "pending",
+    label: orderStatusLabel(order.fulfillment_status ?? order.status),
+    tone: "warning",
+    icon: "alert",
+  };
+}
+
+const STAGE_FILTERS: { value: Stage | "all"; label: string }[] = [
+  { value: "all", label: "Todos" },
+  { value: "pending", label: "Pendientes" },
+  { value: "preparing", label: "En preparación" },
+  { value: "ready", label: "Listos" },
+  { value: "dispatched", label: "Despachados" },
+  { value: "delivered", label: "Entregados" },
+];
+
+function money(amount: number | undefined, currency: string | undefined) {
+  if (amount == null) return "";
+  return new Intl.NumberFormat("es-ES", {
+    style: "currency",
+    currency: (currency ?? "usd").toUpperCase(),
+  }).format(amount);
 }
 
 function remainingItems(order: OrderDetails) {
@@ -81,6 +126,7 @@ export default function OrdersScreen() {
   const [locations, setLocations] = useState<StockLocation[]>([]);
   const [locationId, setLocationId] = useState("");
   const canFulfill = hasPermission(member, "orders", "edit");
+  const [stageFilter, setStageFilter] = useState<Stage | "all">("all");
 
   const load = useCallback(async () => {
     if (!seller) return;
@@ -216,119 +262,138 @@ export default function OrdersScreen() {
         </Text>
       ) : null}
       {items.length ? (
-        <Section title={`${items.length} pedidos`}>
-          {items.map((item) => (
-            <Row
-              key={item.id}
-              title={`Pedido ${item.display_id ?? item.id.slice(-6)}`}
-              detail={`${progressLabel(item)} · ${
-                item.created_at ? new Date(item.created_at).toLocaleDateString("es-ES") : ""
-              }`}
-              trailing={
-                item.total != null
-                  ? `${item.currency_code?.toUpperCase() ?? ""} ${item.total}`
-                  : undefined
-              }
-              action={() => void openOrder(item)}
-              disabled={detailLoading}
-            />
-          ))}
-        </Section>
+        <View style={styles.filters}>
+          <PillGroup
+            accessibilityLabel="Filtrar por estado"
+            value={stageFilter}
+            onChange={setStageFilter}
+            options={STAGE_FILTERS}
+          />
+        </View>
+      ) : null}
+      {items.length ? (
+        <View style={styles.cards}>
+          {items
+            .filter((item) => stageFilter === "all" || progressView(item).stage === stageFilter)
+            .map((item) => {
+              const view = progressView(item);
+              return (
+                <Card
+                  key={item.id}
+                  onPress={detailLoading ? undefined : () => void openOrder(item)}
+                  accessibilityLabel={`Pedido ${item.display_id ?? item.id.slice(-6)}, ${view.label}`}
+                >
+                  <View style={styles.cardLine}>
+                    <Text style={styles.cardTitle}>
+                      Pedido #{item.display_id ?? item.id.slice(-6)}
+                    </Text>
+                    <Text style={styles.cardDate}>
+                      {item.created_at
+                        ? new Intl.DateTimeFormat("es-ES", { dateStyle: "medium" }).format(
+                            new Date(item.created_at),
+                          )
+                        : ""}
+                    </Text>
+                  </View>
+                  <View style={styles.cardLine}>
+                    <Text style={styles.cardTotal}>{money(item.total, item.currency_code)}</Text>
+                    <StatusBadge label={view.label} tone={view.tone} icon={view.icon} />
+                  </View>
+                </Card>
+              );
+            })}
+        </View>
       ) : null}
       {detailLoading ? <Text style={styles.muted}>Cargando el detalle del pedido…</Text> : null}
-      {selectedOrder ? (
-        <Section
-          title={`Detalle · Pedido ${selectedOrder.display_id ?? selectedOrder.id.slice(-6)}`}
-        >
-          {outstanding.length ? (
-            outstanding.map((item) => (
-              <Row
-                key={item.id}
-                title={item.title ?? "Artículo"}
-                detail={
-                  item.variant_title
-                    ? `${item.variant_title} · ${item.remaining} por preparar`
-                    : `${item.remaining} por preparar`
-                }
-              />
-            ))
-          ) : (
-            <Text style={styles.muted}>
-              Todos los artículos de este pedido ya tienen preparación registrada.
-            </Text>
-          )}
-          {canFulfill && outstanding.length && !activeFulfillment ? (
-            <View style={styles.fulfillmentPanel}>
-              <Text style={styles.panelTitle}>Ubicación de preparación</Text>
-              {locations.length ? (
-                locations.map((location) => (
-                  <Pressable
-                    key={location.id}
-                    onPress={() => setLocationId(location.id)}
-                    accessibilityRole="radio"
-                    accessibilityState={{ checked: locationId === location.id }}
-                    accessibilityLabel={location.name}
-                    style={[
-                      styles.locationChoice,
-                      locationId === location.id && styles.locationSelected,
-                    ]}
-                  >
-                    <Icon
-                      name={locationId === location.id ? "check" : "warehouse"}
-                      size={19}
-                      color={locationId === location.id ? theme.action : theme.muted}
-                    />
-                    <Text style={styles.locationText}>{location.name}</Text>
-                  </Pressable>
-                ))
-              ) : (
-                <Text style={styles.muted}>Esta tienda no tiene almacenes habilitados.</Text>
-              )}
-              <Pressable
-                onPress={() => void prepareOrder()}
-                disabled={!locationId || fulfilling || !locations.length}
-                accessibilityRole="button"
-                style={[
-                  styles.primaryButton,
-                  (!locationId || fulfilling || !locations.length) && styles.disabledButton,
-                ]}
-              >
-                <Text style={styles.primaryButtonText}>
-                  {fulfilling ? "Iniciando…" : "Iniciar preparación"}
-                </Text>
-              </Pressable>
-            </View>
-          ) : null}
-          {canFulfill && activeFulfillment && nextAction ? (
-            <View style={styles.fulfillmentPanel}>
-              <Text style={styles.panelTitle}>
-                Etapa actual:{" "}
-                {activeFulfillment.shipped_at
-                  ? "Despachado"
-                  : activeFulfillment.packed_at
-                    ? "Listo para envío"
-                    : "En preparación"}
+      <BottomSheet
+        visible={!!selectedOrder}
+        onClose={() => setSelectedOrder(null)}
+        title={
+          selectedOrder
+            ? `Pedido #${selectedOrder.display_id ?? selectedOrder.id.slice(-6)}`
+            : undefined
+        }
+      >
+        {selectedOrder ? (
+          <Section title="Artículos por preparar">
+            {outstanding.length ? (
+              outstanding.map((item) => (
+                <Row
+                  key={item.id}
+                  title={item.title ?? "Artículo"}
+                  detail={
+                    item.variant_title
+                      ? `${item.variant_title} · ${item.remaining} por preparar`
+                      : `${item.remaining} por preparar`
+                  }
+                />
+              ))
+            ) : (
+              <Text style={styles.muted}>
+                Todos los artículos de este pedido ya tienen preparación registrada.
               </Text>
-              <Pressable
-                onPress={() => void advanceOrder(nextAction)}
-                disabled={fulfilling}
-                accessibilityRole="button"
-                style={[styles.primaryButton, fulfilling && styles.disabledButton]}
-              >
-                <Text style={styles.primaryButtonText}>
-                  {fulfilling
-                    ? "Actualizando…"
-                    : nextAction === "ready"
+            )}
+            {canFulfill && outstanding.length && !activeFulfillment ? (
+              <View style={styles.fulfillmentPanel}>
+                <Text style={styles.panelTitle}>Ubicación de preparación</Text>
+                {locations.length ? (
+                  locations.map((location) => (
+                    <Pressable
+                      key={location.id}
+                      onPress={() => setLocationId(location.id)}
+                      accessibilityRole="radio"
+                      accessibilityState={{ checked: locationId === location.id }}
+                      accessibilityLabel={location.name}
+                      style={[
+                        styles.locationChoice,
+                        locationId === location.id && styles.locationSelected,
+                      ]}
+                    >
+                      <Icon
+                        name={locationId === location.id ? "check" : "warehouse"}
+                        size={19}
+                        color={locationId === location.id ? theme.action : theme.muted}
+                      />
+                      <Text style={styles.locationText}>{location.name}</Text>
+                    </Pressable>
+                  ))
+                ) : (
+                  <Text style={styles.muted}>Esta tienda no tiene almacenes habilitados.</Text>
+                )}
+                <Button
+                  title="Iniciar preparación"
+                  onPress={() => void prepareOrder()}
+                  loading={fulfilling}
+                  disabled={!locationId || !locations.length}
+                />
+              </View>
+            ) : null}
+            {canFulfill && activeFulfillment && nextAction ? (
+              <View style={styles.fulfillmentPanel}>
+                <Text style={styles.panelTitle}>
+                  Etapa actual:{" "}
+                  {activeFulfillment.shipped_at
+                    ? "Despachado"
+                    : activeFulfillment.packed_at
+                      ? "Listo para envío"
+                      : "En preparación"}
+                </Text>
+                <Button
+                  title={
+                    nextAction === "ready"
                       ? "Marcar como listo"
                       : nextAction === "dispatch"
                         ? "Marcar como despachado"
-                        : "Confirmar entrega"}
-                </Text>
-              </Pressable>
-            </View>
-          ) : null}
-        </Section>
-      ) : null}
+                        : "Confirmar entrega"
+                  }
+                  onPress={() => void advanceOrder(nextAction)}
+                  loading={fulfilling}
+                />
+              </View>
+            ) : null}
+          </Section>
+        ) : null}
+      </BottomSheet>
     </OperationList>
   );
 }
@@ -356,16 +421,16 @@ const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
     },
     locationSelected: { borderColor: theme.action, backgroundColor: theme.selectedSurface },
     locationText: { color: theme.text, fontSize: 14, flex: 1 },
-    primaryButton: {
-      minHeight: 50,
-      borderRadius: 13,
-      backgroundColor: theme.action,
-      alignItems: "center",
-      justifyContent: "center",
-      marginTop: 3,
-      paddingHorizontal: 16,
-    },
-    disabledButton: { opacity: 0.5 },
-    primaryButtonText: { color: theme.onAction, fontSize: 14, fontWeight: "600" },
     notice: { color: theme.successText, fontSize: 14, lineHeight: 20, marginBottom: 12 },
+    filters: { marginBottom: 12 },
+    cards: { gap: 12 },
+    cardLine: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 12,
+    },
+    cardTitle: { color: theme.text, fontSize: 17, fontWeight: "600" },
+    cardDate: { color: theme.muted, fontSize: 13 },
+    cardTotal: { color: theme.text, fontSize: 15, fontWeight: "600" },
   });

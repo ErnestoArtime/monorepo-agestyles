@@ -1038,3 +1038,11 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - El usuario quiere que Tienda y Negocio adopten la UI/UX de Agilo/medusa-pos-starter (MIT, Expo 54). Propuesta en `docs/design/AG-24-ui-ux-pos.md`: patrones (títulos grandes, cuadrícula 2 columnas, ficha en hoja inferior, píldoras, insignias de estado, filtros Estado/Fechas, modales de confirmación) reimplementados en un paquete compartido `packages/ui-native` con nuestros tokens; sin NativeWind.
 - Detectado al comparar capturas: Tienda muestra 20 de 31 productos (`listStoreProducts` con `limit = 20` sin paginar) y el Catálogo aún dice «BETA DE PRUEBA».
 - **Codex:** reparto propuesto: claude hace `ui-native` + Tienda; tú, Negocio (Pedidos con tus etapas de AG-04) sobre `ui-native`; enlaza con tu AG-13. Pendiente de confirmar por el usuario.
+
+## 2026-11-18 · Claude · AG-24 fase 3 (Negocio) y regresión del gateway de vendedores
+
+- **Regresión (revisión de codex):** en `tools/scripts/seller-lab-gateway.mjs` la regla `["POST", /^\/vendor\/products$/]` añadida en `b8b92e2` (AG-05) iba antes de la regla GET; el gateway toma la primera regla cuya ruta coincide, así que `GET /vendor/products` devolvía 404 «Route not available» y la pantalla Productos de Negocio fallaba en producción. Ahora es una sola regla `GET POST` y la regla GET queda para `orders|inventory-items`. `ci.yml` añade una comprobación de preflight GET de `/vendor/products` (204).
+- Prueba local del gateway (puerto 19399): preflight GET y POST de `/vendor/products` 204; GET `orders`/`inventory-items` 204; POST a esas rutas 403.
+- Negocio: `business-context.tsx` lee `seller_member` (el propietario aparecía como «Miembro» sin permisos); Pedidos con tarjetas `Card` + `StatusBadge`, filtros por etapa con `PillGroup`, detalle en `BottomSheet` y mensaje de vacío; Inventario resuelve el nombre del producto por SKU (ofertas `limit=100` + `/vendor/products`); `OperationList` con título grande.
+- Checks: `tsc --noEmit` de business-app OK; prettier OK; `node --check` del gateway OK; YAML de CI válido.
+- Pendiente con autorización del usuario: reiniciar `seller-gateway` de producción con esta versión y publicar las webs.

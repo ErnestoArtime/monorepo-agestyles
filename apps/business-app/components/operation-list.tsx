@@ -122,11 +122,13 @@ const createStyles = (theme: BusinessTheme) =>
   StyleSheet.create({
     page: { flex: 1, backgroundColor: theme.background },
     content: { padding: 20, paddingBottom: 42 },
+    // Same weight as ui-native LargeTitle so Tienda and Negocio read as one product (AG-24).
     title: {
       color: theme.text,
-      fontWeight: "600",
-      fontSize: 29,
-      letterSpacing: -0.7,
+      fontWeight: "700",
+      fontSize: 32,
+      lineHeight: 38,
+      letterSpacing: -0.5,
       marginTop: 14,
     },
     subtitle: {
@@ -152,7 +154,7 @@ const createStyles = (theme: BusinessTheme) =>
     error: { color: theme.error, flex: 1, fontSize: 14, lineHeight: 20 },
     empty: { color: theme.muted, fontSize: 14, lineHeight: 20 },
     section: { marginTop: 19 },
-    sectionTitle: { color: theme.text, fontWeight: "600", fontSize: 17, marginBottom: 10 },
+    sectionTitle: { color: theme.text, fontWeight: "700", fontSize: 18, marginBottom: 10 },
     sectionBody: {
       backgroundColor: theme.surface,
       borderColor: theme.border,

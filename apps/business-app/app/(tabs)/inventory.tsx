@@ -31,6 +31,8 @@ export default function InventoryScreen() {
   const router = useRouter();
   const { request, seller, member } = useBusiness();
   const [items, setItems] = useState<InventoryItem[]>([]);
+  // Offer inventory items carry the variant name («Default»); show the product instead.
+  const [names, setNames] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState("");
@@ -50,6 +52,36 @@ export default function InventoryScreen() {
         "/vendor/inventory-items?limit=50&fields=id,title,sku,location_levels.id,location_levels.location_id,location_levels.stocked_quantity,location_levels.location.name",
       );
       setItems(data?.inventory_items ?? []);
+      try {
+        const { regions } = await request<{ regions: { id: string }[] }>("/store/regions");
+        const [offerData, productData] = await Promise.all([
+          request<{
+            offers: { sku?: string; product_id: string; product_variant?: { title?: string } }[];
+          }>(`/store/offers?limit=100&region_id=${regions[0]?.id ?? ""}&seller_id=${seller.id}`),
+          request<{ products: { id: string; title?: string }[] }>(
+            "/vendor/products?limit=100&fields=id,title",
+          ),
+        ]);
+        const productTitles = new Map(
+          (productData.products ?? []).map((product) => [product.id, product.title ?? ""]),
+        );
+        setNames(
+          new Map(
+            offerData.offers
+              .filter((offer) => offer.sku)
+              .map((offer) => {
+                const product = productTitles.get(offer.product_id) || "";
+                const variant = offer.product_variant?.title;
+                return [
+                  offer.sku as string,
+                  variant && variant !== "Default" && product ? `${product} · ${variant}` : product,
+                ];
+              }),
+          ),
+        );
+      } catch {
+        // Names are a convenience; the inventory still lists SKUs.
+      }
     } catch {
       setError("No se pudo consultar el inventario de esta tienda.");
     } finally {
@@ -156,7 +188,9 @@ export default function InventoryScreen() {
                 <View key={key} style={styles.itemBlock}>
                   <View style={styles.itemRow}>
                     <View style={styles.itemDetails}>
-                      <Text style={styles.itemTitle}>{item.title ?? item.sku ?? "Artículo"}</Text>
+                      <Text style={styles.itemTitle}>
+                        {(item.sku && names.get(item.sku)) || item.title || item.sku || "Artículo"}
+                      </Text>
                       <Text style={styles.itemSub}>
                         {item.sku ? `SKU ${item.sku}` : "Sin SKU"}
                         {level.location?.name

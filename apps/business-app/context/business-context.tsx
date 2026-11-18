@@ -115,7 +115,8 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
         },
       );
       const data = result?.data ?? result;
-      setMember(data?.member ?? data);
+      // Mercur returns { seller_member: {...} }; older shapes are still accepted.
+      setMember(data?.seller_member ?? data?.member ?? data);
     } catch (cause) {
       setSeller(null);
       setMember(null);
