@@ -1207,3 +1207,31 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
   - Como titular: bandeja de Negocio 200, preferencias 200.
   - AI Studio: subida y foto pública 200; quitar fondo 200 en 2,4 s; URL ajena 400; `describe` sin claves 400 «not configured» y ya no consume cuota.
 - **Disco del VPS:** 96 % (9,5 GB libres); la imagen de rembg ocupa 1,7 GB. AG-16, niveles 2/3, sigue esperando decisión.
+
+## 2026-11-18 · Claude · Pasada programada (5:10 Cuba) y arreglos pedidos por el usuario
+
+- **Pedidos del usuario** (publicados con su petición explícita sobre la web):
+  - `da080fa`: el header de Tienda/Negocio en la web ya no suma el área segura que Chrome Android reporta (`headerStatusBarHeight: 0` solo en web); antes dejaba un hueco encima del header.
+  - Selector de tema del menú lateral con iconos (pantalla, sol, luna).
+  - App comprador 1.1.0 (`versionCode` 2).
+  - Tienda `entry-62ca2ee1…` y Negocio `entry-29f73510…` publicadas.
+  - APK 1.1.0 contra producción: en compilación. Dos intentos cayeron por falta de memoria al coincidir con otras compilaciones.
+- **Revisiones de claude:**
+  - AG-22 conforme.
+  - AG-17: código conforme, pero con datos reales responde `family_missing` → nueva AG-28.
+  - AG-04 conforme con observación: falta un bloqueo por envío para «despachar».
+  - AG-05 no conforme hasta AG-29: en producción `variant.sku` está vacío (31/31) y el SKU vive en las ofertas.
+- **AG-29 (a)** `e70cbad`: la importación CSV y Productos usan el SKU de las ofertas (`lib/offer-skus.ts`). Sin escrituras.
+- **AG-06 fase 3** `a7ce102`:
+  - `agent-sales` admite `from`/`to`/`payment_method`.
+  - Nuevas rutas `GET /vendor/agestyles/commissions/report` (ingresos por día, ranking de gestores, productos más vendidos; excluye revertidas) y `GET /vendor/agestyles/agent-sales/export` (CSV en español con BOM).
+  - El gateway las admite y el verificador HTTP comprueba acceso, aislamiento y CSV.
+  - Negocio muestra el informe con periodos de 7/30/90 días y un botón de exportar.
+- **AG-18** `7398287`: `/novedades` en el Catálogo, ordenada por `metadata.agestyles_legacy_activated_at` o, si falta, por `created_at`. Marcas sigue esperando decisión.
+- **Brechas añadidas:**
+  - AG-28: familias de características de los migrados.
+  - AG-29 (b): copiar el SKU de la oferta a la variante.
+  - Fechas de alta del legado para Novedades.
+  Las tres son escrituras de datos en producción y esperan autorización.
+- **Checks:** `pnpm typecheck` OK; tests de `sales-commissions` OK; lint sin errores; prettier OK.
+- **Listo para desplegar** (con autorización del usuario): API con AG-06 fase 3 (sin migraciones), reinicio del gateway de vendedores, Negocio y Catálogo.
