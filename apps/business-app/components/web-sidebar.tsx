@@ -170,7 +170,7 @@ export function WebSidebar() {
       </ScrollView>
       <View style={styles.bottom}>
         <Pressable
-          onPress={() => router.push("/(buyer)" as Href)}
+          onPress={() => router.push("/tienda" as Href)}
           accessibilityRole="link"
           style={styles.item}
         >

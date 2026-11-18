@@ -11,7 +11,7 @@ import { useThemePreference, type ThemePreference } from "../context/theme-prefe
 import { useColorScheme } from "../hooks/use-color-scheme";
 import { CONTENT_MAX } from "../hooks/use-responsive";
 import { useTopCategories } from "../hooks/use-top-categories";
-import { buyerHref, buyerPath, buyerPathname } from "../config";
+import { buyerExit, buyerHref, buyerPath, buyerPathname } from "../config";
 
 const HOME = "/(drawer)/(tabs)/(home)";
 
@@ -32,6 +32,7 @@ export function WebTopBar() {
   const colors = Colors[useColorScheme() ?? "light"];
   const styles = useMemo(() => createStyles(colors), [colors]);
   const router = useRouter();
+  const exit = buyerExit();
   // Pathname as Tienda sees it, also when the store is mounted inside Negocio.
   const pathname = buyerPathname(usePathname());
   const { cart } = useCart();
@@ -177,6 +178,10 @@ export function WebTopBar() {
             {link("Tiendas", buyerHref("/stores"), pathname.startsWith("/stores"))}
           </View>
           <View style={styles.actions}>
+            {exit
+              ? // Inside Negocio (AG-31): back to the managed store, keeping both sessions.
+                action(exit.label, "store", () => router.replace(exit.href), { text: exit.label })
+              : null}
             {action(theme.label, theme.icon, () => setPreference(theme.next))}
             <NotificationHeaderBell />
             {action("Favoritos", "heart", () =>

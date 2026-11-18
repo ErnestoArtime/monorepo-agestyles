@@ -41,7 +41,7 @@ services:
       GATEWAY_PREFIX: ""
       GATEWAY_PORT: "19186"
       UPSTREAM_PORT: "19085"
-      ALLOWED_ORIGINS: https://tienda.eav-labs.com,https://catalogo.eav-labs.com
+      ALLOWED_ORIGINS: https://tienda.eav-labs.com,https://catalogo.eav-labs.com,https://negocio.eav-labs.com
     volumes:
       - ../../tools/scripts/buyer-lab-gateway.mjs:/app/buyer-gateway.mjs:ro
     depends_on:

@@ -10,7 +10,7 @@ import { useThemePreference, type ThemePreference } from "../context/theme-prefe
 import { useColorScheme } from "../hooks/use-color-scheme";
 import { useTopCategories } from "../hooks/use-top-categories";
 import { RegionSelector } from "./region-selector";
-import { buyerHref, buyerPath } from "../config";
+import { buyerExit, buyerHref, buyerPath } from "../config";
 
 const HOME = "/(drawer)/(tabs)/(home)";
 
@@ -19,6 +19,7 @@ export function DrawerContent(props: DrawerContentComponentProps) {
   const colors = Colors[useColorScheme() ?? "light"];
   const styles = useMemo(() => createStyles(colors), [colors]);
   const router = useRouter();
+  const exit = buyerExit();
   const { customer } = useCustomer();
   const { preference, setPreference } = useThemePreference();
   const hasCountryChoice = useHasCountryChoice();
@@ -53,6 +54,20 @@ export function DrawerContent(props: DrawerContentComponentProps) {
         <Text style={styles.title} accessibilityRole="header">
           Menú principal
         </Text>
+
+        {exit ? (
+          // Inside Negocio (AG-31): back to the managed store, keeping both sessions.
+          <View style={styles.section}>
+            {item(
+              exit.label,
+              () => {
+                props.navigation.closeDrawer();
+                router.replace(exit.href);
+              },
+              "store",
+            )}
+          </View>
+        ) : null}
 
         <View style={styles.section} accessibilityLabel="Páginas del sitio">
           {item("Inicio", () => go(buyerHref(HOME)), "home")}

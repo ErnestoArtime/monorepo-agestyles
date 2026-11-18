@@ -77,7 +77,7 @@ export default function MoreScreen() {
         <Row
           title="Comprar"
           detail="Explora la tienda como cliente sin cerrar tu sesión de negocio."
-          action={() => router.push("/(buyer)")}
+          action={() => router.push("/tienda")}
         />
       </Section>
       {sellers.length > 1 ? (

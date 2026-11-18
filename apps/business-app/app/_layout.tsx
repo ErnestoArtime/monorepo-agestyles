@@ -24,7 +24,10 @@ function Shell() {
       }}
     />
   );
-  const sidebar = isWideWeb && !!seller && !AUTH_PATHS.some((path) => pathname.startsWith(path));
+  // The shared Tienda (/tienda) brings its own navigation and a «Mi negocio» way back.
+  const inStore = pathname === "/tienda" || pathname.startsWith("/tienda/");
+  const sidebar =
+    isWideWeb && !!seller && !inStore && !AUTH_PATHS.some((path) => pathname.startsWith(path));
   // The same tree with or without the menu, so the navigator is never remounted.
   return (
     <View style={{ flex: 1, flexDirection: "row", backgroundColor: theme.background }}>
