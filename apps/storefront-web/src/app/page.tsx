@@ -50,7 +50,7 @@ export default async function StorefrontHome({
           <a href="#catalogo" className="active">
             Catálogo
           </a>
-          <a href="#novedades">Novedades</a>
+          <Link href="/novedades">Novedades</Link>
           <a href="#tiendas">Tiendas</a>
         </nav>
         <div className="header-actions">
