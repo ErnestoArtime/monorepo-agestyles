@@ -23,7 +23,9 @@ export function AndroidAppLink() {
         <Icon name="phone" size={20} color={theme.text} />
         <View style={styles.messageText}>
           <Text style={[styles.label, { color: theme.text }]}>Lleva AgeStyles contigo</Text>
-          <Text style={[styles.caption, { color: theme.icon }]}>APK de prueba para Android</Text>
+          <Text style={[styles.caption, { color: theme.icon }]}>
+            Versión 1.1.0 · Android 7.0 o superior
+          </Text>
         </View>
       </View>
       <Pressable
