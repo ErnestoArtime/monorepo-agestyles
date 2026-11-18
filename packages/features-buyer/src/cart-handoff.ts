@@ -27,3 +27,36 @@ export function withoutHandoffParam(href: string): string {
   const query = url.searchParams.toString();
   return `${url.pathname}${query ? `?${query}` : ""}${url.hash}`;
 }
+
+export type HandoffLine = { offer_id: string; quantity: number };
+
+type HandoffCartLike = {
+  completed_at?: string | Date | null;
+  items?:
+    | {
+        quantity?: number | string | null;
+        metadata?: Record<string, unknown> | null;
+      }[]
+    | null;
+};
+
+/**
+ * Lines Tienda copies from a cart handed over by the Catálogo. Tienda never takes over the
+ * cart id from the link: whoever wrote the link would know it, and Medusa returns a cart
+ * (with the email and addresses filled in at checkout) to anyone holding its id. Copying the
+ * lines into Tienda's own cart also keeps whatever was already in it. Mercur stores the offer
+ * of each line in `metadata.offer_id`; lines of the same offer are added up. A cart already
+ * paid gives nothing.
+ */
+export function handoffLines(cart: HandoffCartLike | null | undefined): HandoffLine[] {
+  if (!cart || cart.completed_at) return [];
+  const byOffer = new Map<string, number>();
+  for (const item of cart.items ?? []) {
+    const offerId = item.metadata?.offer_id;
+    const quantity = Number(item.quantity);
+    if (typeof offerId !== "string" || !offerId.trim()) continue;
+    if (!Number.isSafeInteger(quantity) || quantity < 1) continue;
+    byOffer.set(offerId, (byOffer.get(offerId) ?? 0) + quantity);
+  }
+  return [...byOffer].map(([offer_id, quantity]) => ({ offer_id, quantity }));
+}

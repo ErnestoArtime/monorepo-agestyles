@@ -21,6 +21,7 @@ export function CartDrawer() {
     closeDrawer,
     setQuantity,
     removeItem,
+    handOff,
   } = useCart();
   const panel = useRef<HTMLElement>(null);
   useModal(drawerOpen, closeDrawer, panel);
@@ -145,7 +146,7 @@ export function CartDrawer() {
               El envío y el pago se completan en la app de compra, con el carrito que ya armaste.
             </p>
             {checkoutUrl ? (
-              <a className="btn btn-primary" href={checkoutUrl}>
+              <a className="btn btn-primary" href={checkoutUrl} onClick={handOff}>
                 Ir a pagar <Icon name="arrowRight" size={14} />
               </a>
             ) : null}

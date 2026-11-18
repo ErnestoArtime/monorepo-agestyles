@@ -39,3 +39,32 @@ test("drops only the handoff parameter from the address", () => {
   );
   assert.equal(withoutHandoffParam("/account?x=1"), "/account?x=1");
 });
+
+test("copies the handed-over lines by offer instead of adopting the cart", async () => {
+  const { handoffLines } = await import("../src/cart-handoff.ts");
+  assert.deepEqual(
+    handoffLines({
+      items: [
+        { quantity: 2, metadata: { offer_id: "offer_1" } },
+        { quantity: "1", metadata: { offer_id: "offer_2" } },
+        { quantity: 1, metadata: { offer_id: "offer_1" } },
+        { quantity: 1, metadata: {} },
+        { quantity: 0, metadata: { offer_id: "offer_3" } },
+        { quantity: 1, metadata: null },
+      ],
+    }),
+    [
+      { offer_id: "offer_1", quantity: 3 },
+      { offer_id: "offer_2", quantity: 1 },
+    ],
+  );
+  assert.deepEqual(
+    handoffLines({
+      completed_at: "2026-11-18T10:00:00Z",
+      items: [{ quantity: 1, metadata: { offer_id: "offer_1" } }],
+    }),
+    [],
+    "a cart already paid is not copied",
+  );
+  assert.deepEqual(handoffLines(null), []);
+});

@@ -34,6 +34,8 @@ type CartContextValue = {
   setQuantity: (itemId: string, quantity: number) => Promise<void>;
   removeItem: (itemId: string) => Promise<void>;
   clearError: () => void;
+  /** «Ir a pagar»: the lines move to Tienda, so this browser forgets its Catálogo cart. */
+  handOff: () => void;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -187,6 +189,12 @@ export function CartProvider({
       setQuantity,
       removeItem,
       clearError: () => setError(null),
+      handOff: () => {
+        // Tienda copies the lines into its own cart; keeping this one would show them twice.
+        void browserStorage.removeItem(STORAGE_KEY);
+        setCart(null);
+        setDrawerOpen(false);
+      },
     }),
     [
       addOffer,

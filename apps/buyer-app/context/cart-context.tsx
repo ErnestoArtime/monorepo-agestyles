@@ -1,5 +1,9 @@
 import { createBuyerCartFeature } from "@agestyles/features-buyer/cart";
-import { parseHandoffCartId, withoutHandoffParam } from "@agestyles/features-buyer/cart-handoff";
+import {
+  handoffLines,
+  parseHandoffCartId,
+  withoutHandoffParam,
+} from "@agestyles/features-buyer/cart-handoff";
 import { sdk } from "@/lib/sdk";
 import type { HttpTypes } from "@medusajs/types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -29,15 +33,18 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 const CART_STORAGE_KEY = "cart_id";
+/** Cart handed over by the Catálogo whose lines are still to be copied into this device's cart. */
+const HANDOFF_STORAGE_KEY = "cart_handoff_source";
 const cartFeature = createBuyerCartFeature(sdk.client, AsyncStorage, CART_STORAGE_KEY);
 
 let handoff: Promise<void> | null = null;
 let handoffArrived = false;
 
 /**
- * A cart built in the public Catálogo arrives as `?cart=cart_…` and becomes this device's cart. The
- * parameter is removed first, so a reload (or a failure) never adopts it twice; an id that no longer
- * exists is dropped by `loadOrCreate`, which then starts a fresh cart.
+ * A cart built in the public Catálogo arrives as `?cart=cart_…`. Its lines are copied into this
+ * device's own cart (see `handoffLines`); the id from the link is never used as Tienda's cart,
+ * because whoever wrote the link would know it and Medusa returns a cart to anyone holding its id.
+ * The parameter is removed first, so a reload never copies the lines twice.
  */
 function adoptHandoffCart(): Promise<void> {
   if (Platform.OS !== "web" || typeof window === "undefined") return Promise.resolve();
@@ -49,7 +56,7 @@ function adoptHandoffCart(): Promise<void> {
       "",
       withoutHandoffParam(window.location.href),
     );
-    await AsyncStorage.setItem(CART_STORAGE_KEY, cartId);
+    await AsyncStorage.setItem(HANDOFF_STORAGE_KEY, cartId);
     handoffArrived = true;
   })();
   return handoff;
@@ -79,7 +86,36 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setError(null);
 
       await adoptHandoffCart();
-      const currentCart = await cartFeature.loadOrCreate(selectedRegion.id);
+      let currentCart = await cartFeature.loadOrCreate(selectedRegion.id);
+      const sourceId = await AsyncStorage.getItem(HANDOFF_STORAGE_KEY);
+      if (sourceId) {
+        // Forget it first: a failure must not copy the same lines again on the next load.
+        await AsyncStorage.removeItem(HANDOFF_STORAGE_KEY);
+        if (sourceId !== currentCart.id) {
+          let failed = 0;
+          try {
+            const source = await cartFeature.refresh(sourceId);
+            for (const line of handoffLines(source)) {
+              try {
+                currentCart = await cartFeature.addOffer(
+                  currentCart.id,
+                  line.offer_id,
+                  line.quantity,
+                );
+              } catch {
+                failed += 1;
+              }
+            }
+          } catch {
+            failed += 1;
+          }
+          if (failed) {
+            setError(
+              "Algunos productos que elegiste en el Catálogo ya no están disponibles y no se añadieron.",
+            );
+          }
+        }
+      }
       setCart(currentCart);
       return currentCart;
     } catch {
