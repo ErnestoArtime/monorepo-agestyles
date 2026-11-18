@@ -43,7 +43,7 @@ export default function AgentSaleScreen() {
       const { regions } = await request<{ regions: { id: string }[] }>("/store/regions");
       const [offerData, productData, locationData] = await Promise.all([
         request<{ offers: StoreOffer[] }>(
-          `/store/offers?limit=100&region_id=${regions[0]?.id ?? ""}&fields=%2Bcalculated_price`,
+          `/store/offers?limit=100&region_id=${regions[0]?.id ?? ""}&seller_id=${seller.id}&fields=%2Bcalculated_price`,
         ),
         request<{ products: { id: string; title?: string }[] }>(
           "/vendor/products?limit=100&fields=id,title",

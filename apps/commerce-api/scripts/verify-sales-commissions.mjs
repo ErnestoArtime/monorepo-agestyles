@@ -117,14 +117,19 @@ async function createMember(name) {
   return { headers, membership };
 }
 
-// Fixture: one A2 offer with stock at an A2 location.
-const { regions } = await expectStatus("/store/regions", {}, 200);
-const { offers } = await expectStatus(
-  `/store/offers?limit=100&region_id=${regions[0].id}`,
-  {},
-  200,
-);
-const offer = offers.find((candidate) => candidate.seller_id === sellerA.id);
+// Fixture: the seeded A2 offer with stock at an A2 location (same fixture as the checkout verifiers).
+const { regions } = await expectStatus("/store/regions?fields=id,currency_code", {}, 200);
+const region = regions.find((candidate) => candidate.currency_code === "eur") ?? regions[0];
+const offerQuery = new URLSearchParams({
+  region_id: region.id,
+  seller_id: sellerA.id,
+  limit: "100",
+  fields: "+in_stock,+calculated_price",
+});
+const { offers } = await expectStatus(`/store/offers?${offerQuery}`, {}, 200);
+const offer =
+  offers.find((candidate) => candidate.sku === "AGESTYLES-LAB-A2-COMMON-01") ??
+  offers.find((candidate) => candidate.in_stock);
 assert(offer, "A2 needs an offer");
 const { stock_locations: locations } = await expectStatus(
   "/vendor/stock-locations?limit=10&fields=id",
