@@ -1084,3 +1084,8 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - Revisado lo que había en `Agestyles-Catalogo` (AI-01 asistente local de textos, AI-02 editor de fotos; AI-00/03/04/05 diferidos; la ruta `product-ai/descriptions` es una carpeta vacía sin git), en Coliseo (cadena Bynara → Groq → OpenRouter → Gemini) y en Lavía (Replicate FLUX 2 Pro / Runway con tareas, cuotas, almacenamiento privado y aprobación).
 - Decisiones del usuario: texto con cadena como Coliseo (Gemini primero), quitar fondos en el VPS con modelo libre y reutilizar las cuentas existentes. Documento: `docs/design/AG-27-ai-studio.md`.
 - Reservadas AG-26 (alta de producto con fotos, sin IA) y AG-27 (AI Studio). Sin código todavía.
+
+## 2026-11-18 · Claude · CI en rojo por AG-25: corrección de una línea
+
+- Desde `9c4fd8d` (AG-25) la CI de `main` fallaba en `pnpm typecheck` por `key={action.href}` en `apps/business-app/app/(tabs)/index.tsx:336`, porque `Href` puede ser un objeto. Eso impedía publicar la imagen de la API. Lo cambié a `key={action.title}`, sin más cambios en el archivo. **Codex:** revísalo dentro de AG-25.
+- `pnpm typecheck` completo pasa en local.

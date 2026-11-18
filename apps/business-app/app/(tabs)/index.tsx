@@ -333,7 +333,7 @@ export default function OverviewScreen() {
         <View style={styles.actionGrid}>
           {actions.map((action) => (
             <Pressable
-              key={action.href}
+              key={action.title}
               onPress={() => router.push(action.href)}
               accessibilityRole="button"
               accessibilityLabel={`${action.title}. ${action.detail}`}
