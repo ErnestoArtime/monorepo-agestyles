@@ -510,9 +510,6 @@ export type Routes = {
                 subscribe: typeof import("@medusajs/medusa/api/admin/workflows-executions/[workflow_id]/subscribe/route");
             };
         };
-        agestyles: {
-            exchangeRate: typeof import("../src/api/admin/agestyles/exchange-rate/route");
-        };
         catalogFamilies: typeof import("../src/api/admin/catalog-families/route") & {
             $id: {
                 versions: typeof import("../src/api/admin/catalog-families/[id]/versions/route") & {
@@ -613,7 +610,6 @@ export type Routes = {
                     request: typeof import("@medusajs/medusa/api/store/orders/[id]/transfer/request/route");
                 };
                 manualPayments: typeof import("../src/api/store/orders/[id]/manual-payments/route");
-                tracking: typeof import("../src/api/store/orders/[id]/tracking/route");
             };
         };
         paymentCollections: typeof import("@medusajs/medusa/api/store/payment-collections/route") & {
@@ -656,16 +652,6 @@ export type Routes = {
         shippingOptions: typeof import("@mercurjs/core/api/store/shipping-options/route") & {
             $id: {
                 calculate: typeof import("@medusajs/medusa/api/store/shipping-options/[id]/calculate/route");
-            };
-        };
-        agestyles: {
-            devices: typeof import("../src/api/store/agestyles/devices/route") & {
-                $id: typeof import("../src/api/store/agestyles/devices/[id]/route");
-            };
-            exchangeRate: typeof import("../src/api/store/agestyles/exchange-rate/route");
-            notificationPreferences: typeof import("../src/api/store/agestyles/notification-preferences/route");
-            notifications: typeof import("../src/api/store/agestyles/notifications/route") & {
-                read: typeof import("../src/api/store/agestyles/notifications/read/route");
             };
         };
         catalogComparison: typeof import("../src/api/store/catalog-comparison/route");
@@ -963,35 +949,5 @@ export type Routes = {
         };
         stores: typeof import("@mercurjs/core/api/vendor/stores/route");
         uploads: typeof import("@mercurjs/core/api/vendor/uploads/route");
-        agestyles: {
-            agentSales: typeof import("../src/api/vendor/agestyles/agent-sales/route");
-            commissionRules: typeof import("../src/api/vendor/agestyles/commission-rules/route") & {
-                $id: typeof import("../src/api/vendor/agestyles/commission-rules/[id]/route");
-            };
-            commissionWithdrawals: typeof import("../src/api/vendor/agestyles/commission-withdrawals/route") & {
-                $id: typeof import("../src/api/vendor/agestyles/commission-withdrawals/[id]/route");
-            };
-            commissions: {
-                balance: typeof import("../src/api/vendor/agestyles/commissions/balance/route");
-            };
-            devices: typeof import("../src/api/vendor/agestyles/devices/route") & {
-                $id: typeof import("../src/api/vendor/agestyles/devices/[id]/route");
-            };
-            inventoryMovements: typeof import("../src/api/vendor/agestyles/inventory-movements/route") & {
-                export: typeof import("../src/api/vendor/agestyles/inventory-movements/export/route");
-            };
-            notificationPreferences: typeof import("../src/api/vendor/agestyles/notification-preferences/route");
-            notifications: typeof import("../src/api/vendor/agestyles/notifications/route") & {
-                read: typeof import("../src/api/vendor/agestyles/notifications/read/route");
-            };
-            orders: {
-                $id: {
-                    fulfillments: typeof import("../src/api/vendor/agestyles/orders/[id]/fulfillments/route");
-                };
-            };
-            salesAgents: typeof import("../src/api/vendor/agestyles/sales-agents/route") & {
-                $id: typeof import("../src/api/vendor/agestyles/sales-agents/[id]/route");
-            };
-        };
     };
 };

@@ -4,5 +4,7 @@ import { memberRecipient, registerDeviceResponse } from "../../../../lib/notific
 type SellerRequest = AuthenticatedMedusaRequest & { seller_context?: { seller_id?: string } };
 
 export async function POST(req: SellerRequest, res: MedusaResponse) {
-  res.status(201).json(await registerDeviceResponse(req.scope, await memberRecipient(req), req.body));
+  res
+    .status(201)
+    .json(await registerDeviceResponse(req.scope, await memberRecipient(req), req.body));
 }
