@@ -1273,3 +1273,12 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
   - Tarjeta del índice actualizada a «AgeStyles · versión 1.1.0 · fase piloto». Copia del índice anterior en la carpeta temporal de la sesión.
   - Como antes, son copias dentro del contenedor: si se recrea desde su imagen (proyecto Utilitaria, `download-site`), hay que volver a copiarlas.
 - **Tienda:** `BUYER_WEB_ANDROID_APK_URL` apunta a la 1.1.0 (copia previa de `.env.buyer-web` en `env-backups-20261118-0802`) y el banner dice «Versión 1.1.0 · Android 7.0 o superior» (`b3ae864`). Tienda republicada.
+
+## 2026-11-18 — Claude: despliegue de lo preparado por las pasadas programadas (autorizado por el usuario)
+
+- **API:** `ghcr.io/ernestoartime/agestyles-commerce-api@sha256:91e3e631…` (de `0444cb7`, publicación `44296877292`, CI `44295461037` verde). Copia de `compose.env` en `env-backups-<fecha>/compose.env.before-0444cb7`; volcado `db-backups/before-0444cb7-*.dump` validado con `pg_restore --list` (1541 entradas). `db:migrate` sin migraciones nuevas (solo los dos scripts que Medusa repite).
+- **Gateway de vendedores** recreado con `--force-recreate`: preflight 204 para `commissions/report`, `agent-sales/export` y `commissions/balance` desde `https://negocio.eav-labs.com`; sin sesión, 401.
+- **Prueba como titular:** `GET /vendor/agestyles/commissions/report` 200 (30 días, sin ventas de gestores todavía); `GET /vendor/agestyles/agent-sales/export` 200 `text/csv`.
+- **Negocio:** `entry-de892fcd…` (incluye «Informe de ventas» y SKU de ofertas), apunta a `/negocio`.
+- **Catálogo:** `/`, `/novedades`, `/comparar` y `/sitemap.xml` 200; título «Novedades | AgeStyles».
+- Pendiente de revisión cruzada (Codex): AG-06 fase 3, AG-29 (a), AG-18 Novedades ya en producción.
