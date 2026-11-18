@@ -17,7 +17,7 @@ export function ShareButton({
 }: {
   product: Shareable;
   price?: string;
-  variant?: "icon" | "label";
+  variant?: "icon" | "label" | "button";
 }) {
   const { color } = useUiTheme();
   const [copied, setCopied] = useState(false);
@@ -61,6 +61,28 @@ export function ShareButton({
       </Pressable>
     );
   }
+  if (variant === "button") {
+    return (
+      <Pressable
+        onPress={() => void share()}
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        style={({ pressed }: { pressed: boolean }) => [
+          styles.square,
+          {
+            borderColor: color.border,
+            backgroundColor: pressed ? color.placeholder : color.surface,
+          },
+        ]}
+      >
+        <Icon
+          name={copied ? "check" : "share"}
+          size={17}
+          color={copied ? color.success : color.text}
+        />
+      </Pressable>
+    );
+  }
   return (
     <View>
       <Pressable
@@ -86,6 +108,14 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     borderWidth: StyleSheet.hairlineWidth,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  square: {
+    width: 44,
+    minHeight: 40,
+    borderRadius: 10,
+    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
   },

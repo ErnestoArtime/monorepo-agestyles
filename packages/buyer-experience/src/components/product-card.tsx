@@ -53,63 +53,62 @@ export const ProductCard = React.memo(function ProductCard({
         imageUrl={imageUrl}
         onPress={open}
         accessory={
-          <View style={styles.accessories}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={
-                favorite
-                  ? `Quitar ${product.title} de favoritos`
-                  : `Guardar ${product.title} en favoritos`
-              }
-              accessibilityState={{ selected: favorite }}
-              disabled={!ready}
-              onPress={() => void toggleFavorite(product.id).catch(() => undefined)}
-              hitSlop={6}
-              style={[
-                styles.favorite,
-                { backgroundColor: color.surface, borderColor: color.border },
-              ]}
-            >
-              {/* A saved favourite is a filled red heart, as in the legacy catalog. */}
-              <Icon
-                name="heart"
-                size={18}
-                color={favorite ? color.error : color.muted}
-                fill={favorite ? color.error : "none"}
-              />
-            </Pressable>
-            <ShareButton
-              product={product}
-              price={amount === undefined ? undefined : formatPrice(amount, currency)}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={
+              favorite
+                ? `Quitar ${product.title} de favoritos`
+                : `Guardar ${product.title} en favoritos`
+            }
+            accessibilityState={{ selected: favorite }}
+            disabled={!ready}
+            onPress={() => void toggleFavorite(product.id).catch(() => undefined)}
+            hitSlop={6}
+            style={[styles.favorite, { backgroundColor: color.surface, borderColor: color.border }]}
+          >
+            {/* A saved favourite is a filled red heart, as in the legacy catalog. */}
+            <Icon
+              name="heart"
+              size={18}
+              color={favorite ? color.error : color.muted}
+              fill={favorite ? color.error : "none"}
             />
-          </View>
+          </Pressable>
         }
       />
-      {/* Same as the Catálogo: «Agregar» opens the quick view to choose store, variant and quantity. */}
-      <Pressable
-        onPress={open}
-        accessibilityRole="button"
-        accessibilityLabel={`Agregar ${product.title ?? "producto"} al carrito`}
-        style={({ pressed }: { pressed: boolean }) => [
-          styles.add,
-          {
-            borderColor: color.border,
-            backgroundColor: pressed ? color.placeholder : color.surface,
-          },
-        ]}
-      >
-        <Icon name="shoppingBag" size={16} color={color.text} />
-        <Text style={[styles.addText, { color: color.text }]}>Agregar</Text>
-      </Pressable>
+      <View style={styles.actions}>
+        {/* Same as the Catálogo: «Agregar» opens the quick view to choose store, variant and quantity. */}
+        <Pressable
+          onPress={open}
+          accessibilityRole="button"
+          accessibilityLabel={`Agregar ${product.title ?? "producto"} al carrito`}
+          style={({ pressed }: { pressed: boolean }) => [
+            styles.add,
+            {
+              borderColor: color.border,
+              backgroundColor: pressed ? color.placeholder : color.surface,
+            },
+          ]}
+        >
+          <Icon name="shoppingBag" size={16} color={color.text} />
+          <Text style={[styles.addText, { color: color.text }]}>Agregar</Text>
+        </Pressable>
+        {/* Next to «Agregar», not on the photo, so the image keeps all its detail. */}
+        <ShareButton
+          product={product}
+          price={amount === undefined ? undefined : formatPrice(amount, currency)}
+          variant="button"
+        />
+      </View>
     </View>
   );
 });
 
 const styles = StyleSheet.create({
   cell: { flex: 1, padding: 6 },
-  accessories: { gap: 8 },
+  actions: { flexDirection: "row", gap: 8, marginTop: 8 },
   add: {
-    marginTop: 8,
+    flex: 1,
     minHeight: 40,
     borderRadius: 10,
     borderWidth: 1,
