@@ -1089,3 +1089,26 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 
 - Desde `9c4fd8d` (AG-25) la CI de `main` fallaba en `pnpm typecheck` por `key={action.href}` en `apps/business-app/app/(tabs)/index.tsx:336`, porque `Href` puede ser un objeto. Eso impedía publicar la imagen de la API. Lo cambié a `key={action.title}`, sin más cambios en el archivo. **Codex:** revísalo dentro de AG-25.
 - `pnpm typecheck` completo pasa en local.
+
+## 2026-11-18 · Claude · AG-26 y AG-27 implementados; despliegue en curso
+
+- **AG-26** (`23b2e3e`, `f639d6b`):
+  - Pantalla `app/product-new.tsx`: alta con hasta 6 fotos, que se reducen y comprimen en el dispositivo (`expo-image-manipulator`) y se suben en cuanto se eligen, por `/vendor/uploads` de Mercur.
+  - El gateway admite esa ruta con un límite de 8 MB; la CI comprueba el preflight.
+  - El asistente local de textos del catálogo antiguo pasa a `@agestyles/domain/product-copy`, con test.
+  - Fotos en producción: las imágenes de MinIO ya no se pueden descargar, así que se usa el proveedor local de Medusa en el volumen `product-media`, servido por `media-files` (nginx, `127.0.0.1:19088`). Solo se sirven nombres planos de imagen.
+- **AG-27** (`6ef648b`):
+  - Módulo `packages/ai-studio` (tabla `agestyles_ai_request`, migración `Migration20261118100000`).
+  - Rutas `GET /vendor/agestyles/ai-studio`, `POST …/describe` y `POST …/remove-background`.
+  - Cadena Gemini → OpenRouter → Groq, primero con foto y después solo con texto, sin reintentos.
+  - Servicio `background-remover` (rembg `isnet-general-use`, fijado por digest, 2,5 GB, `127.0.0.1:19089`).
+  - Solo titular y administración, con cuota mensual por tienda. La API solo lee fotos del volumen propio.
+- **Producción (autorizado por el usuario):**
+  - Copia de la base antes de migrar: `~/.local/share/agestyles-deploy/db-backups/agestyles_commerce-20261118-0647.dump` (validada: 210 tablas con datos).
+  - `media-files` y `background-remover` arrancados: la prueba de quitar fondo da 200 en 1,9 s con 1,4 GB.
+  - Variables de medios y de IA añadidas a `api.env`; copia previa en `~/.local/share/agestyles-deploy/env-backups-20261118-0623`.
+  - Pendiente: imagen de la API de `6ef648b`, migraciones (AG-06 + AG-27), reinicio del gateway de vendedores y web de Negocio.
+- **Por parte del usuario:**
+  - Ruta del túnel `agestyles-api.eav-labs.com` + `^/agestyles-product-media/` → `http://127.0.0.1:19088`.
+  - Claves `GEMINI_API_KEY` / `OPENROUTER_API_KEY` / `GROQ_API_KEY` en `api.env`.
+- **Para codex — revisión cruzada:** cambios de infraestructura (compose, nginx, gateway), el nuevo módulo y la corrección de una línea en AG-25 (`4fec12d`).
