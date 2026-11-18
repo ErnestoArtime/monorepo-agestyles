@@ -1,5 +1,6 @@
 import { ProductImageSlider } from "./product-image-slider";
 import { ProductSkeleton } from "./product-skeleton";
+import { ShareButton } from "./share-button";
 import { Toast } from "./ui/toast";
 import { WebFooter } from "./web-footer";
 import { CONTENT_MAX, useResponsive } from "../hooks/use-responsive";
@@ -22,7 +23,15 @@ import {
 import type { HttpTypes } from "@medusajs/types";
 import { useRouter, type Href } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { buyerHref, buyerPath } from "../config";
 
 type Offer = Awaited<ReturnType<typeof listProductOffers>>["offers"][number];
@@ -241,19 +250,12 @@ export function ProductDetail(
           Vendido por {selectedOffer.seller.name}
         </Text>
       ) : null}
-      <Pressable
-        onPress={() =>
-          router.push({
-            pathname: buyerPath("/(drawer)/(tabs)/compare"),
-            params: { productId: product.id },
-          } as unknown as Href)
-        }
-        accessibilityRole="button"
-        style={styles.compare}
-      >
-        <Icon name="sliders" size={18} color={color.action} />
-        <Text style={[styles.compareText, { color: color.action }]}>Comparar producto</Text>
-      </Pressable>
+      {/* Comparing is hidden while the catalog has few products with technical features. */}
+      <ShareButton
+        product={product}
+        price={price === undefined ? undefined : formatPrice(price, currency)}
+        variant="label"
+      />
     </>
   ) : null;
 
@@ -339,15 +341,22 @@ export function ProductDetail(
                 <Icon name="close" size={20} color={color.text} />
               </Pressable>
               <ScrollView contentContainerStyle={styles.dialogContent}>
-                {body ?? (
-                  <View style={styles.wideColumns}>
-                    <View style={styles.dialogGallery}>{gallery}</View>
-                    <View style={[styles.wideInfo, styles.dialogInfo]}>
-                      {info}
-                      {purchaseBar ? <View style={styles.wideBuy}>{purchaseBar}</View> : null}
-                      {fullPage}
-                    </View>
+                {loading ? (
+                  // Same footprint as the loaded dialog, so it does not resize when the data arrives.
+                  <View style={styles.dialogLoading}>
+                    <ActivityIndicator color={color.action} />
                   </View>
+                ) : (
+                  (body ?? (
+                    <View style={styles.wideColumns}>
+                      <View style={styles.dialogGallery}>{gallery}</View>
+                      <View style={[styles.wideInfo, styles.dialogInfo]}>
+                        {info}
+                        {purchaseBar ? <View style={styles.wideBuy}>{purchaseBar}</View> : null}
+                        {fullPage}
+                      </View>
+                    </View>
+                  ))
                 )}
               </ScrollView>
               {toastView}
@@ -474,6 +483,7 @@ const styles = StyleSheet.create({
   dialog: {
     width: "100%",
     maxWidth: 980,
+    minHeight: 516,
     maxHeight: "90%",
     borderRadius: 18,
     overflow: "hidden",
@@ -490,6 +500,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   dialogContent: { padding: 28 },
+  dialogLoading: { height: 460, alignItems: "center", justifyContent: "center" },
   dialogGallery: { flex: 10, maxWidth: 460 },
   dialogInfo: { paddingRight: 44 },
   wideBuy: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 8 },

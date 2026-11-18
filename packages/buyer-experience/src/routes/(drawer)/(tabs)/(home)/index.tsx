@@ -1,5 +1,12 @@
 import { Loading } from "../../../../components/loading";
 import { ProductCard } from "../../../../components/product-card";
+import {
+  activeFilterCount,
+  EMPTY_FILTERS,
+  FilterPanel,
+  priceBounds,
+  type CatalogFilters,
+} from "../../../../components/filter-panel";
 import { ProductDetail } from "../../../../components/product-detail";
 import { PillGroup, SearchField } from "@agestyles/ui-native";
 import { AndroidAppLink } from "../../../../components/android-app-link";
@@ -39,7 +46,12 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  // Order, category, price and colour (the right-hand «Filtros» panel and the category pills).
+  const [filters, setFilters] = useState<CatalogFilters>(EMPTY_FILTERS);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const selectedCategory = filters.category;
+  const setSelectedCategory = (category: string | null) =>
+    setFilters((current) => ({ ...current, category, color: null }));
   // Product opened in the bottom sheet (reference POS behaviour).
   const [sheetProductId, setSheetProductId] = useState<string | null>(null);
   // Filters opened from the side menu (categories with their subcategories, a store, novelties).
@@ -67,7 +79,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     // Opening a page from the menu starts from a clean list.
-    setSelectedCategory(null);
+    setFilters(EMPTY_FILTERS);
     setSearchTerm("");
   }, [params.filtro, params.ids, params.tienda]);
 
@@ -99,8 +111,31 @@ export default function HomeScreen() {
     return [...new Set(names)].sort((a, b) => a.localeCompare(b));
   }, [products]);
 
+  const priceOf = (product: HttpTypes.StoreProduct) =>
+    product.variants?.[0]?.calculated_price?.calculated_amount ?? undefined;
+  const colorsOf = (product: HttpTypes.StoreProduct) =>
+    (product.options ?? [])
+      .filter((option) => /^colou?r$/i.test(option.title ?? ""))
+      .flatMap((option) => option.values?.map((value) => value.value ?? "") ?? [])
+      .filter(Boolean);
+
+  const colorOptions = useMemo(() => {
+    const pool = filters.category
+      ? products.filter((product) =>
+          product.categories?.some((category) => category.name === filters.category),
+        )
+      : products;
+    return [...new Set(pool.flatMap(colorsOf))].sort((a, b) => a.localeCompare(b, "es"));
+  }, [filters.category, products]);
+
+  const maxPriceHint = useMemo(
+    () => Math.max(0, ...products.map((product) => Number(priceOf(product) ?? 0))),
+    [products],
+  );
+
   const visibleProducts = useMemo(() => {
     const query = searchTerm.trim().toLocaleLowerCase();
+    const { min, max } = priceBounds(filters);
     const filtered = products.filter((product) => {
       const searchableText = String(product.title) + " " + String(product.description ?? "");
       const matchesQuery = !query || searchableText.toLocaleLowerCase().includes(query);
@@ -113,14 +148,23 @@ export default function HomeScreen() {
           : menuFilter?.kind === "tienda"
             ? !storeProductIds || storeProductIds.has(product.id)
             : true;
-      return matchesQuery && matchesCategory && matchesMenu;
+      const price = priceOf(product);
+      const matchesPrice =
+        (min === null || (price !== undefined && price >= min)) &&
+        (max === null || (price !== undefined && price <= max));
+      const matchesColor = !filters.color || colorsOf(product).includes(filters.color);
+      return matchesQuery && matchesCategory && matchesMenu && matchesPrice && matchesColor;
     });
-    return menuFilter?.kind === "novedades"
-      ? [...filtered].sort(
-          (a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime(),
-        )
-      : filtered;
-  }, [menuFilter, products, searchTerm, selectedCategory, storeProductIds]);
+    const newest = (a: HttpTypes.StoreProduct, b: HttpTypes.StoreProduct) =>
+      new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime();
+    const byPrice = (direction: 1 | -1) => (a: HttpTypes.StoreProduct, b: HttpTypes.StoreProduct) =>
+      direction * (Number(priceOf(a) ?? Infinity) - Number(priceOf(b) ?? Infinity));
+    if (filters.sort === "price_asc") return [...filtered].sort(byPrice(1));
+    if (filters.sort === "price_desc") return [...filtered].sort(byPrice(-1));
+    if (filters.sort === "newest" || menuFilter?.kind === "novedades")
+      return [...filtered].sort(newest);
+    return filtered;
+  }, [filters, menuFilter, products, searchTerm, selectedCategory, storeProductIds]);
 
   const fetchProducts = useCallback(async () => {
     if (!selectedRegion) {
@@ -289,11 +333,38 @@ export default function HomeScreen() {
             </View>
             {isWideWeb ? null : <AndroidAppLink />}
             <View style={[styles.searchArea, isWideWeb && styles.searchAreaWide]}>
-              <SearchField
-                value={searchTerm}
-                onChangeText={setSearchTerm}
-                placeholder="Buscar productos"
-              />
+              <View style={styles.searchRow}>
+                <View style={styles.searchInput}>
+                  <SearchField
+                    value={searchTerm}
+                    onChangeText={setSearchTerm}
+                    placeholder="Buscar productos"
+                  />
+                </View>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    activeFilterCount(filters)
+                      ? `Filtros, ${activeFilterCount(filters)} activos`
+                      : "Filtros"
+                  }
+                  onPress={() => setFiltersOpen(true)}
+                  style={[
+                    styles.filterButton,
+                    { borderColor: colors.border, backgroundColor: colors.cardBackground },
+                  ]}
+                >
+                  <Icon name="sliders" size={18} color={colors.text} />
+                  <Text style={[styles.filterText, { color: colors.text }]}>Filtros</Text>
+                  {activeFilterCount(filters) ? (
+                    <View style={[styles.filterBadge, { backgroundColor: colors.tint }]}>
+                      <Text style={[styles.filterBadgeText, { color: colors.onTint }]}>
+                        {activeFilterCount(filters)}
+                      </Text>
+                    </View>
+                  ) : null}
+                </TouchableOpacity>
+              </View>
             </View>
             {menuFilter ? (
               <TouchableOpacity
@@ -364,6 +435,16 @@ export default function HomeScreen() {
             </Text>
           </View>
         }
+      />
+      <FilterPanel
+        visible={filtersOpen}
+        filters={filters}
+        onChange={setFilters}
+        onClose={() => setFiltersOpen(false)}
+        categories={categories}
+        colors={colorOptions}
+        maxPriceHint={maxPriceHint}
+        resultCount={visibleProducts.length}
       />
       <ProductDetail
         layout="sheet"
@@ -492,6 +573,27 @@ const styles = StyleSheet.create({
   wide: { width: "100%", maxWidth: CONTENT_MAX, alignSelf: "center" },
   wideHeader: { paddingTop: 20 },
   searchAreaWide: { marginTop: 20 },
+  searchRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  searchInput: { flex: 1 },
+  filterButton: {
+    minHeight: 46,
+    paddingHorizontal: 14,
+    borderRadius: 23,
+    borderWidth: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  filterText: { fontSize: 15, fontWeight: "600" },
+  filterBadge: {
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    paddingHorizontal: 5,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  filterBadgeText: { fontSize: 12, fontWeight: "700" },
   heroWide: { minHeight: 340, borderRadius: 20 },
   heroTitleWide: { fontSize: 46, lineHeight: 52, letterSpacing: -1.2 },
   heroDescriptionWide: { maxWidth: 440, fontSize: 17, lineHeight: 26 },

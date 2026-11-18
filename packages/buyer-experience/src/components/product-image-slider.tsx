@@ -61,7 +61,8 @@ export function ProductImageSlider({ images, square, thumbnails }: ProductImageS
           viewabilityConfig={viewabilityConfig}
         />
       ) : (
-        <View style={{ height: square ? 0 : height }} />
+        // Square galleries keep their size before measuring, so a dialog does not jump.
+        <View style={square ? { aspectRatio: 1 } : { height }} />
       )}
       {images.length > 1 && thumbnails ? (
         <View style={styles.thumbnails}>

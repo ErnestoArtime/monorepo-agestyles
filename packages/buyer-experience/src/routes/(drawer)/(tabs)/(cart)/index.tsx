@@ -30,7 +30,10 @@ export default function CartScreen() {
         <Text style={[styles.emptyText, { color: color.muted }]}>
           Añade productos desde el catálogo para empezar.
         </Text>
-        <Button title="Explorar productos" onPress={() => router.push(buyerHref("/"))} />
+        <Button
+          title="Explorar productos"
+          onPress={() => router.navigate(buyerHref("/(drawer)/(tabs)/(home)"))}
+        />
       </View>
     );
   }
@@ -80,7 +83,7 @@ export default function CartScreen() {
           <Button
             title="Seguir comprando"
             variant="secondary"
-            onPress={() => router.push(buyerHref("/"))}
+            onPress={() => router.navigate(buyerHref("/(drawer)/(tabs)/(home)"))}
             style={styles.action}
           />
           <Button

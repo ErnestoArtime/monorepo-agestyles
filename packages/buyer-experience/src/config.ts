@@ -15,6 +15,8 @@ export type BuyerExperienceConfig = {
   basePath: string;
   /** Link to the Android APK shown on the web; omit where the app is already installed. */
   androidApkUrl?: string;
+  /** Public Tienda address used in shared product links (Negocio shares Tienda, not itself). */
+  publicStoreUrl?: string;
   /** Exit from the store back to the host app (Negocio's «Mi negocio»). */
   exit?: { label: string; href: Href };
 };
@@ -68,4 +70,15 @@ export function androidApkUrl(): string | undefined {
 
 export function buyerExit(): BuyerExperienceConfig["exit"] {
   return current().exit;
+}
+
+/** Public link to a product page, for sharing. */
+export function publicProductUrl(productId: string): string {
+  const configured = current().publicStoreUrl?.trim();
+  const origin =
+    configured ||
+    (typeof window !== "undefined" && window.location?.origin
+      ? window.location.origin
+      : "https://tienda.eav-labs.com");
+  return `${origin.replace(/\/+$/, "")}/product/${encodeURIComponent(productId)}`;
 }

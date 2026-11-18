@@ -1,6 +1,7 @@
 import { useFavorites } from "../context/favorites-context";
 import { useRegion } from "../context/region-context";
 import { useCupRate } from "../hooks/use-cup-rate";
+import { ShareButton } from "./share-button";
 import { formatPrice } from "../lib/format-price";
 import { formatCupEquivalent } from "@agestyles/api-client/exchange-rate";
 import { Icon } from "@agestyles/icons";
@@ -52,21 +53,36 @@ export const ProductCard = React.memo(function ProductCard({
         imageUrl={imageUrl}
         onPress={open}
         accessory={
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={
-              favorite
-                ? `Quitar ${product.title} de favoritos`
-                : `Guardar ${product.title} en favoritos`
-            }
-            accessibilityState={{ selected: favorite }}
-            disabled={!ready}
-            onPress={() => void toggleFavorite(product.id).catch(() => undefined)}
-            hitSlop={6}
-            style={[styles.favorite, { backgroundColor: color.surface, borderColor: color.border }]}
-          >
-            <Icon name="heart" size={18} color={favorite ? color.action : color.muted} />
-          </Pressable>
+          <View style={styles.accessories}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={
+                favorite
+                  ? `Quitar ${product.title} de favoritos`
+                  : `Guardar ${product.title} en favoritos`
+              }
+              accessibilityState={{ selected: favorite }}
+              disabled={!ready}
+              onPress={() => void toggleFavorite(product.id).catch(() => undefined)}
+              hitSlop={6}
+              style={[
+                styles.favorite,
+                { backgroundColor: color.surface, borderColor: color.border },
+              ]}
+            >
+              {/* A saved favourite is a filled red heart, as in the legacy catalog. */}
+              <Icon
+                name="heart"
+                size={18}
+                color={favorite ? color.error : color.muted}
+                fill={favorite ? color.error : "none"}
+              />
+            </Pressable>
+            <ShareButton
+              product={product}
+              price={amount === undefined ? undefined : formatPrice(amount, currency)}
+            />
+          </View>
         }
       />
       {/* Same as the Catálogo: «Agregar» opens the quick view to choose store, variant and quantity. */}
@@ -91,6 +107,7 @@ export const ProductCard = React.memo(function ProductCard({
 
 const styles = StyleSheet.create({
   cell: { flex: 1, padding: 6 },
+  accessories: { gap: 8 },
   add: {
     marginTop: 8,
     minHeight: 40,

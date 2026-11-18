@@ -15,6 +15,7 @@ import {
   Eye,
   EyeOff,
   Heart,
+  Share2,
   Home,
   List,
   MapPin,
@@ -64,6 +65,7 @@ const glyphs = {
   eye: Eye,
   eyeOff: EyeOff,
   heart: Heart,
+  share: Share2,
   home: Home,
   list: List,
   mapPin: MapPin,
@@ -100,15 +102,24 @@ export type IconProps = {
   size?: number;
   color?: string;
   strokeWidth?: number;
+  /** Fill colour, e.g. a filled heart for a selected favourite. */
+  fill?: string;
 };
 
-export function Icon({ name, size = 20, color = "currentColor", strokeWidth = 1.8 }: IconProps) {
+export function Icon({
+  name,
+  size = 20,
+  color = "currentColor",
+  strokeWidth = 1.8,
+  fill = "none",
+}: IconProps) {
   const Glyph = glyphs[name];
   return (
     <Glyph
       size={size}
       color={color}
       strokeWidth={strokeWidth}
+      fill={fill}
       aria-hidden="true"
       focusable="false"
     />

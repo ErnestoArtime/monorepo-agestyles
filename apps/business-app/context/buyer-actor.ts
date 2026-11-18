@@ -25,5 +25,7 @@ export const buyerActorSession = createBusinessBuyerSession(buyerSdk);
 configureBuyerExperience({
   sdk: buyerSdk,
   basePath: "/tienda",
+  // Shared product links point to the public Tienda, not to Negocio.
+  publicStoreUrl: process.env.EXPO_PUBLIC_STORE_WEB_URL || "https://tienda.eav-labs.com",
   exit: { label: "Mi negocio", href: "/(tabs)" },
 });
