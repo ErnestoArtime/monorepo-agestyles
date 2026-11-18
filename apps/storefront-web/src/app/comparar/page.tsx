@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { Icon } from "@agestyles/icons";
@@ -43,20 +42,6 @@ export default async function ComparePage({ searchParams }: PageProps) {
 
   return (
     <main className="comparison-page">
-      <header className="site-header">
-        <Link href="/" className="brand" aria-label="AgeStyles inicio">
-          <Image src="/agestyles-mark.svg" alt="" width={34} height={34} />
-          <span>AgeStyles</span>
-        </Link>
-        <nav className="main-nav" aria-label="Navegación principal">
-          <Link href="/#catalogo">Catálogo</Link>
-          <Link href="/tiendas">Tiendas</Link>
-        </nav>
-        <Link className="bag" href="/#catalogo">
-          Volver al catálogo
-        </Link>
-      </header>
-
       <section className="wrap comparison-content">
         <div className="comparison-heading">
           <p className="eyebrow">AGESTYLES · COMPARACIÓN</p>

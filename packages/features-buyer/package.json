@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     "./business-buyer-session": "./src/business-buyer-session.ts",
-    "./cart": "./src/cart.ts"
+    "./cart": "./src/cart.ts",
+    "./cart-handoff": "./src/cart-handoff.ts"
   },
   "scripts": {
     "test": "node --test test/*.test.ts",

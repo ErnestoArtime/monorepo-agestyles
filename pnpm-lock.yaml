@@ -325,6 +325,9 @@ importers:
       '@agestyles/design-tokens':
         specifier: workspace:*
         version: link:../../packages/design-tokens
+      '@agestyles/features-buyer':
+        specifier: workspace:*
+        version: link:../../packages/features-buyer
       '@agestyles/icons':
         specifier: workspace:*
         version: link:../../packages/icons

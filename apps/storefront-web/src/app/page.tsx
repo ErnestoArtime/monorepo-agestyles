@@ -35,35 +35,10 @@ export default async function StorefrontHome({
   ]);
   const featured = products.slice(0, 4);
   const catalog = products.slice(0, 48);
-  const buyerAppUrl = process.env.BUYER_APP_URL || "https://tienda.eav-labs.com";
   const sellers = [...allSellers].sort((a, b) => b.productCount - a.productCount).slice(0, 4);
 
   return (
     <main>
-      <div className="topline">UNA NUEVA FORMA DE DESCUBRIR · FASE PILOTO</div>
-      <header className="site-header">
-        <Link href="/" className="brand" aria-label="AgeStyles inicio">
-          <Image src="/agestyles-mark.svg" alt="" width={34} height={34} priority />
-          <span>AgeStyles</span>
-        </Link>
-        <nav className="main-nav" aria-label="Navegación principal">
-          <a href="#catalogo" className="active">
-            Catálogo
-          </a>
-          <Link href="/novedades">Novedades</Link>
-          <a href="#tiendas">Tiendas</a>
-        </nav>
-        <div className="header-actions">
-          <a href="#buscar" aria-label="Buscar">
-            <Icon name="search" size={20} />
-          </a>
-          <a className="bag" href={buyerAppUrl}>
-            <Icon name="shoppingBag" size={15} /> Comprar en la app{" "}
-            <Icon name="arrowRight" size={13} />
-          </a>
-        </div>
-      </header>
-
       <section className="hero wrap" id="novedades">
         <div className="hero-copy">
           <p className="eyebrow">TU PRÓXIMO FAVORITO ESTÁ AQUÍ</p>
@@ -132,7 +107,7 @@ export default async function StorefrontHome({
                   ? `Resultados para “${q}”`
                   : "Encuentra algo especial"}
             </h2>
-            <p>Explora productos y compara las opciones de las tiendas.</p>
+            <p>Mira cada producto de un vistazo, elige tienda y variante y agrégalo al carrito.</p>
           </div>
           <Link className="text-link" href="/">
             Ver todo el catálogo <span>↗</span>
@@ -157,19 +132,6 @@ export default async function StorefrontHome({
               totalPages={totalPages}
             />
           )}
-        </div>
-      </section>
-
-      <section className="compare-strip" id="comparar">
-        <div className="wrap compare-inner">
-          <div>
-            <p className="eyebrow">COMPRA CON CONFIANZA</p>
-            <h2>Compara antes de elegir.</h2>
-            <p>Descubre las opciones de cada tienda y encuentra la que mejor encaja contigo.</p>
-          </div>
-          <a className="button button-outline" href="#catalogo">
-            Explorar productos <Icon name="arrowRight" size={14} />
-          </a>
         </div>
       </section>
 
@@ -212,26 +174,6 @@ export default async function StorefrontHome({
           </div>
         )}
       </section>
-
-      <footer className="site-footer">
-        <div className="wrap footer-main">
-          <Link href="/" className="brand">
-            <Image src="/agestyles-mark.svg" alt="" width={28} height={28} />
-            <span>AgeStyles</span>
-          </Link>
-          <p>Descubre. Compara. Elige.</p>
-          <a href="mailto:hola@agestyles.com">
-            Hablemos <Icon name="arrowRight" size={12} />
-          </a>
-        </div>
-        <div className="wrap footer-bottom">
-          <span>© 2026 AgeStyles</span>
-          <span>AgeStyles en fase piloto</span>
-          <a href={buyerAppUrl}>
-            Conocer la app de compra <Icon name="arrowRight" size={12} />
-          </a>
-        </div>
-      </footer>
     </main>
   );
 }

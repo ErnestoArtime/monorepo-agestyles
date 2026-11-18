@@ -6,6 +6,7 @@ import {
   type CatalogComparisonResponse,
 } from "@agestyles/api-client/catalog-comparison";
 import { getCupExchangeRate } from "@agestyles/api-client/exchange-rate";
+import { toQuickViewOffers, type QuickViewData } from "./quick-view-model";
 
 const backendUrl = process.env.MEDUSA_BACKEND_URL || process.env.NEXT_PUBLIC_MEDUSA_URL;
 const publishableKey =
@@ -278,4 +279,118 @@ export async function getCatalogComparison(
 export async function getCupRate() {
   if (!sdk) return null;
   return getCupExchangeRate(sdk.client);
+}
+
+/** Categories with products, in the order the shop wants them, for the «Catálogos» menu. */
+export async function getMenuCategories(): Promise<PublicProductCategory[]> {
+  if (!sdk) return [];
+  try {
+    const page = await sdk.client.fetch<StoreCategoryPage>("/store/product-categories", {
+      query: { limit: pageSize, fields: "id,name,handle,rank,parent_category_id,products.id" },
+    });
+    return page.product_categories
+      .filter((category) => (category.products?.length ?? 0) > 0)
+      .sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0))
+      .map(({ id, name, handle, rank, parent_category_id }) => ({
+        id,
+        name,
+        handle,
+        rank,
+        parent_category_id,
+      }));
+  } catch {
+    return [];
+  }
+}
+
+export type PublicStoreConfig = {
+  apiUrl: string;
+  publishableKey: string;
+  regionId: string;
+  currency: string;
+};
+
+/**
+ * What the browser needs to keep a cart: the public Store API URL, the publishable key (public by
+ * design, like the one shipped in the mobile apps) and the region the catalog prices come from.
+ */
+export async function getPublicStoreConfig(): Promise<PublicStoreConfig | null> {
+  if (!sdk || !backendUrl || !publishableKey) return null;
+  try {
+    const { regions } = await sdk.store.region.list();
+    const region = regions[0];
+    if (!region) return null;
+    return {
+      apiUrl: backendUrl,
+      publishableKey,
+      regionId: region.id,
+      currency: region.currency_code,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function countryName(code: string): string {
+  try {
+    return new Intl.DisplayNames(["es"], { type: "region" }).of(code.toUpperCase()) ?? code;
+  } catch {
+    return code;
+  }
+}
+
+function productSpecs(product: HttpTypes.StoreProduct): { label: string; value: string }[] {
+  const specs: { label: string; value: string }[] = [];
+  if (product.material) specs.push({ label: "Material", value: product.material });
+  if (product.origin_country) {
+    specs.push({ label: "País de origen", value: countryName(product.origin_country) });
+  }
+  const type = (product as { type?: { value?: string } | null }).type?.value;
+  if (type) specs.push({ label: "Tipo", value: type });
+  return specs;
+}
+
+/** Product, stores and variants with price and stock, shaped for the quick view. */
+export async function getQuickViewData(handle: string): Promise<QuickViewData | undefined> {
+  if (!sdk) return undefined;
+  try {
+    const { regions } = await sdk.store.region.list();
+    const region = regions[0];
+    if (!region) return undefined;
+    const { products } = await listStoreProducts(sdk.client, {
+      regionId: region.id,
+      handle,
+      limit: 1,
+    });
+    const product = products[0];
+    if (!product) return undefined;
+    const [{ offers }, cup] = await Promise.all([
+      listStoreOffers(sdk.client, { productId: product.id, regionId: region.id, limit: 100 }),
+      getCupExchangeRate(sdk.client),
+    ]);
+    const images = [
+      ...new Set(
+        [product.thumbnail, ...(product.images ?? []).map((image) => image.url)].filter(
+          (url): url is string => typeof url === "string" && url.length > 0,
+        ),
+      ),
+    ];
+    return {
+      product: {
+        id: product.id,
+        handle: product.handle || handle,
+        title: product.title,
+        description: product.description ?? null,
+        thumbnail: product.thumbnail ?? null,
+        images,
+        category: product.categories?.[0]?.name ?? null,
+        specs: productSpecs(product),
+      },
+      currency: region.currency_code,
+      offers: toQuickViewOffers(offers, region.currency_code),
+      cupRate: cup ?? null,
+    };
+  } catch {
+    return undefined;
+  }
 }

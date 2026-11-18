@@ -1,5 +1,3 @@
-import Image from "next/image";
-import Link from "next/link";
 import type { Metadata } from "next";
 import { getCatalog } from "@/lib/catalog";
 import { listedAt, lowestOfferPrices } from "@/lib/catalog-format";
@@ -24,23 +22,6 @@ export default async function NewsPage() {
 
   return (
     <main>
-      <header className="site-header">
-        <Link href="/" className="brand" aria-label="AgeStyles inicio">
-          <Image src="/agestyles-mark.svg" alt="" width={34} height={34} priority />
-          <span>AgeStyles</span>
-        </Link>
-        <nav className="main-nav" aria-label="Navegación principal">
-          <Link href="/#catalogo">Catálogo</Link>
-          <Link href="/novedades" className="active" aria-current="page">
-            Novedades
-          </Link>
-          <Link href="/tiendas">Tiendas</Link>
-        </nav>
-        <Link className="bag" href="/#catalogo">
-          Volver al catálogo
-        </Link>
-      </header>
-
       <section className="wrap products-section">
         <div className="section-heading">
           <div>

@@ -3,11 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Icon } from "@agestyles/icons";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, type MouseEvent } from "react";
 import type { HttpTypes } from "@medusajs/types";
 import type { PublicProductCategory } from "@/lib/catalog";
 import { formatPrice, productPrice } from "@/lib/catalog-format";
-import { ProductComparisonBar, ProductComparisonToggle } from "@/components/product-comparison";
+import { useQuickView, type QuickViewTarget } from "@/components/quick-view";
 
 export function ProductExplorer({
   products,
@@ -32,6 +32,7 @@ export function ProductExplorer({
     (product: HttpTypes.StoreProduct) => bestPrices[product.id] || productPrice(product),
     [bestPrices],
   );
+  const quickView = useQuickView();
   const [sort, setSort] = useState("featured");
   const visible = useMemo(() => {
     const items = [...products];
@@ -48,6 +49,13 @@ export function ProductExplorer({
     if (selectedCategory) params.set("category", selectedCategory);
     params.set("page", String(nextPage));
     return `/?${params.toString()}#catalogo`;
+  };
+  // A plain click opens the preview; Ctrl/Cmd/Shift/middle click still follow the link to the page.
+  const preview = (target: QuickViewTarget) => (event: MouseEvent) => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+      return;
+    event.preventDefault();
+    quickView.open(target);
   };
   const firstResult = totalProducts === 0 ? 0 : (page - 1) * 48 + 1;
   const lastResult = Math.min(page * 48, totalProducts);
@@ -78,21 +86,6 @@ export function ProductExplorer({
         })}
       </nav>
       <div className="catalog-tools">
-        <form className="search-box" action="/" method="get">
-          <span aria-hidden="true">
-            <Icon name="search" size={18} />
-          </span>
-          <input
-            name="q"
-            aria-label="Buscar productos"
-            placeholder="¿Qué estás buscando?"
-            defaultValue={searchTerm}
-          />
-          {selectedCategory && <input type="hidden" name="category" value={selectedCategory} />}
-          <button type="submit" aria-label="Buscar">
-            Buscar
-          </button>
-        </form>
         <label className="sort-button">
           Ordenar{" "}
           <select value={sort} onChange={(event) => setSort(event.target.value)}>
@@ -108,19 +101,29 @@ export function ProductExplorer({
         {totalProducts === 1 ? "producto" : "productos"}
         {searchTerm ? ` para “${searchTerm}”` : " disponibles actualmente"}
       </p>
-      <ProductComparisonBar />
       {visible.length ? (
         <div className="product-grid">
           {visible.map((product, index) => {
             const price = getPrice(product);
             const handle = product.handle || product.id;
+            const target: QuickViewTarget = {
+              handle,
+              title: product.title,
+              thumbnail: product.thumbnail,
+              category: product.categories?.[0]?.name ?? null,
+            };
             return (
               <article className="product-card" key={product.id}>
-                <Link className="product-image" href={`/productos/${handle}`}>
+                <Link
+                  className="product-image"
+                  href={`/productos/${handle}`}
+                  onClick={preview(target)}
+                  aria-label={`Vista rápida de ${product.title}`}
+                >
                   {product.thumbnail ? (
                     <Image
                       src={product.thumbnail}
-                      alt={product.title}
+                      alt=""
                       fill
                       unoptimized
                       sizes="(max-width: 650px) 50vw, (max-width: 1000px) 33vw, 25vw"
@@ -132,22 +135,25 @@ export function ProductExplorer({
                 </Link>
                 <div className="product-meta">
                   <span>{product.categories?.[0]?.name || "SELECCIÓN AGESTYLES"}</span>
-                  <span aria-hidden="true">
-                    <Icon name="arrowUpRight" size={12} />
-                  </span>
                 </div>
-                <Link href={`/productos/${handle}`} className="product-title">
+                <Link
+                  href={`/productos/${handle}`}
+                  className="product-title"
+                  onClick={preview(target)}
+                >
                   {product.title}
                 </Link>
-                <div className="product-foot">
-                  <span>{price ? formatPrice(price.amount, price.currency) : "Consultar"}</span>
-                  <Link href={`/productos/${handle}#tiendas`}>
-                    Comparar tiendas <Icon name="arrowRight" size={12} />
-                  </Link>
-                </div>
-                <div className="comparison-card-action">
-                  <ProductComparisonToggle productId={product.id} />
-                </div>
+                <p className="product-price">
+                  {price ? formatPrice(price.amount, price.currency) : "Consultar"}
+                </p>
+                <button
+                  type="button"
+                  className="btn btn-primary btn-block"
+                  onClick={() => quickView.open(target)}
+                  aria-label={`Elegir opciones y agregar ${product.title} al carrito`}
+                >
+                  <Icon name="shoppingBag" size={15} /> Agregar
+                </button>
               </article>
             );
           })}

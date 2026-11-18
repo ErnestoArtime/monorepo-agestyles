@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { Icon } from "@agestyles/icons";
 import { ProductExplorer } from "@/components/product-explorer";
 import { getSellerCatalog } from "@/lib/catalog";
 import { lowestOfferPrices } from "@/lib/catalog-format";
@@ -35,28 +34,10 @@ export default async function StorePage({ params }: PageProps) {
   if (!data) notFound();
 
   const { seller, products, offers, currency } = data;
-  const buyerAppUrl = process.env.BUYER_APP_URL || "https://tienda.eav-labs.com";
   const sortedProducts = [...products].sort((a, b) => a.title.localeCompare(b.title, "es"));
 
   return (
     <main className="seller-store-page">
-      <div className="topline">AGESTYLES · TIENDA OFICIAL</div>
-      <header className="site-header">
-        <Link href="/" className="brand" aria-label="AgeStyles inicio">
-          <Image src="/agestyles-mark.svg" alt="" width={34} height={34} priority />
-          <span>AgeStyles</span>
-        </Link>
-        <nav className="main-nav" aria-label="Navegación principal">
-          <Link href="/#catalogo">Catálogo</Link>
-          <Link href="/tiendas" className="active">
-            Tiendas
-          </Link>
-        </nav>
-        <a className="bag" href={buyerAppUrl}>
-          Comprar en la app <Icon name="arrowRight" size={13} />
-        </a>
-      </header>
-
       <div className="wrap breadcrumbs">
         <Link href="/">Inicio</Link>
         <span>/</span>
@@ -130,26 +111,6 @@ export default async function StorePage({ params }: PageProps) {
           AgeStyles está en fase piloto. Los pedidos son reales; si algo falla, avísanos.
         </p>
       </section>
-
-      <footer className="site-footer">
-        <div className="wrap footer-main">
-          <Link href="/" className="brand">
-            <Image src="/agestyles-mark.svg" alt="" width={28} height={28} />
-            <span>AgeStyles</span>
-          </Link>
-          <p>Descubre. Compara. Elige.</p>
-          <Link href="/tiendas">
-            Todas las tiendas <Icon name="arrowRight" size={12} />
-          </Link>
-        </div>
-        <div className="wrap footer-bottom">
-          <span>© 2026 AgeStyles</span>
-          <span>AgeStyles en fase piloto</span>
-          <a href={buyerAppUrl}>
-            Conocer la app de compra <Icon name="arrowRight" size={12} />
-          </a>
-        </div>
-      </footer>
     </main>
   );
 }
