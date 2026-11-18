@@ -17,6 +17,16 @@ assert.equal(base, "http://127.0.0.1:19081");
 assert(key?.startsWith("pk_"));
 assert(password?.length >= 12);
 
+// Surface any failure, including fixture setup, as a GitHub annotation; job logs need authentication.
+function annotate(error) {
+  console.log(
+    `::error title=verify-sales-commissions::${String(error?.message ?? error).replace(/\n/g, " ")}`,
+  );
+  process.exit(1);
+}
+process.on("uncaughtException", annotate);
+process.on("unhandledRejection", annotate);
+
 const runId = randomUUID();
 const shortId = runId.replace(/-/g, "").slice(0, 6).toUpperCase();
 const created = { members: [], rules: [] };
