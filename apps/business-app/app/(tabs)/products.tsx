@@ -22,6 +22,7 @@ import {
   hasVariantCombination,
   type VariantAxis,
 } from "../../lib/variant-options";
+import { loadOfferSkus, withOfferSkus } from "../../lib/offer-skus";
 
 type SellerProduct = {
   id: string;
@@ -104,7 +105,16 @@ export default function ProductsScreen() {
       const data = await request<{ products?: SellerProduct[] }>(
         "/vendor/products?limit=100&fields=id,title,description,status,thumbnail,variants.id,variants.title,variants.sku",
       );
-      setItems(data?.products ?? []);
+      // Variants have no SKU in production; show the offer SKU instead (AG-29).
+      const skus = seller
+        ? await loadOfferSkus(request, seller.id).catch(() => new Map<string, string>())
+        : new Map<string, string>();
+      setItems(
+        (data?.products ?? []).map((product) => ({
+          ...product,
+          variants: withOfferSkus(product.variants, skus),
+        })),
+      );
     } catch {
       setError("No se pudo consultar el catálogo de esta tienda.");
     } finally {

@@ -5,6 +5,7 @@ import { useBusiness } from "../context/business-context";
 import { hasPermission, Section } from "../components/operation-list";
 import { useBusinessTheme } from "../hooks/use-business-theme";
 import { parseCatalogCsv, type CatalogCsvRow } from "../lib/catalog-csv";
+import { loadOfferSkus, withOfferSkus } from "../lib/offer-skus";
 
 type SellerVariant = { id: string; title?: string; sku?: string | null };
 type SellerProduct = {
@@ -52,7 +53,14 @@ export default function CatalogImportScreen() {
       if (!page.products?.length) break;
       offset += page.products.length;
     } while (offset < count && offset < 5000);
-    return products;
+    // Variants have no SKU in production; match by the offer SKU instead (AG-29).
+    const skus = seller
+      ? await loadOfferSkus(request, seller.id).catch(() => new Map())
+      : new Map();
+    return products.map((product) => ({
+      ...product,
+      variants: withOfferSkus(product.variants, skus),
+    }));
   }
 
   async function createPreview() {
