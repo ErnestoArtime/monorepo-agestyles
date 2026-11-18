@@ -101,3 +101,9 @@ export function useRegion() {
   }
   return context;
 }
+
+/** True when buyers can choose between more than one country; hides the selector otherwise. */
+export function useHasCountryChoice() {
+  const { regions } = useRegion();
+  return regions.reduce((count, region) => count + (region.countries?.length ?? 0), 0) > 1;
+}

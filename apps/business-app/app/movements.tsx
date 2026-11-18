@@ -30,6 +30,9 @@ export default function MovementsScreen() {
   const inventoryItemId = params.inventory_item_id || undefined;
   const [type, setType] = useState<MovementType | undefined>();
   const [period, setPeriod] = useState<Period>("30");
+  const [actorId, setActorId] = useState<string | undefined>();
+  // People seen in the history so far, so the filter survives while it narrows the list.
+  const [actors, setActors] = useState<Map<string, string>>(new Map());
   const [movements, setMovements] = useState<InventoryMovement[]>([]);
   const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -43,19 +46,26 @@ export default function MovementsScreen() {
       setError("");
       try {
         const data = await request<{ inventory_movements: InventoryMovement[]; count: number }>(
-          `${MOVEMENT_PATH}${movementQuery({ type, period, inventoryItemId, limit: PAGE_SIZE, offset })}`,
+          `${MOVEMENT_PATH}${movementQuery({ type, period, inventoryItemId, actorId, limit: PAGE_SIZE, offset })}`,
         );
         setMovements((current) =>
           offset ? [...current, ...data.inventory_movements] : data.inventory_movements,
         );
         setCount(data.count);
+        setActors((current) => {
+          const next = new Map(current);
+          for (const movement of data.inventory_movements) {
+            if (movement.actor_id) next.set(movement.actor_id, movement.actor_email ?? "Usuario");
+          }
+          return next.size === current.size ? current : next;
+        });
       } catch (cause) {
         setError(movementErrorMessage(cause, "No se pudo consultar el historial de movimientos."));
       } finally {
         setLoading(false);
       }
     },
-    [inventoryItemId, period, request, seller, type],
+    [actorId, inventoryItemId, period, request, seller, type],
   );
 
   useEffect(() => {
@@ -67,7 +77,7 @@ export default function MovementsScreen() {
     setError("");
     try {
       const csv = await requestText(
-        `${MOVEMENT_PATH}/export${movementQuery({ type, period, inventoryItemId })}`,
+        `${MOVEMENT_PATH}/export${movementQuery({ type, period, inventoryItemId, actorId })}`,
       );
       await deliverCsv(csv, `movimientos-${new Date().toISOString().slice(0, 10)}.csv`);
     } catch (cause) {
@@ -154,6 +164,29 @@ export default function MovementsScreen() {
         })}
       </View>
 
+      {actors.size > 1 || actorId ? (
+        <View style={styles.filters} accessibilityRole="radiogroup" accessibilityLabel="Usuario">
+          {[
+            { id: undefined as string | undefined, label: "Todas las personas" },
+            ...[...actors].map(([id, label]) => ({ id: id as string | undefined, label })),
+          ].map((option) => {
+            const selected = actorId === option.id;
+            return (
+              <Pressable
+                key={option.id ?? "all"}
+                onPress={() => setActorId(option.id)}
+                accessibilityRole="radio"
+                accessibilityState={{ selected }}
+                style={[styles.chip, selected && styles.chipSelected]}
+              >
+                <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
+                  {option.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : null}
       {movements.length ? (
         <Section title={`${count} movimientos`}>
           {movements.map((movement) => (

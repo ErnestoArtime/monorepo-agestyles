@@ -11,6 +11,7 @@ export type InventoryMovement = {
   quantity_before: number;
   quantity_after: number;
   reason: string | null;
+  actor_id: string;
   actor_email: string | null;
   title: string | null;
   sku: string | null;
@@ -49,18 +50,21 @@ export function movementQuery({
   type,
   period,
   inventoryItemId,
+  actorId,
   limit,
   offset,
 }: {
   type?: MovementType;
   period: Period;
   inventoryItemId?: string;
+  actorId?: string;
   limit?: number;
   offset?: number;
 }) {
   const params = new URLSearchParams();
   if (type) params.set("type", type);
   if (inventoryItemId) params.set("inventory_item_id", inventoryItemId);
+  if (actorId) params.set("actor_id", actorId);
   if (period !== "all") {
     params.set("from", new Date(Date.now() - Number(period) * 24 * 60 * 60 * 1000).toISOString());
   }
