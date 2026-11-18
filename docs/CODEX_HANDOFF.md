@@ -1371,3 +1371,15 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - Vista rápida sin salto: hueco fijo mientras carga y galería cuadrada con `aspectRatio` antes de medir.
 - Carrito vacío: «Explorar productos» navega a la portada; antes iba a `/`, una redirección que en escritorio abría el menú lateral.
 - Probado con Playwright en 1440×700 y 412×900 contra la API de producción en solo lectura.
+
+## 2026-11-18 — Claude: despliegue de los arreglos de Tienda y Negocio y limpieza del disco (autorizado: «publica todo y elimina las versiones más viejas»)
+
+- **Webs desde `24851ee`:** Tienda `entry-42580dc3…`, Negocio `entry-a427d960…`. Comprobado en producción: «Filtros» y 30 botones de compartir en la portada de Tienda; Negocio muestra «Propietario» al entrar el titular. Incluye `05aa067` (títulos de página, barras con tema, usuario y rol), `5f472e9` (filtros, compartir, corazón rojo, sin comparar, vista rápida estable, enlace del carrito) y `24851ee` (compartir fuera de la foto).
+- **Limpieza (solo AgeStyles, nada en uso):** imagen de la API `0444cb7` (se puede volver a descargar de GHCR), cuatro imágenes `rollback-before-*-20261116` de storefront-web y buyer-web, `agestyles/commerce-api:buyer-preview` sin contenedor (creada por un `compose up --build` sin nombre de servicio sobre `buyer-web.yaml`) y la APK `AgeStyles-Prueba-1.0.0` de descargas (ya sin enlace). Libres: 9,2 → 12 GB (95 %). API 200 y contenedores sanos después. Sin tocar otros proyectos ni la caché de Gradle (hace falta para las APK).
+- **APK publicadas** (versiones en `a05a4e1`):
+  - Tienda 1.2.0 (`versionCode` 3, mismo certificado `a58cfbf4…`, SHA-256 `3ca19c6a…`) y Negocio 1.0.1 (`versionCode` 2, certificado `96ae756d…`, SHA-256 `589a2a94…`); ambas se instalan encima.
+  - En descargas se retiraron la 1.1.0 de Tienda y la 1.0.0 de Negocio; tarjetas actualizadas.
+  - Copias de las APK firmadas y de `copy-cli.js` en `~/.local/share/agestyles-deploy/apks/` (el contenedor de descargas no tiene volumen).
+  - Guion reutilizable de esta sesión: `prebuild --clean` → `export:embed` con Node → `cliFile` que copia el bundle → `local.properties` con `sdk.dir` → `assembleRelease` con `--max-workers=1` y `-Xmx1536m`, una app detrás de otra.
+- **Tienda republicada** (`entry-4ef57a7f…`) con `BUYER_WEB_ANDROID_APK_URL` a la 1.2.0 (copia previa de `.env.buyer-web` en `env-backups-<fecha>/env.buyer-web.before-120`).
+- **Restos de compilación borrados:** carpetas `android/` generadas de Tienda y Negocio (ignoradas por git, se regeneran con `prebuild`) y bundles intermedios. Libres al final: 14 GB (94 %). Se conserva `~/.gradle`.
