@@ -1053,3 +1053,10 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - Productos de Negocio: buscador por nombre/SKU, filtros por estado, tarjetas con foto e insignia, ficha en `BottomSheet` con edición y variantes; retirar variante usa `ConfirmDialog` (`Alert.alert` no hace nada en la web). `OperationList` cuenta los hijos que realmente se pintan y acepta `isEmpty`, así que los mensajes de vacío vuelven a salir.
 - Checks: `tsc --noEmit` de business-app OK; prettier OK. Sin capturas todavía.
 - Pendiente: Movimientos y Comisiones, capturas claro/oscuro y publicar las webs de Tienda y Negocio (autorizado por el usuario).
+
+## 2026-11-18 · Codex · AG-25: dashboard de Negocio
+
+- El usuario pidió que la pantalla inicial de Negocio funcione como dashboard: detalle de la tienda, accesos rápidos y avisos pertinentes.
+- La pantalla actual solo enseña si endpoints responden («Disponible/Sin acceso»); el dashboard necesita cifras reales y acciones respetando permisos y tema claro/oscuro.
+- AG-24 de Claude reserva `apps/business-app/**` y está trabajando en la fase 3. AG-25 queda pendiente hasta liberar los archivos para evitar editar el mismo código.
+- Se preparó una propuesta local, luego retirada para no interferir con AG-24. No queda cambio de interfaz ni pruebas ejecutadas. Requisitos y responsable Codex constan en `docs/TABLERO.md`.
