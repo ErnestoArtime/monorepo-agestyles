@@ -7,10 +7,12 @@ import { HapticTab } from "@/components/haptic-tab";
 import { Icon } from "@agestyles/icons";
 import { Colors } from "@/constants/theme";
 import { useCart } from "@/context/cart-context";
+import { useResponsive } from "@/hooks/use-responsive";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const { cart } = useCart();
+  const { isWideWeb } = useResponsive();
 
   const itemCount = cart?.items?.length || 0;
 
@@ -23,6 +25,8 @@ export default function TabLayout() {
         tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
         tabBarInactiveTintColor: Colors[colorScheme ?? "light"].tabIconDefault,
         tabBarStyle: {
+          // Wide browsers get the website top bar instead of the app's tab bar.
+          ...(isWideWeb ? { display: "none" as const } : {}),
           backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
           borderTopColor: Colors[colorScheme ?? "light"].border,
           height: 68,
@@ -68,6 +72,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="favorites"
         options={{
+          // The page has its own title; the website top bar replaces the app header.
+          headerShown: !isWideWeb,
           title: "Favoritos",
           tabBarIcon: ({ color }) => <Icon name="heart" size={23} color={color} />,
         }}

@@ -8,11 +8,13 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { BrandLockup } from "@/components/brand-lockup";
 import { NotificationHeaderBell } from "@/components/notification-header-bell";
 import { Colors } from "@/constants/theme";
+import { useResponsive } from "@/hooks/use-responsive";
 
 export default function HomeStackLayout() {
   const colorScheme = useColorScheme();
   const navigation = useNavigation();
   const colors = Colors[colorScheme ?? "light"];
+  const { isWideWeb } = useResponsive();
 
   return (
     <Stack
@@ -26,6 +28,8 @@ export default function HomeStackLayout() {
       <Stack.Screen
         name="index"
         options={{
+          // The website top bar already carries the brand, the menu and the bell.
+          headerShown: !isWideWeb,
           headerTitle: () => <BrandLockup />,
           headerStyle: { backgroundColor: colors.cardBackground },
           headerTintColor: colors.text,
@@ -52,6 +56,7 @@ export default function HomeStackLayout() {
       <Stack.Screen
         name="product/[id]"
         options={{
+          headerShown: !isWideWeb,
           title: "Detalles del producto",
           presentation: "card",
           headerBackButtonDisplayMode: "minimal",

@@ -3,6 +3,8 @@ import { ProductCard } from "@/components/product-card";
 import { ProductDetail } from "@/components/product-detail";
 import { PillGroup, SearchField } from "@agestyles/ui-native";
 import { AndroidAppLink } from "@/components/android-app-link";
+import { WebFooter } from "@/components/web-footer";
+import { CONTENT_MAX, useResponsive } from "@/hooks/use-responsive";
 import { listStoreProducts } from "@agestyles/api-client/store";
 import { Colors } from "@/constants/theme";
 import { useRegion } from "@/context/region-context";
@@ -28,6 +30,11 @@ export default function HomeScreen() {
   const colors = Colors[colorScheme ?? "light"];
   const { selectedRegion, loading: regionLoading, error: regionError, reloadRegions } = useRegion();
   const router = useRouter();
+  const { isWideWeb, columns } = useResponsive();
+  // Phones open products in a bottom sheet; a wide browser opens the product page (shareable URL).
+  const openProduct = isWideWeb
+    ? undefined
+    : (product: HttpTypes.StoreProduct) => setSheetProductId(product.id);
 
   const [products, setProducts] = useState<HttpTypes.StoreProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -222,27 +229,44 @@ export default function HomeScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <FlatList
         data={visibleProducts}
+        key={`grid-${columns}`}
         keyExtractor={(item) => item.id}
-        numColumns={2}
-        columnWrapperStyle={styles.row}
+        numColumns={columns}
+        columnWrapperStyle={[styles.row, isWideWeb && styles.wide]}
         initialNumToRender={6}
         maxToRenderPerBatch={6}
         windowSize={5}
         removeClippedSubviews={true}
         ListHeaderComponent={
-          <View style={styles.header}>
-            <View style={[styles.betaNotice, { backgroundColor: colors.surfaceMuted }]}>
-              <Icon name="help" size={16} color={colors.tint} />
-              <Text style={[styles.betaCopy, { color: colors.text }]}>
-                AgeStyles está en fase piloto. Los pedidos son reales; si algo falla, avísanos.
-              </Text>
-            </View>
-            <View style={[styles.hero, { backgroundColor: colors.tint }]}>
+          <View style={[styles.header, isWideWeb && [styles.wide, styles.wideHeader]]}>
+            {isWideWeb ? null : (
+              <View style={[styles.betaNotice, { backgroundColor: colors.surfaceMuted }]}>
+                <Icon name="help" size={16} color={colors.tint} />
+                <Text style={[styles.betaCopy, { color: colors.text }]}>
+                  AgeStyles está en fase piloto. Los pedidos son reales; si algo falla, avísanos.
+                </Text>
+              </View>
+            )}
+            <View
+              style={[styles.hero, isWideWeb && styles.heroWide, { backgroundColor: colors.tint }]}
+            >
               <View style={styles.heroCopy}>
-                <Text style={[styles.heroTitle, { color: colors.onTint }]}>
+                <Text
+                  style={[
+                    styles.heroTitle,
+                    isWideWeb && styles.heroTitleWide,
+                    { color: colors.onTint },
+                  ]}
+                >
                   Lo que buscas.{"\n"}Más opciones.
                 </Text>
-                <Text style={[styles.heroDescription, { color: colors.onTint }]}>
+                <Text
+                  style={[
+                    styles.heroDescription,
+                    isWideWeb && styles.heroDescriptionWide,
+                    { color: colors.onTint },
+                  ]}
+                >
                   Descubre productos y compara ofertas de distintas tiendas.
                 </Text>
                 <Text style={[styles.heroLink, { color: colors.onTint }]}>
@@ -253,19 +277,24 @@ export default function HomeScreen() {
                 <TouchableOpacity
                   accessibilityRole="button"
                   accessibilityLabel={"Ver " + products[0].title}
-                  onPress={() => setSheetProductId(products[0].id)}
-                  style={styles.heroImageFrame}
+                  onPress={() =>
+                    openProduct
+                      ? openProduct(products[0])
+                      : router.push(`/(drawer)/(tabs)/(home)/product/${products[0].id}` as never)
+                  }
+                  style={[styles.heroImageFrame, isWideWeb && styles.heroImageFrameWide]}
                 >
                   <Image
                     source={{ uri: products[0].thumbnail }}
                     style={[styles.heroImage, { backgroundColor: colors.imagePlaceholder }]}
                     contentFit="cover"
+                    contentPosition="top"
                   />
                 </TouchableOpacity>
               ) : null}
             </View>
-            <AndroidAppLink />
-            <View style={styles.searchArea}>
+            {isWideWeb ? null : <AndroidAppLink />}
+            <View style={[styles.searchArea, isWideWeb && styles.searchAreaWide]}>
               <SearchField
                 value={searchTerm}
                 onChangeText={setSearchTerm}
@@ -324,9 +353,10 @@ export default function HomeScreen() {
           </View>
         }
         renderItem={({ item }) => (
-          <ProductCard product={item} onOpen={(product) => setSheetProductId(product.id)} />
+          <ProductCard product={item} onOpen={openProduct} columns={columns} />
         )}
         contentContainerStyle={styles.listContent}
+        ListFooterComponent={isWideWeb ? <WebFooter /> : null}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.tint} />
         }
@@ -430,6 +460,7 @@ const styles = StyleSheet.create({
   },
   menuFilter: {
     alignSelf: "flex-start",
+    marginHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
@@ -464,8 +495,15 @@ const styles = StyleSheet.create({
   listContent: {
     paddingBottom: 20,
   },
+  wide: { width: "100%", maxWidth: CONTENT_MAX, alignSelf: "center" },
+  wideHeader: { paddingTop: 20 },
+  searchAreaWide: { marginTop: 20 },
+  heroWide: { minHeight: 340, borderRadius: 20 },
+  heroTitleWide: { fontSize: 46, lineHeight: 52, letterSpacing: -1.2 },
+  heroDescriptionWide: { maxWidth: 440, fontSize: 17, lineHeight: 26 },
+  heroImageFrameWide: { width: "46%", margin: 12, borderRadius: 16 },
   row: {
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
     paddingHorizontal: 8,
   },
   errorText: {

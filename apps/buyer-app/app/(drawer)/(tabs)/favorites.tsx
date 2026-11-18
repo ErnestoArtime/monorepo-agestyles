@@ -1,4 +1,5 @@
 import { ProductCard } from "@/components/product-card";
+import { CONTENT_MAX, useResponsive } from "@/hooks/use-responsive";
 import { Colors } from "@/constants/theme";
 import { useFavorites } from "@/context/favorites-context";
 import { useRegion } from "@/context/region-context";
@@ -19,6 +20,7 @@ import {
 const PAGE_SIZE = 100;
 
 export default function FavoritesScreen() {
+  const { columns, isWideWeb } = useResponsive();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
   const { favoriteIds, ready } = useFavorites();
@@ -82,12 +84,13 @@ export default function FavoritesScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <FlatList
         data={products}
+        key={`favorites-${columns}`}
         keyExtractor={(product) => product.id}
-        numColumns={2}
-        columnWrapperStyle={styles.row}
+        numColumns={columns}
+        columnWrapperStyle={[styles.row, isWideWeb && styles.wide]}
         contentContainerStyle={products.length ? styles.list : styles.emptyList}
         ListHeaderComponent={
-          <View style={styles.heading}>
+          <View style={[styles.heading, isWideWeb && styles.wide]}>
             <Text style={[styles.title, { color: colors.text }]}>Tus favoritos</Text>
             <Text style={[styles.subtitle, { color: colors.icon }]}>
               Productos que guardaste para volver a verlos.
@@ -124,7 +127,7 @@ export default function FavoritesScreen() {
             )}
           </View>
         }
-        renderItem={({ item }) => <ProductCard product={item} />}
+        renderItem={({ item }) => <ProductCard product={item} columns={columns} />}
       />
     </View>
   );
@@ -134,7 +137,8 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   list: { paddingHorizontal: 10, paddingBottom: 24 },
   emptyList: { flexGrow: 1, paddingHorizontal: 20, paddingBottom: 24 },
-  row: { justifyContent: "space-between" },
+  row: { justifyContent: "flex-start" },
+  wide: { width: "100%", maxWidth: CONTENT_MAX, alignSelf: "center" },
   heading: { paddingHorizontal: 5, paddingTop: 24, paddingBottom: 16 },
   title: { fontSize: 28, lineHeight: 34, fontWeight: "600", letterSpacing: -0.5 },
   subtitle: { fontSize: 14, lineHeight: 21, marginTop: 5 },
