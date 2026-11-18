@@ -101,7 +101,38 @@ const fileModule =
           },
         };
       })()
-    : null;
+    : localMediaModule();
+
+/**
+ * Product photos on a server volume (AG-26). MinIO images are no longer published, so the
+ * local provider writes to AGESTYLES_MEDIA_DIR and nginx serves it at AGESTYLES_MEDIA_URL.
+ * Without both variables the module keeps Medusa's default (no public media).
+ */
+function localMediaModule() {
+  const { AGESTYLES_MEDIA_DIR, AGESTYLES_MEDIA_URL } = process.env;
+  if (!AGESTYLES_MEDIA_DIR && !AGESTYLES_MEDIA_URL) return null;
+  if (!AGESTYLES_MEDIA_DIR?.startsWith("/") || !AGESTYLES_MEDIA_URL?.startsWith("https://")) {
+    throw new Error(
+      "AGESTYLES_MEDIA_DIR must be an absolute path and AGESTYLES_MEDIA_URL a public HTTPS URL.",
+    );
+  }
+  return {
+    resolve: "@medusajs/medusa/file",
+    options: {
+      providers: [
+        {
+          resolve: "@medusajs/medusa/file-local",
+          id: "local",
+          options: {
+            upload_dir: AGESTYLES_MEDIA_DIR,
+            private_upload_dir: `${AGESTYLES_MEDIA_DIR}/private`,
+            backend_url: AGESTYLES_MEDIA_URL.replace(/\/+$/, ""),
+          },
+        },
+      ],
+    },
+  };
+}
 
 module.exports = withMercur({
   // The isolated lab uses Mercur's graph query path until its index engine is
