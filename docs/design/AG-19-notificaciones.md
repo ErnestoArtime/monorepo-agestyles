@@ -1,6 +1,6 @@
 # AG-19 — Notificaciones del ecosistema: propuesta de diseño
 
-**Estado:** propuesta (claude, 18 nov 2026) · **Decide:** usuario · **Revisión cruzada:** codex. Sin código todavía.
+**Estado:** N1, N2 y N3 implementados y verificados en datos desechables (claude, 18 nov 2026); sin desplegar · **Revisión cruzada:** codex. Ver «Estado de la implementación» al final.
 
 ## Objetivo
 
@@ -153,3 +153,36 @@ N3 puede adelantarse a N2 si se confirma que hoy no llega ningún correo de cuen
 4. **Stock bajo.** Umbral por defecto propuesto: 3 unidades o menos, y quién lo recibe (titular y permiso de inventario).
 5. **Horas silenciosas** del push (22:00–07:00, hora de Cuba) y **retención** (90 días).
 6. **Orden.** ¿Empezamos por N1 y adelantamos N3 si no llegan correos de cuenta?
+
+## Estado de la implementación (18 nov 2026)
+
+El usuario pidió empezar por N1 y N2 y adelantar el correo (N3). Las decisiones sin respuesta se tomaron con los valores recomendados de este documento: SendGrid para el correo, WhatsApp asistido (sin Business API), stock bajo a 3 unidades, horas silenciosas de 22:00 a 07:00 (hora de Cuba) y retención de 90 días. Todo es modificable.
+
+**Hecho**
+
+- `packages/notifications` (módulo Medusa propio): bandeja, cola de entregas, dispositivos y preferencias; reglas puras con tests; cliente de Expo Push con lotes de 100 y recibos de 300.
+- `apps/commerce-api`: rutas `store|vendor/agestyles/{notifications, notifications/read, devices, notification-preferences}`, 8 subscribers, jobs (entregas cada minuto, recibos cada 10 min, stock bajo cada 30 min, purga diaria) y script `run-notification-deliveries.ts`.
+- Eventos: `order_group.created` (un aviso al comprador por checkout), `order.placed` (uno por tienda y rol con permiso), etapas de preparación (evento propio de la ruta `fulfillments` de AG-04), `order.canceled`, pagos manuales enviados/verificados/rechazados, retiros de comisión, `product.published|rejected|change-requested` y `auth.password_reset` (correo).
+- `packages/api-client/notifications` y `packages/features-notifications` (provider con contador, campana, bandeja, preferencias, registro de push) cableados en Tienda y Negocio, más las pantallas de restablecer contraseña.
+- Gateways y CI: reglas de `buyer-lab-gateway.mjs` y `seller-lab-gateway.mjs`, preflights y `verify-notifications.mjs`.
+- Versiones: Medusa 2.22.3, Mercur 2.4.1, Expo `~54.0.22`, `expo-notifications ~0.32.17`. Extensiones usadas: módulo propio, subscribers, jobs, rutas API, Notification Module con el proveedor oficial SendGrid y opciones del event bus Redis. Sin parches ni fork.
+
+**Verificado** (Postgres 16 y Redis desechables, API compilada y arrancada): las migraciones corren completas; `verify-notifications.mjs` pasa dos veces seguidas con un checkout real de dos tiendas. Comprueba un solo «Pedido recibido» para el comprador y un «Pedido nuevo» por tienda, que cada tienda solo ve lo suyo, que el rol de inventario no recibe pedidos, el aislamiento entre clientes, las cuatro etapas (preparación, listo, despachado, entregado), la lectura por destinatario, el registro y borrado de dispositivos, las preferencias y el push contra un Expo simulado, incluida la revocación de un token que Expo declara inexistente. Tests unitarios de reglas, cliente de Expo y formato de textos.
+
+**Diferencias con la propuesta**
+
+1. **El push no pasa por el Notification Module.** Expo trabaja en dos fases (ticket y recibo posterior) y puede invalidar un token concreto; eso no encaja en `send()` de un proveedor. La cola propia llama directamente a un cliente de Expo; el correo sí usa el Notification Module con el proveedor oficial de SendGrid.
+2. **Reintentos del bus para todos los subscribers.** Medusa solo admite `jobOptions` globales en el módulo Redis (`attempts: 3`, retroceso exponencial); no se pueden limitar a los propios porque Mercur emite sus eventos. BullMQ repite solo el subscriber que falló.
+3. **Stock bajo:** como máximo un aviso por producto y semana mientras siga bajo, sin guardar estado de «recuperado».
+4. **Cotizaciones:** no se avisa de ellas (no se verificó el flujo de la cotización con el comprador); queda como seguimiento.
+5. **Correo por defecto:** los avisos de pedidos y pagos por correo están desactivados hasta que el usuario los active en Avisos. El restablecimiento de contraseña no depende de esa preferencia.
+6. **Horas silenciosas** fijas para todos (no por usuario).
+7. **Límite de ritmo del registro de dispositivos:** no hay uno propio en la API; solo el limitador general de los gateways.
+8. **Correo de bienvenida** y el aviso de invitación a una tienda propio no se hicieron: Mercur ya envía su correo de invitación (en inglés) por el mismo Notification Module, que ahora funciona al configurar SendGrid.
+
+**Pendiente (no depende del código)**
+
+- Autorización del usuario para desplegar la API (incluye migración) y reiniciar los gateways.
+- Credenciales: clave de SendGrid y remitente verificado; proyecto EAS, Firebase y, para iOS, Apple Developer. Detalle en el runbook de producción.
+- Probar push en un móvil real, la entrega real de un correo y las pantallas en dispositivo: no se pudo aquí.
+- Modo comprador de Negocio sin campana propia (queda fuera de esta entrega).
