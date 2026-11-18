@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { CardGrid } from "../../components/card-grid";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Icon } from "@agestyles/icons";
 import { hasPermission, OperationList, Row, Section } from "../../components/operation-list";
@@ -273,7 +274,7 @@ export default function OrdersScreen() {
         </View>
       ) : null}
       {items.length ? (
-        <View style={styles.cards}>
+        <CardGrid>
           {items
             .filter((item) => stageFilter === "all" || progressView(item).stage === stageFilter)
             .map((item) => {
@@ -303,7 +304,7 @@ export default function OrdersScreen() {
                 </Card>
               );
             })}
-        </View>
+        </CardGrid>
       ) : null}
       {detailLoading ? <Text style={styles.muted}>Cargando el detalle del pedido…</Text> : null}
       <BottomSheet

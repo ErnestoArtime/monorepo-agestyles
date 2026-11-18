@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { CardGrid } from "../../components/card-grid";
+import { useResponsive } from "../../hooks/use-responsive";
 import { Image, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { router } from "expo-router";
 import { Icon } from "@agestyles/icons";
@@ -95,6 +97,7 @@ export default function ProductsScreen() {
     null,
   );
   const canEdit = hasPermission(member, "products", "edit");
+  const { isWideWeb } = useResponsive();
   const canManageProducts = hasPermission(member, "products", "manage");
 
   const load = useCallback(async () => {
@@ -378,21 +381,22 @@ export default function ProductsScreen() {
         </Text>
       ) : null}
       {canEdit ? (
-        <Button
-          icon="plus"
-          title="Nuevo producto"
-          onPress={() => router.push("/product-new")}
-          style={styles.importButton}
-        />
-      ) : null}
-      {canEdit ? (
-        <Button
-          icon="list"
-          variant="secondary"
-          title="Importar o corregir catálogo por CSV"
-          onPress={() => router.push("/catalog-import")}
-          style={styles.importButton}
-        />
+        // In a wide browser both actions sit side by side at their natural width, like a web page.
+        <View style={isWideWeb ? styles.actionsWide : null}>
+          <Button
+            icon="plus"
+            title="Nuevo producto"
+            onPress={() => router.push("/product-new")}
+            style={styles.importButton}
+          />
+          <Button
+            icon="list"
+            variant="secondary"
+            title="Importar o corregir catálogo por CSV"
+            onPress={() => router.push("/catalog-import")}
+            style={styles.importButton}
+          />
+        </View>
       ) : null}
       {items.length ? (
         <View style={styles.toolbar}>
@@ -418,7 +422,7 @@ export default function ProductsScreen() {
         <Text style={styles.readOnlyNote}>Ningún producto coincide con la búsqueda.</Text>
       ) : null}
       {visibleItems.length ? (
-        <View style={styles.cards}>
+        <CardGrid>
           {visibleItems.map((item) => {
             const variants = item.variants?.length ?? 0;
             return (
@@ -461,7 +465,7 @@ export default function ProductsScreen() {
               </Card>
             );
           })}
-        </View>
+        </CardGrid>
       ) : null}
       {!canEdit && items.length ? (
         <Text style={styles.readOnlyNote}>
@@ -817,6 +821,7 @@ export default function ProductsScreen() {
 const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
   StyleSheet.create({
     toolbar: { gap: 12, marginBottom: 14 },
+    actionsWide: { flexDirection: "row", gap: 12, alignItems: "flex-start" },
     count: { color: theme.muted, fontSize: 13 },
     cards: { gap: 10 },
     cardRow: { flexDirection: "row", alignItems: "center", gap: 12 },

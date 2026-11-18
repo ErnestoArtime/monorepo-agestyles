@@ -5,6 +5,7 @@ import { Platform, View } from "react-native";
 import { hasPermission } from "../../components/operation-list";
 import { useBusiness } from "../../context/business-context";
 import { useBusinessTheme } from "../../hooks/use-business-theme";
+import { useResponsive } from "../../hooks/use-responsive";
 
 const icons: Record<string, IconName> = {
   index: "home",
@@ -25,11 +26,14 @@ export default function BusinessTabs() {
   const { member } = useBusiness();
   const theme = useBusinessTheme();
   const router = useRouter();
+  const { isWideWeb } = useResponsive();
   return (
     <Tabs
       screenOptions={({ route }) => ({
         // Browsers draw their own top bar; Android Chrome's safe-area inset doubled the header.
         ...(Platform.OS === "web" ? { headerStatusBarHeight: 0 } : {}),
+        // In a wide browser the side menu replaces the app header and the tab bar.
+        headerShown: !isWideWeb,
         headerStyle: { backgroundColor: theme.surface },
         headerTitleStyle: { color: theme.text, fontWeight: "600" },
         headerTintColor: theme.action,
@@ -41,6 +45,7 @@ export default function BusinessTabs() {
         tabBarActiveTintColor: theme.action,
         tabBarInactiveTintColor: theme.muted,
         tabBarStyle: {
+          ...(isWideWeb ? { display: "none" as const } : {}),
           backgroundColor: theme.surface,
           borderTopColor: theme.border,
           minHeight: 62,

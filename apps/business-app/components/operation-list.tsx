@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { Icon } from "@agestyles/icons";
 import { useBusinessTheme, type BusinessTheme } from "../hooks/use-business-theme";
+import { CONTENT_MAX, useResponsive } from "../hooks/use-responsive";
 export { hasPermission } from "../lib/permissions";
 
 export function OperationList({
@@ -34,6 +35,7 @@ export function OperationList({
 }) {
   const theme = useBusinessTheme();
   const styles = createStyles(theme);
+  const { isWideWeb } = useResponsive();
   // Children are often a list of conditionals (`cond ? <X/> : null`), which is truthy even
   // when every branch rendered nothing, so count what actually renders.
   const nothingRendered = Children.toArray(children).length === 0;
@@ -42,7 +44,7 @@ export function OperationList({
   return (
     <ScrollView
       style={styles.page}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, isWideWeb && styles.contentWide]}
       refreshControl={
         onRefresh ? (
           <RefreshControl refreshing={loading} onRefresh={onRefresh} tintColor={theme.action} />
@@ -129,6 +131,14 @@ const createStyles = (theme: BusinessTheme) =>
   StyleSheet.create({
     page: { flex: 1, backgroundColor: theme.background },
     content: { padding: 20, paddingBottom: 42 },
+    // Web layout: a centred page with room around it, like a back office.
+    contentWide: {
+      width: "100%",
+      maxWidth: CONTENT_MAX,
+      alignSelf: "center",
+      paddingHorizontal: 40,
+      paddingTop: 28,
+    },
     // Same weight as ui-native LargeTitle so Tienda and Negocio read as one product (AG-24).
     title: {
       color: theme.text,

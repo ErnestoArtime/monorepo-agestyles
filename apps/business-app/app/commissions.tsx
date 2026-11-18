@@ -13,6 +13,7 @@ import {
 import { deliverCsv } from "../lib/inventory-movements";
 import { useBusiness } from "../context/business-context";
 import { useBusinessTheme } from "../hooks/use-business-theme";
+import { useResponsive } from "../hooks/use-responsive";
 import {
   agentLink,
   COMMISSIONS,
@@ -70,6 +71,7 @@ export default function CommissionsScreen() {
   const styles = createStyles(theme);
   const router = useRouter();
   const { request, requestText, seller } = useBusiness();
+  const { isWideWeb } = useResponsive();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -253,15 +255,18 @@ export default function CommissionsScreen() {
       error={error}
       onRefresh={() => void load()}
     >
-      <Pressable
-        onPress={() => router.back()}
-        accessibilityRole="button"
-        accessibilityLabel="Volver"
-        style={styles.back}
-      >
-        <Icon name="arrowLeft" size={18} color={theme.action} />
-        <Text style={styles.link}>Volver</Text>
-      </Pressable>
+      {isWideWeb ? null : (
+        // The web layout's side menu already reaches every section.
+        <Pressable
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Volver"
+          style={styles.back}
+        >
+          <Icon name="arrowLeft" size={18} color={theme.action} />
+          <Text style={styles.link}>Volver</Text>
+        </Pressable>
+      )}
       {notice ? (
         <Text accessibilityRole="alert" style={styles.notice}>
           {notice}
