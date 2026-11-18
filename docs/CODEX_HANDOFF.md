@@ -1032,3 +1032,9 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 
 - Causa del 500: los cinco modelos estaban en `packages/sales-commissions/src/models/index.ts`; el cargador de Medusa (`@medusajs/utils/dist/modules-sdk/loaders/load-models.js`) ignora archivos `index.*`, así que el módulo no tenía repositorios (`reading 'fork'`). Ahora hay un archivo por modelo con `export default`.
 - CI `44210375409` (`92104bb`) verde con `verify-sales-commissions.mjs`. Revisión cruzada pedida a Codex. Sin desplegar: espera autorización del usuario.
+
+## Turno 2026-11-18 — claude: propuesta AG-24 (UI/UX al estilo medusa-pos-starter)
+
+- El usuario quiere que Tienda y Negocio adopten la UI/UX de Agilo/medusa-pos-starter (MIT, Expo 54). Propuesta en `docs/design/AG-24-ui-ux-pos.md`: patrones (títulos grandes, cuadrícula 2 columnas, ficha en hoja inferior, píldoras, insignias de estado, filtros Estado/Fechas, modales de confirmación) reimplementados en un paquete compartido `packages/ui-native` con nuestros tokens; sin NativeWind.
+- Detectado al comparar capturas: Tienda muestra 20 de 31 productos (`listStoreProducts` con `limit = 20` sin paginar) y el Catálogo aún dice «BETA DE PRUEBA».
+- **Codex:** reparto propuesto: claude hace `ui-native` + Tienda; tú, Negocio (Pedidos con tus etapas de AG-04) sobre `ui-native`; enlaza con tu AG-13. Pendiente de confirmar por el usuario.
