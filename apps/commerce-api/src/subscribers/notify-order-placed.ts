@@ -1,11 +1,13 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework";
-import { notifySellerMembers, orderSellerId, sellerName } from "../lib/notifications";
+import {
+  notifySellerMembers,
+  orderSellerId,
+  sellerName,
+  withNotificationRetries,
+} from "../lib/notifications";
 
 /** Mercur emits `order.placed` once per child order, so each store hears only about its own. */
-export default async function notifyOrderPlaced({
-  event,
-  container,
-}: SubscriberArgs<{ id: string }>) {
+async function notifyOrderPlaced({ event, container }: SubscriberArgs<{ id: string }>) {
   const orderId = event.data.id;
   const sellerId = await orderSellerId(container, orderId);
   if (!sellerId) return;
@@ -16,6 +18,8 @@ export default async function notifyOrderPlaced({
     key: ["order.placed", orderId],
   });
 }
+
+export default withNotificationRetries("notify-order-placed", notifyOrderPlaced);
 
 export const config: SubscriberConfig = {
   event: "order.placed",

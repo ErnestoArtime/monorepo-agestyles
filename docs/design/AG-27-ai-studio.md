@@ -30,7 +30,7 @@ Estado: decisión de proveedores tomada por el usuario el 18 nov 2026. Sin códi
 ## Consecuencias técnicas
 
 - **Fotos en la cadena de texto.** El asistente envía una foto, así que cada eslabón necesita un modelo que lea imágenes. Los modelos que Coliseo usa por defecto en Groq (`llama-3.3-70b-versatile`) y OpenRouter (`openrouter/free`) son solo de texto. Para AgeStyles hay que configurar modelos con visión. Si ninguno está disponible, se envían solo los datos de la ficha. Los modelos concretos se verifican al implementar.
-- **Claves.** Las claves de Coliseo viven en los secretos de Supabase y no se pueden leer desde aquí. El usuario tendrá que copiarlas a `~/.config/agestyles-commerce-production/ai.env` (permisos 600). Nunca van en el repositorio ni en la app.
+- **Claves.** Las claves de Coliseo viven en los secretos de Supabase y no se pueden leer desde aquí. El usuario tendrá que copiarlas a `~/.config/agestyles-commerce-production/api.env` (permisos 600). Nunca van en el repositorio ni en la app.
 - **Desde dónde se llama.** Las llamadas salen del servidor (`commerce-api`), nunca del móvil: los proveedores bloquean Cuba y las claves no deben llegar al cliente.
 - **Gasto compartido.** Al compartir cuenta, el consumo de AgeStyles se mezcla con el de Coliseo y Lavía. AgeStyles registra sus propias solicitudes por tienda para poder separarlo.
 - **Quitar fondos en el VPS.** Contenedor propio con un modelo de segmentación de objetos (familia rembg / BiRefNet / ISNet; se decide al medir calidad y tiempo en CPU) y una API interna solo en loopback. Hay que medir RAM y segundos por foto antes de activarlo.
@@ -75,3 +75,12 @@ Estado: decisión de proveedores tomada por el usuario el 18 nov 2026. Sin códi
   - Registro en `agestyles_ai_request`, sin imágenes.
   - La API solo lee fotos de nuestro propio volumen: nunca descarga direcciones arbitrarias.
 - **Claves:** `GEMINI_API_KEY`, `OPENROUTER_API_KEY` y `GROQ_API_KEY` (y, opcionalmente, `AGESTYLES_AI_*_MODEL`) en el `api.env` privado de producción. Sin claves, el botón «Sugerir con IA» no aparece.
+
+## Revisión de Codex y cambios (18 nov 2026)
+
+- **Fotos en Supabase (decisión del usuario):**
+  - Las fotos nuevas van al bucket público ya existente `product-images` del proyecto del catálogo, con el prefijo `agestyles/` para separarlas de las del catálogo antiguo.
+  - `medusa-config` acepta como `S3_ENDPOINT` el endpoint S3 de Supabase (`https://<ref>.storage.supabase.co/storage/v1/s3`) además de MinIO local.
+  - AI Studio lee las fotos con `getAsBuffer` del módulo de archivos, ya no del disco. Quitar fondos sigue en el VPS, pero solo procesa: el resultado se guarda en Supabase.
+  - Una foto de un borrador tiene URL pública no adivinable desde que se sube, igual que en el catálogo antiguo. Es una decisión aceptada para el piloto.
+- **Cuota sin condición de carrera:** antes de llamar al proveedor se reserva una fila `pending` dentro de un bloqueo por tienda (`agestyles-ai-quota:<seller>`). Cuentan todas las reservas, sea cual sea su resultado.

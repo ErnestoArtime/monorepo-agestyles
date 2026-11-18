@@ -1,5 +1,6 @@
 import { MedusaService } from "@medusajs/framework/utils";
 import DeviceToken from "./models/device-token";
+import EventOutbox from "./models/event-outbox";
 import NotificationDelivery from "./models/notification-delivery";
 import NotificationPreference from "./models/notification-preference";
 import Notification from "./models/notification";
@@ -92,6 +93,7 @@ class NotificationsService extends MedusaService({
   NotificationDelivery,
   DeviceToken,
   NotificationPreference,
+  EventOutbox,
 }) {
   private async findByDedupe(dedupeKey: string): Promise<NotificationRecord | null> {
     const [found] = (await this.listNotifications({

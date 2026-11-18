@@ -1,10 +1,13 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework";
-import { notifyCustomer, orderCustomerId, orderSellerId, sellerName } from "../lib/notifications";
+import {
+  notifyCustomer,
+  orderCustomerId,
+  orderSellerId,
+  sellerName,
+  withNotificationRetries,
+} from "../lib/notifications";
 
-export default async function notifyOrderCanceled({
-  event,
-  container,
-}: SubscriberArgs<{ id: string }>) {
+async function notifyOrderCanceled({ event, container }: SubscriberArgs<{ id: string }>) {
   const customerId = await orderCustomerId(container, event.data.id);
   if (!customerId) return;
   const sellerId = await orderSellerId(container, event.data.id);
@@ -18,6 +21,8 @@ export default async function notifyOrderCanceled({
     key: ["order.canceled", event.data.id],
   });
 }
+
+export default withNotificationRetries("notify-order-canceled", notifyOrderCanceled);
 
 export const config: SubscriberConfig = {
   event: "order.canceled",

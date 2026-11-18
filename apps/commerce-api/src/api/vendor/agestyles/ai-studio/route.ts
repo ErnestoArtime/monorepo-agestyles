@@ -1,6 +1,7 @@
 import type { MedusaResponse } from "@medusajs/framework/http";
 import {
   backgroundRemoverUrl,
+  mediaBaseUrl,
   monthlyLimit,
   resolveAiActor,
   textProviders,
@@ -15,7 +16,7 @@ export async function GET(req: AiStudioRequest, res: MedusaResponse) {
   res.json({
     allowed: actor.allowed,
     describe: providers.length > 0,
-    remove_background: !!backgroundRemoverUrl() && !!process.env.AGESTYLES_MEDIA_DIR,
+    remove_background: !!backgroundRemoverUrl() && !!mediaBaseUrl(),
     providers: providers.map((provider) => provider.name),
     used: await usedThisMonth(req, actor.sellerId),
     limit: monthlyLimit(),

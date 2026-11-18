@@ -1,3 +1,4 @@
+import { withNotificationRetries } from "../lib/notifications";
 import { createHash } from "node:crypto";
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework";
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils";
@@ -25,10 +26,7 @@ function resetBaseUrl(actorType: string): string | null {
  * Medusa only emits `auth.password_reset`; nothing sends the email by itself. The token
  * is never written to the inbox or the logs: it goes straight into the email link.
  */
-export default async function sendPasswordResetEmail({
-  event,
-  container,
-}: SubscriberArgs<PasswordResetEvent>) {
+async function sendPasswordResetEmail({ event, container }: SubscriberArgs<PasswordResetEvent>) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER);
   const { entity_id: email, actor_type: actorType, token } = event.data;
   const base = resetBaseUrl(actorType);
@@ -49,6 +47,8 @@ export default async function sendPasswordResetEmail({
     content: renderPasswordResetEmail(url),
   });
 }
+
+export default withNotificationRetries("send-password-reset-email", sendPasswordResetEmail);
 
 export const config: SubscriberConfig = {
   event: "auth.password_reset",

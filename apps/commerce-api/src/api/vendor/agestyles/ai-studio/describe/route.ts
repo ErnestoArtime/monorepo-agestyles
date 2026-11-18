@@ -2,9 +2,10 @@ import type { MedusaResponse } from "@medusajs/framework/http";
 import { MedusaError } from "@medusajs/framework/utils";
 import { describeProduct, type CopyTone } from "@agestyles/ai-studio";
 import {
-  logAiRequest,
+  finishAiRequest,
   readOwnMedia,
   requireAiAccess,
+  reserveAiRequest,
   textProviders,
   toMedusaError,
   type AiStudioRequest,
@@ -30,7 +31,8 @@ export async function POST(req: AiStudioRequest, res: MedusaResponse) {
       "AI Studio text provider is not configured.",
     );
   }
-  const photo = body.image_url ? await readOwnMedia(body.image_url) : null;
+  const photo = body.image_url ? await readOwnMedia(req, body.image_url) : null;
+  const requestId = await reserveAiRequest(req, actor, "describe");
   try {
     const result = await describeProduct(
       {
@@ -46,9 +48,7 @@ export async function POST(req: AiStudioRequest, res: MedusaResponse) {
       providers,
       (url, init) => fetch(url, init),
     );
-    await logAiRequest(req, {
-      ...actor,
-      kind: "describe",
+    await finishAiRequest(req, requestId, {
       status: "ok",
       provider: result.provider,
       model: result.model,
@@ -59,9 +59,7 @@ export async function POST(req: AiStudioRequest, res: MedusaResponse) {
       used_image: result.usedImage,
     });
   } catch (error) {
-    await logAiRequest(req, {
-      ...actor,
-      kind: "describe",
+    await finishAiRequest(req, requestId, {
       status: "failed",
       error: (error as { attempts?: string[] }).attempts?.join(",") ?? (error as Error).message,
     });

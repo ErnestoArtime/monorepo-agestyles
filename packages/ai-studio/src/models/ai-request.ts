@@ -10,7 +10,8 @@ const AiRequest = model
     seller_id: model.text(),
     member_id: model.text(),
     kind: model.enum(["describe", "remove_background"]),
-    status: model.enum(["ok", "failed"]),
+    // `pending` is the quota reservation taken before calling a provider.
+    status: model.enum(["pending", "ok", "failed"]),
     provider: model.text().nullable(),
     model: model.text().nullable(),
     error: model.text().nullable(),

@@ -1162,3 +1162,29 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
   - `pnpm lint` sin errores (22 avisos previos).
   - Prettier OK.
 - AG-19 **no** está desplegado: tiene migración propia (`Migration20261118180000`) y configuración de producción (push/correo), pendientes de revisión de codex y de la autorización del usuario.
+
+## 2026-11-18 · Claude · Respuesta a la revisión de Codex (merge `d3a9bba`)
+
+1. **Reintentos globales de Redis:**
+   - Se quitó `jobOptions.attempts: 3` del event bus, que vuelve al valor por defecto de un intento.
+   - Los 8 suscriptores de AgeStyles se envuelven en `withNotificationRetries` (3 intentos en proceso, con espera creciente). Son idempotentes por `dedupe_key`; el correo de restablecimiento usa `idempotency_key` del módulo de notificaciones.
+   - Los suscriptores de Medusa y Mercur ya no se repiten.
+2. **Carrera en la cuota de AI Studio:**
+   - `reserveAiRequest` cuenta y crea una fila `pending` dentro de `locking.execute("agestyles-ai-quota:<seller>")` antes de llamar al proveedor; `finishAiRequest` la cierra como `ok` o `failed`.
+   - Migración `Migration20261119000000` (estado `pending`).
+3. **Almacenamiento de fotos:**
+   - El usuario decidió el bucket público ya existente `product-images` de Supabase. El prefijo `agestyles/` separa las fotos nuevas de las antiguas.
+   - `medusa-config` admite el endpoint S3 de Supabase y AI Studio lee mediante `getAsBuffer`, no del disco.
+   - Pendiente: la clave S3 del usuario (Supabase → Project Settings → Storage → S3 Connection) y el cambio de `api.env`. Después se podrán retirar el volumen `product-media` y `media-files`, con permiso.
+4. **Eventos perdidos si Redis falla:**
+   - Nueva tabla `agestyles_event_outbox` (`Migration20261119010000`).
+   - `emitAgestylesEventSafely` escribe la fila antes de emitir y la marca `emitted` al lograrlo.
+   - El job `relay-event-outbox` (cada minuto, con bloqueo) reemite las filas pendientes de más de 1 min, hasta 10 intentos, y purga las emitidas tras 7 días.
+   - Limitación honesta: la fila no va en la misma transacción que la operación comercial. Si cae PostgreSQL entre las dos escrituras, el evento puede perderse, pero en ese caso la operación misma falla.
+- **Tablero:** AG-06 marcado como desplegado; AG-26 recoge la decisión de Supabase; la ruta de las claves es `api.env`, no `ai.env`.
+- **Checks:**
+  - `pnpm typecheck` OK.
+  - Tests de notifications, ai-studio, domain y sales-commissions OK.
+  - `pnpm lint` sin errores.
+  - Prettier OK.
+- Sin despliegue: AG-19 y estas migraciones esperan la autorización del usuario.

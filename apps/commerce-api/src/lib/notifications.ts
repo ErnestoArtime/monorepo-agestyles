@@ -59,22 +59,84 @@ export async function emitAgestylesEvent(
   await eventBus.emit({ name, data });
 }
 
-/** A failed notification must never break the sale, payment or stock change that caused it. */
+/** Re-emission stops after this many failed attempts; the row stays for inspection. */
+export const OUTBOX_MAX_ATTEMPTS = 10;
+
+type OutboxService = {
+  createEventOutboxes(data: {
+    name: string;
+    data: Record<string, unknown>;
+  }): Promise<{ id: string }>;
+  updateEventOutboxes(data: Record<string, unknown>): Promise<unknown>;
+};
+
+/**
+ * A failed notification must never break the sale, payment or stock change that caused it.
+ * The event is first written to the PostgreSQL outbox, then emitted; if Redis is down the
+ * row stays pending and `relay-event-outbox` emits it later.
+ */
 export async function emitAgestylesEventSafely(
   scope: Scope,
   name: (typeof AGESTYLES_EVENTS)[keyof typeof AGESTYLES_EVENTS],
   data: Record<string, unknown>,
 ): Promise<void> {
+  const logger = scope.resolve(ContainerRegistrationKeys.LOGGER) as {
+    warn(message: string): void;
+  };
+  const outbox = notificationsService(scope) as unknown as OutboxService;
+  let row: { id: string } | null = null;
   try {
-    await emitAgestylesEvent(scope, name, data);
+    row = await outbox.createEventOutboxes({ name, data });
   } catch (error) {
-    const logger = scope.resolve(ContainerRegistrationKeys.LOGGER) as {
-      warn(message: string): void;
-    };
     logger.warn(
-      `Could not emit ${name}: ${error instanceof Error ? error.message : "unknown error"}`,
+      `Could not record ${name} in the outbox: ${error instanceof Error ? error.message : "unknown error"}`,
     );
   }
+  try {
+    await emitAgestylesEvent(scope, name, data);
+    if (row) {
+      await outbox
+        .updateEventOutboxes({ id: row.id, status: "emitted", attempts: 1, emitted_at: new Date() })
+        .catch(() => undefined);
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "unknown error";
+    if (row) {
+      await outbox
+        .updateEventOutboxes({ id: row.id, attempts: 1, last_error: message.slice(0, 300) })
+        .catch(() => undefined);
+    }
+    logger.warn(`Could not emit ${name} (kept in the outbox): ${message}`);
+  }
+}
+
+/**
+ * Runs an AgeStyles notification subscriber with a few in-process retries. Only these
+ * subscribers retry (they are idempotent by dedupe key); the Redis event bus keeps its
+ * default of one attempt so Medusa/Mercur subscribers with external effects never repeat.
+ */
+export function withNotificationRetries<A extends { container: Scope }>(
+  name: string,
+  handler: (args: A) => Promise<void>,
+  attempts = 3,
+  delayMs = 2000,
+): (args: A) => Promise<void> {
+  return async (args: A) => {
+    for (let attempt = 1; ; attempt += 1) {
+      try {
+        return await handler(args);
+      } catch (error) {
+        if (attempt >= attempts) throw error;
+        const logger = args.container.resolve(ContainerRegistrationKeys.LOGGER) as {
+          warn(message: string): void;
+        };
+        logger.warn(
+          `${name} failed (attempt ${attempt}/${attempts}), retrying: ${error instanceof Error ? error.message : "unknown error"}`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delayMs * attempt));
+      }
+    }
+  };
 }
 
 export async function sellerName(scope: Scope, sellerId: string): Promise<string | null> {

@@ -6,6 +6,7 @@ import {
   orderCustomerId,
   orderSellerId,
   sellerName,
+  withNotificationRetries,
 } from "../lib/notifications";
 
 const STAGES: Record<string, EventCode> = {
@@ -22,7 +23,7 @@ type StageEvent = { order_id: string; fulfillment_id: string; action: string };
  * event for «listo» and emits separate ones for the rest, so this single event keeps
  * the four stages uniform and avoids duplicates.
  */
-export default async function notifyOrderStage({ event, container }: SubscriberArgs<StageEvent>) {
+async function notifyOrderStage({ event, container }: SubscriberArgs<StageEvent>) {
   const code = STAGES[event.data.action];
   if (!code) return;
   const customerId = await orderCustomerId(container, event.data.order_id);
@@ -38,6 +39,8 @@ export default async function notifyOrderStage({ event, container }: SubscriberA
     key: [AGESTYLES_EVENTS.ORDER_STAGE, event.data.fulfillment_id, event.data.action],
   });
 }
+
+export default withNotificationRetries("notify-order-stage", notifyOrderStage);
 
 export const config: SubscriberConfig = {
   event: AGESTYLES_EVENTS.ORDER_STAGE,

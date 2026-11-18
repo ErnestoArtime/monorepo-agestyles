@@ -2,9 +2,10 @@ import type { MedusaResponse } from "@medusajs/framework/http";
 import { MedusaError } from "@medusajs/framework/utils";
 import {
   backgroundRemoverUrl,
-  logAiRequest,
+  finishAiRequest,
   readOwnMedia,
   requireAiAccess,
+  reserveAiRequest,
   saveDerivedImage,
   type AiStudioRequest,
 } from "../../../../../lib/ai-studio";
@@ -20,7 +21,11 @@ export async function POST(req: AiStudioRequest, res: MedusaResponse) {
   if (!service) {
     throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "Background removal is not configured.");
   }
-  const photo = await readOwnMedia((req.body as { image_url?: string } | undefined)?.image_url);
+  const photo = await readOwnMedia(
+    req,
+    (req.body as { image_url?: string } | undefined)?.image_url,
+  );
+  const requestId = await reserveAiRequest(req, actor, "remove_background");
   try {
     const response = await fetch(`${service.replace(/\/+$/, "")}/remove`, {
       method: "POST",
@@ -31,17 +36,10 @@ export async function POST(req: AiStudioRequest, res: MedusaResponse) {
     if (!response.ok) throw new Error(`remover_http_${response.status}`);
     const png = Buffer.from(await response.arrayBuffer());
     const file = await saveDerivedImage(req, png);
-    await logAiRequest(req, {
-      ...actor,
-      kind: "remove_background",
-      status: "ok",
-      provider: "local",
-    });
+    await finishAiRequest(req, requestId, { status: "ok", provider: "local" });
     res.json({ original_url: (req.body as { image_url: string }).image_url, url: file.url });
   } catch (error) {
-    await logAiRequest(req, {
-      ...actor,
-      kind: "remove_background",
+    await finishAiRequest(req, requestId, {
       status: "failed",
       provider: "local",
       error: (error as Error).message,

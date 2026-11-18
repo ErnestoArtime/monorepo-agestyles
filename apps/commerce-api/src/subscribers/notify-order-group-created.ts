@@ -1,11 +1,8 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework";
-import { notifyCustomer, queryGraph } from "../lib/notifications";
+import { notifyCustomer, queryGraph, withNotificationRetries } from "../lib/notifications";
 
 /** One «Pedido recibido» per checkout (order group), not one per store. */
-export default async function notifyOrderGroupCreated({
-  event,
-  container,
-}: SubscriberArgs<{ id: string }>) {
+async function notifyOrderGroupCreated({ event, container }: SubscriberArgs<{ id: string }>) {
   const { data } = await queryGraph(container).graph({
     entity: "order_group",
     fields: ["id", "customer_id"],
@@ -19,6 +16,8 @@ export default async function notifyOrderGroupCreated({
     key: ["order_group.created", group.id],
   });
 }
+
+export default withNotificationRetries("notify-order-group-created", notifyOrderGroupCreated);
 
 export const config: SubscriberConfig = {
   event: "order_group.created",

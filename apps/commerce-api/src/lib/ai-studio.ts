@@ -1,5 +1,3 @@
-import { readFile, stat } from "node:fs/promises";
-import { basename, join } from "node:path";
 import type { AuthenticatedMedusaRequest } from "@medusajs/framework/http";
 import { MedusaError, Modules } from "@medusajs/framework/utils";
 import {
@@ -25,7 +23,8 @@ type SellerModule = {
 };
 
 const ADMINISTRATION_ROLE = "role_seller_administration";
-const MEDIA_NAME = /^[0-9]+-[a-zA-Z0-9_-][a-zA-Z0-9_.-]*\.(jpe?g|png|webp)$/;
+// Uploads made by AgeStyles: optional `agestyles/` prefix (S3) and a flat image name.
+const MEDIA_KEY = /^(?:agestyles\/)?[a-zA-Z0-9][a-zA-Z0-9_.-]*\.(jpe?g|png|webp)$/;
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 
 export function aiStudioService(req: AiStudioRequest) {
@@ -64,7 +63,7 @@ export async function usedThisMonth(req: AiStudioRequest, sellerId: string) {
   return count;
 }
 
-/** Owner/administration check plus the monthly quota (failed calls count too). */
+/** Owner or store administration only; the quota is reserved separately. */
 export async function requireAiAccess(req: AiStudioRequest) {
   const actor = await resolveAiActor(req);
   if (!actor.allowed) {
@@ -73,10 +72,55 @@ export async function requireAiAccess(req: AiStudioRequest) {
       "AI Studio is available to the store owner and administration.",
     );
   }
-  if ((await usedThisMonth(req, actor.sellerId)) >= monthlyLimit()) {
-    throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "Monthly AI Studio quota reached.");
-  }
   return actor;
+}
+
+/**
+ * Reserves one use of the monthly quota before any provider is called. The count and the
+ * reservation run under a per-store lock, so concurrent requests cannot exceed the limit.
+ * Every reservation counts, whatever its final status (a failed call may have been charged).
+ */
+export async function reserveAiRequest(
+  req: AiStudioRequest,
+  actor: { sellerId: string; memberId: string },
+  kind: "describe" | "remove_background",
+): Promise<string> {
+  const locking = req.scope.resolve(Modules.LOCKING);
+  return locking.execute(
+    `agestyles-ai-quota:${actor.sellerId}`,
+    async () => {
+      if ((await usedThisMonth(req, actor.sellerId)) >= monthlyLimit()) {
+        throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "Monthly AI Studio quota reached.");
+      }
+      const created = (await aiStudioService(req).createAiRequests({
+        seller_id: actor.sellerId,
+        member_id: actor.memberId,
+        kind,
+        status: "pending",
+      })) as unknown as { id: string };
+      return created.id;
+    },
+    { timeout: 10 },
+  );
+}
+
+export async function finishAiRequest(
+  req: AiStudioRequest,
+  id: string,
+  result: {
+    status: "ok" | "failed";
+    provider?: string | null;
+    model?: string | null;
+    error?: string | null;
+  },
+) {
+  await aiStudioService(req).updateAiRequests({
+    id,
+    status: result.status,
+    provider: result.provider ?? null,
+    model: result.model ?? null,
+    error: result.error?.slice(0, 500) ?? null,
+  });
 }
 
 export function textProviders() {
@@ -87,14 +131,25 @@ export function backgroundRemoverUrl() {
   return process.env.AGESTYLES_BACKGROUND_REMOVER_URL?.trim() || "";
 }
 
+/** Public base URL of the configured product-photo storage (Supabase S3 or local volume). */
+export function mediaBaseUrl() {
+  const base =
+    process.env.AGESTYLES_FILE_STORAGE_PROVIDER === "s3"
+      ? process.env.S3_FILE_URL
+      : process.env.AGESTYLES_MEDIA_URL;
+  return base?.replace(/\/+$/, "") || "";
+}
+
 /**
- * Reads a photo the store already uploaded to our own media volume. Only URLs under
- * AGESTYLES_MEDIA_URL are accepted, so the API never fetches arbitrary addresses.
+ * Reads a photo the store already uploaded, through Medusa's file module. Only URLs under
+ * our own media base are accepted, so the API never fetches arbitrary addresses.
  */
-export async function readOwnMedia(url: unknown): Promise<{ mimeType: string; bytes: Buffer }> {
-  const base = process.env.AGESTYLES_MEDIA_URL?.replace(/\/+$/, "");
-  const dir = process.env.AGESTYLES_MEDIA_DIR;
-  if (!base || !dir) {
+export async function readOwnMedia(
+  req: AiStudioRequest,
+  url: unknown,
+): Promise<{ mimeType: string; bytes: Buffer }> {
+  const base = mediaBaseUrl();
+  if (!base) {
     throw new MedusaError(
       MedusaError.Types.NOT_ALLOWED,
       "Product media storage is not configured.",
@@ -106,19 +161,26 @@ export async function readOwnMedia(url: unknown): Promise<{ mimeType: string; by
       "The photo must be one uploaded to AgeStyles.",
     );
   }
-  const name = url.slice(base.length + 1);
-  if (!MEDIA_NAME.test(name) || basename(name) !== name) {
+  let key: string;
+  try {
+    key = decodeURIComponent(url.slice(base.length + 1));
+  } catch {
     throw new MedusaError(MedusaError.Types.INVALID_DATA, "Unsupported photo address.");
   }
-  const path = join(dir, name);
-  const info = await stat(path).catch(() => null);
-  if (!info?.isFile() || info.size > MAX_IMAGE_BYTES) {
+  if (!MEDIA_KEY.test(key)) {
+    throw new MedusaError(MedusaError.Types.INVALID_DATA, "Unsupported photo address.");
+  }
+  const files = req.scope.resolve(Modules.FILE) as unknown as {
+    getAsBuffer(id: string): Promise<Buffer>;
+  };
+  const bytes = await files.getAsBuffer(key).catch(() => null);
+  if (!bytes || bytes.length > MAX_IMAGE_BYTES) {
     throw new MedusaError(MedusaError.Types.NOT_FOUND, "Photo not found.");
   }
-  const extension = name.split(".").pop()!.toLowerCase();
+  const extension = key.split(".").pop()!.toLowerCase();
   const mimeType =
     extension === "png" ? "image/png" : extension === "webp" ? "image/webp" : "image/jpeg";
-  return { mimeType, bytes: await readFile(path) };
+  return { mimeType, bytes };
 }
 
 export async function saveDerivedImage(req: AiStudioRequest, png: Buffer) {
@@ -135,29 +197,6 @@ export async function saveDerivedImage(req: AiStudioRequest, png: Buffer) {
     mimeType: "image/png",
     content: png.toString("base64"),
     access: "public",
-  });
-}
-
-export async function logAiRequest(
-  req: AiStudioRequest,
-  entry: {
-    sellerId: string;
-    memberId: string;
-    kind: "describe" | "remove_background";
-    status: "ok" | "failed";
-    provider?: string | null;
-    model?: string | null;
-    error?: string | null;
-  },
-) {
-  await aiStudioService(req).createAiRequests({
-    seller_id: entry.sellerId,
-    member_id: entry.memberId,
-    kind: entry.kind,
-    status: entry.status,
-    provider: entry.provider ?? null,
-    model: entry.model ?? null,
-    error: entry.error?.slice(0, 500) ?? null,
   });
 }
 

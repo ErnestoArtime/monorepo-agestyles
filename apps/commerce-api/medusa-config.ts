@@ -59,20 +59,29 @@ const fileModule =
         try {
           endpoint = new URL(S3_ENDPOINT);
         } catch {
-          throw new Error("S3_ENDPOINT must be a valid loopback MinIO URL.");
+          throw new Error("S3_ENDPOINT must be a valid URL.");
         }
+        // Two supported targets: the loopback MinIO of each environment, or the Supabase
+        // Storage S3 endpoint of an AgeStyles project (product photos live with the legacy
+        // catalog's in the `product-images` bucket, decided 18 nov 2026).
+        const loopbackMinio =
+          endpoint.protocol === "http:" &&
+          endpoint.hostname === "127.0.0.1" &&
+          endpoint.port === minioPort &&
+          endpoint.pathname === "/";
+        const supabaseStorage =
+          endpoint.protocol === "https:" &&
+          /^[a-z0-9]{20}\.(storage\.)?supabase\.co$/.test(endpoint.hostname) &&
+          endpoint.pathname.replace(/\/+$/, "") === "/storage/v1/s3";
         if (
-          endpoint.protocol !== "http:" ||
-          endpoint.hostname !== "127.0.0.1" ||
-          endpoint.port !== minioPort ||
+          (!loopbackMinio && !supabaseStorage) ||
           endpoint.username ||
           endpoint.password ||
-          endpoint.pathname !== "/" ||
           endpoint.search ||
           endpoint.hash
         ) {
           throw new Error(
-            `S3_ENDPOINT must be http://127.0.0.1:${minioPort} for this environment.`,
+            `S3_ENDPOINT must be http://127.0.0.1:${minioPort} or a Supabase Storage S3 endpoint.`,
           );
         }
         if (!S3_FILE_URL.startsWith("https://")) {
@@ -92,6 +101,8 @@ const fileModule =
                   access_key_id: S3_ACCESS_KEY_ID,
                   secret_access_key: S3_SECRET_ACCESS_KEY,
                   bucket: S3_BUCKET,
+                  // New AgeStyles uploads stay apart from the legacy catalog's files.
+                  prefix: process.env.S3_PREFIX ?? "agestyles/",
                   region: S3_REGION,
                   endpoint: S3_ENDPOINT,
                   additional_client_config: { forcePathStyle: true },
@@ -199,9 +210,9 @@ module.exports = withMercur({
       resolve: "@medusajs/medusa/event-bus-redis",
       options: {
         redisUrl: REDIS_URL,
-        // A failed subscriber is retried (only that one: BullMQ remembers which already
-        // completed). Notification subscribers are idempotent by dedupe key.
-        jobOptions: { attempts: 3, backoff: { type: "exponential", delay: 5000 } },
+        // No global retries: they would also repeat Medusa/Mercur subscribers with external
+        // effects. AgeStyles notification subscribers retry themselves
+        // (withNotificationRetries) and lost emissions are recovered from the outbox.
       },
     },
     {

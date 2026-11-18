@@ -6,6 +6,7 @@ import {
   orderCustomerId,
   orderSellerId,
   sellerName,
+  withNotificationRetries,
 } from "../lib/notifications";
 
 type PaymentEvent = { payment_id: string; order_id: string };
@@ -14,10 +15,7 @@ type PaymentEvent = { payment_id: string; order_id: string };
  * Proof submitted → the store reviews it; verified or rejected → the buyer is told.
  * The order decides both audiences, so a store never hears about another store's order.
  */
-export default async function notifyManualPayments({
-  event,
-  container,
-}: SubscriberArgs<PaymentEvent>) {
+async function notifyManualPayments({ event, container }: SubscriberArgs<PaymentEvent>) {
   const { payment_id: paymentId, order_id: orderId } = event.data;
   const sellerId = await orderSellerId(container, orderId);
   const store = sellerId ? await sellerName(container, sellerId) : null;
@@ -43,6 +41,8 @@ export default async function notifyManualPayments({
     key: [event.name, paymentId],
   });
 }
+
+export default withNotificationRetries("notify-manual-payments", notifyManualPayments);
 
 export const config: SubscriberConfig = {
   event: [

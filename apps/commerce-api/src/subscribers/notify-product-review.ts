@@ -1,6 +1,6 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework";
 import type { EventCode } from "@agestyles/notifications";
-import { notifySellerMembers, queryGraph } from "../lib/notifications";
+import { notifySellerMembers, queryGraph, withNotificationRetries } from "../lib/notifications";
 
 const CODES: Record<string, EventCode> = {
   "product.published": "seller_product_approved",
@@ -9,10 +9,7 @@ const CODES: Record<string, EventCode> = {
 };
 
 /** Mercur's review workflow already emits these; the owning store's managers hear the verdict. */
-export default async function notifyProductReview({
-  event,
-  container,
-}: SubscriberArgs<{ id: string }>) {
+async function notifyProductReview({ event, container }: SubscriberArgs<{ id: string }>) {
   const code = CODES[event.name];
   if (!code) return;
   const query = queryGraph(container);
@@ -33,6 +30,8 @@ export default async function notifyProductReview({
     key: [event.name, event.data.id],
   });
 }
+
+export default withNotificationRetries("notify-product-review", notifyProductReview);
 
 export const config: SubscriberConfig = {
   event: ["product.published", "product.rejected", "product.change-requested"],

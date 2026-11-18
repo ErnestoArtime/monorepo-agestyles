@@ -1,5 +1,9 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework";
-import { AGESTYLES_EVENTS, notifySellerMembers } from "../lib/notifications";
+import {
+  AGESTYLES_EVENTS,
+  notifySellerMembers,
+  withNotificationRetries,
+} from "../lib/notifications";
 
 type WithdrawalEvent = {
   withdrawal_id: string;
@@ -9,10 +13,7 @@ type WithdrawalEvent = {
 };
 
 /** Request → store managers; resolution → the agent who asked. */
-export default async function notifyCommissionWithdrawals({
-  event,
-  container,
-}: SubscriberArgs<WithdrawalEvent>) {
+async function notifyCommissionWithdrawals({ event, container }: SubscriberArgs<WithdrawalEvent>) {
   const { withdrawal_id: withdrawalId, seller_id: sellerId } = event.data;
   if (event.name === AGESTYLES_EVENTS.WITHDRAWAL_REQUESTED) {
     await notifySellerMembers(container, {
@@ -33,6 +34,11 @@ export default async function notifyCommissionWithdrawals({
     target_member_id: event.data.agent_member_id,
   });
 }
+
+export default withNotificationRetries(
+  "notify-commission-withdrawals",
+  notifyCommissionWithdrawals,
+);
 
 export const config: SubscriberConfig = {
   event: [AGESTYLES_EVENTS.WITHDRAWAL_REQUESTED, AGESTYLES_EVENTS.WITHDRAWAL_RESOLVED],
