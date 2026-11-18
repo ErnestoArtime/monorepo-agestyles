@@ -325,12 +325,15 @@ jobs:
       - name: Report Commerce API errors as annotations when a check fails
         if: failure()
         run: |
-          # Job logs need authentication; annotations are readable by every agent.
-          docker logs agestyles-commerce-api-ci 2>&1 \
+          # Job logs need authentication and GitHub keeps only 10 annotations per step,
+          # so the latest API errors are joined into one annotation readable by every agent.
+          errors="$(docker logs agestyles-commerce-api-ci 2>&1 \
             | grep -iE 'error|exception|at .*\.(js|ts):' \
             | grep -vE 'TypeError: fetch failed' \
-            | tail -n 25 \
-            | sed -e 's/%/%25/g' -e 's/^/::error title=commerce-api log::/' || true
+            | tail -n 30 \
+            | sed -e 's/\x1b\[[0-9;]*m//g' -e 's/%/%25/g' \
+            | paste -sd'|' - || true)"
+          if [ -n "${errors}" ]; then echo "::error title=commerce-api latest errors::${errors}"; fi
 
       - name: Stop disposable Commerce API smoke test
         if: always()
