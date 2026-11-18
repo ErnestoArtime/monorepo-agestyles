@@ -1,15 +1,20 @@
 import { Icon } from "@agestyles/icons";
-import {
-  buildProductCopyDraft,
-  buildProductTitleDraft,
-  type ProductCopyTone,
-} from "@agestyles/domain/product-copy";
-import { BottomSheet, Button, Card, PillGroup } from "@agestyles/ui-native";
+import { buildProductCopyDraft, type ProductCopyTone } from "@agestyles/domain/product-copy";
+import { BottomSheet, Button, Card, LargeTitle, PillGroup } from "@agestyles/ui-native";
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Image, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  Image,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { hasPermission, OperationList } from "../components/operation-list";
 import { useBusiness } from "../context/business-context";
 import { useBusinessTheme } from "../hooks/use-business-theme";
@@ -37,13 +42,8 @@ function aiErrorMessage(cause: unknown, fallback: string) {
   return fallback;
 }
 
-type MaxEdge = "800" | "1200" | "1600" | "2048";
-const MAX_EDGE_OPTIONS: { value: MaxEdge; label: string }[] = [
-  { value: "800", label: "800 px" },
-  { value: "1200", label: "1200 px" },
-  { value: "1600", label: "1600 px" },
-  { value: "2048", label: "2048 px" },
-];
+/** Longest side after on-device resizing: sharp on phones and catalog pages, light to upload. */
+const MAX_EDGE = 1600;
 const TONE_OPTIONS: { value: ProductCopyTone; label: string }[] = [
   { value: "commercial", label: "Comercial" },
   { value: "technical", label: "Técnico" },
@@ -82,7 +82,6 @@ export default function NewProductScreen() {
   const [variantTitle, setVariantTitle] = useState("");
   const [sku, setSku] = useState("");
   const [tone, setTone] = useState<ProductCopyTone>("commercial");
-  const [maxEdge, setMaxEdge] = useState<MaxEdge>("1600");
   const [photos, setPhotos] = useState<StoredPhoto[]>([]);
   const [ai, setAi] = useState<AiStatus | null>(null);
   const [aiBusy, setAiBusy] = useState<string | null>(null);
@@ -185,7 +184,7 @@ export default function NewProductScreen() {
       const prepared = await Promise.all(
         picked.assets
           .slice(0, MAX_PHOTOS - photos.length)
-          .map((asset) => preparePhoto(asset, Number(maxEdge))),
+          .map((asset) => preparePhoto(asset, MAX_EDGE)),
       );
       const urls = await uploadPhotos(prepared);
       setPhotos((current) =>
@@ -286,110 +285,171 @@ export default function NewProductScreen() {
     );
   }
 
-  return (
-    <OperationList
-      title="Nuevo producto"
-      subtitle="Completa la ficha y añade fotos. Se envía a revisión antes de publicarse."
-      loading={false}
-      error={canEdit ? error : "Tu rol no permite crear productos."}
-    >
-      <Pressable
-        onPress={() => router.back()}
-        accessibilityRole="button"
-        accessibilityLabel="Volver"
-        style={styles.back}
-      >
-        <Icon name="arrowLeft" size={18} color={theme.action} />
-        <Text style={styles.link}>Productos</Text>
-      </Pressable>
+  if (!canEdit) {
+    return (
+      <OperationList
+        title="Nuevo producto"
+        subtitle=""
+        loading={false}
+        error="Tu rol no permite crear productos."
+      />
+    );
+  }
 
-      {canEdit ? (
-        <View style={styles.form}>
-          <Text style={styles.section}>Fotos</Text>
-          <Text style={styles.help}>
-            La primera es la portada. Se reducen y comprimen en tu dispositivo antes de subirlas.
-          </Text>
-          <PillGroup
-            accessibilityLabel="Tamaño máximo de las fotos"
-            value={maxEdge}
-            onChange={setMaxEdge}
-            options={MAX_EDGE_OPTIONS}
-          />
-          {photos.length ? (
-            <View style={styles.photos}>
-              {photos.map((photo, index) => (
-                <View key={`${photo.uri}-${index}`} style={styles.photo}>
-                  <Image
-                    source={{ uri: photo.uri }}
-                    style={StyleSheet.absoluteFill}
-                    resizeMode="cover"
-                    accessibilityLabel={index === 0 ? "Foto de portada" : `Foto ${index + 1}`}
-                  />
-                  {index === 0 ? (
-                    <Text style={styles.cover}>Portada</Text>
-                  ) : (
-                    <Pressable
-                      onPress={() => movePhoto(index)}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Usar la foto ${index + 1} como portada`}
-                      style={styles.coverAction}
-                    >
-                      <Text style={styles.coverActionText}>Portada</Text>
-                    </Pressable>
-                  )}
-                  <Pressable
-                    onPress={() => setPhotos((current) => current.filter((_, i) => i !== index))}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Quitar la foto ${index + 1}`}
-                    hitSlop={6}
-                    style={styles.remove}
-                  >
-                    <Icon name="close" size={16} color="#ffffff" />
-                  </Pressable>
-                  {canCutout ? (
-                    <Pressable
-                      onPress={() => void removeBackground(index)}
-                      disabled={!!aiBusy}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Quitar el fondo de la foto ${index + 1}`}
-                      style={styles.cutoutAction}
-                    >
-                      <Text style={styles.coverActionText}>
-                        {aiBusy === `cutout-${index}` ? "…" : "Sin fondo"}
-                      </Text>
-                    </Pressable>
-                  ) : null}
-                </View>
-              ))}
-            </View>
-          ) : null}
-          {photos.length < MAX_PHOTOS ? (
-            <View style={styles.row}>
-              <Button
-                icon="plus"
-                variant="secondary"
-                title={preparing ? "Preparando…" : "Elegir fotos"}
-                disabled={preparing}
-                onPress={() => void addPhotos("library")}
-                style={styles.flex}
+  const cover = photos[0];
+  const checklist = [
+    { label: "Portada", ok: !!cover },
+    { label: "Nombre", ok: !!title.trim() },
+    { label: "Descripción", ok: description.trim().length >= 20 },
+  ];
+
+  return (
+    <View style={styles.screen}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <Pressable
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Volver a productos"
+          style={styles.back}
+        >
+          <Icon name="arrowLeft" size={18} color={theme.action} />
+          <Text style={styles.link}>Productos</Text>
+        </Pressable>
+        <LargeTitle
+          title="Nuevo producto"
+          subtitle="Una buena portada y una descripción con datos reales venden más."
+        />
+        {error ? (
+          <View accessibilityRole="alert" style={styles.errorBox}>
+            <Icon name="alert" size={18} color={theme.error} />
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        ) : null}
+
+        {/* Photos: one large cover, then a strip with the rest. */}
+        <Card style={styles.card}>
+          <SectionHeader title="Fotos" hint={`${photos.length}/${MAX_PHOTOS}`} styles={styles} />
+          {cover ? (
+            <View style={styles.coverBox}>
+              <Image
+                source={{ uri: cover.uri }}
+                style={styles.coverImage}
+                resizeMode="contain"
+                accessibilityLabel="Foto de portada"
               />
-              {Platform.OS !== "web" ? (
-                <Button
-                  icon="scan"
-                  variant="secondary"
-                  title="Cámara"
-                  disabled={preparing}
-                  onPress={() => void addPhotos("camera")}
-                  style={styles.flex}
-                />
-              ) : null}
+              <Text style={styles.coverBadge}>Portada</Text>
+              <View style={styles.coverActions}>
+                {canCutout ? (
+                  <Pressable
+                    onPress={() => void removeBackground(0)}
+                    disabled={!!aiBusy}
+                    accessibilityRole="button"
+                    accessibilityLabel="Quitar el fondo de la portada"
+                    style={styles.chipAction}
+                  >
+                    <Text style={styles.chipActionText}>
+                      {aiBusy === "cutout-0" ? "Quitando fondo…" : "Quitar fondo"}
+                    </Text>
+                  </Pressable>
+                ) : null}
+                <Pressable
+                  onPress={() => setPhotos((current) => current.slice(1))}
+                  accessibilityRole="button"
+                  accessibilityLabel="Quitar la portada"
+                  style={styles.chipAction}
+                >
+                  <Icon name="trash" size={14} color="#ffffff" />
+                </Pressable>
+              </View>
             </View>
           ) : (
-            <Text style={styles.help}>Máximo {MAX_PHOTOS} fotos.</Text>
+            <Pressable
+              onPress={() => void addPhotos("library")}
+              disabled={preparing}
+              accessibilityRole="button"
+              accessibilityLabel="Añadir la foto de portada"
+              style={({ pressed }) => [styles.dropzone, pressed && styles.pressed]}
+            >
+              <View style={styles.dropIcon}>
+                <Icon name="package" size={28} color={theme.action} />
+              </View>
+              <Text style={styles.dropTitle}>
+                {preparing ? "Preparando foto…" : "Añade la foto de portada"}
+              </Text>
+              <Text style={styles.dropHint}>
+                Producto centrado, buena luz y fondo liso. Se reduce y comprime antes de subir.
+              </Text>
+            </Pressable>
           )}
+          {cover ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={styles.strip}>
+                {photos.slice(1).map((photo, offset) => {
+                  const index = offset + 1;
+                  return (
+                    <View key={`${photo.url}-${index}`} style={styles.thumb}>
+                      <Pressable
+                        onPress={() => movePhoto(index)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Usar la foto ${index + 1} como portada`}
+                        style={StyleSheet.absoluteFill}
+                      >
+                        <Image
+                          source={{ uri: photo.uri }}
+                          style={StyleSheet.absoluteFill}
+                          resizeMode="cover"
+                        />
+                      </Pressable>
+                      <Pressable
+                        onPress={() =>
+                          setPhotos((current) => current.filter((_, i) => i !== index))
+                        }
+                        accessibilityRole="button"
+                        accessibilityLabel={`Quitar la foto ${index + 1}`}
+                        hitSlop={6}
+                        style={styles.thumbRemove}
+                      >
+                        <Icon name="close" size={12} color="#ffffff" />
+                      </Pressable>
+                    </View>
+                  );
+                })}
+                {photos.length < MAX_PHOTOS ? (
+                  <Pressable
+                    onPress={() => void addPhotos("library")}
+                    disabled={preparing}
+                    accessibilityRole="button"
+                    accessibilityLabel="Añadir más fotos"
+                    style={({ pressed }) => [
+                      styles.thumb,
+                      styles.addThumb,
+                      pressed && styles.pressed,
+                    ]}
+                  >
+                    <Icon name="plus" size={22} color={theme.action} />
+                    <Text style={styles.addThumbText}>{preparing ? "…" : "Añadir"}</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            </ScrollView>
+          ) : null}
+          {cover ? (
+            <Text style={styles.hint}>Toca una miniatura para usarla como portada.</Text>
+          ) : null}
+          {Platform.OS !== "web" ? (
+            <Button
+              icon="scan"
+              variant="secondary"
+              title="Hacer foto con la cámara"
+              disabled={preparing || photos.length >= MAX_PHOTOS}
+              onPress={() => void addPhotos("camera")}
+            />
+          ) : null}
+        </Card>
 
-          <Text style={styles.section}>Ficha</Text>
-          <Field label="Nombre del producto" styles={styles}>
+        <Card style={styles.card}>
+          <SectionHeader title="Datos del producto" styles={styles} />
+          <Field label="Nombre" counter={`${title.length}/120`} styles={styles}>
             <TextInput
               value={title}
               onChangeText={setTitle}
@@ -401,7 +461,7 @@ export default function NewProductScreen() {
             />
           </Field>
           <View style={styles.row}>
-            <Field label="Marca (opcional)" styles={styles} flex>
+            <Field label="Marca" optional styles={styles} flex>
               <TextInput
                 value={brand}
                 onChangeText={setBrand}
@@ -412,7 +472,7 @@ export default function NewProductScreen() {
                 style={styles.input}
               />
             </Field>
-            <Field label="Tipo (opcional)" styles={styles} flex>
+            <Field label="Tipo" optional styles={styles} flex>
               <TextInput
                 value={category}
                 onChangeText={setCategory}
@@ -424,97 +484,107 @@ export default function NewProductScreen() {
               />
             </Field>
           </View>
-          {title.trim() && brand.trim() ? (
-            <Button
-              variant="secondary"
-              title={`Usar título: ${buildProductTitleDraft({ name: title, brand })}`}
-              onPress={() => setTitle(buildProductTitleDraft({ name: title, brand }))}
-            />
-          ) : null}
-          <Field label="Descripción" styles={styles}>
-            <TextInput
-              value={description}
-              onChangeText={setDescription}
-              multiline
-              maxLength={5000}
-              textAlignVertical="top"
-              placeholder="Describe el producto con datos reales: material, medidas, uso…"
-              placeholderTextColor={theme.placeholderText}
-              accessibilityLabel="Descripción"
-              style={[styles.input, styles.multiline]}
-            />
-          </Field>
-          <View style={styles.assistant}>
-            <Text style={styles.assistantTitle}>Borrador desde la ficha</Text>
-            <Text style={styles.help}>
-              Ordena los datos que escribiste. No inventa características: revisa antes de guardar.
-            </Text>
+        </Card>
+
+        <Card style={styles.card}>
+          <SectionHeader title="Descripción" styles={styles} />
+          <TextInput
+            value={description}
+            onChangeText={setDescription}
+            multiline
+            maxLength={5000}
+            textAlignVertical="top"
+            placeholder="Material, medidas, uso, cuidados… Solo datos que puedas confirmar."
+            placeholderTextColor={theme.placeholderText}
+            accessibilityLabel="Descripción"
+            style={[styles.input, styles.multiline]}
+          />
+          <View style={styles.helper}>
+            <View style={styles.helperHead}>
+              <Icon name="sliders" size={16} color={theme.action} />
+              <Text style={styles.helperTitle}>Ayuda para escribir</Text>
+            </View>
             <PillGroup
-              accessibilityLabel="Estilo del borrador"
+              accessibilityLabel="Estilo del texto"
               value={tone}
               onChange={setTone}
               options={TONE_OPTIONS}
             />
-            <Button
-              variant="secondary"
-              title={description.trim() ? "Reemplazar por el borrador" : "Preparar borrador"}
-              disabled={!title.trim()}
-              onPress={() =>
-                setDescription(
-                  buildProductCopyDraft({
-                    name: title,
-                    brand,
-                    category,
-                    tone,
-                  }),
-                )
-              }
-            />
             {canDescribe ? (
-              <Button
-                icon="send"
-                title={aiBusy === "describe" ? "La IA está escribiendo…" : "Sugerir con IA"}
-                loading={aiBusy === "describe"}
-                disabled={!title.trim() || !!aiBusy}
-                onPress={() => void suggestWithAi()}
-              />
+              <>
+                <Button
+                  icon="send"
+                  title={aiBusy === "describe" ? "La IA está escribiendo…" : "Sugerir con IA"}
+                  loading={aiBusy === "describe"}
+                  disabled={!title.trim() || !!aiBusy}
+                  onPress={() => void suggestWithAi()}
+                />
+                <Text style={styles.hint}>
+                  Mira la portada y los datos de la ficha. Lo que escribas en la descripción se usa
+                  como datos confirmados. Quedan {aiLeft} usos este mes.
+                </Text>
+              </>
             ) : null}
-            {ai?.allowed && (ai.describe || ai.remove_background) ? (
-              <Text style={styles.help}>
-                La IA usa la portada y los datos de la ficha. Quedan {aiLeft} usos este mes.
+            <Pressable
+              onPress={() =>
+                setDescription(buildProductCopyDraft({ name: title, brand, category, tone }))
+              }
+              disabled={!title.trim()}
+              accessibilityRole="button"
+              style={({ pressed }) => [
+                styles.textAction,
+                !title.trim() && styles.disabled,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text style={styles.link}>
+                {canDescribe
+                  ? "O montar un texto básico con nombre, marca y tipo"
+                  : "Montar un texto básico con nombre, marca y tipo"}
               </Text>
-            ) : null}
+            </Pressable>
             {aiNotice ? (
               <Text accessibilityRole="alert" style={styles.aiNotice}>
                 {aiNotice}
               </Text>
             ) : null}
-            {suggestion ? (
-              <Card style={styles.suggestion}>
-                <Text style={styles.label}>Propuesta de la IA · revisa antes de usar</Text>
-                <Text style={styles.suggestionTitle}>{suggestion.title}</Text>
-                <Text style={styles.suggestionText}>{suggestion.description}</Text>
-                <View style={styles.row}>
-                  <Button
-                    variant="secondary"
-                    title="Usar título"
-                    onPress={() => setTitle(suggestion.title)}
-                    style={styles.flex}
-                  />
-                  <Button
-                    variant="secondary"
-                    title="Usar descripción"
-                    onPress={() => setDescription(suggestion.description)}
-                    style={styles.flex}
-                  />
-                </View>
-              </Card>
-            ) : null}
           </View>
+          {suggestion ? (
+            <View style={styles.suggestion}>
+              <Text style={styles.suggestionLabel}>Propuesta de la IA · revisa antes de usar</Text>
+              <Text style={styles.suggestionTitle}>{suggestion.title}</Text>
+              <Text style={styles.suggestionText}>{suggestion.description}</Text>
+              <View style={styles.row}>
+                <Button
+                  variant="secondary"
+                  title="Usar nombre"
+                  onPress={() => setTitle(suggestion.title)}
+                  style={styles.flex}
+                />
+                <Button
+                  title="Usar texto"
+                  onPress={() => setDescription(suggestion.description)}
+                  style={styles.flex}
+                />
+              </View>
+              <Pressable
+                onPress={() => setSuggestion(null)}
+                accessibilityRole="button"
+                style={styles.textAction}
+              >
+                <Text style={styles.mutedLink}>Descartar propuesta</Text>
+              </Pressable>
+            </View>
+          ) : null}
+        </Card>
 
-          <Text style={styles.section}>Variante</Text>
+        <Card style={styles.card}>
+          <SectionHeader title="Variante" styles={styles} />
+          <Text style={styles.hint}>
+            Si vendes tallas o colores, podrás añadir más variantes cuando la ficha esté aprobada.
+          </Text>
           <View style={styles.row}>
-            <Field label="Nombre (opcional)" styles={styles} flex>
+            <Field label="Nombre" optional styles={styles} flex>
               <TextInput
                 value={variantTitle}
                 onChangeText={setVariantTitle}
@@ -525,7 +595,7 @@ export default function NewProductScreen() {
                 style={styles.input}
               />
             </Field>
-            <Field label="SKU (opcional)" styles={styles} flex>
+            <Field label="SKU" optional styles={styles} flex>
               <TextInput
                 value={sku}
                 onChangeText={setSku}
@@ -538,22 +608,38 @@ export default function NewProductScreen() {
               />
             </Field>
           </View>
+        </Card>
+      </ScrollView>
 
-          <Button
-            title={saving ? "Enviando…" : "Enviar a revisión"}
-            loading={saving}
-            disabled={saving || preparing || !title.trim()}
-            onPress={() => void submit()}
-          />
-          <Text style={styles.help}>
-            Precio y existencias se fijan cuando AgeStyles apruebe la ficha.
-          </Text>
+      {/* Sticky footer: readiness at a glance and the single primary action. */}
+      <View style={styles.footer}>
+        <View style={styles.checklist} accessibilityLabel="Estado de la ficha">
+          {checklist.map((item) => (
+            <View key={item.label} style={styles.checkItem}>
+              <Icon
+                name={item.ok ? "check" : "minus"}
+                size={14}
+                color={item.ok ? theme.successText : theme.muted}
+              />
+              <Text style={[styles.checkText, item.ok && styles.checkTextOk]}>{item.label}</Text>
+            </View>
+          ))}
         </View>
-      ) : null}
+        <Button
+          title={saving ? "Enviando…" : "Enviar a revisión"}
+          loading={saving}
+          disabled={saving || preparing || !title.trim()}
+          onPress={() => void submit()}
+        />
+        <Text style={styles.footerHint}>
+          Precio y existencias se fijan cuando AgeStyles apruebe la ficha.
+        </Text>
+      </View>
+
       <BottomSheet
         visible={!!cutout}
         onClose={() => setCutout(null)}
-        title="Comparar fondo"
+        title="¿Usar la foto sin fondo?"
         footer={
           <View style={styles.row}>
             <Button
@@ -598,28 +684,57 @@ export default function NewProductScreen() {
             </View>
           </View>
         ) : null}
-        <Text style={styles.help}>
+        <Text style={styles.hint}>
           Revisa bordes y textos: la herramienta puede dejar restos o recortar detalles finos.
         </Text>
       </BottomSheet>
-    </OperationList>
+    </View>
+  );
+}
+
+function SectionHeader({
+  title,
+  hint,
+  styles,
+}: {
+  title: string;
+  hint?: string;
+  styles: ReturnType<typeof createStyles>;
+}) {
+  return (
+    <View style={styles.sectionHead}>
+      <Text accessibilityRole="header" style={styles.sectionTitle}>
+        {title}
+      </Text>
+      {hint ? <Text style={styles.sectionHint}>{hint}</Text> : null}
+    </View>
   );
 }
 
 function Field({
   label,
+  optional,
+  counter,
   children,
   styles,
   flex,
 }: {
   label: string;
+  optional?: boolean;
+  counter?: string;
   children: React.ReactNode;
   styles: ReturnType<typeof createStyles>;
   flex?: boolean;
 }) {
   return (
     <View style={[styles.field, flex && styles.flex]}>
-      <Text style={styles.label}>{label}</Text>
+      <View style={styles.fieldHead}>
+        <Text style={styles.label}>
+          {label}
+          {optional ? <Text style={styles.optional}> · opcional</Text> : null}
+        </Text>
+        {counter ? <Text style={styles.counter}>{counter}</Text> : null}
+      </View>
       {children}
     </View>
   );
@@ -627,93 +742,180 @@ function Field({
 
 const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
   StyleSheet.create({
-    back: { minHeight: 44, flexDirection: "row", alignItems: "center", gap: 6 },
-    link: { color: theme.action, fontSize: 14, fontWeight: "500" },
-    form: { gap: 12, marginTop: 4 },
-    section: { color: theme.text, fontSize: 18, fontWeight: "700", marginTop: 12 },
-    help: { color: theme.muted, fontSize: 13, lineHeight: 18 },
+    screen: { flex: 1, backgroundColor: theme.background },
+    content: {
+      padding: 16,
+      paddingBottom: 32,
+      gap: 14,
+      width: "100%",
+      maxWidth: 640,
+      alignSelf: "center",
+    },
+    back: {
+      minHeight: 44,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      alignSelf: "flex-start",
+    },
+    link: { color: theme.action, fontSize: 14, fontWeight: "600" },
+    mutedLink: { color: theme.muted, fontSize: 13 },
+    errorBox: {
+      flexDirection: "row",
+      gap: 10,
+      alignItems: "center",
+      padding: 12,
+      borderRadius: 12,
+      backgroundColor: theme.errorSoft,
+    },
+    errorText: { flex: 1, color: theme.error, fontSize: 14, lineHeight: 20 },
+    card: { gap: 12, padding: 16 },
+    sectionHead: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" },
+    sectionTitle: { color: theme.text, fontSize: 17, fontWeight: "700" },
+    sectionHint: { color: theme.muted, fontSize: 13 },
+    hint: { color: theme.muted, fontSize: 13, lineHeight: 18 },
     row: { flexDirection: "row", gap: 10 },
     flex: { flex: 1 },
     field: { gap: 6 },
+    fieldHead: { flexDirection: "row", justifyContent: "space-between" },
     label: { color: theme.text, fontSize: 13, fontWeight: "600" },
+    optional: { color: theme.muted, fontWeight: "400" },
+    counter: { color: theme.muted, fontSize: 12 },
     input: {
       minHeight: 46,
       borderWidth: 1,
       borderColor: theme.border,
       borderRadius: 12,
-      backgroundColor: theme.surface,
+      backgroundColor: theme.background,
       color: theme.text,
       paddingHorizontal: 13,
       paddingVertical: 11,
       fontSize: 15,
     },
-    multiline: { minHeight: 120 },
-    photos: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-    photo: {
-      width: 104,
-      height: 104,
-      borderRadius: 12,
-      overflow: "hidden",
-      backgroundColor: theme.surface,
-      borderWidth: 1,
+    multiline: { minHeight: 140, lineHeight: 21 },
+    dropzone: {
+      aspectRatio: 4 / 3,
+      borderRadius: 14,
+      borderWidth: 1.5,
+      borderStyle: "dashed",
       borderColor: theme.border,
-    },
-    cover: {
-      position: "absolute",
-      left: 6,
-      bottom: 6,
-      backgroundColor: theme.action,
-      color: theme.onAction,
-      fontSize: 11,
-      fontWeight: "700",
-      paddingHorizontal: 6,
-      paddingVertical: 2,
-      borderRadius: 6,
-      overflow: "hidden",
-    },
-    coverAction: {
-      position: "absolute",
-      left: 6,
-      bottom: 6,
-      backgroundColor: "rgba(0,0,0,0.55)",
-      paddingHorizontal: 6,
-      paddingVertical: 2,
-      borderRadius: 6,
-    },
-    coverActionText: { color: "#ffffff", fontSize: 11, fontWeight: "600" },
-    remove: {
-      position: "absolute",
-      right: 6,
-      top: 6,
-      width: 26,
-      height: 26,
-      borderRadius: 13,
+      backgroundColor: theme.background,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: "rgba(0,0,0,0.55)",
+      padding: 20,
+      gap: 8,
     },
-    assistant: {
-      gap: 10,
-      padding: 14,
-      borderRadius: 14,
+    dropIcon: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.surface,
       borderWidth: 1,
       borderColor: theme.border,
-      backgroundColor: theme.surface,
+      marginBottom: 4,
     },
-    assistantTitle: { color: theme.text, fontSize: 15, fontWeight: "700" },
-    aiNotice: { color: theme.text, fontSize: 13, lineHeight: 18 },
-    suggestion: { gap: 8 },
-    suggestionTitle: { color: theme.text, fontSize: 16, fontWeight: "700" },
-    suggestionText: { color: theme.text, fontSize: 14, lineHeight: 20 },
-    cutoutAction: {
+    dropTitle: { color: theme.text, fontSize: 16, fontWeight: "700" },
+    dropHint: {
+      color: theme.muted,
+      fontSize: 13,
+      lineHeight: 18,
+      textAlign: "center",
+      maxWidth: 280,
+    },
+    coverBox: {
+      aspectRatio: 1,
+      borderRadius: 14,
+      overflow: "hidden",
+      backgroundColor: "#ffffff",
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    coverImage: { width: "100%", height: "100%" },
+    coverBadge: {
       position: "absolute",
-      left: 6,
-      top: 6,
-      backgroundColor: "rgba(0,0,0,0.55)",
-      paddingHorizontal: 6,
-      paddingVertical: 2,
-      borderRadius: 6,
+      left: 10,
+      top: 10,
+      backgroundColor: theme.action,
+      color: theme.onAction,
+      fontSize: 12,
+      fontWeight: "700",
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 8,
+      overflow: "hidden",
     },
+    coverActions: { position: "absolute", right: 10, bottom: 10, flexDirection: "row", gap: 8 },
+    chipAction: {
+      minHeight: 34,
+      minWidth: 34,
+      paddingHorizontal: 12,
+      borderRadius: 17,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "rgba(0,0,0,0.6)",
+    },
+    chipActionText: { color: "#ffffff", fontSize: 13, fontWeight: "600" },
+    strip: { flexDirection: "row", gap: 10 },
+    thumb: {
+      width: 72,
+      height: 72,
+      borderRadius: 10,
+      overflow: "hidden",
+      backgroundColor: theme.background,
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    thumbRemove: {
+      position: "absolute",
+      right: 4,
+      top: 4,
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "rgba(0,0,0,0.6)",
+    },
+    addThumb: { alignItems: "center", justifyContent: "center", borderStyle: "dashed", gap: 2 },
+    addThumbText: { color: theme.action, fontSize: 11, fontWeight: "600" },
+    helper: {
+      gap: 10,
+      padding: 12,
+      borderRadius: 12,
+      backgroundColor: theme.background,
+    },
+    helperHead: { flexDirection: "row", alignItems: "center", gap: 8 },
+    helperTitle: { color: theme.text, fontSize: 14, fontWeight: "700" },
+    textAction: { minHeight: 36, justifyContent: "center", alignSelf: "flex-start" },
+    aiNotice: { color: theme.text, fontSize: 13, lineHeight: 18 },
+    suggestion: {
+      gap: 8,
+      padding: 14,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: theme.action,
+    },
+    suggestionLabel: { color: theme.muted, fontSize: 12, fontWeight: "600" },
+    suggestionTitle: { color: theme.text, fontSize: 16, fontWeight: "700" },
+    suggestionText: { color: theme.text, fontSize: 14, lineHeight: 21 },
+    footer: {
+      paddingHorizontal: 16,
+      paddingTop: 10,
+      paddingBottom: 14,
+      gap: 8,
+      backgroundColor: theme.surface,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: theme.border,
+    },
+    checklist: { flexDirection: "row", gap: 14, justifyContent: "center" },
+    checkItem: { flexDirection: "row", alignItems: "center", gap: 4 },
+    checkText: { color: theme.muted, fontSize: 12 },
+    checkTextOk: { color: theme.successText, fontWeight: "600" },
+    footerHint: { color: theme.muted, fontSize: 12, textAlign: "center" },
+    pressed: { opacity: 0.7 },
+    disabled: { opacity: 0.45 },
     compare: { flexDirection: "row", gap: 10 },
     compareImage: {
       width: "100%",
