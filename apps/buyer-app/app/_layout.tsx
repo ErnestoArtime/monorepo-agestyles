@@ -1,10 +1,10 @@
 import { Platform } from "react-native";
 import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
-import { Stack } from "expo-router";
+import { Stack, useGlobalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 
 import { Colors } from "@/constants/theme";
 import { CartProvider } from "@/context/cart-context";
@@ -15,6 +15,7 @@ import { RegionProvider } from "@/context/region-context";
 import { ThemePreferenceProvider } from "@/context/theme-preference";
 import { UiThemeProvider } from "@agestyles/ui-native";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { rememberAgentCode } from "@/lib/agent-code";
 
 export default function RootLayout() {
   return (
@@ -26,6 +27,11 @@ export default function RootLayout() {
 
 function RootNavigation() {
   const colorScheme = useColorScheme();
+  // A sales agent's link (`?gestor=CODE`) is remembered and offered at checkout (AG-06).
+  const { gestor } = useGlobalSearchParams<{ gestor?: string }>();
+  useEffect(() => {
+    if (gestor) void rememberAgentCode(gestor);
+  }, [gestor]);
   const colors = Colors[colorScheme ?? "light"];
   const navigationTheme = useMemo(() => {
     const baseTheme = colorScheme === "dark" ? DarkTheme : DefaultTheme;

@@ -26,6 +26,14 @@ export {
   salesServiceFilters,
   salesToCsv,
 } from "./reports";
+export {
+  AGENT_CODE_METADATA_KEY,
+  onlineSaleLines,
+  parseReversalNote,
+  reversalEntries,
+  saleTotal,
+} from "./online";
+export type { LedgerEntry, OnlineSaleLine, OrderItemInput, ReversalEntry } from "./online";
 export type { SaleRecord, SalesFilters, SalesReport } from "./reports";
 export type {
   AgentSaleInput,

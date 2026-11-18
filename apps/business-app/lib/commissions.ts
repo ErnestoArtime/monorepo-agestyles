@@ -6,6 +6,19 @@ export const COMMISSIONS = {
   withdrawals: "/vendor/agestyles/commission-withdrawals",
 };
 
+/** Public store web where buyers land with an agent's link (AG-06 phase 4). */
+export const STORE_WEB_URL = (
+  process.env.EXPO_PUBLIC_STORE_WEB_URL || "https://tienda.eav-labs.com"
+).replace(/\/+$/, "");
+
+export function agentLink(code: string) {
+  return `${STORE_WEB_URL}/?gestor=${encodeURIComponent(code)}`;
+}
+
+export function reverseSalePath(id: string) {
+  return `/vendor/agestyles/agent-sales/${id}/reverse`;
+}
+
 export type SalesAgent = {
   id: string;
   member_id: string;
@@ -25,6 +38,9 @@ export type CommissionRule = {
 export type AgentSale = {
   id: string;
   agent_id: string;
+  source?: "manual" | "online";
+  order_id?: string | null;
+  note?: string | null;
   payment_method: "cash" | "transfer" | "online";
   status: "pending" | "paid" | "reversed";
   total: number | string;
@@ -34,7 +50,7 @@ export type AgentSale = {
     sku: string | null;
     quantity: number;
     unit_price: number;
-    commission: number;
+    commission?: number;
   }[];
 };
 
@@ -63,6 +79,12 @@ export const PAYMENT_LABEL: Record<AgentSale["payment_method"], string> = {
   cash: "Efectivo",
   transfer: "Transferencia",
   online: "Pedido online",
+};
+
+export const SALE_STATUS_LABEL: Record<AgentSale["status"], string> = {
+  pending: "Pendiente de pago",
+  paid: "Cobrada",
+  reversed: "Anulada",
 };
 
 export const WITHDRAWAL_LABEL: Record<Withdrawal["status"], string> = {

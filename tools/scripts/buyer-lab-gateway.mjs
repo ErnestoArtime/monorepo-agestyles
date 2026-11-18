@@ -30,6 +30,7 @@ const rules = [
   ["GET", /^\/store\/(product-categories|sellers)$/],
   ["GET", /^\/store\/catalog-comparison$/],
   ["GET", /^\/store\/agestyles\/exchange-rate$/],
+  ["GET", /^\/store\/agestyles\/sales-agents\/[a-z0-9]{4,12}$/i],
   ["GET", /^\/store\/products(?:\/prod_[a-z0-9]+)?$/i],
   ["POST", /^\/store\/carts$/],
   ["GET POST", /^\/store\/carts\/cart_[a-z0-9]+$/i],

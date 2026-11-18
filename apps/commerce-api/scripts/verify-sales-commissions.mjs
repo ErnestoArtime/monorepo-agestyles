@@ -347,6 +347,33 @@ try {
     "payment_method filter applies",
   );
 
+  // Phase 4: buyers can check an agent code; managers reverse sales (commission debited once).
+  const { sales_agent: publicAgent } = await expectStatus(
+    `/store/agestyles/sales-agents/ci${shortId}`,
+    {},
+    200,
+  );
+  assert.equal(publicAgent.code, `CI${shortId}`.toUpperCase(), "codes are case-insensitive");
+  assert.equal(publicAgent.member_email, undefined, "the public lookup hides who the agent is");
+  await expectStatus("/store/agestyles/sales-agents/ZZZZ9999", {}, 404);
+  const reversePath = `/vendor/agestyles/agent-sales/${second.data.agent_sale.id}/reverse`;
+  await expectStatus(reversePath, { method: "POST", headers: agent.headers, body: {} }, 403);
+  await expectStatus(reversePath, { method: "POST", headers: ownerB, body: {} }, 404);
+  const reversal = await expectStatus(
+    reversePath,
+    { method: "POST", headers: ownerA, body: { note: "Devolución CI" } },
+    200,
+  );
+  assert.equal(reversal.reversed, 3, "reversing debits what the sale earned");
+  assert.equal(reversal.agent_sale.status, "reversed");
+  await expectStatus(reversePath, { method: "POST", headers: ownerA, body: {} }, 400);
+  balance = await expectStatus(
+    `/vendor/agestyles/commissions/balance?agent_id=${salesAgent.id}`,
+    { headers: ownerA },
+    200,
+  );
+  assert.equal(balance.balance, -2, "the reversal is debited once, even after a withdrawal");
+
   console.log(
     "PASS: sales agents and commissions enforce roles and store isolation; thresholds, stock, balance and withdrawals are consistent",
   );

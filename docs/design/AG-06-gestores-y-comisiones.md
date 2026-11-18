@@ -53,4 +53,14 @@ Todo se valida en el servidor y por tienda: un gestor solo ve sus ventas y su sa
 | 1 | Paquete `sales-commissions`: modelos, migración y reglas puras con tests | Hecha (`9e6c2b9`) |
 | 2 | Rutas vendor: gestores, reglas, venta registrada por el gestor (descuenta stock como `venta` de AG-03), saldo, retiros; verificador HTTP en CI | Código hecho (`00844f3`, `5e50367`); verificador en ajuste |
 | 3 | Pantallas de Negocio: Comisiones (gestor y titular) y Registrar venta | Hecha (`4c7f02b`); sin revisión visual |
-| 4 | Ventas online con código del gestor y reversión por devolución/cancelación | Pendiente |
+| 4 | Ventas online con código del gestor y reversión por devolución/cancelación | Hecha en código (18 nov), sin desplegar; ver abajo |
+
+## Fase 4 — implementación (18 nov 2026)
+
+- **Código en la compra:** la Tienda ofrece «¿Te atendió un gestor de venta?» en el paso de pago; valida el código con `GET /store/agestyles/sales-agents/:code` (solo devuelve código y nombre de la tienda, nunca quién es el gestor) y lo guarda en `cart.metadata.agestyles_agent_code`. Un enlace `https://tienda.eav-labs.com/?gestor=CODIGO` lo recuerda en el dispositivo y lo aplica al llegar al pago.
+- **Atribución en el servidor:** Mercur 2.4.1 (`complete-cart-with-split-orders`) copia `cart.metadata` a cada pedido hijo. El subscriber `agent-sale-order-placed` (`order.placed`) crea una venta `online` en estado `pending` solo si el código pertenece a un gestor activo **de la tienda de ese pedido**; los pedidos de otras tiendas del mismo carrito se ignoran. Idempotente por pedido (bloqueo `agestyles-agent-order:<pedido>`).
+- **Acreditación:** `agent-sale-payment` escucha `agestyles.manual_payment.verified` y `payment.captured`; con el bloqueo del gestor recalcula la comisión con las reglas vigentes y los umbrales acumulables, marca la venta `paid` y añade los asientos `earned` en el workflow `agestyles-settle-agent-sale` (compensable).
+- **Reversión:** `agent-sale-order-canceled` (`order.canceled`) y la ruta del titular `POST /vendor/agestyles/agent-sales/:id/reverse` añaden asientos `reversed` por lo que la venta ganó y aún no se revirtió (idempotente) y la marcan `reversed`. El saldo puede quedar negativo si el gestor ya retiró esa comisión. El stock no se toca: si la mercancía vuelve, se registra como alta en Movimientos.
+- **Negocio:** el gestor ve su código y copia o comparte su enlace; el titular ve «Ventas de la tienda» con estado («Pendiente de pago», «Anulada») y «Anular» con confirmación.
+- **Sin migración:** el modelo ya tenía `source`, `order_id`, `status` y `payment_method = online`.
+- **Pendiente:** devoluciones parciales (AG-20) aún no revierten la parte devuelta; prueba de compra real con código (AG-11).

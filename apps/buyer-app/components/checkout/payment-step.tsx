@@ -1,3 +1,4 @@
+import { AgentCodeField } from "@/components/checkout/agent-code-field";
 import { Loading } from "@/components/loading";
 import { Button } from "@/components/ui/button";
 import { Colors } from "@/constants/theme";
@@ -17,6 +18,7 @@ interface PaymentStepProps {
   onSelectProvider: (providerId: string) => void;
   onBack: () => void;
   onPlaceOrder: () => void;
+  onCartChanged: () => Promise<void> | void;
 }
 
 export function PaymentStep({
@@ -27,6 +29,7 @@ export function PaymentStep({
   onSelectProvider,
   onBack,
   onPlaceOrder,
+  onCartChanged,
 }: PaymentStepProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
@@ -88,6 +91,8 @@ export function PaymentStep({
               );
             })
           )}
+
+          <AgentCodeField cart={cart} onChanged={onCartChanged} />
 
           <View style={[styles.summary, { borderColor: colors.icon + "30" }]}>
             <Text style={[styles.summaryTitle, { color: colors.text }]}>Resumen de la orden</Text>

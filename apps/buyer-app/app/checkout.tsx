@@ -11,6 +11,7 @@ import { useCart } from "@/context/cart-context";
 import { useCustomer } from "@/context/customer-context";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { sdk } from "@/lib/sdk";
+import { forgetAgentCode } from "@/lib/agent-code";
 import { rememberOrderWhatsAppLinks, snapshotCartBySeller } from "@/lib/order-whatsapp";
 import type { HttpTypes } from "@medusajs/types";
 import { useRouter } from "expo-router";
@@ -293,6 +294,7 @@ export default function CheckoutScreen() {
         },
       });
       await clearCart();
+      await forgetAgentCode();
     } catch (err: any) {
       console.error("Failed to complete order:", err);
       Alert.alert(
@@ -382,6 +384,7 @@ export default function CheckoutScreen() {
             onSelectProvider={setSelectedPaymentProvider}
             onBack={() => setCurrentStep("shipping")}
             onPlaceOrder={handlePlaceOrder}
+            onCartChanged={refreshCart}
           />
         )}
       </View>

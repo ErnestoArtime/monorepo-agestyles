@@ -1,18 +1,27 @@
 import { Icon } from "@agestyles/icons";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Platform, Pressable, Share, StyleSheet, Text, TextInput, View } from "react-native";
 import { OperationList, Section } from "../components/operation-list";
-import { Button, PillGroup, StatusBadge, type BadgeTone } from "@agestyles/ui-native";
+import {
+  Button,
+  ConfirmDialog,
+  PillGroup,
+  StatusBadge,
+  type BadgeTone,
+} from "@agestyles/ui-native";
 import { deliverCsv } from "../lib/inventory-movements";
 import { useBusiness } from "../context/business-context";
 import { useBusinessTheme } from "../hooks/use-business-theme";
 import {
+  agentLink,
   COMMISSIONS,
   commissionError,
   money,
   PAYMENT_LABEL,
+  reverseSalePath,
   ruleLabel,
+  SALE_STATUS_LABEL,
   shortDate,
   WITHDRAWAL_LABEL,
   type AgentSale,
@@ -88,6 +97,8 @@ export default function CommissionsScreen() {
   const [period, setPeriod] = useState<ReportPeriod>("30");
   const [salesReport, setSalesReport] = useState<SalesReport | null>(null);
   const [exporting, setExporting] = useState(false);
+  // Reversal of a sale by the manager (AG-06 phase 4)
+  const [reversal, setReversal] = useState<AgentSale | null>(null);
 
   const productTitle = useMemo(
     () => new Map(products.map((product) => [product.id, product.title ?? "Producto"])),
@@ -163,6 +174,34 @@ export default function CommissionsScreen() {
   }
 
   const ownSales = sales.filter((sale) => sale.agent_id === ownAgentId);
+  const ownAgent = agents.find((agent) => agent.id === ownAgentId) ?? null;
+
+  async function shareAgentLink(code: string) {
+    const link = agentLink(code);
+    const message = `Compra en AgeStyles con mi código de gestor ${code}: ${link}`;
+    try {
+      if (Platform.OS === "web" && typeof navigator !== "undefined" && navigator.clipboard) {
+        await navigator.clipboard.writeText(link);
+        setNotice("Enlace copiado. Compártelo con tus clientes.");
+        return;
+      }
+      await Share.share({ title: "Mi enlace de gestor", message });
+    } catch {
+      setError("No se pudo compartir el enlace. Tu código es " + code + ".");
+    }
+  }
+
+  async function confirmReversal() {
+    const sale = reversal;
+    setReversal(null);
+    if (!sale) return;
+    await run(
+      `reverse-${sale.id}`,
+      () => request(reverseSalePath(sale.id), "POST", {}),
+      "Venta anulada. Su comisión se ha descontado del saldo del gestor.",
+      "No se pudo anular la venta.",
+    );
+  }
   const ownWithdrawals = withdrawals.filter((item) => item.agent_id === ownAgentId);
   const pending = withdrawals.filter((item) => item.status === "requested");
   const productRules = rules.filter((rule) => rule.product_id);
@@ -248,6 +287,25 @@ export default function CommissionsScreen() {
                 title="Registrar venta"
                 onPress={() => router.push("/agent-sale")}
               />
+              {ownAgent ? (
+                <View style={styles.codeBox}>
+                  <View style={styles.flex}>
+                    <Text style={styles.muted}>Tu código de gestor</Text>
+                    <Text style={styles.code} selectable>
+                      {ownAgent.code}
+                    </Text>
+                    <Text style={styles.muted}>
+                      Las compras online con tu código suman comisión cuando se confirma el pago.
+                    </Text>
+                  </View>
+                  <Button
+                    icon="send"
+                    title={Platform.OS === "web" ? "Copiar enlace" : "Compartir enlace"}
+                    variant="secondary"
+                    onPress={() => void shareAgentLink(ownAgent.code)}
+                  />
+                </View>
+              ) : null}
               <Text style={styles.label}>Retirar en efectivo (USD)</Text>
               <View style={styles.inline}>
                 <TextInput
@@ -370,6 +428,25 @@ export default function CommissionsScreen() {
               ))
             ) : (
               <Text style={[styles.muted, styles.pad]}>No hay retiros pendientes.</Text>
+            )}
+          </Section>
+
+          <Section title="Ventas de la tienda">
+            {sales.length ? (
+              sales
+                .slice(0, 20)
+                .map((sale) => (
+                  <SaleRow
+                    key={sale.id}
+                    sale={sale}
+                    styles={styles}
+                    agentLabel={agentEmail.get(sale.agent_id) ?? "Gestor"}
+                    onReverse={sale.status === "reversed" ? undefined : () => setReversal(sale)}
+                    busy={busy === `reverse-${sale.id}`}
+                  />
+                ))
+            ) : (
+              <Text style={[styles.muted, styles.pad]}>Aún no hay ventas de gestores.</Text>
             )}
           </Section>
 
@@ -708,6 +785,17 @@ export default function CommissionsScreen() {
           </Section>
         </>
       ) : null}
+      <ConfirmDialog
+        visible={!!reversal}
+        tone="warning"
+        title="Anular venta"
+        message={`La comisión de esta venta (${money(
+          (reversal?.lines ?? []).reduce((sum, line) => sum + Number(line.commission ?? 0), 0),
+        )}) se descontará del saldo del gestor. Si la mercancía vuelve, regístrala como alta en Movimientos.`}
+        primary={{ label: "Anular venta", onPress: () => void confirmReversal() }}
+        secondary={{ label: "Cancelar", onPress: () => setReversal(null) }}
+        onClose={() => setReversal(null)}
+      />
     </OperationList>
   );
 }
@@ -733,8 +821,26 @@ function Figure({
   );
 }
 
-function SaleRow({ sale, styles }: { sale: AgentSale; styles: Styles }) {
-  const commission = sale.lines.reduce((sum, line) => sum + Number(line.commission), 0);
+function SaleRow({
+  sale,
+  styles,
+  agentLabel,
+  onReverse,
+  busy,
+}: {
+  sale: AgentSale;
+  styles: Styles;
+  agentLabel?: string;
+  onReverse?: () => void;
+  busy?: boolean;
+}) {
+  const commission = sale.lines.reduce((sum, line) => sum + Number(line.commission ?? 0), 0);
+  const amount =
+    sale.status === "pending"
+      ? "Al pagarse"
+      : sale.status === "reversed"
+        ? money(0)
+        : `+${money(commission)}`;
   return (
     <View style={styles.row}>
       <View style={styles.flex}>
@@ -745,12 +851,35 @@ function SaleRow({ sale, styles }: { sale: AgentSale; styles: Styles }) {
         </Text>
         <Text style={styles.muted}>
           {shortDate(sale.created_at)} · {PAYMENT_LABEL[sale.payment_method]} · {money(sale.total)}
+          {agentLabel ? ` · ${agentLabel}` : ""}
         </Text>
+        {sale.status !== "paid" ? (
+          <StatusBadge label={SALE_STATUS_LABEL[sale.status]} tone={SALE_TONE[sale.status]} />
+        ) : null}
       </View>
-      <Text style={styles.rowTitle}>+{money(commission)}</Text>
+      <View style={styles.saleSide}>
+        <Text style={styles.rowTitle}>{amount}</Text>
+        {onReverse ? (
+          <Pressable
+            disabled={busy}
+            onPress={onReverse}
+            accessibilityRole="button"
+            accessibilityLabel="Anular venta"
+            style={[styles.secondary, busy && styles.disabled]}
+          >
+            <Text style={styles.danger}>Anular</Text>
+          </Pressable>
+        ) : null}
+      </View>
     </View>
   );
 }
+
+const SALE_TONE: Record<AgentSale["status"], BadgeTone> = {
+  pending: "warning",
+  paid: "success",
+  reversed: "neutral",
+};
 
 const WITHDRAWAL_TONE: Record<Withdrawal["status"], BadgeTone> = {
   requested: "warning",
@@ -809,5 +938,17 @@ const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
     },
     bar: { height: 10, borderRadius: 5, backgroundColor: theme.action },
     rankRow: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 48 },
+    codeBox: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      padding: 12,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: theme.border,
+      backgroundColor: theme.background,
+    },
+    code: { color: theme.text, fontSize: 22, fontWeight: "700", letterSpacing: 1.5 },
+    saleSide: { alignItems: "flex-end", gap: 2 },
     rank: { width: 22, color: theme.muted, fontSize: 14, fontWeight: "700", textAlign: "center" },
   });

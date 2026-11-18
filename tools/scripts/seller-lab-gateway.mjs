@@ -76,6 +76,7 @@ const rules = [
   ["GET POST", /^\/vendor\/agestyles\/agent-sales$/],
   ["GET", /^\/vendor\/agestyles\/commissions\/(balance|report)$/],
   ["GET", /^\/vendor\/agestyles\/agent-sales\/export$/],
+  ["POST", /^\/vendor\/agestyles\/agent-sales\/asale_[a-z0-9]+\/reverse$/i],
   ["GET POST", /^\/vendor\/agestyles\/commission-withdrawals$/],
   ["POST", /^\/vendor\/agestyles\/commission-withdrawals\/cwdraw_[a-z0-9]+$/i],
   // Notifications of the selected store (AG-19); authorization is enforced by the API.

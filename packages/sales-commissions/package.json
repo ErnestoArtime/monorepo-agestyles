@@ -23,6 +23,6 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
-    "test": "node test/sales-commissions.test.ts"
+    "test": "node test/sales-commissions.test.ts && node test/online.test.ts"
   }
 }
