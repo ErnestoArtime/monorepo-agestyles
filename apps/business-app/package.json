@@ -13,9 +13,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@agestyles/api-client": "workspace:*",
     "@agestyles/design-tokens": "workspace:*",
     "@agestyles/domain": "workspace:*",
     "@agestyles/features-buyer": "workspace:*",
+    "@agestyles/features-notifications": "workspace:*",
     "@agestyles/icons": "workspace:*",
     "@agestyles/ui-native": "workspace:*",
     "@medusajs/js-sdk": "2.22.3",
@@ -27,6 +29,7 @@
     "expo-image-manipulator": "~14.0.8",
     "expo-image-picker": "~17.0.11",
     "expo-linking": "~8.0.8",
+    "expo-notifications": "~0.32.17",
     "expo-router": "~6.0.13",
     "expo-splash-screen": "~31.0.10",
     "expo-status-bar": "~3.0.8",
