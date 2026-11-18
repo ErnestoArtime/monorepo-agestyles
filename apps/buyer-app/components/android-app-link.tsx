@@ -1,7 +1,8 @@
 import { Colors } from "@/constants/theme";
 import { Icon } from "@agestyles/icons";
 import React from "react";
-import { Linking, Platform, Pressable, StyleSheet, Text, View, useColorScheme } from "react-native";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Linking, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
 const apkUrl = process.env.EXPO_PUBLIC_ANDROID_APK_URL?.trim();
 

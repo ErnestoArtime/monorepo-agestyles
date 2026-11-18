@@ -30,7 +30,7 @@ const buyerCart = createBuyerCartFeature(
 );
 const buyerCatalog = {
   listProducts: (regionId: string, query?: string) =>
-    listStoreProducts(buyerSdk.client, { regionId, query, limit: 30 }),
+    listStoreProducts(buyerSdk.client, { regionId, query, limit: 200 }),
   listOffers: (productId: string, regionId: string) =>
     listProductOffers(buyerSdk.client, { productId, regionId }),
 };

@@ -125,8 +125,10 @@ export default function HomeScreen() {
       setLoading(true);
       setError(null);
 
+      // The whole catalog, not the client's default page of 20.
       const { products: fetchedProducts } = await listStoreProducts(sdk.client, {
         regionId: selectedRegion.id,
+        limit: 200,
       });
 
       setProducts(fetchedProducts);

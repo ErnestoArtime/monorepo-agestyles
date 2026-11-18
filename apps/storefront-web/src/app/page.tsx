@@ -40,7 +40,7 @@ export default async function StorefrontHome({
 
   return (
     <main>
-      <div className="topline">UNA NUEVA FORMA DE DESCUBRIR · BETA DE PRUEBA</div>
+      <div className="topline">UNA NUEVA FORMA DE DESCUBRIR · FASE PILOTO</div>
       <header className="site-header">
         <Link href="/" className="brand" aria-label="AgeStyles inicio">
           <Image src="/agestyles-mark.svg" alt="" width={34} height={34} priority />
