@@ -50,6 +50,11 @@ export function parseRuleInput(body: unknown): CommissionRuleInput {
   if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
     fail("La comisión debe ser mayor que cero.");
   }
+  if (!productId && kind !== "percent") {
+    fail(
+      "La comisión general de la tienda es un porcentaje; los importes fijos se definen por producto.",
+    );
+  }
   if (kind === "percent" && value > MAX_PERCENT) fail("El porcentaje no puede superar el 100 %.");
   if (kind === "fixed" && value > MAX_FIXED) fail("El importe de comisión es demasiado alto.");
   if (roundMoney(value) !== value) fail("La comisión admite como máximo dos decimales.");

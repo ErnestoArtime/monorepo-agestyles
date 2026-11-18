@@ -38,10 +38,19 @@ Cálculo por línea vendida: se toma la regla del producto si existe; si no, la 
 
 Todo se valida en el servidor y por tienda: un gestor solo ve sus ventas y su saldo; solo el titular o administración configuran reglas y confirman retiros; ningún retiro puede superar el saldo (con bloqueo como en AG-03); el libro es solo de añadir.
 
-## Decisiones que faltan (usuario)
+## Decisiones del usuario (18 nov 2026)
 
-1. **Cómo se atribuye una venta a un gestor.**
-2. **Precedencia** entre la regla del producto y el porcentaje general de la tienda.
-3. Si se mantiene la comisión **acumulable con umbral de unidades** del legado.
-4. **Cómo se retira el efectivo:** con solicitud y confirmación del titular, o lo anota directamente el titular.
-5. (Propuesta por defecto, salvo indicación contraria) La comisión se acredita cuando la venta queda **pagada**, y se revierte si hay devolución o cancelación.
+1. **Atribución:** el gestor **registra en Negocio** las ventas que hace (en tienda, por WhatsApp…), cobradas en efectivo o por transferencia; además, un cliente puede **comprar online con el código del gestor** y la venta queda a su nombre (fase 4).
+2. **Precedencia:** se aplica **la comisión del producto**; la regla general de la tienda es **un porcentaje** y solo cubre productos sin comisión propia.
+3. **Acumulable:** opción **por producto** con importe fijo: la comisión se acredita cada vez que el gestor completa el umbral de unidades; sin umbral, en cada venta.
+4. **Retiros:** el gestor **solicita** y el titular **confirma** la entrega del efectivo (o la rechaza); el saldo baja al confirmar.
+5. **Acreditación:** las ventas registradas por el gestor se consideran cobradas al registrarlas; las online, al confirmarse el pago. Se revierten con devolución o cancelación (pendiente: fase 4).
+
+## Plan por fases
+
+| Fase | Contenido | Estado |
+|---|---|---|
+| 1 | Paquete `sales-commissions`: modelos, migración y reglas puras con tests | Hecha (`9e6c2b9`) |
+| 2 | Rutas vendor: gestores, reglas, venta registrada por el gestor (descuenta stock como `venta` de AG-03), saldo, retiros; verificador HTTP en CI | Código hecho (`00844f3`, `5e50367`); verificador en ajuste |
+| 3 | Pantallas de Negocio: Comisiones (gestor y titular) y Registrar venta | Hecha (`4c7f02b`); sin revisión visual |
+| 4 | Ventas online con código del gestor y reversión por devolución/cancelación | Pendiente |

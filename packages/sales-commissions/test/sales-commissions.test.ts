@@ -32,14 +32,18 @@ assert.equal(
   10,
 );
 invalid(() => parseRuleInput({ kind: "percent", value: 101 }), /100/);
-invalid(() => parseRuleInput({ kind: "fixed", value: 0 }), /mayor que cero/);
-invalid(() => parseRuleInput({ kind: "fixed", value: 1.005 }), /dos decimales/);
+invalid(() => parseRuleInput({ kind: "fixed", value: 2 }), /general de la tienda es un porcentaje/);
+invalid(() => parseRuleInput({ product_id: "prod_1", kind: "fixed", value: 0 }), /mayor que cero/);
+invalid(
+  () => parseRuleInput({ product_id: "prod_1", kind: "fixed", value: 1.005 }),
+  /dos decimales/,
+);
 invalid(() => parseRuleInput({ kind: "bonus", value: 1 }), /porcentaje o importe fijo/);
 invalid(
   () => parseRuleInput({ product_id: "prod_1", kind: "percent", value: 5, unit_threshold: 10 }),
   /importe fijo/,
 );
-invalid(() => parseRuleInput({ kind: "fixed", value: 2, unit_threshold: 10 }), /por producto/);
+invalid(() => parseRuleInput({ kind: "fixed", value: 2, unit_threshold: 10 }), /porcentaje/);
 invalid(
   () => parseRuleInput({ product_id: "prod_1", kind: "fixed", value: 2, unit_threshold: 1 }),
   /entre 2/,

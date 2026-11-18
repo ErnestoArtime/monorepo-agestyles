@@ -123,7 +123,7 @@ const { stock_locations: locations } = await expectStatus(
 );
 const locationId = locations[0].id;
 const { inventory_items: items } = await expectStatus(
-  `/vendor/inventory-items?sku=${encodeURIComponent(offer.sku)}&fields=id,sku,location_levels.location_id,location_levels.stocked_quantity`,
+  `/vendor/inventory-items?limit=100&fields=id,sku,location_levels.location_id,location_levels.stocked_quantity`,
   { headers: ownerA },
   200,
 );
@@ -299,6 +299,12 @@ try {
   console.log(
     "PASS: sales agents and commissions enforce roles and store isolation; thresholds, stock, balance and withdrawals are consistent",
   );
+} catch (error) {
+  // Surface the failing check as a GitHub annotation; job logs need authentication.
+  console.log(
+    `::error title=verify-sales-commissions::${String(error?.message ?? error).replace(/\n/g, " ")}`,
+  );
+  throw error;
 } finally {
   const current = await stockOf().catch(() => originalStock);
   if (current !== originalStock) {
