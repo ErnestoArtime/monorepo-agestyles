@@ -554,7 +554,9 @@ export default function ProductsScreen() {
                               <View style={styles.variantSummary}>
                                 <View style={styles.variantText}>
                                   <Text style={styles.variantTitle}>
-                                    {variant.title ?? "Variante"}
+                                    {!variant.title || variant.title === "Default"
+                                      ? "Variante única"
+                                      : variant.title}
                                   </Text>
                                   <Text style={styles.variantSku}>{variant.sku || "Sin SKU"}</Text>
                                 </View>

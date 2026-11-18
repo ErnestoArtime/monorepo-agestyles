@@ -254,6 +254,7 @@ export default function OrdersScreen() {
       loading={loading}
       error={error}
       empty="No hay pedidos para mostrar."
+      isEmpty={!items.length}
       onRefresh={() => void load()}
     >
       {notice ? (
