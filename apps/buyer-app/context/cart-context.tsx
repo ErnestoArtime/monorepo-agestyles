@@ -1,7 +1,9 @@
 import { createBuyerCartFeature } from "@agestyles/features-buyer/cart";
+import { parseHandoffCartId, withoutHandoffParam } from "@agestyles/features-buyer/cart-handoff";
 import { sdk } from "@/lib/sdk";
 import type { HttpTypes } from "@medusajs/types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform } from "react-native";
 import React, {
   createContext,
   ReactNode,
@@ -29,6 +31,40 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 const CART_STORAGE_KEY = "cart_id";
 const cartFeature = createBuyerCartFeature(sdk.client, AsyncStorage, CART_STORAGE_KEY);
 
+let handoff: Promise<void> | null = null;
+let handoffArrived = false;
+
+/**
+ * A cart built in the public Catálogo arrives as `?cart=cart_…` and becomes this device's cart. The
+ * parameter is removed first, so a reload (or a failure) never adopts it twice; an id that no longer
+ * exists is dropped by `loadOrCreate`, which then starts a fresh cart.
+ */
+function adoptHandoffCart(): Promise<void> {
+  if (Platform.OS !== "web" || typeof window === "undefined") return Promise.resolve();
+  handoff ??= (async () => {
+    const cartId = parseHandoffCartId(window.location.search);
+    if (!cartId) return;
+    window.history.replaceState(
+      window.history.state,
+      "",
+      withoutHandoffParam(window.location.href),
+    );
+    await AsyncStorage.setItem(CART_STORAGE_KEY, cartId);
+    handoffArrived = true;
+  })();
+  return handoff;
+}
+
+/** True once when this visit came with a cart handed over from the Catálogo (so it opens on the cart). */
+export async function takeHandoffArrival(): Promise<boolean> {
+  await adoptHandoffCart();
+  const arrived = handoffArrived;
+  handoffArrived = false;
+  return arrived;
+}
+// Read the address as soon as the app starts: the router rewrites it while the regions load.
+void adoptHandoffCart();
+
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<HttpTypes.StoreCart | null>(null);
   const [loading, setLoading] = useState(false);
@@ -42,6 +78,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       setError(null);
 
+      await adoptHandoffCart();
       const currentCart = await cartFeature.loadOrCreate(selectedRegion.id);
       setCart(currentCart);
       return currentCart;

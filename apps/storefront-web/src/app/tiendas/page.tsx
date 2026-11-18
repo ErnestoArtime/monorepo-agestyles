@@ -14,27 +14,9 @@ export const metadata: Metadata = {
 
 export default async function StoresPage() {
   const sellers = await getSellerDirectory();
-  const buyerAppUrl = process.env.BUYER_APP_URL || "https://tienda.eav-labs.com";
 
   return (
     <main className="stores-directory-page">
-      <div className="topline">AGESTYLES · TIENDAS Y COMERCIOS</div>
-      <header className="site-header">
-        <Link href="/" className="brand" aria-label="AgeStyles inicio">
-          <Image src="/agestyles-mark.svg" alt="" width={34} height={34} priority />
-          <span>AgeStyles</span>
-        </Link>
-        <nav className="main-nav" aria-label="Navegación principal">
-          <Link href="/#catalogo">Catálogo</Link>
-          <Link href="/tiendas" className="active">
-            Tiendas
-          </Link>
-        </nav>
-        <a className="bag" href={buyerAppUrl}>
-          Comprar en la app <Icon name="arrowRight" size={13} />
-        </a>
-      </header>
-
       <section className="wrap stores-directory-intro">
         <div className="breadcrumbs">
           <Link href="/">Inicio</Link>
@@ -110,26 +92,6 @@ export default async function StoresPage() {
           </div>
         )}
       </section>
-
-      <footer className="site-footer">
-        <div className="wrap footer-main">
-          <Link href="/" className="brand">
-            <Image src="/agestyles-mark.svg" alt="" width={28} height={28} />
-            <span>AgeStyles</span>
-          </Link>
-          <p>Descubre. Compara. Elige.</p>
-          <Link href="/">
-            Volver al catálogo <Icon name="arrowRight" size={12} />
-          </Link>
-        </div>
-        <div className="wrap footer-bottom">
-          <span>© 2026 AgeStyles</span>
-          <span>AgeStyles en fase piloto</span>
-          <a href={buyerAppUrl}>
-            Conocer la app de compra <Icon name="arrowRight" size={12} />
-          </a>
-        </div>
-      </footer>
     </main>
   );
 }
