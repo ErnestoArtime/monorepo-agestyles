@@ -1489,3 +1489,33 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
   - Riesgos: quitar «mensajes beta» (AG-07 hecho) y «comisiones sin reglas» (AG-06 desplegado); añadir **imágenes en dos sitios**: AG-09 dice mantener Supabase; AG-26 decidió el bucket `product-images` (falta la clave S3); hoy producción usa el volumen local y la optimización de AG-36 solo actúa en ese proveedor. Si se pasa a S3 hay que aplicar la misma optimización allí.
 - **Bloqueos que dependen del usuario:** tasa CUP (AG-01), compra real (AG-11, depende de AG-01), backup externo (AG-02, aplazado), ruta de Cloudflare del gateway de administración (AG-32), clave S3 de Supabase (AG-26), claves de IA (AG-27), SendGrid (AG-19), escritura de SKU (AG-29 b) y familias (AG-28).
 - **Codex:** su último commit es del 18 nov (AG-25, que sigue «en curso»). Esperan su revisión: AG-03, AG-06 fases 3–4, AG-19, AG-24, AG-26, AG-27, AG-30 a AG-36 y los gateways de producción.
+
+## 2026-11-19 — Claude: AG-39 (Análisis), AG-40 (avisos por rol) y AG-41 (repaso visual), desplegados
+
+- **AG-39** (`e1e9101`, `81f7da1`, `d84de94`, `78ff604`…): `GET /vendor/agestyles/analytics` y pantalla «Análisis» en Negocio.
+  - Contenido: ventas del período frente al anterior, online + en tienda, sin contar dos veces las ventas online de un gestor; ventas por día; más vendidos; sin rotación (60 días); próximos a agotarse (7 días al ritmo de 30); pedidos abiertos por etapa y antigüedad; pagos manuales pendientes; gestores y comisiones solo para titular o administración.
+  - El stock se lee de las ofertas (`inventory_item_link`), porque el enlace inventario→variante no devuelve el producto. Comprobado contra la base con un script de solo lectura: AgeStyles 26 uds, 16 ofertas sin stock.
+  - La CI falló una vez porque `let agents = null` se tipaba como `null`; corregido.
+  - Sin rentabilidad hasta que exista el coste (decisión del usuario).
+- **AG-40** (`0581545`, `dd10806`, `20d0e9c`): matriz en `docs/design/AG-40-notificaciones-por-rol.md`.
+  - Destinatario `user` y grupo `marketplace`, con la migración `Migration20261119120000` ya aplicada.
+  - Avisos nuevos:
+    - administración: tienda por aprobar (`seller.created`), producto por revisar (`product-change.created`), comprobante por verificar y solicitud de categoría;
+    - tienda: pedido cancelado, pago verificado o rechazado, tienda aprobada o suspendida, solicitud de categoría resuelta;
+    - gestor: comisión generada.
+  - Bandeja de administración: `GET /admin/agestyles/notifications` y `POST …/read`, pantalla Administración → «Avisos» y ámbito `admin` en el cliente compartido.
+  - Probado en producción: solicitud → aviso a la administración (no leídos 0→1) → rechazo → la tienda recibe «Solicitud de categoría no aceptada» con el motivo → marcar leído.
+  - De paso: el aviso de stock bajo decía «Default»; ahora usa el nombre del producto.
+- **AG-41** (`78ff604` y siguientes):
+  - Tienda: los enlaces directos con `?filtro=…` perdían los parámetros en la redirección de `/`; página 404 en español; acceso alineado como el registro; favoritos vacío con «Explorar productos».
+  - Negocio: al recargar se perdía la tienda elegida (pantallas con errores en rojo y sin menú). Ahora se recuerda la última tienda o se abre la única. Además, «← Más» común en móvil (`OperationList.backLabel`) y página 404 en español.
+  - Catálogo: 404 en español. Ojo: `Dockerfile.runtime` copia una compilación local de `.next`, así que hay que ejecutar `pnpm --filter @agestyles/storefront-web build` antes de `compose up --build`. El Catálogo publicado era de la compilación del 18 nov, 18:41.
+- **Despliegue:**
+  - Volcados `db-backups/before-dd10806-*` y `before-81f7da1-*`.
+  - API `sha256:1c217027…` (de `dd10806`) y `db:migrate` aplicado.
+  - Gateways de compradores y vendedores recreados; Tienda, Negocio y Catálogo publicados.
+  - Las reglas nuevas del gateway de administración siguen sin aplicar (gateway no desplegado, AG-32).
+- **Disco:** con permiso del usuario se borraron las imágenes de la API `981ac9a` y `2dedff5`, y las carpetas `android/` que dejó la compilación de AG-37. Libres: 8,7 GB (96 %).
+- **Hallazgo para decidir:** el rol «gestión de pedidos» de Mercur no tiene ningún permiso en `seller-permissions`, ni siquiera ver pedidos. Hay que decidir si equivale a atención al cliente.
+- **Pendiente:** unificar el estilo del Catálogo (Next) con la Tienda o decidir si el Catálogo se retira en favor de la Tienda web.
+- **Codex:** revisar AG-39, AG-40 (migración, suscriptores y bandeja de administración) y AG-41 (cambio de `business-context` al restaurar la tienda).
