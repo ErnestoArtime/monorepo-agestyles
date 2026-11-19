@@ -111,7 +111,7 @@ test("transfer persists the cart and addOffer appends offers from two sellers", 
     cartWithBothSellers,
   );
   assert.deepEqual(calls[0], {
-    path: "/store/carts/cart_guest/transfer",
+    path: "/store/carts/cart_guest/customer",
     options: { method: "POST", query: { fields: "+items.*" } },
   });
   assert.deepEqual(calls[1], {

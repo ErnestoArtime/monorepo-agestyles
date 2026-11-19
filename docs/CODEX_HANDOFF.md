@@ -1626,3 +1626,10 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
   - Los dos 401 son el comportamiento esperado: Negocio prueba `member` y `user` con las mismas credenciales, y su correo personal aún no es cuenta de equipo ni de administración.
   - La contraseña viaja por HTTPS: TLS 1.3, AES-256-GCM, y HTTP redirige 301 a HTTPS. DevTools la muestra antes del cifrado.
   - Recomendación al usuario: activar HSTS en Cloudflare.
+
+## 2026-11-19 22:10 · Claude · AG-32 fase C: login de la Tienda con carrito y primera cuenta administradora
+
+- Fallo: la Tienda mostraba «No se pudo iniciar sesión» aunque el login (y la migración desde el catálogo antiguo) daban 200. El cliente vinculaba el carrito invitado con `POST /store/carts/:id/transfer`, ruta que no existe en Medusa 2.22.3 ni en Mercur 2.4.1 (la correcta es `/store/carts/:id/customer`, ya permitida por el buyer-gateway), y ese error tumbaba el login.
+- Cambios: `packages/api-client/src/store.ts` usa `/customer`; `customer-context.tsx` trata el vínculo del carrito como «mejor esfuerzo» en login y registro; test de `features-buyer` actualizado (pasa).
+- Producción (autorizado por el usuario): copia `before-promote-admin-20261119-2204.dump`; `legacy-promote-admin.ts` (montado, prueba en seco y luego real) dio administración a la cuenta antigua de administrador recién migrada → usuario `user_01M7TT27KFHZK41G4JM3J7NJCZ`. Tienda y Negocio republicadas.
+- Revisión cruzada pendiente (Codex): ruta de vínculo del carrito y alta de administrador.

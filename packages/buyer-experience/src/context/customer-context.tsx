@@ -96,7 +96,10 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
       }
 
       const { customer: currentCustomer } = await sdk.store.customer.retrieve();
-      await linkCurrentCart();
+      // Linking the guest cart is best effort: the sign-in already succeeded.
+      await linkCurrentCart().catch((error) => {
+        console.warn("Could not link the cart to the customer account:", error);
+      });
       setCustomer(currentCustomer);
     },
     [linkCurrentCart],
@@ -129,7 +132,10 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
       }
 
       const { customer: currentCustomer } = await sdk.store.customer.retrieve();
-      await linkCurrentCart();
+      // Linking the guest cart is best effort: the sign-in already succeeded.
+      await linkCurrentCart().catch((error) => {
+        console.warn("Could not link the cart to the customer account:", error);
+      });
       setCustomer(currentCustomer);
     },
     [linkCurrentCart],
