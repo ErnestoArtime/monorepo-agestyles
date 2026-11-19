@@ -3,6 +3,7 @@ import { ProductSkeleton } from "./product-skeleton";
 import { ShareButton } from "./share-button";
 import { Toast } from "./ui/toast";
 import { WebFooter } from "./web-footer";
+import { ProductExtras, StoreLink } from "./product-extras";
 import { CONTENT_MAX, useResponsive } from "../hooks/use-responsive";
 import { useCart } from "../context/cart-context";
 import { useRegion } from "../context/region-context";
@@ -57,6 +58,8 @@ export function ProductDetail(
   // catalog's quick view as a centred dialog instead of the phone's bottom sheet.
   const wide = props.layout === "screen" && isWideWeb;
   const dialog = props.layout === "sheet" && isWideWeb;
+  // The quick view closes before opening a store's page.
+  const closeSheet = props.layout === "sheet" ? props.onClose : undefined;
 
   const [product, setProduct] = useState<HttpTypes.StoreProduct | null>(null);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
@@ -77,7 +80,7 @@ export function ProductDetail(
       setError(null);
       setQuantity(1);
       const { product: fetched } = await sdk.store.product.retrieve(productId, {
-        fields: "*variants.calculated_price,+variants.inventory_quantity",
+        fields: "*variants.calculated_price,+variants.inventory_quantity,*categories",
         region_id: selectedRegion.id,
       });
       setProduct(fetched);
@@ -238,6 +241,7 @@ export function ProductDetail(
         : null}
       {offers.length > 1 ? (
         <View style={styles.group}>
+          {/* Each store in the list, and below it a link to the chosen one's page. */}
           <Text style={[styles.groupTitle, { color: color.text }]}>Tienda</Text>
           {offers.map((offer) => {
             const selected = selectedOffer?.id === offer.id;
@@ -262,11 +266,19 @@ export function ProductDetail(
               </Pressable>
             );
           })}
+          {selectedOffer ? (
+            <StoreLink
+              seller={selectedOffer.seller}
+              label={`Ver la tienda ${selectedOffer.seller.name}`}
+              onBeforeOpen={closeSheet}
+            />
+          ) : null}
         </View>
       ) : selectedOffer ? (
-        <Text style={[styles.soldBy, { color: color.muted }]}>
-          Vendido por {selectedOffer.seller.name}
-        </Text>
+        <View style={styles.soldByRow}>
+          <Text style={[styles.soldBy, { color: color.muted }]}>Vendido por</Text>
+          <StoreLink seller={selectedOffer.seller} onBeforeOpen={closeSheet} />
+        </View>
       ) : null}
       {/* Comparing is hidden while the catalog has few products with technical features. */}
       <ShareButton
@@ -296,6 +308,16 @@ export function ProductDetail(
           style={styles.addButton}
         />
       </>
+    ) : null;
+
+  const storeSeller = selectedOffer?.seller ?? offers[0]?.seller ?? null;
+  const extras =
+    props.layout === "screen" && product && !loading && !error ? (
+      <ProductExtras
+        productId={product.id}
+        categoryIds={(product.categories ?? []).map((category) => category.id)}
+        seller={storeSeller ? { id: storeSeller.id, name: storeSeller.name } : null}
+      />
     ) : null;
 
   const toastView = (
@@ -418,6 +440,7 @@ export function ProductDetail(
                 </View>
               </View>
             )}
+            {extras}
           </View>
           <WebFooter />
         </ScrollView>
@@ -428,7 +451,10 @@ export function ProductDetail(
 
   return (
     <View style={[styles.screen, { backgroundColor: color.background }]}>
-      <ScrollView contentContainerStyle={styles.screenContent}>{content}</ScrollView>
+      <ScrollView contentContainerStyle={styles.screenContent}>
+        {content}
+        <View style={styles.phoneExtras}>{extras}</View>
+      </ScrollView>
       {purchaseBar ? (
         <View
           style={[
@@ -447,6 +473,9 @@ export function ProductDetail(
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   screenContent: { padding: 16, paddingBottom: 32 },
+  // The sections below bring their own 16 px margins.
+  phoneExtras: { marginHorizontal: -16 },
+  soldByRow: { flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" },
   screenBar: {
     flexDirection: "row",
     alignItems: "center",
