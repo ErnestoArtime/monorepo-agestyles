@@ -30,7 +30,11 @@ export type HomeBanner = {
   subtitle: string | null;
   image_url: string;
   cta: string | null;
-  link: { kind: "none" | "category" | "product" | "seller" | "url"; value: string | null; label: string | null };
+  link: {
+    kind: "none" | "category" | "product" | "seller" | "url";
+    value: string | null;
+    label: string | null;
+  };
 };
 
 export type CatalogParams = {
@@ -64,9 +68,12 @@ export function fetchCatalog(params: CatalogParams) {
 }
 
 export function fetchHome(regionId: string) {
-  return sdk.client.fetch<{ banners: HomeBanner[]; featured: CatalogCard[] }>("/store/agestyles/home", {
-    query: { region_id: regionId },
-  });
+  return sdk.client.fetch<{ banners: HomeBanner[]; featured: CatalogCard[] }>(
+    "/store/agestyles/home",
+    {
+      query: { region_id: regionId },
+    },
+  );
 }
 
 /** The product cards render Store API products; a catalog card carries what they need. */
@@ -78,6 +85,8 @@ export function cardAsProduct(card: CatalogCard): HttpTypes.StoreProduct {
     thumbnail: card.thumbnail,
     created_at: card.created_at,
     categories: card.categories,
-    variants: [{ calculated_price: { calculated_amount: card.price, currency_code: card.currency_code } }],
+    variants: [
+      { calculated_price: { calculated_amount: card.price, currency_code: card.currency_code } },
+    ],
   } as unknown as HttpTypes.StoreProduct;
 }

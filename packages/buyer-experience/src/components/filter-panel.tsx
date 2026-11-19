@@ -191,10 +191,7 @@ export function FilterPanel({
                   onChange={(value) =>
                     set({ category: value === "__all__" ? null : value, color: null })
                   }
-                  options={[
-                    { value: "__all__", label: "Todas" },
-                    ...categories,
-                  ]}
+                  options={[{ value: "__all__", label: "Todas" }, ...categories]}
                 />
               </View>
             ) : null}

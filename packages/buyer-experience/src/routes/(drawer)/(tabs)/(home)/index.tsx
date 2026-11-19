@@ -461,10 +461,7 @@ export default function HomeScreen() {
                   accessibilityLabel="Categorías"
                   value={selectedCategory ?? "__all__"}
                   onChange={(value) => setSelectedCategory(value === "__all__" ? null : value)}
-                  options={[
-                    { value: "__all__", label: "Todos los productos" },
-                    ...categories,
-                  ]}
+                  options={[{ value: "__all__", label: "Todos los productos" }, ...categories]}
                 />
               </ScrollView>
             ) : null}

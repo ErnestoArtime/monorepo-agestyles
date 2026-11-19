@@ -23,7 +23,11 @@ export function FeaturedRow({
       <Text accessibilityRole="header" style={[styles.title, { color: colors.text }]}>
         Destacados
       </Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.row}
+      >
         {cards.map((card) => (
           <View key={card.id} style={{ width: tileWidth }}>
             <ProductCard

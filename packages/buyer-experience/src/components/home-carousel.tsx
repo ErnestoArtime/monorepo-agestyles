@@ -77,7 +77,11 @@ export function HomeCarousel({
             accessibilityLabel={banner.title}
             style={{ width, height }}
           >
-            <Image source={{ uri: banner.image_url }} style={StyleSheet.absoluteFill} contentFit="cover" />
+            <Image
+              source={{ uri: banner.image_url }}
+              style={StyleSheet.absoluteFill}
+              contentFit="cover"
+            />
             <View style={styles.shade} />
             <View style={styles.copy}>
               <Text style={styles.title} numberOfLines={2}>
@@ -90,7 +94,9 @@ export function HomeCarousel({
               ) : null}
               {banner.link.kind !== "none" ? (
                 <View style={[styles.cta, { backgroundColor: colors.background }]}>
-                  <Text style={[styles.ctaText, { color: colors.text }]}>{banner.cta ?? "Ver más"}</Text>
+                  <Text style={[styles.ctaText, { color: colors.text }]}>
+                    {banner.cta ?? "Ver más"}
+                  </Text>
                   <Icon name="arrowRight" size={14} color={colors.text} />
                 </View>
               ) : null}
@@ -136,7 +142,11 @@ export function HomeCarousel({
 /** Where a banner leads (category, product, store or an external page). */
 export function openBannerLink(
   banner: HomeBanner,
-  handlers: { category: (id: string, name: string) => void; product: (id: string) => void; seller: (id: string, name: string) => void },
+  handlers: {
+    category: (id: string, name: string) => void;
+    product: (id: string) => void;
+    seller: (id: string, name: string) => void;
+  },
 ) {
   const { kind, value, label } = banner.link;
   if (!value) return;
