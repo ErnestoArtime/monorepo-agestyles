@@ -1589,3 +1589,22 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
   - En el primer acceso, verificar la contraseña contra Supabase Auth y crear la identidad de Medusa con ella.
   - Así no hace falta correo ni contraseñas nuevas.
   - Una consulta agregada con la clave de servidor del catálogo antiguo quedó bloqueada a la espera de la autorización explícita del usuario; no se leyó nada.
+
+## 2026-11-19 — Claude: AG-32 fase C desplegada (cuentas del catálogo antiguo) y Negocio con acceso web y menú en acordeón
+
+- **Autorización del usuario (19 nov):** leer las cuentas del catálogo antiguo (correo, nombre y rol). Los gestores no se asignan a AgeStyles; se hará a mano.
+- **Recuento previo (agregado, sin datos personales):** 14 cuentas, todas con correo confirmado, 8 han entrado alguna vez; perfiles: 7 `admin`, 6 `gestor_venta`, 1 `user`; 7 pedidos, 8 líneas, 3 favoritos.
+- **Despliegue (`8c409be`, API `sha256:ad06631e…`):**
+  - Copia previa `env-backups-<fecha>/api.env.before-legacy-login` y volcado `before-8c409be-*`.
+  - `api.env` incluye ahora `AGESTYLES_LEGACY_SUPABASE_URL` y `AGESTYLES_LEGACY_SUPABASE_ANON_KEY`, la clave pública del catálogo antiguo.
+  - La clave de servidor solo se pasó al contenedor durante la importación (`docker compose run -e`); no se guardó.
+  - `buyer-gateway` recreado; Tienda y Negocio publicadas.
+- **Importación:** `scripts/legacy-users-import.ts`, primero en modo prueba y luego de verdad. 14 clientes nuevos, `has_account=false`, con `metadata.legacy_user_id`, `legacy_role` y `legacy_imported_at`. Los roles antiguos no dan ningún permiso.
+- **Comprobado:**
+  - `POST /store/agestyles/legacy-login` por la ruta pública con un correo inexistente → `{migrated:false}`.
+  - Con una cuenta importada y contraseña errónea → `{migrated:false}` y 0 identidades creadas.
+  - **No comprobado:** el camino correcto, que necesita la contraseña real de alguna de las cuentas antiguas.
+- **Negocio (`420d339`, `24d081b`):**
+  - Acceso con diseño web en navegador ancho (`components/auth-frame.tsx`, también en la recuperación de contraseña), sin el margen superior de la app en la web móvil.
+  - Menú lateral en acordeón: «<tienda>» y «Administración del marketplace»; al abrir uno se pliega el otro.
+- **Pendiente:** el correo personal del usuario figura entre las cuentas importadas con rol antiguo `admin`. Tras su primer acceso en la Tienda se le puede dar la administración (y, si quiere, la tienda) enlazando su identidad desde el servidor.
