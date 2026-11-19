@@ -14,10 +14,15 @@ import {
   deleteProductsWorkflow,
   deleteShippingOptionsWorkflow,
   deleteStockLocationsWorkflow,
+  linkProductsToSalesChannelWorkflow,
   linkSalesChannelsToStockLocationWorkflow,
+  updateProductCategoriesWorkflow,
+  updateProductsWorkflow,
 } from "@medusajs/medusa/core-flows";
 import {
   acceptMemberInviteWorkflow,
+  approveSellerWorkflow,
+  confirmProductChangeWorkflow,
   createMemberInvitesWorkflow,
   createOffersWorkflow,
   createProductsWorkflow,
@@ -48,6 +53,9 @@ import {
  *
  *   AGESTYLES_DEMO_ACTION=report   what exists (default, read only)
  *   AGESTYLES_DEMO_ACTION=seed     create what is missing (idempotent)
+ *   AGESTYLES_DEMO_ACTION=publish  make the demo public: approve the stores, approve their
+ *                                  products, show the categories and (optionally) replace
+ *                                  the photos with AGESTYLES_DEMO_PHOTOS_DIR/<store>-<product>.jpg|png
  *   AGESTYLES_DEMO_ACTION=cleanup  remove every demo record
  *
  * seed and cleanup need AGESTYLES_DEMO_CONFIRM=yes. Seed prints one line starting with
@@ -116,8 +124,10 @@ export default async function demoStores({ container }: ExecArgs) {
     await cleanup(container, query, before);
   } else if (action === "seed") {
     await seed(container, query);
+  } else if (action === "publish") {
+    await publish(container, query, before);
   } else {
-    throw new Error("AGESTYLES_DEMO_ACTION debe ser report, seed o cleanup.");
+    throw new Error("AGESTYLES_DEMO_ACTION debe ser report, seed, publish o cleanup.");
   }
   console.log(JSON.stringify({ action, ...summary(await demoState(query)) }));
 }
@@ -680,5 +690,87 @@ async function cleanup(
     for (const category of ordered) {
       await deleteProductCategoriesWorkflow(container).run({ input: [category.id] });
     }
+  }
+}
+
+/** The user decided the demo stores go public (19 nov 2026): approve, publish and show them. */
+async function publish(
+  container: ExecArgs["container"],
+  query: Query,
+  state: Awaited<ReturnType<typeof demoState>>,
+) {
+  const file = container.resolve(Modules.FILE);
+  const photosDir = process.env.AGESTYLES_DEMO_PHOTOS_DIR;
+
+  for (const seller of state.sellers) {
+    if (seller.status === "pending_approval") {
+      await approveSellerWorkflow(container).run({ input: { seller_id: seller.id } } as never);
+    }
+  }
+
+  for (const category of state.categories) {
+    await updateProductCategoriesWorkflow(container).run({
+      input: { selector: { id: category.id }, update: { is_internal: false, is_active: true } },
+    });
+  }
+
+  // Real photos (free licences) in place of the generated cards.
+  if (photosDir) {
+    const { data: products } = await query.graph({
+      entity: "product",
+      fields: ["id", "external_id", "images.id"],
+      filters: { id: state.products.map((product) => product.id) },
+    });
+    for (const product of products) {
+      const key = String(product.external_id).replace(`${DEMO_PREFIX}-`, "");
+      const source = ["jpg", "png"]
+        .map((ext) => path.join(photosDir, `${key}.${ext}`))
+        .find((candidate) => existsSync(candidate));
+      if (!source) continue;
+      const isPng = source.endsWith(".png");
+      const [uploaded] = await file.createFiles([
+        {
+          filename: `demo-${key}.${isPng ? "png" : "jpg"}`,
+          mimeType: isPng ? "image/png" : "image/jpeg",
+          content: readFileSync(source).toString("base64"),
+          access: "public",
+        },
+      ]);
+      if (!uploaded?.url) continue;
+      await updateProductsWorkflow(container).run({
+        input: {
+          selector: { id: product.id },
+          update: { images: [{ url: uploaded.url }], thumbnail: uploaded.url },
+        },
+      });
+    }
+  }
+
+  // Approve the pending product requests, as «Aprobar» does in the administration.
+  const productIds = state.products.map((product) => product.id as string);
+  const { data: changes } = await query.graph({
+    entity: "product_change",
+    fields: ["id", "status", "product_id"],
+    filters: { product_id: productIds },
+  });
+  const pending = changes
+    .filter((change) => change.status === "pending")
+    .map((change) => change.id);
+  if (pending.length) {
+    await confirmProductChangeWorkflow(container).run({
+      input: { ids: pending, confirmed_by: "agestyles-demo" },
+    } as never);
+  }
+  // Published and in the store's sales channel, so Tienda and Catálogo list them.
+  await updateProductsWorkflow(container).run({
+    input: { selector: { id: productIds }, update: { status: "published" } },
+  });
+  const { data: channels } = await query.graph({ entity: "sales_channel", fields: ["id"] });
+  try {
+    await linkProductsToSalesChannelWorkflow(container).run({
+      input: { id: channels[0].id, add: productIds },
+    });
+  } catch (error) {
+    if (!isAlreadyLinked(error)) throw error;
   }
 }

@@ -1416,3 +1416,13 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
   - **Mercur 2.4.1 no usa `options` al crear productos:** las variantes salen de atributos en línea con `is_variant_axis: true`.
   - **Borrar una tienda no borra sus `member` ni sus invitaciones:** la limpieza los elimina aparte.
   - Limpieza probada dos veces antes de la creación final.
+
+## 2026-11-19 — Claude: tiendas de demostración publicadas con fotos reales (pedido del usuario)
+
+- **Fotos:** 25 fotos de dominio público o CC0 (Openverse; preferencia StockSnap y Flickr PDM, solo fotografías y sin marcas visibles) elegidas a mano entre candidatas; 2 productos sin foto adecuada conservan la tarjeta generada. Lista con fuentes en `docs/demo/photo-credits.md`.
+- **Modo nuevo `AGESTYLES_DEMO_ACTION=publish`:** aprueba las tiendas, hace visibles las categorías, sube y asigna las fotos (`AGESTYLES_DEMO_PHOTOS_DIR`), confirma los cambios de producto pendientes (`confirmProductChangeWorkflow`, como «Aprobar»), los deja `published` y los vincula al canal de venta.
+- **Ejecutado** con volcado previo `db-backups/before-demo-publish-*.dump`.
+- **Comprobado:**
+  - Store API: 58 productos públicos (31 + 27), 39 con oferta disponible, 6 tiendas y 16 categorías.
+  - Capturas reales de Tienda (portada, Categorías → Moda, Tiendas) y Catálogo.
+- `cleanup` sigue borrándolo todo.
