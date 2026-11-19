@@ -1556,3 +1556,19 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - Añadida al túnel compartido la regla `agestyles-api.eav-labs.com`, path `^/admin-app/`, origen `http://127.0.0.1:19188`. Quedó antes de la regla general buyer (`19186`), conservando la ruta seller, media y el catch-all.
 - El CNAME proxied de `agestyles-api.eav-labs.com` ya apuntaba al túnel; no se modificó DNS. Snapshot previo y posterior privados en `/home/ernesto/.local/share/cloudflare-tunnel-snapshots/` (modo 600).
 - Verificación: configuración remota versión 31 incluye la regla en índice 36 y buyer general queda en 37. El gateway aún no está ejecutándose; la prueba pública `/admin-app/healthz` devuelve 502 hasta que se active el servicio `admin-gateway`.
+
+## 2026-11-19 — Claude: AG-43 filtros de la Tienda por talla y marca, desplegado
+
+- **Cambios (`07b139c`):**
+  - El índice del catálogo pide `*product_attribute_values,product_attribute_values.attribute.name` a la Store API (sin esos campos, `attributes` llega vacío) y saca de cada producto:
+    - las tallas: atributos «Talla…», de los codificadores de AG-42 o propios del producto;
+    - la marca: «Marca»;
+    - también los colores definidos como atributo.
+  - Filtros `size` y `brand`, y facetas `sizes` (orden de tienda: XS…XXL, luego números) y `brands`, calculadas antes de aplicar color, talla y marca, como ya se hacía con el color.
+  - Panel «Filtros»: secciones Talla y Marca; cambiar de categoría las vacía.
+  - Pruebas: `test/storefront-catalog.test.mjs`.
+- **Comprobado en producción:**
+  - API: facetas con tallas S/M/L/XL y 15 marcas; `size=M` → 4 productos; `brand=Malecón` → 4; M + Arcoíris → 0.
+  - Navegador: el panel muestra las dos secciones y «Ver 4 productos» al elegir M.
+- **Incidente sin corte:** la primera descarga de la imagen se cortó por red, y el guion siguió y escribió una referencia vacía en `compose.env`. El `compose up` falló y la API siguió con la imagen anterior (sana). Restaurado `compose.env` desde la copia del mismo minuto y redesplegado tras descargar con reintentos y comprobar el digest. Imagen en producción: `sha256:ad065b41…`. A partir de ahora el guion valida el digest antes de escribirlo.
+- **Pendiente:** activar marcas en los codificadores (AG-42) para que las tiendas reales tengan marca.
