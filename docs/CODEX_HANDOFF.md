@@ -1551,3 +1551,8 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
   - Filtros por talla y marca en la Tienda.
   - Biblioteca de atributos, unidades y familias (con AG-28).
 - **Codex:** revisar la ruta de borrado, las reglas de los gateways y el cambio del alta de producto.
+## 2026-11-19 — Codex: ruta Cloudflare para Administración preparada
+
+- Añadida al túnel compartido la regla `agestyles-api.eav-labs.com`, path `^/admin-app/`, origen `http://127.0.0.1:19188`. Quedó antes de la regla general buyer (`19186`), conservando la ruta seller, media y el catch-all.
+- El CNAME proxied de `agestyles-api.eav-labs.com` ya apuntaba al túnel; no se modificó DNS. Snapshot previo y posterior privados en `/home/ernesto/.local/share/cloudflare-tunnel-snapshots/` (modo 600).
+- Verificación: configuración remota versión 31 incluye la regla en índice 36 y buyer general queda en 37. El gateway aún no está ejecutándose; la prueba pública `/admin-app/healthz` devuelve 502 hasta que se active el servicio `admin-gateway`.
