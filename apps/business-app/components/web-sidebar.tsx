@@ -224,9 +224,9 @@ export function WebSidebar() {
   ];
   const inAdmin = pathname.startsWith("/admin");
   const [open, setOpen] = useState({ store: !inAdmin, admin: inAdmin });
-  // Opening a page opens its block; the other one keeps what the person chose.
+  // Opening a page shows its block.
   useEffect(() => {
-    setOpen((current) => (inAdmin ? { ...current, admin: true } : { ...current, store: true }));
+    setOpen({ store: !inAdmin, admin: inAdmin });
   }, [inAdmin]);
   const accountName =
     memberDisplayName(member) === "Tu cuenta" && admin
@@ -274,7 +274,14 @@ export function WebSidebar() {
             <View key={section.key} style={styles.section}>
               {section.title ? (
                 <Pressable
-                  onPress={() => setOpen({ ...open, [section.key]: !open[section.key] })}
+                  onPress={() =>
+                    // Accordion: opening one block folds the other, so its options are in view.
+                    setOpen(
+                      open[section.key]
+                        ? { ...open, [section.key]: false }
+                        : { store: section.key === "store", admin: section.key === "admin" },
+                    )
+                  }
                   accessibilityRole="button"
                   accessibilityState={{ expanded }}
                   accessibilityLabel={`${section.title}: ${expanded ? "plegar" : "desplegar"}`}
