@@ -1572,3 +1572,11 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
   - Navegador: el panel muestra las dos secciones y «Ver 4 productos» al elegir M.
 - **Incidente sin corte:** la primera descarga de la imagen se cortó por red, y el guion siguió y escribió una referencia vacía en `compose.env`. El `compose up` falló y la API siguió con la imagen anterior (sana). Restaurado `compose.env` desde la copia del mismo minuto y redesplegado tras descargar con reintentos y comprobar el digest. Imagen en producción: `sha256:ad065b41…`. A partir de ahora el guion valida el digest antes de escribirlo.
 - **Pendiente:** activar marcas en los codificadores (AG-42) para que las tiendas reales tengan marca.
+
+## 2026-11-19 — Claude: gateway de administración en producción (AG-32 A/B, y pantallas de AG-34/35/40/42)
+
+- El usuario creó la ruta de Cloudflare `agestyles-api.eav-labs.com/admin-app/` → `127.0.0.1:19188`. Arrancado `admin-gateway` (`docker compose … up -d --no-deps admin-gateway`). La web de Negocio no hubo que recompilarla: deriva la URL del origen de la API.
+- **Comprobado por la ruta pública:** sin sesión 401; origen ajeno 403; ruta fuera de la lista (`/admin/api-keys`) 404; preflight CORS desde Negocio 204.
+- **Negocio con la cuenta de administración:** Avisos, Codificadores (categorías y tallas), Portada, Solicitudes de categoría, Tiendas, Usuarios, Pedidos y Revisión cargan sin errores ni peticiones en bucle. Hay un único administrador (la cuenta técnica de `admin.env`).
+- **Pendiente:** invitar al titular como administrador desde Usuarios (decide el usuario qué correo); activar marcas en Codificadores; revisión de seguridad del gateway por Codex.
+- Detalle menor: la bandeja de Avisos de administración usa el subtítulo genérico de la bandeja compartida («Novedades de tus pedidos y de tu cuenta»).
