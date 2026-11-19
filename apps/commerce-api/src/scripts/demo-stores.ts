@@ -51,7 +51,7 @@ import {
  *   AGESTYLES_DEMO_ACTION=cleanup  remove every demo record
  *
  * seed and cleanup need AGESTYLES_DEMO_CONFIRM=yes. Seed prints one line starting with
- * DEMO_CREDENTIALS (emails and generated passwords of the demo accounts): redirect it to a
+ * DEMO_CREDENTIAL (emails and generated passwords of the demo accounts): redirect it to a
  * private file. Optional AGESTYLES_DEMO_IMAGES_DIR holds `<store>-<product>.png` photos.
  */
 
@@ -129,7 +129,12 @@ async function seed(container: ExecArgs["container"], query: Query) {
   const commissions = container.resolve<SalesCommissionsService>(
     AGESTYLES_SALES_COMMISSIONS_MODULE,
   );
-  const credentials: { store: string; role: string; email: string; password: string }[] = [];
+  // Printed as soon as each account exists, so a failed run never loses a password.
+  const credentials = {
+    push(entry: { store: string; role: string; email: string; password: string }) {
+      console.log(`DEMO_CREDENTIAL ${JSON.stringify(entry)}`);
+    },
+  };
   const imagesDir = process.env.AGESTYLES_DEMO_IMAGES_DIR;
 
   const [{ data: channels }, { data: profiles }, { data: regions }] = await Promise.all([
@@ -440,9 +445,16 @@ async function seed(container: ExecArgs["container"], query: Query) {
       });
       if (existing.length) continue;
       const images = await uploadImage(file, imagesDir, store.slug, product);
-      const options = product.options?.length
-        ? product.options
-        : [{ title: "Default option", values: ["Default option value"] }];
+      // Mercur builds variants from attributes: each option is an inline variant-axis
+      // attribute, and the brand a plain text attribute.
+      const attributes = [
+        ...(product.options ?? []).map((option) => ({
+          title: option.title,
+          values: option.values,
+          is_variant_axis: true,
+        })),
+        { title: "Marca", value: product.brand },
+      ];
       const { result: created } = await createProductsWorkflow(container).run({
         input: {
           created_by: sellerId,
@@ -461,11 +473,9 @@ async function seed(container: ExecArgs["container"], query: Query) {
                 ? { images: images.map((url) => ({ url })), thumbnail: images[0] }
                 : {}),
               category_ids: [categoryIds.get(handleOf(product.category))!].filter(Boolean),
-              options,
+              attributes,
               variants: product.variants.map((variant, index) => {
-                const optionValues = product.options?.length
-                  ? variant.options
-                  : { "Default option": "Default option value" };
+                const optionValues = product.options?.length ? variant.options : {};
                 return {
                   title: product.options?.length
                     ? Object.values(variant.options).join(" / ")
@@ -523,7 +533,6 @@ async function seed(container: ExecArgs["container"], query: Query) {
       }
     }
   }
-  console.log(`DEMO_CREDENTIALS ${JSON.stringify(credentials)}`);
 }
 
 async function uploadImage(
@@ -634,6 +643,18 @@ async function cleanup(
     for (const row of rows) if (row.member?.email) memberEmails.add(row.member.email);
     await deleteSellersWorkflow(container).run({ input: { ids: sellerIds } });
   }
+  // Mercur keeps the member records (and invites) of a deleted store: remove the demo ones.
+  const DEMO_EMAIL = /^agestylesdevelop\+demo-[a-z0-9-]+@gmail\.com$/;
+  const sellerModule = container.resolve("seller") as any;
+  const members = (await sellerModule.listMembers({})) as { id: string; email: string }[];
+  const demoMembers = members.filter(
+    (member) => DEMO_EMAIL.test(member.email) || memberEmails.has(member.email),
+  );
+  if (demoMembers.length) await sellerModule.deleteMembers(demoMembers.map((member) => member.id));
+  const invites = (await sellerModule.listMemberInvites({})) as { id: string; email: string }[];
+  const demoInvites = invites.filter((invite) => DEMO_EMAIL.test(invite.email));
+  if (demoInvites.length)
+    await sellerModule.deleteMemberInvites(demoInvites.map((invite) => invite.id));
   const identities = await auth.listProviderIdentities({ provider: "emailpass" });
   const demoIdentities = (identities as { entity_id: string; auth_identity_id: string }[]).filter(
     (identity) =>

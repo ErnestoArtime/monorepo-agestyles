@@ -1399,3 +1399,20 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - Pedido del usuario: 5 tiendas ficticias con productos y categorías para probar las pantallas. Decisión del usuario: en producción pero **ocultas** (tiendas sin aprobar, productos `proposed`, categorías internas, todo con `agestyles_demo`).
 - `apps/commerce-api/src/scripts/demo-stores.ts` (`AGESTYLES_DEMO_ACTION=report|seed|cleanup`, `AGESTYLES_DEMO_CONFIRM=yes`) y `demo-stores-data.ts` (5 tiendas, 27 productos con variantes, 11 categorías, 4 clientes, miembros con rol, gestor `DEMOMODA` con regla del 8 %).
 - Ensayo en el laboratorio: `report` correcto; `seed` se detiene porque la base del laboratorio no tiene región de Cuba (producción sí). Pendiente: ensayar seed y cleanup (crear la región en el laboratorio o probar contra una copia), luego copia de la BD y ejecución en producción con una imagen que incluya el script, y comprobar que nada sale en Tienda ni Catálogo. Las fotos se generan con Playwright (guion en la carpeta temporal de la sesión).
+
+## 2026-11-19 — Claude: Tienda (revisión del usuario) y AG-33 ejecutado
+
+- **Tienda (`56453de`, publicada):**
+  - Categorías, tienda, «Novedades» y «Todos los productos» abren como página propia, con «Inicio» y título, sin la portada.
+  - Los listados solo muestran productos con oferta disponible (`hooks/use-available-offers.ts`, `in_stock` de `/store/offers`): hoy 15 de 31.
+  - «Agregar» añade directo con una sola variante y una sola oferta.
+  - La ficha muestra esqueleto y «Comprobando…» hasta cargar las ofertas.
+  - Botón de menú en Favoritos, Tiendas, Comparar, Cuenta y Mis compras en móvil y web estrecha.
+  - Tienda `entry-29282a62…`, Negocio `entry-fd8b72b7…`.
+- **AG-33 en producción:**
+  - El usuario pidió no separar laboratorio y producción («todavía no salimos a la calle»).
+  - Volcado `db-backups/before-demo-stores-*.dump` validado.
+  - Ejecutado con la imagen de `e3e3f80` y el script corregido montado en la ejecución (`docker compose run -v`).
+  - **Mercur 2.4.1 no usa `options` al crear productos:** las variantes salen de atributos en línea con `is_variant_axis: true`.
+  - **Borrar una tienda no borra sus `member` ni sus invitaciones:** la limpieza los elimina aparte.
+  - Limpieza probada dos veces antes de la creación final.
