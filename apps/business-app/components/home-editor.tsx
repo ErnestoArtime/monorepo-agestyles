@@ -1,3 +1,4 @@
+import { mediaVariant } from "@agestyles/api-client/media";
 import { Button, PillGroup } from "@agestyles/ui-native";
 import { Icon } from "@agestyles/icons";
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
@@ -291,7 +292,7 @@ export function HomeEditor({
           <View key={banner.id} style={styles.row}>
             <View style={styles.bannerThumb}>
               <Image
-                source={{ uri: banner.image_url }}
+                source={{ uri: mediaVariant(banner.image_url, 400) }}
                 style={StyleSheet.absoluteFill}
                 resizeMode="cover"
               />
@@ -353,7 +354,7 @@ export function HomeEditor({
             <View style={styles.preview}>
               {editing.image_url ? (
                 <Image
-                  source={{ uri: editing.image_url }}
+                  source={{ uri: mediaVariant(editing.image_url, 800) }}
                   style={StyleSheet.absoluteFill}
                   resizeMode="cover"
                 />
@@ -477,7 +478,7 @@ export function HomeEditor({
               <View style={styles.thumb}>
                 {product?.thumbnail ? (
                   <Image
-                    source={{ uri: product.thumbnail }}
+                    source={{ uri: mediaVariant(product.thumbnail, 400) }}
                     style={StyleSheet.absoluteFill}
                     resizeMode="cover"
                   />

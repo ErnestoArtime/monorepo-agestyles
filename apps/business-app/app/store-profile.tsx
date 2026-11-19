@@ -1,3 +1,4 @@
+import { mediaVariant } from "@agestyles/api-client/media";
 import { Button } from "@agestyles/ui-native";
 import { Icon } from "@agestyles/icons";
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
@@ -143,7 +144,11 @@ export default function StoreProfileScreen() {
       <Section title="Vista previa">
         <View style={styles.cover}>
           {banner ? (
-            <Image source={{ uri: banner }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+            <Image
+              source={{ uri: mediaVariant(banner, 800) }}
+              style={StyleSheet.absoluteFill}
+              resizeMode="cover"
+            />
           ) : (
             <Text style={styles.muted}>Sin portada</Text>
           )}
@@ -151,7 +156,11 @@ export default function StoreProfileScreen() {
         <View style={styles.identity}>
           <View style={styles.logo}>
             {logo ? (
-              <Image source={{ uri: logo }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+              <Image
+                source={{ uri: mediaVariant(logo, 400) }}
+                style={StyleSheet.absoluteFill}
+                resizeMode="cover"
+              />
             ) : (
               <Icon name="store" size={28} color={theme.muted} />
             )}

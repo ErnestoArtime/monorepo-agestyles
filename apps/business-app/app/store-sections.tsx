@@ -1,3 +1,4 @@
+import { mediaVariant } from "@agestyles/api-client/media";
 import { Button } from "@agestyles/ui-native";
 import { Icon } from "@agestyles/icons";
 import { useRouter } from "expo-router";
@@ -255,7 +256,7 @@ export default function StoreSectionsScreen() {
                   <View style={styles.thumb}>
                     {product.thumbnail ? (
                       <Image
-                        source={{ uri: product.thumbnail }}
+                        source={{ uri: mediaVariant(product.thumbnail, 400) }}
                         style={StyleSheet.absoluteFill}
                         resizeMode="cover"
                       />

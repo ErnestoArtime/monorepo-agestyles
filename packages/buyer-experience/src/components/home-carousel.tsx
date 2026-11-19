@@ -1,3 +1,4 @@
+import { mediaVariant } from "@agestyles/api-client/media";
 import { Icon } from "@agestyles/icons";
 import { Image } from "expo-image";
 import React, { useEffect, useRef, useState } from "react";
@@ -78,7 +79,7 @@ export function HomeCarousel({
             style={{ width, height }}
           >
             <Image
-              source={{ uri: banner.image_url }}
+              source={{ uri: mediaVariant(banner.image_url, width <= 520 ? 800 : 1600) }}
               style={StyleSheet.absoluteFill}
               contentFit="cover"
             />

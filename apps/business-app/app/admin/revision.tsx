@@ -1,3 +1,4 @@
+import { mediaVariant } from "@agestyles/api-client/media";
 import { Button } from "@agestyles/ui-native";
 import { Icon } from "@agestyles/icons";
 import { useCallback, useEffect, useState } from "react";
@@ -105,7 +106,7 @@ export default function AdminReviewScreen() {
               <View style={styles.thumb}>
                 {change.product_thumbnail ? (
                   <Image
-                    source={{ uri: change.product_thumbnail }}
+                    source={{ uri: mediaVariant(change.product_thumbnail, 400) }}
                     style={StyleSheet.absoluteFill}
                     resizeMode="cover"
                     accessibilityIgnoresInvertColors

@@ -18,22 +18,24 @@
     "verify:order-quote-expiry": "node --env-file=../../apps/commerce-api/.env --env-file=../../apps/buyer-app/.env.local scripts/verify-order-quote-expiry.mjs"
   },
   "dependencies": {
+    "@agestyles/ai-studio": "workspace:*",
     "@agestyles/catalog-pim": "workspace:*",
     "@agestyles/category-requests": "workspace:*",
     "@agestyles/domain": "workspace:*",
     "@agestyles/inventory-movements": "workspace:*",
     "@agestyles/manual-payments": "workspace:*",
-    "@agestyles/ai-studio": "workspace:*",
     "@agestyles/notifications": "workspace:*",
     "@agestyles/sales-commissions": "workspace:*",
     "@medusajs/admin-sdk": "2.22.3",
     "@medusajs/cli": "2.22.3",
     "@medusajs/draft-order": "2.22.3",
+    "@medusajs/file-local": "2.22.3",
     "@medusajs/framework": "2.22.3",
     "@medusajs/medusa": "2.22.3",
     "@mercurjs/core": "2.4.1",
     "@mercurjs/types": "2.4.1",
-    "http-proxy-middleware": "3.0.7"
+    "http-proxy-middleware": "3.0.7",
+    "sharp": "0.35.5"
   },
   "devDependencies": {
     "@swc/core": "1.15.3",

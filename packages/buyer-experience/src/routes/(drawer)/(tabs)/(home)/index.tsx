@@ -1,3 +1,4 @@
+import { mediaVariant } from "@agestyles/api-client/media";
 import { Loading } from "../../../../components/loading";
 import { ProductCard } from "../../../../components/product-card";
 import {
@@ -390,7 +391,9 @@ export default function HomeScreen() {
                     >
                       {storeProfile.banner ? (
                         <Image
-                          source={{ uri: storeProfile.banner }}
+                          source={{
+                            uri: mediaVariant(storeProfile.banner, isWideWeb ? 1600 : 800),
+                          }}
                           style={styles.fill}
                           contentFit="cover"
                           accessibilityIgnoresInvertColors
@@ -409,7 +412,7 @@ export default function HomeScreen() {
                       >
                         {storeProfile.logo ? (
                           <Image
-                            source={{ uri: storeProfile.logo }}
+                            source={{ uri: mediaVariant(storeProfile.logo, 400) }}
                             style={styles.fill}
                             contentFit="cover"
                             accessibilityLabel={`Logo de ${storeProfile.name}`}
@@ -511,7 +514,7 @@ export default function HomeScreen() {
                       style={[styles.heroImageFrame, isWideWeb && styles.heroImageFrameWide]}
                     >
                       <Image
-                        source={{ uri: products[0].thumbnail }}
+                        source={{ uri: mediaVariant(products[0].thumbnail, 800) }}
                         style={[styles.heroImage, { backgroundColor: colors.imagePlaceholder }]}
                         contentFit="cover"
                         contentPosition="top"

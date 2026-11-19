@@ -1,3 +1,4 @@
+import { mediaVariant } from "@agestyles/api-client/media";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CardGrid } from "../../components/card-grid";
 import { useResponsive } from "../../hooks/use-responsive";
@@ -439,7 +440,7 @@ export default function ProductsScreen() {
                   <View style={styles.thumb}>
                     {item.thumbnail ? (
                       <Image
-                        source={{ uri: item.thumbnail }}
+                        source={{ uri: mediaVariant(item.thumbnail, 400) }}
                         style={StyleSheet.absoluteFill}
                         resizeMode="cover"
                         accessibilityIgnoresInvertColors

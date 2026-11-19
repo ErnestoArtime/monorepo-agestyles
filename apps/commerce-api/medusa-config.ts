@@ -132,7 +132,8 @@ function localMediaModule() {
     options: {
       providers: [
         {
-          resolve: "@medusajs/medusa/file-local",
+          // Medusa's local provider plus WebP optimisation and size variants (AG-36).
+          resolve: "./src/modules/optimized-file",
           id: "local",
           options: {
             upload_dir: AGESTYLES_MEDIA_DIR,

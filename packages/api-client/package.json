@@ -12,7 +12,8 @@
     "./exchange-rate": "./src/exchange-rate.ts",
     "./seller-contacts": "./src/seller-contacts.ts",
     "./catalog-comparison": "./src/catalog-comparison.ts",
-    "./notifications": "./src/notifications.ts"
+    "./notifications": "./src/notifications.ts",
+    "./media": "./src/media.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

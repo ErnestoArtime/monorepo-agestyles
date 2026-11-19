@@ -1,3 +1,4 @@
+import { mediaVariant } from "@agestyles/api-client/media";
 import { formatPrice } from "../lib/format-price";
 import { Icon } from "@agestyles/icons";
 import { Stepper, useUiTheme } from "@agestyles/ui-native";
@@ -30,7 +31,11 @@ export const CartItem = React.memo(function CartItem({
     <View style={[styles.row, { borderBottomColor: color.border }]}>
       <View style={[styles.thumb, { backgroundColor: color.placeholder }]}>
         {thumbnail ? (
-          <Image source={{ uri: thumbnail }} style={StyleSheet.absoluteFill} contentFit="cover" />
+          <Image
+            source={{ uri: mediaVariant(thumbnail, 400) }}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+          />
         ) : (
           <Icon name="package" size={22} color={color.muted} />
         )}

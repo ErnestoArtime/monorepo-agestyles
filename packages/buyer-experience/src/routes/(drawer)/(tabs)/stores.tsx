@@ -1,3 +1,4 @@
+import { mediaVariant } from "@agestyles/api-client/media";
 import { Icon } from "@agestyles/icons";
 import { Colors } from "../../../constants/theme";
 import { useColorScheme } from "../../../hooks/use-color-scheme";
@@ -105,13 +106,21 @@ export default function StoresScreen() {
         >
           <View style={styles.cover}>
             {item.banner ? (
-              <Image source={{ uri: item.banner }} style={styles.fill} contentFit="cover" />
+              <Image
+                source={{ uri: mediaVariant(item.banner, 800) }}
+                style={styles.fill}
+                contentFit="cover"
+              />
             ) : null}
           </View>
           <View style={styles.body}>
             <View style={[styles.logo, styles.logoFallback]}>
               {item.logo ? (
-                <Image source={{ uri: item.logo }} style={styles.fill} contentFit="cover" />
+                <Image
+                  source={{ uri: mediaVariant(item.logo, 400) }}
+                  style={styles.fill}
+                  contentFit="cover"
+                />
               ) : (
                 <Icon name="store" size={22} color={colors.tint} />
               )}

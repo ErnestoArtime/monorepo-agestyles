@@ -1,3 +1,4 @@
+import { mediaVariant } from "@agestyles/api-client/media";
 import { Colors } from "../constants/theme";
 import { useColorScheme } from "../hooks/use-color-scheme";
 import { Image } from "expo-image";
@@ -47,7 +48,8 @@ export function ProductImageSlider({ images, square, thumbnails }: ProductImageS
           data={images}
           renderItem={({ item }) => (
             <Image
-              source={{ uri: item }}
+              // Phones get the 800 px variant; wide galleries the full 1600 px image.
+              source={{ uri: mediaVariant(item, width <= 520 ? 800 : 1600) }}
               style={{ width, height, backgroundColor: colors.imagePlaceholder }}
               contentFit={square ? "contain" : "cover"}
             />
@@ -79,7 +81,7 @@ export function ProductImageSlider({ images, square, thumbnails }: ProductImageS
               ]}
             >
               <Image
-                source={{ uri }}
+                source={{ uri: mediaVariant(uri, 400) }}
                 style={[styles.thumbnailImage, { backgroundColor: colors.imagePlaceholder }]}
                 contentFit="cover"
               />

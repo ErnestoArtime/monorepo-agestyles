@@ -1,3 +1,4 @@
+import { mediaVariant } from "@agestyles/api-client/media";
 import { Loading } from "../../components/loading";
 import { Button } from "../../components/ui/button";
 import { Icon } from "@agestyles/icons";
@@ -140,7 +141,9 @@ export default function OrderConfirmationScreen() {
               ]}
             >
               <Image
-                source={{ uri: item.thumbnail || "https://via.placeholder.com/60" }}
+                source={{
+                  uri: mediaVariant(item.thumbnail, 400) || "https://via.placeholder.com/60",
+                }}
                 style={[styles.itemImage, { backgroundColor: colors.imagePlaceholder }]}
                 contentFit="cover"
               />

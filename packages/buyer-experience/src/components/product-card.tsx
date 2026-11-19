@@ -1,3 +1,4 @@
+import { mediaVariant } from "@agestyles/api-client/media";
 import { useCart } from "../context/cart-context";
 import { useFavorites } from "../context/favorites-context";
 import { useRegion } from "../context/region-context";
@@ -39,7 +40,8 @@ export const ProductCard = React.memo(function ProductCard({
   const { isFavorite, toggleFavorite, ready } = useFavorites();
   const favorite = isFavorite(product.id);
 
-  const imageUrl = product.thumbnail || product.images?.[0]?.url;
+  // Cards are small: the 400 px variant is enough even on dense screens (AG-36).
+  const imageUrl = mediaVariant(product.thumbnail || product.images?.[0]?.url, 400);
   const amount = product.variants?.[0]?.calculated_price?.calculated_amount ?? undefined;
   const currency = selectedRegion?.currency_code;
   async function addDirect(offerId: string) {
