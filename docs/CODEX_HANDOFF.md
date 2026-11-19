@@ -1519,3 +1519,35 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - **Hallazgo para decidir:** el rol «gestión de pedidos» de Mercur no tiene ningún permiso en `seller-permissions`, ni siquiera ver pedidos. Hay que decidir si equivale a atención al cliente.
 - **Pendiente:** unificar el estilo del Catálogo (Next) con la Tienda o decidir si el Catálogo se retira en favor de la Tienda web.
 - **Codex:** revisar AG-39, AG-40 (migración, suscriptores y bandeja de administración) y AG-41 (cambio de `business-context` al restaurar la tienda).
+
+## 2026-11-19 — Claude: AG-42 codificadores (categorías, tallas y marcas), desplegado
+
+- **Revisión previa:** `docs/reviews/2026-11-19-codificadores.md`. El catálogo antiguo tenía Administración → Codificadores con Categorías, Subcategorías, Marcas, Tallas por tipo y, con bandera, Familias y Biblioteca de atributos. En 2.0 solo se creaban categorías al aprobar solicitudes.
+- **Hecho (`ac57ee3`):**
+  - Administración → «Codificadores» (`apps/business-app/app/admin/codificadores.tsx`):
+    - Categorías: árbol, crear, editar, mover, ordenar, activar/desactivar y «usa género» (`metadata.uses_gender`). Usa las rutas de Medusa `/admin/product-categories`. El borrado va por `DELETE /admin/agestyles/codifiers/categories/:id` y lo rechaza si hay productos o subcategorías; el listado con recuentos, por `GET …/categories`.
+    - Tallas: atributos globales de Mercur con `metadata.agestyles_codifier = "size"` y `size_type`.
+    - Marcas: atributo global «Marca» (`agestyles_codifier = "brand"`), con el logo en `metadata.logo_url` del valor.
+    - Valores y atributos se desactivan, no se borran: el gateway no deja pasar `DELETE`.
+  - Alta de producto en Negocio:
+    - La categoría se elige del árbol y se guarda como `categories: [{id}]`; antes era texto que no se guardaba.
+    - La marca se elige de la lista cuando existe el atributo.
+    - Las tallas forman variantes: `attributes: [{id, value_ids}]` y `options: {[nombre del atributo]: talla}`.
+  - Gateways: administración (categorías y atributos) y vendedores (lectura de `/vendor/product-categories` y `/vendor/product-attributes`).
+- **Mercur 2.4.1, aprendido:**
+  1. Solo un atributo `multi_select` con `is_variant_axis` cuenta como eje de variantes (`workflows/product/workflows/create-products.js`, `hasAxisByIndex`); con `single_select` el producto conserva la opción `__default__` y la variante falla («Product has 1 option values but there were 2»).
+  2. No se puede cambiar el `type` de un atributo existente.
+  3. Un alta fallida deshace el producto, pero deja filas en `product_attribute_value_link`, y esas filas impiden borrar el atributo.
+- **Datos escritos en producción:**
+  - 5 tipos de talla del catálogo antiguo (`multi_select`): calzado 5–14 de medio en medio, pullover, camiseta y shorts XS–XXL, pantalón 24–34.
+  - Los primeros 5, creados como `single_select`, se borraron. Para poder borrar el de camiseta se marcaron como borradas (`deleted_at`) 9 filas huérfanas de `product_attribute_value_link`, de 3 altas de prueba fallidas cuyo producto ya no existía.
+  - Producto de prueba (S/M/L → 3 variantes, opción «Talla de camiseta», categoría «Moda mujer») creado y borrado por la administración.
+  - Volcado previo `db-backups/before-ac57ee3-*`.
+- **Despliegue:** API de `ac57ee3`, gateway de vendedores recreado, web de Negocio publicada. Borrada la imagen `dd10806`; quedan la actual y la anterior. Libres 8,8 GB.
+- **Comprobado:** borrar «Audio» (2 productos) → 400 con mensaje; borrar «Ferretería» (con subcategorías) → 400; el alta muestra el árbol de categorías y las tallas por tipo.
+- **Pendiente:**
+  - La pantalla de Codificadores necesita el gateway de administración (ruta de Cloudflare `agestyles-api.eav-labs.com/admin-app/`, AG-32).
+  - Las marcas están sin activar.
+  - Filtros por talla y marca en la Tienda.
+  - Biblioteca de atributos, unidades y familias (con AG-28).
+- **Codex:** revisar la ruta de borrado, las reglas de los gateways y el cambio del alta de producto.
