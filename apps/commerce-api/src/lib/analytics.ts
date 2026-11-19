@@ -278,7 +278,9 @@ export function buildAnalytics(input: AnalyticsInput) {
   }
   oldest.sort((a, b) => b.hours - a.hours);
 
-  let agents = null;
+  let agents:
+    { agent_id: string; name: string; count: number; amount: number; commission: number }[] | null =
+    null;
   if (input.includeAgents) {
     const names = new Map(input.agents.map((agent) => [agent.id, agent.name]));
     const byAgent = new Map<
