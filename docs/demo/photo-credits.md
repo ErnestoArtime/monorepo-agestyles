@@ -31,3 +31,20 @@ Fotos de dominio público (`pdm`) o CC0 obtenidas con la API de Openverse el 19 
 | `moda-malecon-pantalon-chino` | CC0 | stocksnap | https://stocksnap.io/photo/guy-man-A77BC7AD07 |
 | `moda-malecon-sombrero-yarey` | CC0 | stocksnap | https://stocksnap.io/photo/straw-hat-R27ZN6PJ4S |
 | `moda-malecon-vestido-lino` | PDM | flickr | https://www.flickr.com/photos/32944625@N03/54601932491 |
+
+## Portada de la Tienda y tiendas de demostración (AG-34)
+
+Fotos CC0 de Openverse (19 nov 2026), subidas al almacenamiento propio. Los logos de las tiendas de demostración son monogramas generados (iniciales sobre color), sin material de terceros.
+
+| Uso | Licencia | Fuente | Página de origen |
+|---|---|---|---|
+| Banner «Moda para cada día» | CC0 | stocksnap | https://stocksnap.io/photo/fashion-clothes-ZN97ZIF3ZU |
+| Banner «Suena mejor» | CC0 | stocksnap | https://stocksnap.io/photo/headphones-music-UXKE7VWPCY |
+| Banner «La despensa, a un clic» | CC0 | stocksnap | https://stocksnap.io/photo/coffee-beans-X2JNLNHCT9 |
+| Banner «Cuidarse en casa» | CC0 | stocksnap | https://stocksnap.io/photo/cosmetics-care-GZAJOCOQCW |
+| Banner «Para jugar y aprender» | CC0 | stocksnap | https://stocksnap.io/photo/toys-puzzles-INAKF0ZV5X |
+| Portada ElectroHogar Habana | CC0 | stocksnap | https://stocksnap.io/photo/technology-electronics-0VPHDKU2FJ |
+| Portada Moda Malecón | CC0 | stocksnap | https://stocksnap.io/photo/shoes-floor-SKLXSX6JFN |
+| Portada Bodega La Esquina | CC0 | rawpixel | https://www.rawpixel.com/image/3338561/free-photo-image-spice-market-bazaar-bread |
+| Portada Belleza Vedado | CC0 | stocksnap | https://stocksnap.io/photo/makeup-brush-IJSBS0EFPO |
+| Portada Juguetería Arcoíris | CC0 | rawpixel | https://www.rawpixel.com/image/5905165/photo-image-public-domain-cute-free |
