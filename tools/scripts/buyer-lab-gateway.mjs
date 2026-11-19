@@ -41,6 +41,8 @@ const rules = [
   ["POST DELETE", /^\/store\/carts\/cart_[a-z0-9]+\/line-items\/cali_[a-z0-9]+$/i],
   ["POST", /^\/store\/payment-collections(?:\/pay_col_[a-z0-9]+\/payment-sessions)?$/i],
   ["POST", /^\/auth\/customer\/emailpass(?:\/register)?$/],
+  // First sign-in of an account from the old catalog (AG-32 phase C); counted as a sign-in.
+  ["POST", /^\/store\/agestyles\/legacy-login$/],
   // Choose a new password from the emailed link (AG-19); the token travels as a bearer.
   ["POST", /^\/auth\/customer\/emailpass\/(reset-password|update)$/],
   ["GET", /^\/store\/customers\/me$/],
@@ -113,7 +115,7 @@ createServer({ requestTimeout: 30_000, headersTimeout: 10_000 }, (incoming, outg
   if (count >= 120 || totalRequests >= 600)
     return reply(outgoing, 429, "Retry in a minute", corsHeaders);
   clientRequests.set(client, count + 1);
-  if (path.startsWith("/auth/customer/emailpass")) {
+  if (path.startsWith("/auth/customer/emailpass") || path === "/store/agestyles/legacy-login") {
     const attempts = authAttempts.get(client) ?? 0;
     if (attempts >= 10)
       return reply(outgoing, 429, "Too many sign-in attempts. Retry in a minute.", corsHeaders);

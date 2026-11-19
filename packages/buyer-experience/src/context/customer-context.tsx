@@ -74,7 +74,21 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (email: string, password: string) => {
-      const result = await sdk.auth.login("customer", "emailpass", { email, password });
+      let result: Awaited<ReturnType<typeof sdk.auth.login>>;
+      try {
+        result = await sdk.auth.login("customer", "emailpass", { email, password });
+      } catch (error) {
+        // An account from the old catalog (AG-32 phase C) moves its password on its first
+        // sign-in: the API checks it against the old catalog and then the normal sign-in works.
+        const legacy = await sdk.client
+          .fetch<{ migrated: boolean }>("/store/agestyles/legacy-login", {
+            method: "POST",
+            body: { email, password },
+          })
+          .catch(() => ({ migrated: false }));
+        if (!legacy.migrated) throw error;
+        result = await sdk.auth.login("customer", "emailpass", { email, password });
+      }
       if (typeof result !== "string") {
         throw new Error(
           "This sign-in method needs an additional step that is not available in the app yet.",
