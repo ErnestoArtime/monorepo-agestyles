@@ -1469,3 +1469,12 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - **Comprobado:** subida nueva → WebP + variantes servidas (200, image/webp); variante de foto antigua 200; secciones de Bodega La Esquina visibles en su página; sección con producto ajeno → 400; solicitud de categoría → bandeja de administración → rechazar sin motivo 400 → rechazar 200 → segunda decisión 400 → la tienda ve el estado y la nota.
 - **Pendiente / siguiente:** el resto del peso de la web está en `@medusajs/js-sdk` (613 KB de fuente), reanimated + gesture-handler (menú lateral), react-native-web y expo-router. Aviso a la tienda al resolverse su solicitud (necesita un evento nuevo en `packages/notifications`). APK sin regenerar.
 - **Codex:** revisar `optimized-file` (rutas de variantes y borrado), las rutas de AG-35 y las reglas nuevas de los gateways.
+
+
+## 2026-11-19 — Codex: Tienda 1.3.0 y Negocio 1.1.0 (publicado)
+
+- **Versiones Android:** Tienda `1.3.0` / `versionCode 4` (`com.eavlabs.agestyles.buyerlab`); Negocio `1.1.0` / `versionCode 3` (`com.eavlabs.agestyles.businesslab`).
+- **Webs:** exportaciones de producción contra `https://agestyles-api.eav-labs.com` (Tienda) y `/negocio` (Negocio); imágenes Docker actualizadas en los contenedores web existentes. `https://tienda.eav-labs.com` y `https://negocio.eav-labs.com` responden 200; `/healthz` local de ambos también responde 200.
+- **APK Android ARM64:** Tienda: [`AgeStyles-1.3.0-arm64-v8a.apk`](https://descargas.eav-labs.com/releases/AgeStyles-1.3.0-arm64-v8a.apk), SHA-256 `aa13789127baa46d9c72155d77b787c8b0eb6219a4c3d85478ad1352a88b99a9`, certificado `a58cfbf45b1ab1eac67ebef02c3cfba31830870681f8bf0f81f81c04cd119cba`. Negocio: [`AgeStyles-Negocio-1.1.0-arm64-v8a.apk`](https://descargas.eav-labs.com/releases/AgeStyles-Negocio-1.1.0-arm64-v8a.apk), SHA-256 `f8b00a47110976c81ede4a37f1fb4aa37c846e72c0a3e69baa657fa408199d29`, certificado `96ae756d4d3effe61d2c63109c3eceb7db7d7866d56b512711ffebd3bca33ccb`.
+- **Descargas:** portal actualizado con ambas versiones y enlaces a SHA-256. Las cuatro URLs públicas responden 200; los checksums públicos coinciden con los APK locales. Las versiones previas se conservan para rollback.
+- **Build:** Tienda compiló correctamente usando ABI ARM64 para mantener bajo el consumo de memoria. Negocio produjo el APK Release verificable; el daemon de Gradle terminó durante tareas finales de lint por presión de memoria, después de generar el artefacto. Se verificaron paquete, versión y certificado con `aapt`/`apksigner`.
