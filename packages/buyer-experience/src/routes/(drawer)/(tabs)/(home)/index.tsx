@@ -1,6 +1,5 @@
 import { Loading } from "../../../../components/loading";
 import { ProductCard } from "../../../../components/product-card";
-import { useAvailableOffers } from "../../../../hooks/use-available-offers";
 import {
   activeFilterCount,
   EMPTY_FILTERS,
@@ -9,21 +8,30 @@ import {
   type CatalogFilters,
 } from "../../../../components/filter-panel";
 import { ProductDetail } from "../../../../components/product-detail";
+import { HomeCarousel, openBannerLink } from "../../../../components/home-carousel";
+import { FeaturedRow } from "../../../../components/featured-row";
 import { PillGroup, SearchField } from "@agestyles/ui-native";
 import { AndroidAppLink } from "../../../../components/android-app-link";
 import { WebFooter } from "../../../../components/web-footer";
 import { CONTENT_MAX, useResponsive } from "../../../../hooks/use-responsive";
-import { listStoreProducts } from "@agestyles/api-client/store";
 import { Colors } from "../../../../constants/theme";
 import { useRegion } from "../../../../context/region-context";
 import { useColorScheme } from "../../../../hooks/use-color-scheme";
 import { Icon } from "@agestyles/icons";
-import { sdk } from "../../../../config";
+import {
+  cardAsProduct,
+  fetchCatalog,
+  fetchHome,
+  type CatalogCard,
+  type CatalogPage,
+  type HomeBanner,
+} from "../../../../lib/storefront";
 import type { HttpTypes } from "@medusajs/types";
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   FlatList,
   RefreshControl,
   ScrollView,
@@ -32,6 +40,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
+/** Products per page asked to the server (AG-34): the first screen loads fast, the rest on scroll. */
+const PAGE_SIZE = 24;
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
@@ -42,12 +53,23 @@ export default function HomeScreen() {
   // Quick view: a bottom sheet on phones, a centred dialog in a wide browser; both link to the page.
   const openProduct = (product: HttpTypes.StoreProduct) => setSheetProductId(product.id);
 
-  const [allProducts, setProducts] = useState<HttpTypes.StoreProduct[]>([]);
-  const [reloadKey, setReloadKey] = useState(0);
+  // Server-side catalog (AG-34): filtered, sorted and paged by the API, only what can be bought now.
+  const [items, setItems] = useState<CatalogCard[]>([]);
+  const [count, setCount] = useState(0);
+  const [facets, setFacets] = useState<CatalogPage["facets"]>({
+    categories: [],
+    colors: [],
+    max_price: 0,
+  });
+  const [categoryOptions, setCategoryOptions] = useState<{ id: string; name: string }[]>([]);
+  const [loadedOnce, setLoadedOnce] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   // Order, category, price and colour (the right-hand «Filtros» panel and the category pills).
   const [filters, setFilters] = useState<CatalogFilters>(EMPTY_FILTERS);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -56,6 +78,9 @@ export default function HomeScreen() {
     setFilters((current) => ({ ...current, category, color: null }));
   // Product opened in the bottom sheet (reference POS behaviour).
   const [sheetProductId, setSheetProductId] = useState<string | null>(null);
+  // Home banners and «Destacados», managed from Negocio's administration.
+  const [banners, setBanners] = useState<HomeBanner[]>([]);
+  const [featured, setFeatured] = useState<CatalogCard[]>([]);
   // Filters opened from the side menu (categories with their subcategories, a store, novelties).
   const params = useLocalSearchParams<{
     filtro?: string;
@@ -63,27 +88,12 @@ export default function HomeScreen() {
     ids?: string;
     tienda?: string;
   }>();
-  const [storeProductIds, setStoreProductIds] = useState<Set<string> | null>(null);
-  // Listings only show what can be bought now (an in-stock, priced offer in the region).
-  const availability = useAvailableOffers(selectedRegion?.id, reloadKey);
-  const products = useMemo(
-    () =>
-      availability.byProduct.size
-        ? allProducts.filter((product) => availability.byProduct.has(product.id))
-        : allProducts,
-    [allProducts, availability.byProduct],
-  );
-  /** Single variant with a single available offer: «Agregar» adds it straight to the cart. */
-  const directOfferId = (product: HttpTypes.StoreProduct) => {
-    const offers = availability.byProduct.get(product.id) ?? [];
-    return (product.variants?.length ?? 0) === 1 && offers.length === 1 ? offers[0].id : undefined;
-  };
   const menuFilter = useMemo(() => {
     if (params.filtro === "categoria" && params.ids) {
       return {
         kind: "categoria" as const,
         label: params.nombre ?? "Categoría",
-        ids: new Set(params.ids.split(",")),
+        ids: params.ids.split(",").filter(Boolean),
       };
     }
     if (params.filtro === "tienda" && params.tienda) {
@@ -97,129 +107,131 @@ export default function HomeScreen() {
     // Opening a page from the menu starts from a clean list.
     setFilters(EMPTY_FILTERS);
     setSearchTerm("");
+    setDebouncedSearch("");
   }, [params.filtro, params.ids, params.tienda]);
 
   useEffect(() => {
-    if (menuFilter?.kind !== "tienda" || !selectedRegion) {
-      setStoreProductIds(null);
+    const timer = setTimeout(() => setDebouncedSearch(searchTerm.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const query = useMemo(() => {
+    if (!selectedRegion) return null;
+    const { min, max } = priceBounds(filters);
+    return {
+      regionId: selectedRegion.id,
+      q: debouncedSearch || undefined,
+      categoryIds: filters.category
+        ? [filters.category]
+        : menuFilter?.kind === "categoria"
+          ? menuFilter.ids
+          : undefined,
+      sellerId: menuFilter?.kind === "tienda" ? menuFilter.seller : undefined,
+      minPrice: min ?? undefined,
+      maxPrice: max ?? undefined,
+      color: filters.color ?? undefined,
+      sort:
+        filters.sort === "featured" && menuFilter?.kind === "novedades" ? "newest" : filters.sort,
+      limit: PAGE_SIZE,
+    } as const;
+  }, [debouncedSearch, filters, menuFilter, selectedRegion]);
+
+  // Only the latest request may write the list (fast typing, quick filter changes).
+  const requestId = useRef(0);
+  const loadFirstPage = useCallback(async () => {
+    if (!query) {
+      setLoading(false);
+      setRefreshing(false);
       return;
     }
+    const id = ++requestId.current;
+    setLoading(true);
+    setError(null);
+    try {
+      const page = await fetchCatalog({ ...query, offset: 0 });
+      if (id !== requestId.current) return;
+      setItems(page.products);
+      setCount(page.count);
+      setFacets(page.facets);
+      if (!query.categoryIds) setCategoryOptions(page.facets.categories);
+      setLoadedOnce(true);
+    } catch (err) {
+      if (id !== requestId.current) return;
+      console.error("Failed to fetch products:", err);
+      setError("No se pudieron cargar los productos. Inténtalo de nuevo.");
+    } finally {
+      if (id === requestId.current) {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    }
+  }, [query]);
+
+  useEffect(() => {
+    void loadFirstPage();
+  }, [loadFirstPage, reloadKey]);
+
+  const loadMore = async () => {
+    if (!query || loading || loadingMore || items.length >= count) return;
+    const id = requestId.current;
+    setLoadingMore(true);
+    try {
+      const page = await fetchCatalog({ ...query, offset: items.length });
+      if (id !== requestId.current) return;
+      setItems((current) => {
+        const seen = new Set(current.map((card) => card.id));
+        return [...current, ...page.products.filter((card) => !seen.has(card.id))];
+      });
+      setCount(page.count);
+    } catch (err) {
+      console.error("Failed to fetch more products:", err);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!selectedRegion) return;
     let active = true;
-    sdk.client
-      .fetch<{ offers: { product_id: string }[] }>("/store/offers", {
-        query: { region_id: selectedRegion.id, seller_id: menuFilter.seller, limit: 100 },
-      })
-      .then(({ offers }) => {
-        if (active) setStoreProductIds(new Set(offers.map((offer) => offer.product_id)));
+    fetchHome(selectedRegion.id)
+      .then((home) => {
+        if (!active) return;
+        setBanners(home.banners);
+        setFeatured(home.featured);
       })
       .catch(() => {
-        if (active) setStoreProductIds(new Set());
+        // The home works without banners or featured products.
+        if (active) {
+          setBanners([]);
+          setFeatured([]);
+        }
       });
     return () => {
       active = false;
     };
-  }, [menuFilter, selectedRegion]);
+  }, [selectedRegion, reloadKey]);
 
-  const categories = useMemo(() => {
-    const names = products.flatMap(
-      (product) => product.categories?.map((category) => category.name) ?? [],
-    );
-    return [...new Set(names)].sort((a, b) => a.localeCompare(b));
-  }, [products]);
-
-  const priceOf = (product: HttpTypes.StoreProduct) =>
-    product.variants?.[0]?.calculated_price?.calculated_amount ?? undefined;
-  const colorsOf = (product: HttpTypes.StoreProduct) =>
-    (product.options ?? [])
-      .filter((option) => /^colou?r$/i.test(option.title ?? ""))
-      .flatMap((option) => option.values?.map((value) => value.value ?? "") ?? [])
-      .filter(Boolean);
-
-  const colorOptions = useMemo(() => {
-    const pool = filters.category
-      ? products.filter((product) =>
-          product.categories?.some((category) => category.name === filters.category),
-        )
-      : products;
-    return [...new Set(pool.flatMap(colorsOf))].sort((a, b) => a.localeCompare(b, "es"));
-  }, [filters.category, products]);
-
-  const maxPriceHint = useMemo(
-    () => Math.max(0, ...products.map((product) => Number(priceOf(product) ?? 0))),
-    [products],
+  const products = useMemo(() => items.map(cardAsProduct), [items]);
+  const directOffers = useMemo(
+    () => new Map(items.map((card) => [card.id, card.direct_offer_id ?? undefined])),
+    [items],
   );
-
-  const visibleProducts = useMemo(() => {
-    const query = searchTerm.trim().toLocaleLowerCase();
-    const { min, max } = priceBounds(filters);
-    const filtered = products.filter((product) => {
-      const searchableText = String(product.title) + " " + String(product.description ?? "");
-      const matchesQuery = !query || searchableText.toLocaleLowerCase().includes(query);
-      const matchesCategory =
-        !selectedCategory ||
-        product.categories?.some((category) => category.name === selectedCategory);
-      const matchesMenu =
-        menuFilter?.kind === "categoria"
-          ? product.categories?.some((category) => menuFilter.ids.has(category.id))
-          : menuFilter?.kind === "tienda"
-            ? !storeProductIds || storeProductIds.has(product.id)
-            : true;
-      const price = priceOf(product);
-      const matchesPrice =
-        (min === null || (price !== undefined && price >= min)) &&
-        (max === null || (price !== undefined && price <= max));
-      const matchesColor = !filters.color || colorsOf(product).includes(filters.color);
-      return matchesQuery && matchesCategory && matchesMenu && matchesPrice && matchesColor;
-    });
-    const newest = (a: HttpTypes.StoreProduct, b: HttpTypes.StoreProduct) =>
-      new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime();
-    const byPrice = (direction: 1 | -1) => (a: HttpTypes.StoreProduct, b: HttpTypes.StoreProduct) =>
-      direction * (Number(priceOf(a) ?? Infinity) - Number(priceOf(b) ?? Infinity));
-    if (filters.sort === "price_asc") return [...filtered].sort(byPrice(1));
-    if (filters.sort === "price_desc") return [...filtered].sort(byPrice(-1));
-    if (filters.sort === "newest" || menuFilter?.kind === "novedades")
-      return [...filtered].sort(newest);
-    return filtered;
-  }, [filters, menuFilter, products, searchTerm, selectedCategory, storeProductIds]);
-
-  const fetchProducts = useCallback(async () => {
-    if (!selectedRegion) {
-      setLoading(false);
-      setRefreshing(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-
-      // The whole catalog, not the client's default page of 20.
-      const { products: fetchedProducts } = await listStoreProducts(sdk.client, {
-        regionId: selectedRegion.id,
-        limit: 200,
-      });
-
-      setProducts(fetchedProducts);
-    } catch (err) {
-      console.error("Failed to fetch products:", err);
-      setError("No se pudieron cargar los productos. Inténtalo de nuevo.");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [selectedRegion]);
-
-  useEffect(() => {
-    if (selectedRegion) {
-      fetchProducts();
-    }
-  }, [selectedRegion, fetchProducts]);
+  const categories = useMemo(
+    () => categoryOptions.map((category) => ({ value: category.id, label: category.name })),
+    [categoryOptions],
+  );
 
   const onRefresh = () => {
     setRefreshing(true);
     setReloadKey((key) => key + 1);
-    fetchProducts();
   };
+
+  const openBanner = (banner: HomeBanner) =>
+    openBannerLink(banner, {
+      category: (id, name) => router.setParams({ filtro: "categoria", ids: id, nombre: name }),
+      product: (id) => setSheetProductId(id),
+      seller: (id, name) => router.setParams({ filtro: "tienda", tienda: id, nombre: name }),
+    });
 
   if (regionLoading) {
     return <Loading message="Preparando el catálogo…" />;
@@ -254,11 +266,11 @@ export default function HomeScreen() {
     );
   }
 
-  if (loading || availability.loading) {
+  if (!loadedOnce && (loading || !error)) {
     return <Loading message="Cargando productos..." />;
   }
 
-  if (error) {
+  if (error && !loadedOnce) {
     return (
       <View style={[styles.centerContainer, { backgroundColor: colors.background }]}>
         <View
@@ -274,7 +286,7 @@ export default function HomeScreen() {
           <Text style={[styles.errorText, { color: colors.icon }]}>{error}</Text>
           <TouchableOpacity
             accessibilityRole="button"
-            onPress={fetchProducts}
+            onPress={() => void loadFirstPage()}
             style={[styles.retryButton, { backgroundColor: colors.tint }]}
           >
             <Text style={[styles.retryText, { color: colors.onTint }]}>Reintentar</Text>
@@ -292,7 +304,7 @@ export default function HomeScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <FlatList
-        data={visibleProducts}
+        data={products}
         key={`grid-${columns}`}
         keyExtractor={(item) => item.id}
         numColumns={columns}
@@ -336,7 +348,18 @@ export default function HomeScreen() {
                 </Text>
               </View>
             )}
-            {isListing ? null : (
+            {isListing ? null : banners.length ? (
+              <>
+                <View style={styles.carousel}>
+                  <HomeCarousel
+                    banners={banners}
+                    height={isWideWeb ? 380 : 220}
+                    onOpen={openBanner}
+                  />
+                </View>
+                {isWideWeb ? null : <AndroidAppLink />}
+              </>
+            ) : (
               <>
                 <View
                   style={[
@@ -387,6 +410,13 @@ export default function HomeScreen() {
                 {isWideWeb ? null : <AndroidAppLink />}
               </>
             )}
+            {isListing || debouncedSearch || activeFilterCount(filters) ? null : (
+              <FeaturedRow
+                cards={featured}
+                tileWidth={isWideWeb ? 250 : 172}
+                onOpen={openProduct}
+              />
+            )}
             <View style={[styles.searchArea, isWideWeb && styles.searchAreaWide]}>
               <View style={styles.searchRow}>
                 <View style={styles.searchInput}>
@@ -433,7 +463,7 @@ export default function HomeScreen() {
                   onChange={(value) => setSelectedCategory(value === "__all__" ? null : value)}
                   options={[
                     { value: "__all__", label: "Todos los productos" },
-                    ...categories.map((category) => ({ value: category, label: category })),
+                    ...categories,
                   ]}
                 />
               </ScrollView>
@@ -447,7 +477,7 @@ export default function HomeScreen() {
                     : "Descubre algo especial"}
               </Text>
               <Text style={[styles.resultCount, { color: colors.icon }]}>
-                {visibleProducts.length} {visibleProducts.length === 1 ? "producto" : "productos"}
+                {loading ? "Buscando…" : `${count} ${count === 1 ? "producto" : "productos"}`}
               </Text>
             </View>
           </View>
@@ -457,11 +487,23 @@ export default function HomeScreen() {
             product={item}
             onOpen={openProduct}
             columns={columns}
-            directOfferId={directOfferId(item)}
+            directOfferId={directOffers.get(item.id)}
           />
         )}
         contentContainerStyle={styles.listContent}
-        ListFooterComponent={isWideWeb ? <WebFooter /> : null}
+        onEndReached={() => void loadMore()}
+        onEndReachedThreshold={0.6}
+        ListFooterComponent={
+          <>
+            {loadingMore ? (
+              <View style={styles.moreLoading}>
+                <ActivityIndicator color={colors.tint} />
+                <Text style={[styles.resultCount, { color: colors.icon }]}>Cargando más…</Text>
+              </View>
+            ) : null}
+            {isWideWeb ? <WebFooter /> : null}
+          </>
+        }
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.tint} />
         }
@@ -471,7 +513,7 @@ export default function HomeScreen() {
             <Text style={[styles.emptyText, { color: colors.text }]}>
               {isListing && !searchTerm && !activeFilterCount(filters)
                 ? "Ahora mismo no hay productos disponibles aquí. Vuelve pronto."
-                : products.length === 0
+                : !debouncedSearch && !activeFilterCount(filters)
                   ? "Aún no hay productos disponibles"
                   : "Ningún producto coincide con estos filtros"}
             </Text>
@@ -484,9 +526,9 @@ export default function HomeScreen() {
         onChange={setFilters}
         onClose={() => setFiltersOpen(false)}
         categories={categories}
-        colors={colorOptions}
-        maxPriceHint={maxPriceHint}
-        resultCount={visibleProducts.length}
+        colors={facets.colors}
+        maxPriceHint={facets.max_price}
+        resultCount={count}
       />
       <ProductDetail
         layout="sheet"
@@ -568,6 +610,14 @@ const styles = StyleSheet.create({
   heroImage: {
     width: "100%",
     height: "100%",
+  },
+  carousel: { marginHorizontal: 16 },
+  moreLoading: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    paddingVertical: 20,
   },
   categoryList: {
     paddingHorizontal: 16,

@@ -8,22 +8,27 @@ import {
 
 type Query = {
   graph(input: { entity: string; fields: string[]; filters?: Record<string, unknown> }): Promise<{
-    data: { id: string; title: string; thumbnail: string | null; status: string }[];
+    data: Record<string, any>[];
   }>;
 };
 
-/** Home content for the administration: banners, featured ids and the published products. */
+/** Home content for the administration, with the published products and the categories to link. */
 export async function GET(req: AuthenticatedMedusaRequest, res: MedusaResponse) {
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY) as unknown as Query;
-  const [content, { data: products }] = await Promise.all([
+  const [content, { data: products }, { data: categories }] = await Promise.all([
     readHomeContent(req.scope),
     query.graph({
       entity: "product",
       fields: ["id", "title", "thumbnail", "status"],
       filters: { status: "published" },
     }),
+    query.graph({ entity: "product_category", fields: ["id", "name"] }),
   ]);
-  res.json({ content, products: products.sort((a, b) => a.title.localeCompare(b.title, "es")) });
+  res.json({
+    content,
+    products: products.sort((a, b) => String(a.title).localeCompare(String(b.title), "es")),
+    categories: categories.sort((a, b) => String(a.name).localeCompare(String(b.name), "es")),
+  });
 }
 
 export async function POST(req: AuthenticatedMedusaRequest, res: MedusaResponse) {

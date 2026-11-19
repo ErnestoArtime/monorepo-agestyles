@@ -83,6 +83,11 @@ export default function MoreScreen() {
             detail="Altas y cambios de producto pendientes de aprobar."
             action={() => router.push("/admin/revision")}
           />
+          <Row
+            title="Portada de la Tienda"
+            detail="Banners de la página inicial y productos destacados."
+            action={() => router.push("/admin/portada")}
+          />
         </Section>
       ) : null}
       <Section title="Avisos">

@@ -141,6 +141,12 @@ export function WebSidebar() {
         href: "/admin/revision",
         match: (p) => p.startsWith("/admin/revision"),
       },
+      {
+        label: "Portada de la Tienda",
+        icon: "home",
+        href: "/admin/portada",
+        match: (p) => p.startsWith("/admin/portada"),
+      },
     ],
   };
   // The store sections need a selected store; the administration needs an administrator.

@@ -16,6 +16,8 @@ type AdminContextValue = {
   logoutAdmin: () => Promise<void>;
   refreshAdmin: () => Promise<void>;
   adminRequest: <T>(path: string, method?: string, body?: unknown) => Promise<T>;
+  /** Multipart upload to `/admin/uploads` (home banners, AG-34). */
+  adminUpload: (form: FormData) => Promise<{ files: { id: string; url: string }[] }>;
 };
 
 const AdminContext = createContext<AdminContextValue | null>(null);
@@ -61,9 +63,19 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     return (result?.data ?? result) as T;
   }, []);
 
+  const adminUpload = useCallback(async (form: FormData) => {
+    // A null content-type lets the runtime set the multipart boundary.
+    const result = await adminSdk.client.fetch("/admin/uploads", {
+      method: "POST",
+      body: form,
+      headers: { "content-type": null },
+    });
+    return ((result as any)?.data ?? result) as { files: { id: string; url: string }[] };
+  }, []);
+
   const value = useMemo(
-    () => ({ admin, adminReady, loginAdmin, logoutAdmin, refreshAdmin, adminRequest }),
-    [admin, adminReady, loginAdmin, logoutAdmin, refreshAdmin, adminRequest],
+    () => ({ admin, adminReady, loginAdmin, logoutAdmin, refreshAdmin, adminRequest, adminUpload }),
+    [admin, adminReady, loginAdmin, logoutAdmin, refreshAdmin, adminRequest, adminUpload],
   );
   return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>;
 }

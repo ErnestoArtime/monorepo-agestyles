@@ -129,7 +129,7 @@ export function FilterPanel({
   filters: CatalogFilters;
   onChange: (filters: CatalogFilters) => void;
   onClose: () => void;
-  categories: string[];
+  categories: { value: string; label: string }[];
   colors: string[];
   maxPriceHint: number;
   resultCount: number;
@@ -193,7 +193,7 @@ export function FilterPanel({
                   }
                   options={[
                     { value: "__all__", label: "Todas" },
-                    ...categories.map((category) => ({ value: category, label: category })),
+                    ...categories,
                   ]}
                 />
               </View>
