@@ -36,18 +36,39 @@ export function WebTopBar() {
   // Pathname as Tienda sees it, also when the store is mounted inside Negocio.
   const pathname = buyerPathname(usePathname());
   const { cart } = useCart();
-  const { customer } = useCustomer();
+  const { customer, logout } = useCustomer();
   const { preference, setPreference } = useThemePreference();
   const categories = useTopCategories();
   const [categoriesOpen, setCategoriesOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
 
   // Escape closes the categories menu, as in any website dropdown.
   useEffect(() => {
-    if (!categoriesOpen || Platform.OS !== "web" || typeof window === "undefined") return;
-    const onKey = (event: KeyboardEvent) => event.key === "Escape" && setCategoriesOpen(false);
+    if (!(categoriesOpen || accountOpen) || Platform.OS !== "web" || typeof window === "undefined")
+      return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setCategoriesOpen(false);
+      setAccountOpen(false);
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [categoriesOpen]);
+  }, [accountOpen, categoriesOpen]);
+
+  const customerName = [customer?.first_name, customer?.last_name].filter(Boolean).join(" ");
+  const customerInitials = (
+    customerName
+      ? customerName
+          .split(/\s+/)
+          .slice(0, 2)
+          .map((part) => part[0])
+          .join("")
+      : (customer?.email?.[0] ?? "?")
+  ).toUpperCase();
+  const openAccount = (target: Href) => {
+    setAccountOpen(false);
+    router.push(target);
+  };
 
   const openCategory = (category: (typeof categories)[number]) => {
     setCategoriesOpen(false);
@@ -105,11 +126,14 @@ export function WebTopBar() {
 
   return (
     <View style={styles.bar} accessibilityRole="header">
-      {categoriesOpen ? (
+      {categoriesOpen || accountOpen ? (
         // Click anywhere outside the menu to close it.
         <Pressable
-          accessibilityLabel="Cerrar menú de categorías"
-          onPress={() => setCategoriesOpen(false)}
+          accessibilityLabel="Cerrar menú"
+          onPress={() => {
+            setCategoriesOpen(false);
+            setAccountOpen(false);
+          }}
           style={styles.backdrop}
         />
       ) : null}
@@ -187,16 +211,98 @@ export function WebTopBar() {
             {action("Favoritos", "heart", () =>
               router.push(buyerHref("/(drawer)/(tabs)/favorites") as Href),
             )}
-            {action(
-              customer ? "Mi cuenta" : "Iniciar sesión",
-              "user",
-              () =>
-                router.push(
-                  buyerHref(
-                    customer ? "/(drawer)/(tabs)/account" : "/(drawer)/(tabs)/account/login",
-                  ),
-                ),
-              { text: customer ? "Mi cuenta" : "Entrar" },
+            {customer ? (
+              // Signed in: who you are, and your account pages, as on any shop website.
+              <View style={styles.dropdownHost}>
+                <Pressable
+                  onPress={() => {
+                    setCategoriesOpen(false);
+                    setAccountOpen((open) => !open);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Tu cuenta: ${customerName || customer.email}`}
+                  accessibilityState={{ expanded: accountOpen }}
+                  style={({ hovered, pressed }: { hovered?: boolean; pressed: boolean }) => [
+                    styles.action,
+                    (hovered || pressed || accountOpen) && {
+                      backgroundColor: colors.surfaceMuted,
+                    },
+                  ]}
+                >
+                  <View style={styles.avatar}>
+                    <Text style={styles.avatarText}>{customerInitials}</Text>
+                  </View>
+                  <Text style={styles.actionText} numberOfLines={1}>
+                    {customer.first_name || "Mi cuenta"}
+                  </Text>
+                  <Icon name="chevronDown" size={16} color={colors.icon} />
+                </Pressable>
+                {accountOpen ? (
+                  <View style={[styles.dropdown, styles.accountMenu]}>
+                    <View style={styles.accountHead}>
+                      <Text style={styles.accountName} numberOfLines={1}>
+                        {customerName || "Tu cuenta"}
+                      </Text>
+                      <Text style={styles.accountEmail} numberOfLines={1}>
+                        {customer.email}
+                      </Text>
+                    </View>
+                    {(
+                      [
+                        ["Mi cuenta", "user", buyerHref("/(drawer)/(tabs)/account")],
+                        ["Mis compras", "package", buyerHref("/(drawer)/(tabs)/account/orders")],
+                        [
+                          "Direcciones de entrega",
+                          "mapPin",
+                          {
+                            pathname: buyerPath("/(drawer)/(tabs)/account"),
+                            params: { seccion: "direcciones" },
+                          } as Href,
+                        ],
+                        ["Favoritos", "heart", buyerHref("/(drawer)/(tabs)/favorites")],
+                        ["Notificaciones", "bell", buyerHref("/notifications")],
+                      ] as [string, IconName, Href][]
+                    ).map(([label, icon, href]) => (
+                      <Pressable
+                        key={label}
+                        onPress={() => openAccount(href)}
+                        accessibilityRole="link"
+                        style={({ hovered }: { hovered?: boolean; pressed: boolean }) => [
+                          styles.dropdownItem,
+                          styles.menuItem,
+                          hovered && { backgroundColor: colors.surfaceMuted },
+                        ]}
+                      >
+                        <Icon name={icon} size={18} color={colors.icon} />
+                        <Text style={[styles.dropdownText, styles.flex]}>{label}</Text>
+                      </Pressable>
+                    ))}
+                    <View style={styles.menuSeparator} />
+                    <Pressable
+                      onPress={() => {
+                        setAccountOpen(false);
+                        void logout().catch(() => undefined);
+                      }}
+                      accessibilityRole="button"
+                      style={({ hovered }: { hovered?: boolean; pressed: boolean }) => [
+                        styles.dropdownItem,
+                        styles.menuItem,
+                        hovered && { backgroundColor: colors.surfaceMuted },
+                      ]}
+                    >
+                      <Icon name="arrowLeft" size={18} color={colors.icon} />
+                      <Text style={[styles.dropdownText, styles.flex]}>Cerrar sesión</Text>
+                    </Pressable>
+                  </View>
+                ) : null}
+              </View>
+            ) : (
+              action(
+                "Iniciar sesión",
+                "user",
+                () => router.push(buyerHref("/(drawer)/(tabs)/account/login")),
+                { text: "Entrar" },
+              )
             )}
             {action(
               itemCount ? `Carrito, ${itemCount} artículos` : "Carrito",
@@ -285,6 +391,34 @@ const createStyles = (colors: (typeof Colors)[keyof typeof Colors]) =>
       gap: 16,
     },
     dropdownText: { color: colors.text, fontSize: 15 },
+    flex: { flex: 1 },
+    avatar: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.tint,
+    },
+    avatarText: { color: colors.onTint, fontSize: 12, fontWeight: "700" },
+    accountMenu: { left: undefined, right: 0, minWidth: 260 },
+    accountHead: {
+      paddingHorizontal: 16,
+      paddingTop: 8,
+      paddingBottom: 10,
+      gap: 2,
+      borderBottomColor: colors.border,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      marginBottom: 4,
+    },
+    accountName: { color: colors.text, fontSize: 15, fontWeight: "700" },
+    accountEmail: { color: colors.icon, fontSize: 13 },
+    menuItem: { justifyContent: "flex-start", gap: 12 },
+    menuSeparator: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: colors.border,
+      marginVertical: 4,
+    },
     backdrop: {
       // Fixed on web so it covers the page under the bar, not only the bar.
       position: (Platform.OS === "web" ? "fixed" : "absolute") as "absolute",

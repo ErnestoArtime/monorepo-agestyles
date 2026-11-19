@@ -75,7 +75,10 @@ const rules = [
   ["POST", /^\/store\/agestyles\/legacy-login$/],
   // Choose a new password from the emailed link (AG-19); the token travels as a bearer.
   ["POST", /^\/auth\/customer\/emailpass\/(reset-password|update)$/],
-  ["GET", /^\/store\/customers\/me$/],
+  ["GET POST", /^\/store\/customers\/me$/],
+  // Saved delivery addresses of the signed-in customer (Mi cuenta and checkout).
+  ["GET POST", /^\/store\/customers\/me\/addresses$/],
+  ["POST DELETE", /^\/store\/customers\/me\/addresses\/caddr_[a-z0-9]+$/i],
   ["GET", /^\/store\/order-groups(?:\/og_[a-z0-9]+)?$/i],
   ["GET", /^\/store\/orders\/order_[a-z0-9]+\/tracking$/i],
   // Notifications (AG-19): inbox, push devices and channel preferences of the signed-in customer.

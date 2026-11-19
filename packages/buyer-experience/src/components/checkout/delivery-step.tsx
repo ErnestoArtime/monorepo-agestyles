@@ -1,4 +1,5 @@
 import { AddressForm } from "./address-form";
+import { addressSummary, type SavedAddress } from "../../lib/addresses";
 import { Button } from "../ui/button";
 import { Colors } from "../../constants/theme";
 import { useRegion } from "../../context/region-context";
@@ -7,6 +8,7 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   Keyboard,
   KeyboardAvoidingView,
+  Pressable,
   Platform,
   ScrollView,
   StyleSheet,
@@ -37,6 +39,13 @@ interface DeliveryStepProps {
   onBillingAddressChange: (field: keyof Address, value: string) => void;
   onUseSameForBillingChange: (value: boolean) => void;
   onNext: () => void;
+  /** Signed-in customer's saved addresses (AG-46); empty for guests. */
+  savedAddresses?: SavedAddress[];
+  onUseSavedAddress?: (saved: SavedAddress) => void;
+  /** Offer to keep a new address in the account (only when it is not saved yet). */
+  canSaveAddress?: boolean;
+  saveAddress?: boolean;
+  onSaveAddressChange?: (value: boolean) => void;
 }
 
 export function DeliveryStep({
@@ -50,6 +59,11 @@ export function DeliveryStep({
   onBillingAddressChange,
   onUseSameForBillingChange,
   onNext,
+  savedAddresses = [],
+  onUseSavedAddress,
+  canSaveAddress,
+  saveAddress,
+  onSaveAddressChange,
 }: DeliveryStepProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
@@ -111,6 +125,42 @@ export function DeliveryStep({
             Dirección de envío
           </Text>
 
+          {savedAddresses.length ? (
+            <View style={styles.saved} accessibilityLabel="Tus direcciones guardadas">
+              {savedAddresses.map((saved) => {
+                const selected =
+                  saved.address_1 === shippingAddress.address &&
+                  saved.city === shippingAddress.city &&
+                  (saved.first_name ?? "") === shippingAddress.firstName;
+                return (
+                  <Pressable
+                    key={saved.id}
+                    onPress={() => onUseSavedAddress?.(saved)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: selected }}
+                    style={[
+                      styles.savedItem,
+                      {
+                        borderColor: selected ? colors.tint : colors.border,
+                        backgroundColor: colors.cardBackground,
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.savedName, { color: colors.text }]}>
+                      {saved.address_name || (saved.is_default_shipping ? "Principal" : "Guardada")}
+                    </Text>
+                    <Text style={{ color: colors.icon }} numberOfLines={2}>
+                      {addressSummary(saved)}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+              <Text style={[styles.savedHint, { color: colors.icon }]}>
+                Elige una o escribe otra debajo.
+              </Text>
+            </View>
+          ) : null}
+
           <AddressForm
             firstName={shippingAddress.firstName}
             lastName={shippingAddress.lastName}
@@ -128,6 +178,15 @@ export function DeliveryStep({
             onCountryCodeChange={(value) => onShippingAddressChange("countryCode", value)}
             onPhoneChange={(value) => onShippingAddressChange("phone", value)}
           />
+
+          {canSaveAddress ? (
+            <View style={styles.switchContainer}>
+              <Text style={[styles.switchLabel, { color: colors.text }]}>
+                Guardar esta dirección en mi cuenta
+              </Text>
+              <Switch value={Boolean(saveAddress)} onValueChange={onSaveAddressChange} />
+            </View>
+          ) : null}
 
           <View style={styles.switchContainer}>
             <Text style={[styles.switchLabel, { color: colors.text }]}>
@@ -173,6 +232,10 @@ export function DeliveryStep({
 }
 
 const styles = StyleSheet.create({
+  saved: { gap: 8, marginBottom: 12 },
+  savedItem: { borderWidth: 1.5, borderRadius: 10, padding: 12, gap: 2 },
+  savedName: { fontSize: 15, fontWeight: "600" },
+  savedHint: { fontSize: 13 },
   container: {
     flex: 1,
   },

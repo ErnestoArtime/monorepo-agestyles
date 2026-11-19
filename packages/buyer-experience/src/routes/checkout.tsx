@@ -12,6 +12,7 @@ import { useCustomer } from "../context/customer-context";
 import { useColorScheme } from "../hooks/use-color-scheme";
 import { sdk } from "../config";
 import { forgetAgentCode } from "../lib/agent-code";
+import { fieldsFromSaved, isSaved, useSavedAddresses } from "../lib/addresses";
 import { rememberOrderWhatsAppLinks, snapshotCartBySeller } from "../lib/order-whatsapp";
 import type { HttpTypes } from "@medusajs/types";
 import { useRouter } from "expo-router";
@@ -60,6 +61,14 @@ export default function CheckoutScreen() {
     countryCode: "",
     phone: "",
   });
+
+  // Saved addresses of a signed-in customer (AG-46): pick one, or keep a new one.
+  const addressBook = useSavedAddresses();
+  const [saveAddress, setSaveAddress] = useState(true);
+  const canSaveAddress =
+    Boolean(customer) &&
+    Boolean(shippingAddress.address.trim()) &&
+    !isSaved(shippingAddress, addressBook.addresses);
 
   // Shipping step
   const [shippingOptions, setShippingOptions] = useState<ShippingOptions>({});
@@ -158,6 +167,18 @@ export default function CheckoutScreen() {
     }
   }, [currentStep, fetchShippingOptions, fetchPaymentProviders]);
 
+  // A signed-in customer with an empty form starts from their main saved address.
+  useEffect(() => {
+    const main = addressBook.addresses[0];
+    if (!main) return;
+    setShippingAddress((current) =>
+      current.address.trim()
+        ? current
+        : { ...fieldsFromSaved(main), countryCode: main.country_code || current.countryCode },
+    );
+    setEmail((current) => current || customer?.email || "");
+  }, [addressBook.addresses, customer?.email]);
+
   const handleDeliveryNext = async () => {
     // Validate shipping address
     if (
@@ -222,6 +243,12 @@ export default function CheckoutScreen() {
         billing_address: billingAddressData,
       });
 
+      if (canSaveAddress && saveAddress) {
+        // Best effort: a failure to save the address must not stop the purchase.
+        await addressBook
+          .save(shippingAddress, { isDefault: addressBook.addresses.length === 0 })
+          .catch(() => undefined);
+      }
       await refreshCart();
       setCurrentStep("shipping");
     } catch (err) {
@@ -358,6 +385,16 @@ export default function CheckoutScreen() {
             }
             onUseSameForBillingChange={setUseSameForBilling}
             onNext={handleDeliveryNext}
+            savedAddresses={addressBook.addresses}
+            onUseSavedAddress={(saved) =>
+              setShippingAddress((current) => ({
+                ...fieldsFromSaved(saved),
+                countryCode: saved.country_code || current.countryCode,
+              }))
+            }
+            canSaveAddress={canSaveAddress}
+            saveAddress={saveAddress}
+            onSaveAddressChange={setSaveAddress}
           />
         )}
 

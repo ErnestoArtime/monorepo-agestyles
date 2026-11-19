@@ -1,10 +1,7 @@
-import { Icon } from "@agestyles/icons";
 import { Button } from "../../../../components/ui/button";
 import { Colors } from "../../../../constants/theme";
 import { useCustomer } from "../../../../context/customer-context";
-import { formatPrice } from "../../../../lib/format-price";
-import { groupStatusView } from "../../../../lib/order-status";
-import { Card, LargeTitle, StatusBadge, useUiTheme } from "@agestyles/ui-native";
+import { LargeTitle } from "@agestyles/ui-native";
 import { sdk } from "../../../../config";
 import { listBuyerOrderGroups } from "@agestyles/api-client/buyer-orders";
 import type { BuyerOrderGroup } from "@agestyles/api-client/buyer-orders";
@@ -19,11 +16,8 @@ import {
   Text,
   View,
 } from "react-native";
-import { buyerHref, buyerPath } from "../../../../config";
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("es", { dateStyle: "medium" }).format(new Date(value));
-}
+import { buyerHref } from "../../../../config";
+import { OrderGroupRow } from "../../../../components/account/order-group-row";
 
 export default function OrdersScreen() {
   const { customer, loading: customerLoading } = useCustomer();
@@ -117,43 +111,6 @@ export default function OrdersScreen() {
         </View>
       )}
     </ScrollView>
-  );
-}
-
-/** Order card (reference POS style): number, date, stores, total and a status badge. */
-function OrderGroupRow({ group }: { group: BuyerOrderGroup }) {
-  const { color } = useUiTheme();
-  const currency = group.orders[0]?.currency_code;
-  const status = groupStatusView(group.orders.map((order) => order.fulfillment_status));
-  return (
-    <Card
-      accessibilityLabel={`Compra ${group.display_id ?? group.id}, ${status.label}, ${formatPrice(group.total, currency)}`}
-      onPress={() =>
-        router.push({
-          pathname: buyerPath("/(drawer)/(tabs)/account/orders/[id]"),
-          params: { id: group.id },
-        })
-      }
-    >
-      <View style={styles.rowHeading}>
-        <Text style={[styles.orderName, { color: color.text }]}>
-          Compra #{group.display_id ?? group.id}
-        </Text>
-        <Text style={{ color: color.muted }}>{formatDate(group.created_at)}</Text>
-      </View>
-      <View style={styles.rowLine}>
-        <Icon name="store" size={16} color={color.muted} />
-        <Text style={{ color: color.text, flexShrink: 1 }} numberOfLines={1}>
-          {group.orders.map((order) => order.seller?.name ?? "Tienda").join(" · ")}
-        </Text>
-      </View>
-      <View style={styles.rowHeading}>
-        <Text style={[styles.total, { color: color.text }]}>
-          {formatPrice(group.total, currency)}
-        </Text>
-        <StatusBadge label={status.label} tone={status.tone} icon={status.icon} />
-      </View>
-    </Card>
   );
 }
 

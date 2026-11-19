@@ -34,9 +34,10 @@ export default function AccountLayout() {
       <Stack.Screen
         name="index"
         options={{
-          title: "Cuenta",
+          title: "Mi cuenta",
           headerRight: () => <NotificationHeaderBell />,
-          ...(isWideWeb ? {} : { headerLeft: () => <MenuButton /> }),
+          // Wide browsers: the account area has its own heading and side menu, like a website.
+          ...(isWideWeb ? { headerShown: false } : { headerLeft: () => <MenuButton /> }),
         }}
       />
       <Stack.Screen

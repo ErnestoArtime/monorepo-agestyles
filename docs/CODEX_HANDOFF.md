@@ -1645,3 +1645,9 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - `admin-gateway.mjs`: `GET POST /admin/agestyles/people`.
 - Negocio → Administración → Usuarios rehecha: filtros (todas, administradores, equipos, clientes, catálogo antiguo), cada persona se abre con sus permisos y acciones (confirmación en las destructivas); se mantiene invitar administrador e invitaciones pendientes.
 - Revisión cruzada pendiente (Codex): reglas de autorización de las acciones.
+
+## 2026-11-19 23:40 · Claude · AG-46: Mi cuenta web, direcciones de entrega y menú de usuario
+
+- `packages/buyer-experience`: `lib/addresses.ts` (`useSavedAddresses` sobre `sdk.store.customer.*Address`, conversiones y `isSaved`), `customer-context` gana `updateProfile` (POST `/store/customers/me`), `account/index.tsx` rehecha (en web ancha: menú lateral con identidad + contenido; secciones `?seccion=datos|direcciones`; compras recientes con `components/account/order-group-row.tsx` extraído de Mis compras), cabecera de app oculta en web ancha, `web-top-bar.tsx` con menú de usuario (iniciales, nombre, desplegable con cuenta, compras, direcciones, favoritos, avisos y cerrar sesión), checkout con direcciones guardadas para elegir, autorrelleno con la principal y «Guardar esta dirección en mi cuenta» (mejor esfuerzo).
+- `buyer-lab-gateway.mjs`: `GET POST /store/customers/me`, `GET POST /store/customers/me/addresses`, `POST DELETE /store/customers/me/addresses/caddr_*`.
+- Comprobado: typecheck de buyer-experience, lint del monorepo (0 errores), prettier.

@@ -24,6 +24,8 @@ type CustomerContextValue = {
     lastName: string;
   }) => Promise<void>;
   logout: () => Promise<void>;
+  /** Saves name and phone of the signed-in customer (Mi cuenta). */
+  updateProfile: (input: { firstName: string; lastName: string; phone: string }) => Promise<void>;
 };
 
 const CustomerContext = createContext<CustomerContextValue | null>(null);
@@ -150,8 +152,28 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
     await clearCart();
   }, [clearCart]);
 
+  const updateProfile = useCallback(
+    async ({
+      firstName,
+      lastName,
+      phone,
+    }: {
+      firstName: string;
+      lastName: string;
+      phone: string;
+    }) => {
+      const { customer: updated } = await sdk.store.customer.update({
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+        phone: phone.trim() || undefined,
+      });
+      setCustomer(updated);
+    },
+    [],
+  );
+
   return (
-    <CustomerContext.Provider value={{ customer, loading, login, register, logout }}>
+    <CustomerContext.Provider value={{ customer, loading, login, register, logout, updateProfile }}>
       {children}
     </CustomerContext.Provider>
   );
