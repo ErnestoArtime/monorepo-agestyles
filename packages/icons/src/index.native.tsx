@@ -6,6 +6,7 @@ import ArrowUpRight from "lucide-react-native/icons/arrow-up-right";
 import Bell from "lucide-react-native/icons/bell";
 import Boxes from "lucide-react-native/icons/boxes";
 import Check from "lucide-react-native/icons/check";
+import ChartColumn from "lucide-react-native/icons/chart-column";
 import ChevronDown from "lucide-react-native/icons/chevron-down";
 import ChevronRight from "lucide-react-native/icons/chevron-right";
 import ChevronUp from "lucide-react-native/icons/chevron-up";
@@ -57,6 +58,7 @@ const glyphs = {
   arrowUpRight: ArrowUpRight,
   bell: Bell,
   boxes: Boxes,
+  chart: ChartColumn,
   check: Check,
   chevronDown: ChevronDown,
   chevronRight: ChevronRight,

@@ -71,6 +71,11 @@ export default function MoreScreen() {
           />
         ) : null}
         <Row
+          title="Análisis"
+          detail="Ventas, más vendidos, stock por agotarse y pedidos por atender."
+          action={() => router.push("/analytics")}
+        />
+        <Row
           title="Comisiones"
           detail="Gestores de venta, ventas registradas, saldo y retiros."
           action={() => router.push("/commissions")}

@@ -62,6 +62,16 @@ export function WebSidebar() {
               },
             ]
           : []),
+        ...(member?.is_owner || hasPermission(member, "orders")
+          ? [
+              {
+                label: "Análisis",
+                icon: "chart" as IconName,
+                href: "/analytics",
+                match: (p: string) => p.startsWith("/analytics"),
+              },
+            ]
+          : []),
         {
           label: "Comisiones",
           icon: "creditCard",
