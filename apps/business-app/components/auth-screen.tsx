@@ -1,8 +1,8 @@
 import { Icon } from "@agestyles/icons";
 import type { ReactNode } from "react";
-import { ScrollView, StyleSheet, Text, TextInput, View, type TextInputProps } from "react-native";
+import { StyleSheet, Text, TextInput, View, type TextInputProps } from "react-native";
 import { useBusinessTheme } from "../hooks/use-business-theme";
-import { BrandLockup } from "./brand-lockup";
+import { AuthFrame } from "./auth-frame";
 
 /** Public page (no session needed) for the account recovery screens. */
 export function AuthScreen({
@@ -17,16 +17,13 @@ export function AuthScreen({
   const theme = useBusinessTheme();
   const styles = createStyles(theme);
   return (
-    <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
-      <View style={styles.brand}>
-        <BrandLockup />
-      </View>
+    <AuthFrame>
       <Text accessibilityRole="header" style={styles.title}>
         {title}
       </Text>
       <Text style={styles.subtitle}>{subtitle}</Text>
       <View style={styles.form}>{children}</View>
-    </ScrollView>
+    </AuthFrame>
   );
 }
 
@@ -69,8 +66,6 @@ export function AuthNotice({ tone, children }: { tone: "error" | "success"; chil
 
 const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
   StyleSheet.create({
-    page: { flexGrow: 1, backgroundColor: theme.background, padding: 24, paddingTop: 56 },
-    brand: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 54 },
     title: {
       fontSize: 31,
       lineHeight: 37,

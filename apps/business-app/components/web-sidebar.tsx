@@ -1,7 +1,7 @@
 import { NotificationBell, useOptionalNotifications } from "@agestyles/features-notifications";
 import { Icon, type IconName } from "@agestyles/icons";
 import { usePathname, useRouter, type Href } from "expo-router";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { BrandLockup } from "./brand-lockup";
 import { useAdmin } from "../context/admin-context";
@@ -202,7 +202,32 @@ export function WebSidebar() {
     ],
   };
   // The store sections need a selected store; the administration needs an administrator.
-  const groups = [...(seller ? storeGroups : []), ...(admin ? [adminGroup] : [])];
+  // With both, each is a collapsible block: the store's options or the whole marketplace.
+  const both = Boolean(seller && admin);
+  const sections: {
+    key: "store" | "admin";
+    title?: string;
+    groups: { title?: string; items: Item[] }[];
+  }[] = [
+    ...(seller
+      ? [{ key: "store" as const, title: both ? seller.name : undefined, groups: storeGroups }]
+      : []),
+    ...(admin
+      ? [
+          {
+            key: "admin" as const,
+            title: both ? "Administración del marketplace" : undefined,
+            groups: both ? [{ items: adminGroup.items }] : [adminGroup],
+          },
+        ]
+      : []),
+  ];
+  const inAdmin = pathname.startsWith("/admin");
+  const [open, setOpen] = useState({ store: !inAdmin, admin: inAdmin });
+  // Opening a page opens its block; the other one keeps what the person chose.
+  useEffect(() => {
+    setOpen((current) => (inAdmin ? { ...current, admin: true } : { ...current, store: true }));
+  }, [inAdmin]);
   const accountName =
     memberDisplayName(member) === "Tu cuenta" && admin
       ? [admin.first_name, admin.last_name].filter(Boolean).join(" ") || admin.email
@@ -243,32 +268,71 @@ export function WebSidebar() {
         </Pressable>
       ) : null}
       <ScrollView style={styles.flex} contentContainerStyle={styles.groups}>
-        {groups.map((group, index) => (
-          <View key={group.title ?? index} style={styles.group}>
-            {group.title ? <Text style={styles.heading}>{group.title}</Text> : null}
-            {group.items.map((item) => {
-              const active = item.match(pathname);
-              return (
+        {sections.map((section) => {
+          const expanded = !section.title || open[section.key];
+          return (
+            <View key={section.key} style={styles.section}>
+              {section.title ? (
                 <Pressable
-                  key={item.href}
-                  onPress={() => router.push(item.href as Href)}
-                  accessibilityRole="link"
-                  accessibilityState={{ selected: active }}
+                  onPress={() => setOpen({ ...open, [section.key]: !open[section.key] })}
+                  accessibilityRole="button"
+                  accessibilityState={{ expanded }}
+                  accessibilityLabel={`${section.title}: ${expanded ? "plegar" : "desplegar"}`}
                   style={({ hovered }: { hovered?: boolean }) => [
-                    styles.item,
-                    active && styles.itemActive,
-                    hovered && !active && { backgroundColor: theme.quietSurface },
+                    styles.sectionHeader,
+                    hovered && { backgroundColor: theme.quietSurface },
                   ]}
                 >
-                  <Icon name={item.icon} size={18} color={active ? theme.action : theme.muted} />
-                  <Text style={[styles.itemText, active && styles.itemTextActive]}>
-                    {item.label}
+                  <Icon
+                    name={section.key === "admin" ? "shieldCheck" : "store"}
+                    size={16}
+                    color={theme.action}
+                  />
+                  <Text style={styles.sectionTitle} numberOfLines={1}>
+                    {section.title}
                   </Text>
+                  <Icon
+                    name={expanded ? "chevronDown" : "chevronRight"}
+                    size={16}
+                    color={theme.muted}
+                  />
                 </Pressable>
-              );
-            })}
-          </View>
-        ))}
+              ) : null}
+              {expanded
+                ? section.groups.map((group, index) => (
+                    <View key={group.title ?? index} style={styles.group}>
+                      {group.title ? <Text style={styles.heading}>{group.title}</Text> : null}
+                      {group.items.map((item) => {
+                        const active = item.match(pathname);
+                        return (
+                          <Pressable
+                            key={item.href}
+                            onPress={() => router.push(item.href as Href)}
+                            accessibilityRole="link"
+                            accessibilityState={{ selected: active }}
+                            style={({ hovered }: { hovered?: boolean }) => [
+                              styles.item,
+                              active && styles.itemActive,
+                              hovered && !active && { backgroundColor: theme.quietSurface },
+                            ]}
+                          >
+                            <Icon
+                              name={item.icon}
+                              size={18}
+                              color={active ? theme.action : theme.muted}
+                            />
+                            <Text style={[styles.itemText, active && styles.itemTextActive]}>
+                              {item.label}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  ))
+                : null}
+            </View>
+          );
+        })}
       </ScrollView>
       <View style={styles.bottom}>
         <View
@@ -314,6 +378,23 @@ export function WebSidebar() {
 
 const createStyles = (theme: BusinessTheme) =>
   StyleSheet.create({
+    section: { gap: 4 },
+    sectionHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      minHeight: 40,
+      paddingHorizontal: 10,
+      borderRadius: 10,
+      marginTop: 4,
+    },
+    sectionTitle: {
+      flex: 1,
+      color: theme.text,
+      fontSize: 13,
+      fontWeight: "700",
+      letterSpacing: 0.2,
+    },
     sidebar: {
       width: 260,
       backgroundColor: theme.surface,

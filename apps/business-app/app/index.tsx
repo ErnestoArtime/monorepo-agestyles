@@ -1,16 +1,8 @@
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Icon } from "@agestyles/icons";
-import { BrandLockup } from "../components/brand-lockup";
+import { AuthFrame } from "../components/auth-frame";
 import { useAdmin } from "../context/admin-context";
 import { Seller, useBusiness } from "../context/business-context";
 import { useBusinessTheme } from "../hooks/use-business-theme";
@@ -57,10 +49,7 @@ export default function EntryScreen() {
     );
 
   return (
-    <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
-      <View style={styles.brand}>
-        <BrandLockup />
-      </View>
+    <AuthFrame>
       <Text style={styles.title}>{sellers.length ? "Elige una tienda" : "Gestiona tu tienda"}</Text>
       <Text style={styles.subtitle}>
         {sellers.length
@@ -153,13 +142,12 @@ export default function EntryScreen() {
           Los permisos se comprueban en el servidor para cada tienda.
         </Text>
       </View>
-    </ScrollView>
+    </AuthFrame>
   );
 }
 
 const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
   StyleSheet.create({
-    page: { flexGrow: 1, backgroundColor: theme.background, padding: 24, paddingTop: 56 },
     loading: {
       flex: 1,
       alignItems: "center",
@@ -167,7 +155,6 @@ const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
       gap: 16,
       backgroundColor: theme.background,
     },
-    brand: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 54 },
     title: {
       fontSize: 31,
       lineHeight: 37,
