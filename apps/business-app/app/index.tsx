@@ -28,8 +28,13 @@ export default function EntryScreen() {
     setLocalError("");
     try {
       await login(email.trim(), password);
-    } catch {
-      setLocalError("Revisa tus datos e inténtalo de nuevo.");
+    } catch (cause) {
+      // An existing account without team access gets the context's specific message.
+      setLocalError(
+        cause instanceof Error && cause.message === "NO_STAFF_ACCESS"
+          ? ""
+          : "Revisa tus datos e inténtalo de nuevo.",
+      );
     }
   }
   async function onSelect(choice: Seller) {

@@ -209,7 +209,24 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
           ),
           loginAdmin(email, password).catch(() => false),
         ]);
-        if (business && !isAdmin) throw business;
+        if (business && !isAdmin) {
+          // A buyer account (or one migrated from the old catalog, AG-32) that has no team
+          // or administration access yet gets a clear answer instead of «check your data».
+          const buyer = await buyerSdk.auth
+            .login("customer", "emailpass", { email, password })
+            .then(() => true)
+            .catch(async () => {
+              const legacy = await buyerSdk.client
+                .fetch<{ migrated: boolean }>("/store/agestyles/legacy-login", {
+                  method: "POST",
+                  body: { email, password },
+                })
+                .catch(() => ({ migrated: false }));
+              return legacy.migrated;
+            });
+          if (buyer) throw new Error("NO_STAFF_ACCESS");
+          throw business;
+        }
         setSeller(null);
         setMember(null);
         if (business) {
@@ -222,7 +239,11 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
         setReady(true);
         if (choices.length === 1) await selectSeller(choices[0]);
       } catch (cause) {
-        setError("No se pudo iniciar sesión.");
+        setError(
+          cause instanceof Error && cause.message === "NO_STAFF_ACCESS"
+            ? "Tu cuenta existe, pero aún no tiene acceso a ninguna tienda ni a la administración. Pide acceso a la administración de AgeStyles."
+            : "No se pudo iniciar sesión.",
+        );
         throw cause;
       } finally {
         setLoading(false);
