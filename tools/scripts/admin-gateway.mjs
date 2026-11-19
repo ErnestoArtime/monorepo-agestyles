@@ -54,6 +54,9 @@ const rules = [
   ["GET", new RegExp(`^/admin/orders/${ID}$`, "i")],
   ["GET", /^\/admin\/manual-payments$/],
   ["POST", new RegExp(`^/admin/manual-payments/${ID}/(verify|reject)$`, "i")],
+  // Tienda's home: banners and featured products, and the banner images.
+  ["GET POST", /^\/admin\/agestyles\/home$/],
+  ["POST", /^\/admin\/uploads$/],
   // Product publication review.
   ["GET", /^\/admin\/product-changes$/],
   ["POST", new RegExp(`^/admin/product-changes/${ID}/(confirm|cancel)$`, "i")],
@@ -140,7 +143,8 @@ createServer({ requestTimeout: 30_000, headersTimeout: 10_000 }, (incoming, outg
 
   if (
     incoming.headers["transfer-encoding"] ||
-    Number(incoming.headers["content-length"]) > 65_536
+    Number(incoming.headers["content-length"]) >
+      (path === "/admin/uploads" ? 8 * 1024 * 1024 : 65_536)
   ) {
     return reply(outgoing, 413, "Request body too large", corsHeaders);
   }
