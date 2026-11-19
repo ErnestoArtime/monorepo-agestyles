@@ -9,13 +9,19 @@ export function CardGrid({
   children,
   minColumnWidth = 340,
   gap = 12,
+  maxColumns = 3,
 }: {
   children: ReactNode;
   minColumnWidth?: number;
   gap?: number;
+  /** Indicator rows can use four; record lists stay at three. */
+  maxColumns?: number;
 }) {
   const [width, setWidth] = useState(0);
-  const columns = Math.max(1, Math.min(3, Math.floor((width + gap) / (minColumnWidth + gap))));
+  const columns = Math.max(
+    1,
+    Math.min(maxColumns, Math.floor((width + gap) / (minColumnWidth + gap))),
+  );
   const itemWidth = width ? (width - gap * (columns - 1)) / columns : undefined;
   return (
     <View

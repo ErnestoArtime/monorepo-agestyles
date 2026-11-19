@@ -146,7 +146,7 @@ export default function AnalyticsScreen() {
       </View>
       {data ? (
         <>
-          <CardGrid minColumnWidth={200}>
+          <CardGrid minColumnWidth={200} maxColumns={4}>
             <Kpi
               label="Ventas"
               value={money(data.sales.amount)}
