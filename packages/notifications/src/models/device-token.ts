@@ -3,7 +3,7 @@ import { model } from "@medusajs/framework/utils";
 const DeviceToken = model
   .define("agestyles_device_token", {
     id: model.id({ prefix: "adevice" }).primaryKey(),
-    actor_type: model.enum(["customer", "member"]),
+    actor_type: model.enum(["customer", "member", "user"]),
     actor_id: model.text(),
     app: model.enum(["buyer", "business"]),
     platform: model.enum(["android", "ios", "web"]),

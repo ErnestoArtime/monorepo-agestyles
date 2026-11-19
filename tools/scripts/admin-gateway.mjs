@@ -57,6 +57,8 @@ const rules = [
   // Tienda's home: banners and featured products, and the banner images.
   ["GET POST", /^\/admin\/agestyles\/home$/],
   ["GET", /^\/admin\/agestyles\/category-requests$/],
+  ["GET", /^\/admin\/agestyles\/notifications$/],
+  ["POST", /^\/admin\/agestyles\/notifications\/read$/],
   ["POST", /^\/admin\/agestyles\/category-requests\/catreq_[A-Za-z0-9]+$/],
   ["POST", /^\/admin\/uploads$/],
   // Product publication review.

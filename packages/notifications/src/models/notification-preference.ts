@@ -3,9 +3,17 @@ import { model } from "@medusajs/framework/utils";
 const NotificationPreference = model
   .define("agestyles_notification_preference", {
     id: model.id({ prefix: "apref" }).primaryKey(),
-    actor_type: model.enum(["customer", "member"]),
+    actor_type: model.enum(["customer", "member", "user"]),
     actor_id: model.text(),
-    group: model.enum(["orders", "payments", "inventory", "commissions", "catalog", "account"]),
+    group: model.enum([
+      "orders",
+      "payments",
+      "inventory",
+      "commissions",
+      "catalog",
+      "account",
+      "marketplace",
+    ]),
     channel: model.enum(["push", "email"]),
     enabled: model.boolean(),
   })

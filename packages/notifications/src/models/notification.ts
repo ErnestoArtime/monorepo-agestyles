@@ -3,11 +3,19 @@ import { model } from "@medusajs/framework/utils";
 const Notification = model
   .define("agestyles_notification", {
     id: model.id({ prefix: "anotif" }).primaryKey(),
-    recipient_type: model.enum(["customer", "member"]),
+    recipient_type: model.enum(["customer", "member", "user"]),
     recipient_id: model.text(),
     seller_id: model.text().nullable(),
     event_code: model.text(),
-    group: model.enum(["orders", "payments", "inventory", "commissions", "catalog", "account"]),
+    group: model.enum([
+      "orders",
+      "payments",
+      "inventory",
+      "commissions",
+      "catalog",
+      "account",
+      "marketplace",
+    ]),
     title: model.text(),
     body: model.text(),
     target: model.json().nullable(),

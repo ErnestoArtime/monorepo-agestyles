@@ -3,7 +3,8 @@
  * (store member). It only needs a `fetcher`, so each app keeps its own session handling.
  */
 
-export type NotificationScope = "store" | "vendor";
+/** `admin`: the marketplace administration in Negocio (AG-40). */
+export type NotificationScope = "store" | "vendor" | "admin";
 
 export type Fetcher = <T>(
   path: string,

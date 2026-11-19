@@ -13,6 +13,12 @@ const ROUTES: Record<string, string> = {
   inventory: "/(tabs)/inventory",
   products: "/(tabs)/products",
   commissions: "/commissions",
+  home: "/(tabs)",
+  "category-requests": "/category-requests",
+  "admin-stores": "/admin/tiendas",
+  "admin-review": "/admin/revision",
+  "admin-orders": "/admin/pedidos",
+  "admin-categories": "/admin/categorias",
 };
 
 /** Screen a notification leads to, or null when the target is missing or unknown. */

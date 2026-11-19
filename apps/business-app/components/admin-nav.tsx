@@ -7,6 +7,7 @@ import { useBusinessTheme } from "../hooks/use-business-theme";
 import { useResponsive } from "../hooks/use-responsive";
 
 const SECTIONS = [
+  { value: "/admin/avisos", label: "Avisos" },
   { value: "/admin/usuarios", label: "Usuarios" },
   { value: "/admin/tiendas", label: "Tiendas" },
   { value: "/admin/pedidos", label: "Pedidos" },

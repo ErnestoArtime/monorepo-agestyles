@@ -4,7 +4,8 @@
  * and input validation. No Medusa imports, so it is testable with `node`.
  */
 
-export const RECIPIENT_TYPES = ["customer", "member"] as const;
+/** `user`: the marketplace administration (Medusa admin users), AG-40. */
+export const RECIPIENT_TYPES = ["customer", "member", "user"] as const;
 export type RecipientType = (typeof RECIPIENT_TYPES)[number];
 
 /** In-app inbox is implicit and always on; these are the external channels. */
@@ -18,6 +19,7 @@ export const GROUPS = [
   "commissions",
   "catalog",
   "account",
+  "marketplace",
 ] as const;
 export type NotificationGroup = (typeof GROUPS)[number];
 
@@ -259,6 +261,146 @@ export const EVENTS = {
       title: "Retiro rechazado",
       body: "Tu solicitud de retiro de comisiones se ha rechazado.",
       target: { screen: "commissions" },
+    }),
+  },
+  seller_order_canceled: {
+    recipient: "member",
+    group: "orders",
+    audience: "orders",
+    channels: ["push", "email"],
+    render: (p) => ({
+      title: "Pedido cancelado",
+      body: `Se ha cancelado un pedido de ${storeLower(p)}. No lo prepares.`,
+      target: {
+        screen: "orders",
+        ...(text(p.order_id) ? { params: { id: text(p.order_id) } } : {}),
+      },
+    }),
+  },
+  seller_payment_verified: {
+    recipient: "member",
+    group: "payments",
+    audience: "orders",
+    channels: ["push", "email"],
+    render: (p) => ({
+      title: "Pago verificado",
+      body: "AgeStyles ha verificado el pago de un pedido. Ya puedes prepararlo.",
+      target: {
+        screen: "orders",
+        ...(text(p.order_id) ? { params: { id: text(p.order_id) } } : {}),
+      },
+    }),
+  },
+  seller_payment_rejected: {
+    recipient: "member",
+    group: "payments",
+    audience: "orders",
+    channels: ["push", "email"],
+    render: (p) => ({
+      title: "Pago rechazado",
+      body: "AgeStyles ha rechazado el comprobante de pago de un pedido. Espera a que el cliente lo corrija.",
+      target: {
+        screen: "orders",
+        ...(text(p.order_id) ? { params: { id: text(p.order_id) } } : {}),
+      },
+    }),
+  },
+  seller_store_approved: {
+    recipient: "member",
+    group: "account",
+    audience: "managers",
+    channels: ["push", "email"],
+    render: (p) => ({
+      title: "Tienda aprobada",
+      body: `${store(p)} ya está aprobada y puede vender en AgeStyles.`,
+      target: { screen: "home" },
+    }),
+  },
+  seller_store_suspended: {
+    recipient: "member",
+    group: "account",
+    audience: "managers",
+    channels: ["push", "email"],
+    render: (p) => ({
+      title: "Tienda suspendida",
+      body: `${store(p)} está suspendida y sus productos no se muestran. Contacta con AgeStyles.`,
+      target: { screen: "home" },
+    }),
+  },
+  seller_category_request_resolved: {
+    recipient: "member",
+    group: "catalog",
+    audience: "managers",
+    channels: ["push", "email"],
+    render: (p) => {
+      const name = text(p.category) || text(p.request) || "la categoría";
+      const outcome = text(p.outcome);
+      return {
+        title:
+          outcome === "approved"
+            ? "Categoría creada"
+            : outcome === "merged"
+              ? "Usa una categoría existente"
+              : "Solicitud de categoría no aceptada",
+        body:
+          outcome === "approved"
+            ? `Ya puedes usar «${name}» en tus productos.`
+            : outcome === "merged"
+              ? `Para «${text(p.request) || "tu solicitud"}», usa la categoría «${name}».`
+              : `«${text(p.request) || "Tu solicitud"}» no se ha aceptado.${text(p.note) ? ` Motivo: ${text(p.note)}` : ""}`,
+        target: { screen: "category-requests" },
+      };
+    },
+  },
+  agent_commission_earned: {
+    recipient: "member",
+    group: "commissions",
+    audience: "member",
+    channels: ["push", "email"],
+    render: (p) => ({
+      title: "Comisión generada",
+      body: `Una compra online con tu código de gestor te genera ${text(p.amount) ? `${text(p.amount)} de comisión` : "comisión"}.`,
+      target: { screen: "commissions" },
+    }),
+  },
+  admin_store_registered: {
+    recipient: "user",
+    group: "marketplace",
+    channels: ["email"],
+    render: (p) => ({
+      title: "Tienda nueva por aprobar",
+      body: `${store(p)} se ha registrado y espera aprobación.`,
+      target: { screen: "admin-stores" },
+    }),
+  },
+  admin_product_review: {
+    recipient: "user",
+    group: "marketplace",
+    channels: ["email"],
+    render: (p) => ({
+      title: "Producto por revisar",
+      body: `${store(p)} ha enviado ${text(p.product) ? `«${text(p.product)}»` : "un producto"} para revisar.`,
+      target: { screen: "admin-review" },
+    }),
+  },
+  admin_payment_proof: {
+    recipient: "user",
+    group: "marketplace",
+    channels: ["email"],
+    render: () => ({
+      title: "Comprobante por verificar",
+      body: "Un cliente ha enviado un comprobante de pago. Verifícalo o recházalo.",
+      target: { screen: "admin-orders" },
+    }),
+  },
+  admin_category_request: {
+    recipient: "user",
+    group: "marketplace",
+    channels: ["email"],
+    render: (p) => ({
+      title: "Solicitud de categoría",
+      body: `${store(p)} pide la categoría «${text(p.request) || "nueva"}».`,
+      target: { screen: "admin-categories" },
     }),
   },
 } satisfies Record<string, EventDefinition>;

@@ -152,6 +152,12 @@ export function WebSidebar() {
     title: "Administración",
     items: [
       {
+        label: "Avisos",
+        icon: "bell",
+        href: "/admin/avisos",
+        match: (p) => p.startsWith("/admin/avisos"),
+      },
+      {
         label: "Usuarios",
         icon: "userCircle",
         href: "/admin/usuarios",

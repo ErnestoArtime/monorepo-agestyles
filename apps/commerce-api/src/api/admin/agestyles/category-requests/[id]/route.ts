@@ -7,6 +7,25 @@ import {
   validateCategoryDecision,
 } from "@agestyles/category-requests";
 import { categoryRequestsService, categoryTree } from "../../../../../lib/category-requests";
+import { notifySafely, notifySellerMembers } from "../../../../../lib/notifications";
+
+/** The store's managers hear the decision (AG-40); never blocks the decision itself. */
+function tellStore(
+  scope: AuthenticatedMedusaRequest["scope"],
+  request: { id: string; seller_id: string; name: string },
+  outcome: "approved" | "merged" | "rejected",
+  category: string | null,
+  note: string | null,
+) {
+  return notifySafely("seller_category_request_resolved", () =>
+    notifySellerMembers(scope, {
+      event_code: "seller_category_request_resolved",
+      seller_id: request.seller_id,
+      params: { outcome, request: request.name, category, note },
+      key: ["seller_category_request_resolved", request.id],
+    }),
+  );
+}
 
 /**
  * The administration decides a request (AG-35): create the category as a main one or under
@@ -60,28 +79,30 @@ export async function POST(req: AuthenticatedMedusaRequest<unknown>, res: Medusa
       resolution_note: decision.note,
       reviewed_by: reviewer,
     });
+    await tellStore(req.scope, request, "approved", created.name, decision.note);
     res.json({ category_request: resolved, category: { id: created.id, name: created.name } });
     return;
   }
   if (decision.action === "merge") {
     if (!exists(decision.category_id))
       throw new MedusaError(MedusaError.Types.INVALID_DATA, "Esa categoría no existe.");
-    res.json({
-      category_request: await service.resolveRequest(request.id, {
-        status: "merged",
-        resolved_category_id: decision.category_id,
-        resolution_note: decision.note,
-        reviewed_by: reviewer,
-      }),
-    });
-    return;
-  }
-  res.json({
-    category_request: await service.resolveRequest(request.id, {
-      status: "rejected",
-      resolved_category_id: null,
+    const target = categories.find((category) => category.id === decision.category_id);
+    const merged = await service.resolveRequest(request.id, {
+      status: "merged",
+      resolved_category_id: decision.category_id,
       resolution_note: decision.note,
       reviewed_by: reviewer,
-    }),
+    });
+    await tellStore(req.scope, request, "merged", target?.name ?? null, decision.note);
+    res.json({ category_request: merged });
+    return;
+  }
+  const rejected = await service.resolveRequest(request.id, {
+    status: "rejected",
+    resolved_category_id: null,
+    resolution_note: decision.note,
+    reviewed_by: reviewer,
   });
+  await tellStore(req.scope, request, "rejected", null, decision.note);
+  res.json({ category_request: rejected });
 }

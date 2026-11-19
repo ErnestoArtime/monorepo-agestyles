@@ -99,6 +99,11 @@ export default function MoreScreen() {
             action={() => router.push("/admin/tiendas")}
           />
           <Row
+            title="Avisos de administración"
+            detail="Tiendas por aprobar, productos por revisar, pagos y categorías."
+            action={() => router.push("/admin/avisos")}
+          />
+          <Row
             title="Pedidos del marketplace"
             detail="Todos los pedidos y los pagos por verificar."
             action={() => router.push("/admin/pedidos")}

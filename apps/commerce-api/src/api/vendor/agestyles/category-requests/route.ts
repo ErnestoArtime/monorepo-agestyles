@@ -1,5 +1,6 @@
 import type { MedusaResponse } from "@medusajs/framework/http";
 import { categoryRequestsService, categoryTree } from "../../../../lib/category-requests";
+import { notifyAdmins, notifySafely, sellerName } from "../../../../lib/notifications";
 import {
   requireManager,
   resolveCommissionActor,
@@ -27,6 +28,13 @@ export async function POST(req: CommissionRequest, res: MedusaResponse) {
     actor.sellerId,
     actor.memberId,
     req.body,
+  );
+  await notifySafely("admin_category_request", async () =>
+    notifyAdmins(req.scope, {
+      event_code: "admin_category_request",
+      params: { store: await sellerName(req.scope, actor.sellerId), request: request.name },
+      key: ["admin_category_request", request.id],
+    }),
   );
   res.status(201).json({ category_request: request });
 }

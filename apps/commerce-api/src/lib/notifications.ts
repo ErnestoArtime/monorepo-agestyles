@@ -191,6 +191,37 @@ type SellerModule = {
   >;
 };
 
+/**
+ * One entry per marketplace administrator (Medusa `user` actors, AG-40): new stores to
+ * approve, products to review, payment proofs and category requests.
+ */
+export async function notifyAdmins(
+  scope: Scope,
+  input: { event_code: EventCode; params?: Params; key: string[] },
+): Promise<number> {
+  const { data: users } = await queryGraph(scope).graph({ entity: "user", fields: ["id"] });
+  const service = notificationsService(scope);
+  for (const user of users as { id: string }[]) {
+    await service.notify({
+      event_code: input.event_code,
+      recipient_type: "user",
+      recipient_id: user.id,
+      params: input.params,
+      dedupe_key: dedupeKey(...input.key, user.id),
+    });
+  }
+  return users.length;
+}
+
+/** Notifications must never break the action that triggered them. */
+export async function notifySafely(label: string, send: () => Promise<unknown>) {
+  try {
+    await send();
+  } catch (error) {
+    console.error(`[notifications] ${label}:`, error instanceof Error ? error.message : error);
+  }
+}
+
 /** One entry per store member allowed to see this kind of event. */
 export async function notifySellerMembers(
   scope: Scope,
@@ -244,6 +275,15 @@ export function customerRecipient(req: AuthenticatedMedusaRequest): Recipient {
 }
 
 /** The signed-in member, always bound to the selected store they actually belong to. */
+/** A marketplace administrator (Medusa `user`, AG-40). */
+export function adminRecipient(req: AuthenticatedMedusaRequest): Recipient {
+  const actorId = req.auth_context?.actor_id;
+  if (!actorId || req.auth_context?.actor_type !== "user") {
+    throw new MedusaError(MedusaError.Types.UNAUTHORIZED, "An administrator session is required.");
+  }
+  return { recipient_type: "user", recipient_id: actorId, seller_id: null };
+}
+
 export async function memberRecipient(req: SellerRequest): Promise<Recipient> {
   const sellerId = req.seller_context?.seller_id;
   const memberId = req.auth_context?.actor_id;

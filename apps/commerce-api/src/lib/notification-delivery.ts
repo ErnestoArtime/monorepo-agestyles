@@ -40,7 +40,9 @@ function appUrl(recipientType: string): string | null {
       ? process.env.AGESTYLES_STORE_WEB_URL
       : process.env.AGESTYLES_BUSINESS_WEB_URL;
   const base = raw?.trim().replace(/\/+$/, "");
-  return base?.startsWith("https://") ? base : null;
+  if (!base?.startsWith("https://")) return null;
+  // Administrators read their notices in Negocio's administration.
+  return recipientType === "user" ? `${base}/admin/avisos` : base;
 }
 
 /** Failed attempts back off (1 min … 12 h); after the last one the delivery stays `failed`. */
@@ -188,7 +190,12 @@ async function recipientEmail(
   container: MedusaContainer,
   notification: NotificationRecord,
 ): Promise<string | null> {
-  const entity = notification.recipient_type === "customer" ? "customer" : "member";
+  const entity =
+    notification.recipient_type === "customer"
+      ? "customer"
+      : notification.recipient_type === "user"
+        ? "user"
+        : "member";
   const { data } = await queryGraph(container).graph({
     entity,
     fields: ["id", "email"],
