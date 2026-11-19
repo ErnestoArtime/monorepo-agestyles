@@ -42,6 +42,8 @@ const rules = [
   ["POST", new RegExp(`^/admin/invites/${ID}/resend$`, "i")],
   ["GET", /^\/admin\/customers$/],
   ["GET", /^\/admin\/members$/],
+  // Everyone as one list of people, and the superadmin's actions on them (AG-45).
+  ["GET POST", /^\/admin\/agestyles\/people$/],
   // Stores.
   ["GET", /^\/admin\/sellers$/],
   ["GET", new RegExp(`^/admin/sellers/${ID}$`, "i")],

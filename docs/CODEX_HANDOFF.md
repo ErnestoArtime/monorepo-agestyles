@@ -1638,3 +1638,10 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 
 - Nuevo `apps/commerce-api/src/scripts/add-store-member.ts`: añade una identidad existente al equipo de una tienda con los flujos de Mercur `createMemberInvitesWorkflow` + `acceptMemberInviteWorkflow` (sin contraseña nueva; imprime solo ids).
 - Producción (autorizado por el usuario): copia `before-store-member-*.dump`; prueba en seco y luego real → miembro `mem_01M7TVWPVKKWTE4Z45E648SGDQ` en `sel_01M7NH1254S7Z1HZ7YQTJT39N7` con `role_seller_administration`. La identidad conserva `user_id` y `customer_id`.
+
+## 2026-11-19 23:00 · Claude · AG-45: Usuarios del superadmin con acciones y permisos
+
+- API `GET/POST /admin/agestyles/people` (`src/lib/people.ts` + ruta; test `test/people.test.mjs`): lista única de personas (clientes, administradores y miembros de tienda unidos por correo, con `has_password` y `legacy_role`) y acciones `grant_admin` (`createUserAccountWorkflow`), `revoke_admin` (`removeUserAccountWorkflow`; ni a uno mismo ni al último), `add_to_store` (`addSellerMemberWorkflow` si ya es miembro; si no, invitación + aceptación de Mercur con su identidad), `change_role` (`updateMemberRoleWorkflow`) y `remove_from_store` (`removeSellerMemberWorkflow`); el propietario no se toca. Sin contraseña → 409 con mensaje en español.
+- `admin-gateway.mjs`: `GET POST /admin/agestyles/people`.
+- Negocio → Administración → Usuarios rehecha: filtros (todas, administradores, equipos, clientes, catálogo antiguo), cada persona se abre con sus permisos y acciones (confirmación en las destructivas); se mantiene invitar administrador e invitaciones pendientes.
+- Revisión cruzada pendiente (Codex): reglas de autorización de las acciones.
