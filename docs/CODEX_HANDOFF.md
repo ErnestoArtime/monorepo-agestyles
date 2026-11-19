@@ -1580,3 +1580,12 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - **Negocio con la cuenta de administración:** Avisos, Codificadores (categorías y tallas), Portada, Solicitudes de categoría, Tiendas, Usuarios, Pedidos y Revisión cargan sin errores ni peticiones en bucle. Hay un único administrador (la cuenta técnica de `admin.env`).
 - **Pendiente:** invitar al titular como administrador desde Usuarios (decide el usuario qué correo); activar marcas en Codificadores; revisión de seguridad del gateway por Codex.
 - Detalle menor: la bandeja de Avisos de administración usa el subtítulo genérico de la bandeja compartida («Novedades de tus pedidos y de tu cuenta»).
+
+## 2026-11-19 — Claude: titular como administrador y propuesta de migración de usuarios (AG-32)
+
+- **Titular como administrador, sin correo:** con la cuenta técnica se creó la invitación (`POST /admin/invites`). El titular la aceptó con su identidad `emailpass` existente: `POST /auth/user/emailpass` da token sin actor y luego `POST /admin/invites/accept?token=…`. Resultado: `user_01M7THG1TQ2F11GDE373H1EG8J`; `/admin/users/me` 200. En Negocio, el titular entra con su contraseña de siempre y ve su tienda y Administración («Superadministrador»). Credenciales leídas de los archivos privados, sin mostrarlas.
+- **Migración de usuarios (fase C):** propuesta en `docs/design/AG-32-fase-C-migracion-usuarios.md`.
+  - Importar las cuentas sin contraseña.
+  - En el primer acceso, verificar la contraseña contra Supabase Auth y crear la identidad de Medusa con ella.
+  - Así no hace falta correo ni contraseñas nuevas.
+  - Una consulta agregada con la clave de servidor del catálogo antiguo quedó bloqueada a la espera de la autorización explícita del usuario; no se leyó nada.
