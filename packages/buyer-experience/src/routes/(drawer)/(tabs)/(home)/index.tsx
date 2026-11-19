@@ -1,5 +1,6 @@
 import { Loading } from "../../../../components/loading";
 import { ProductCard } from "../../../../components/product-card";
+import { useAvailableOffers } from "../../../../hooks/use-available-offers";
 import {
   activeFilterCount,
   EMPTY_FILTERS,
@@ -41,7 +42,8 @@ export default function HomeScreen() {
   // Quick view: a bottom sheet on phones, a centred dialog in a wide browser; both link to the page.
   const openProduct = (product: HttpTypes.StoreProduct) => setSheetProductId(product.id);
 
-  const [products, setProducts] = useState<HttpTypes.StoreProduct[]>([]);
+  const [allProducts, setProducts] = useState<HttpTypes.StoreProduct[]>([]);
+  const [reloadKey, setReloadKey] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,6 +64,20 @@ export default function HomeScreen() {
     tienda?: string;
   }>();
   const [storeProductIds, setStoreProductIds] = useState<Set<string> | null>(null);
+  // Listings only show what can be bought now (an in-stock, priced offer in the region).
+  const availability = useAvailableOffers(selectedRegion?.id, reloadKey);
+  const products = useMemo(
+    () =>
+      availability.byProduct.size
+        ? allProducts.filter((product) => availability.byProduct.has(product.id))
+        : allProducts,
+    [allProducts, availability.byProduct],
+  );
+  /** Single variant with a single available offer: «Agregar» adds it straight to the cart. */
+  const directOfferId = (product: HttpTypes.StoreProduct) => {
+    const offers = availability.byProduct.get(product.id) ?? [];
+    return (product.variants?.length ?? 0) === 1 && offers.length === 1 ? offers[0].id : undefined;
+  };
   const menuFilter = useMemo(() => {
     if (params.filtro === "categoria" && params.ids) {
       return {
@@ -201,6 +217,7 @@ export default function HomeScreen() {
 
   const onRefresh = () => {
     setRefreshing(true);
+    setReloadKey((key) => key + 1);
     fetchProducts();
   };
 
@@ -237,7 +254,7 @@ export default function HomeScreen() {
     );
   }
 
-  if (loading) {
+  if (loading || availability.loading) {
     return <Loading message="Cargando productos..." />;
   }
 
@@ -267,6 +284,11 @@ export default function HomeScreen() {
     );
   }
 
+  // A category, a store, «Novedades» or «Todos los productos» open as their own page,
+  // without the home hero.
+  const isListing = Boolean(menuFilter) || params.filtro === "todos";
+  const listingTitle = menuFilter?.label ?? "Todos los productos";
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <FlatList
@@ -281,7 +303,32 @@ export default function HomeScreen() {
         removeClippedSubviews={true}
         ListHeaderComponent={
           <View style={[styles.header, isWideWeb && [styles.wide, styles.wideHeader]]}>
-            {isWideWeb ? null : (
+            {isListing ? (
+              <View style={styles.listingHeader}>
+                <TouchableOpacity
+                  accessibilityRole="link"
+                  onPress={() =>
+                    router.setParams({
+                      filtro: undefined,
+                      ids: undefined,
+                      nombre: undefined,
+                      tienda: undefined,
+                    })
+                  }
+                  style={styles.listingBack}
+                >
+                  <Icon name="arrowLeft" size={16} color={colors.tint} />
+                  <Text style={[styles.listingBackText, { color: colors.tint }]}>Inicio</Text>
+                </TouchableOpacity>
+                <Text
+                  accessibilityRole="header"
+                  style={[styles.listingTitle, { color: colors.text }]}
+                >
+                  {listingTitle}
+                </Text>
+              </View>
+            ) : null}
+            {isWideWeb || isListing ? null : (
               <View style={[styles.betaNotice, { backgroundColor: colors.surfaceMuted }]}>
                 <Icon name="help" size={16} color={colors.tint} />
                 <Text style={[styles.betaCopy, { color: colors.text }]}>
@@ -289,49 +336,57 @@ export default function HomeScreen() {
                 </Text>
               </View>
             )}
-            <View
-              style={[styles.hero, isWideWeb && styles.heroWide, { backgroundColor: colors.tint }]}
-            >
-              <View style={styles.heroCopy}>
-                <Text
+            {isListing ? null : (
+              <>
+                <View
                   style={[
-                    styles.heroTitle,
-                    isWideWeb && styles.heroTitleWide,
-                    { color: colors.onTint },
+                    styles.hero,
+                    isWideWeb && styles.heroWide,
+                    { backgroundColor: colors.tint },
                   ]}
                 >
-                  Lo que buscas.{"\n"}Más opciones.
-                </Text>
-                <Text
-                  style={[
-                    styles.heroDescription,
-                    isWideWeb && styles.heroDescriptionWide,
-                    { color: colors.onTint },
-                  ]}
-                >
-                  Descubre productos y compara ofertas de distintas tiendas.
-                </Text>
-                <Text style={[styles.heroLink, { color: colors.onTint }]}>
-                  Explora el catálogo <Icon name="arrowRight" size={14} color={colors.onTint} />
-                </Text>
-              </View>
-              {products[0]?.thumbnail ? (
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  accessibilityLabel={"Ver " + products[0].title}
-                  onPress={() => openProduct(products[0])}
-                  style={[styles.heroImageFrame, isWideWeb && styles.heroImageFrameWide]}
-                >
-                  <Image
-                    source={{ uri: products[0].thumbnail }}
-                    style={[styles.heroImage, { backgroundColor: colors.imagePlaceholder }]}
-                    contentFit="cover"
-                    contentPosition="top"
-                  />
-                </TouchableOpacity>
-              ) : null}
-            </View>
-            {isWideWeb ? null : <AndroidAppLink />}
+                  <View style={styles.heroCopy}>
+                    <Text
+                      style={[
+                        styles.heroTitle,
+                        isWideWeb && styles.heroTitleWide,
+                        { color: colors.onTint },
+                      ]}
+                    >
+                      Lo que buscas.{"\n"}Más opciones.
+                    </Text>
+                    <Text
+                      style={[
+                        styles.heroDescription,
+                        isWideWeb && styles.heroDescriptionWide,
+                        { color: colors.onTint },
+                      ]}
+                    >
+                      Descubre productos y compara ofertas de distintas tiendas.
+                    </Text>
+                    <Text style={[styles.heroLink, { color: colors.onTint }]}>
+                      Explora el catálogo <Icon name="arrowRight" size={14} color={colors.onTint} />
+                    </Text>
+                  </View>
+                  {products[0]?.thumbnail ? (
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      accessibilityLabel={"Ver " + products[0].title}
+                      onPress={() => openProduct(products[0])}
+                      style={[styles.heroImageFrame, isWideWeb && styles.heroImageFrameWide]}
+                    >
+                      <Image
+                        source={{ uri: products[0].thumbnail }}
+                        style={[styles.heroImage, { backgroundColor: colors.imagePlaceholder }]}
+                        contentFit="cover"
+                        contentPosition="top"
+                      />
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+                {isWideWeb ? null : <AndroidAppLink />}
+              </>
+            )}
             <View style={[styles.searchArea, isWideWeb && styles.searchAreaWide]}>
               <View style={styles.searchRow}>
                 <View style={styles.searchInput}>
@@ -366,27 +421,7 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               </View>
             </View>
-            {menuFilter ? (
-              <TouchableOpacity
-                accessibilityRole="button"
-                accessibilityLabel={`Quitar filtro ${menuFilter.label}`}
-                onPress={() =>
-                  router.setParams({
-                    filtro: undefined,
-                    ids: undefined,
-                    nombre: undefined,
-                    tienda: undefined,
-                  })
-                }
-                style={[styles.menuFilter, { backgroundColor: colors.tint }]}
-              >
-                <Text style={[styles.categoryText, { color: colors.onTint }]}>
-                  {menuFilter.label}
-                </Text>
-                <Icon name="close" size={16} color={colors.onTint} />
-              </TouchableOpacity>
-            ) : null}
-            {categories.length > 0 ? (
+            {categories.length > 0 && menuFilter?.kind !== "categoria" ? (
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -405,8 +440,8 @@ export default function HomeScreen() {
             ) : null}
             <View style={styles.sectionHeading}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                {menuFilter
-                  ? menuFilter.label
+                {isListing
+                  ? "Productos"
                   : searchTerm || selectedCategory
                     ? "Resultados del catálogo"
                     : "Descubre algo especial"}
@@ -418,7 +453,12 @@ export default function HomeScreen() {
           </View>
         }
         renderItem={({ item }) => (
-          <ProductCard product={item} onOpen={openProduct} columns={columns} />
+          <ProductCard
+            product={item}
+            onOpen={openProduct}
+            columns={columns}
+            directOfferId={directOfferId(item)}
+          />
         )}
         contentContainerStyle={styles.listContent}
         ListFooterComponent={isWideWeb ? <WebFooter /> : null}
@@ -429,9 +469,11 @@ export default function HomeScreen() {
           <View style={styles.emptyContainer}>
             <Icon name="search" size={24} color={colors.icon} />
             <Text style={[styles.emptyText, { color: colors.text }]}>
-              {products.length === 0
-                ? "Aún no hay productos disponibles"
-                : "Ningún producto coincide con estos filtros"}
+              {isListing && !searchTerm && !activeFilterCount(filters)
+                ? "Ahora mismo no hay productos disponibles aquí. Vuelve pronto."
+                : products.length === 0
+                  ? "Aún no hay productos disponibles"
+                  : "Ningún producto coincide con estos filtros"}
             </Text>
           </View>
         }
@@ -573,6 +615,16 @@ const styles = StyleSheet.create({
   wide: { width: "100%", maxWidth: CONTENT_MAX, alignSelf: "center" },
   wideHeader: { paddingTop: 20 },
   searchAreaWide: { marginTop: 20 },
+  listingHeader: { marginHorizontal: 16, marginTop: 18, marginBottom: 14, gap: 6 },
+  listingBack: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    alignSelf: "flex-start",
+    minHeight: 32,
+  },
+  listingBackText: { fontSize: 14, fontWeight: "600" },
+  listingTitle: { fontSize: 30, lineHeight: 36, fontWeight: "700", letterSpacing: -0.5 },
   searchRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   searchInput: { flex: 1 },
   filterButton: {

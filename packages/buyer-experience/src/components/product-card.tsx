@@ -1,3 +1,4 @@
+import { useCart } from "../context/cart-context";
 import { useFavorites } from "../context/favorites-context";
 import { useRegion } from "../context/region-context";
 import { useCupRate } from "../hooks/use-cup-rate";
@@ -18,6 +19,8 @@ interface ProductCardProps {
   onOpen?: (product: HttpTypes.StoreProduct) => void;
   /** Columns of the grid this tile sits in (2 on phones, more on wide screens). */
   columns?: number;
+  /** Offer to add straight to the cart (single variant, single available offer). */
+  directOfferId?: string;
 }
 
 /** Grid tile (reference POS style) with favourite toggle and CUP reference price. */
@@ -25,7 +28,10 @@ export const ProductCard = React.memo(function ProductCard({
   product,
   onOpen,
   columns = 2,
+  directOfferId,
 }: ProductCardProps) {
+  const { addToCart } = useCart();
+  const [adding, setAdding] = React.useState<"idle" | "busy" | "done" | "error">("idle");
   const router = useRouter();
   const { color } = useUiTheme();
   const { selectedRegion } = useRegion();
@@ -36,6 +42,17 @@ export const ProductCard = React.memo(function ProductCard({
   const imageUrl = product.thumbnail || product.images?.[0]?.url;
   const amount = product.variants?.[0]?.calculated_price?.calculated_amount ?? undefined;
   const currency = selectedRegion?.currency_code;
+  async function addDirect(offerId: string) {
+    setAdding("busy");
+    try {
+      await addToCart(offerId, 1);
+      setAdding("done");
+    } catch {
+      setAdding("error");
+    } finally {
+      setTimeout(() => setAdding("idle"), 2000);
+    }
+  }
   const open = () =>
     onOpen
       ? onOpen(product)
@@ -77,9 +94,11 @@ export const ProductCard = React.memo(function ProductCard({
         }
       />
       <View style={styles.actions}>
-        {/* Same as the Catálogo: «Agregar» opens the quick view to choose store, variant and quantity. */}
+        {/* With one variant and one available offer «Agregar» adds it at once; otherwise it
+            opens the quick view to choose store, variant and quantity (as in the Catálogo). */}
         <Pressable
-          onPress={open}
+          onPress={directOfferId ? () => void addDirect(directOfferId) : open}
+          disabled={adding === "busy"}
           accessibilityRole="button"
           accessibilityLabel={`Agregar ${product.title ?? "producto"} al carrito`}
           style={({ pressed }: { pressed: boolean }) => [
@@ -90,8 +109,20 @@ export const ProductCard = React.memo(function ProductCard({
             },
           ]}
         >
-          <Icon name="shoppingBag" size={16} color={color.text} />
-          <Text style={[styles.addText, { color: color.text }]}>Agregar</Text>
+          <Icon
+            name={adding === "done" ? "check" : "shoppingBag"}
+            size={16}
+            color={adding === "done" ? color.success : color.text}
+          />
+          <Text style={[styles.addText, { color: adding === "error" ? color.error : color.text }]}>
+            {adding === "busy"
+              ? "Agregando…"
+              : adding === "done"
+                ? "Añadido"
+                : adding === "error"
+                  ? "No se pudo"
+                  : "Agregar"}
+          </Text>
         </Pressable>
         {/* Next to «Agregar», not on the photo, so the image keeps all its detail. */}
         <ShareButton

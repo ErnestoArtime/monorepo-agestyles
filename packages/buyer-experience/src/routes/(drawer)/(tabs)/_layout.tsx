@@ -4,6 +4,7 @@ import { Tabs } from "expo-router";
 import React from "react";
 
 import { HapticTab } from "../../../components/haptic-tab";
+import { MenuButton } from "../../../components/menu-button";
 import { Icon } from "@agestyles/icons";
 import { Colors } from "../../../constants/theme";
 import { useCart } from "../../../context/cart-context";
@@ -22,6 +23,8 @@ export default function TabLayout() {
       screenOptions={{
         // Wide browsers: a page heading under the website top bar, not a second app bar.
         ...webPageHeaderOption(isWideWeb),
+        // First-level pages keep the menu button on phones and narrow browsers.
+        ...(isWideWeb ? {} : { headerLeft: () => <MenuButton /> }),
         // In a browser the bar above the page belongs to the browser; Android Chrome still
         // reports a top safe-area inset, which doubled the header height (AG-24).
         ...(Platform.OS === "web" ? { headerStatusBarHeight: 0 } : {}),

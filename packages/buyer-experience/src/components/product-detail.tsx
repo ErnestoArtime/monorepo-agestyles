@@ -61,6 +61,8 @@ export function ProductDetail(
   const [product, setProduct] = useState<HttpTypes.StoreProduct | null>(null);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
   const [offers, setOffers] = useState<Offer[]>([]);
+  // Until the stores' offers arrive the availability is unknown, not «Agotado».
+  const [offersLoading, setOffersLoading] = useState(true);
   const [offerId, setOfferId] = useState<string>();
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -120,7 +122,12 @@ export function ProductDetail(
   useEffect(() => {
     setOffers([]);
     setOfferId(undefined);
-    if (!variantId || !regionId) return;
+    setOffersLoading(true);
+    if (!variantId || !regionId) {
+      // No complete variant chosen yet: nothing to look up.
+      if (product) setOffersLoading(false);
+      return;
+    }
     let active = true;
     listProductOffers(sdk.client, { variantId, regionId })
       .then(({ offers: list }) => {
@@ -130,11 +137,14 @@ export function ProductDetail(
       .catch(() => {
         if (active)
           setToast({ message: "No se pudieron cargar las ofertas de las tiendas", type: "error" });
+      })
+      .finally(() => {
+        if (active) setOffersLoading(false);
       });
     return () => {
       active = false;
     };
-  }, [regionId, variantId]);
+  }, [product, regionId, variantId]);
 
   const selectedOffer =
     offers.find((offer) => offer.id === offerId && offer.variant?.id === variantId) ??
@@ -190,13 +200,21 @@ export function ProductDetail(
           {product.title}
         </Text>
         <View style={styles.priceBlock}>
-          <Text style={[styles.price, { color: color.text }]}>
-            {price === undefined ? "—" : formatPrice(price, currency)}
-          </Text>
+          {offersLoading ? (
+            <View style={[styles.priceSkeleton, { backgroundColor: color.placeholder }]} />
+          ) : (
+            <Text style={[styles.price, { color: color.text }]}>
+              {price === undefined ? "—" : formatPrice(price, currency)}
+            </Text>
+          )}
           {cup ? <Text style={[styles.cup, { color: color.muted }]}>{cup}</Text> : null}
         </View>
       </View>
-      {!inStock ? <StatusBadge label="Agotado" tone="error" icon="alert" /> : null}
+      {offersLoading ? (
+        <View style={[styles.badgeSkeleton, { backgroundColor: color.placeholder }]} />
+      ) : !inStock ? (
+        <StatusBadge label="Agotado" tone="error" icon="alert" />
+      ) : null}
       {product.description ? (
         <Text style={[styles.description, { color: color.muted }]}>{product.description}</Text>
       ) : null}
@@ -271,10 +289,10 @@ export function ProductDetail(
       <>
         <Stepper value={quantity} onChange={setQuantity} min={1} />
         <Button
-          title={inStock ? "Añadir al carrito" : "Agotado"}
+          title={offersLoading ? "Comprobando…" : inStock ? "Añadir al carrito" : "Agotado"}
           onPress={() => void add()}
           loading={adding}
-          disabled={!inStock}
+          disabled={offersLoading || !inStock}
           style={styles.addButton}
         />
       </>
@@ -465,6 +483,8 @@ const styles = StyleSheet.create({
   compare: { minHeight: 44, flexDirection: "row", alignItems: "center", gap: 8 },
   compareText: { fontSize: 14, fontWeight: "600" },
   addButton: { flex: 1 },
+  priceSkeleton: { width: 72, height: 22, borderRadius: 6 },
+  badgeSkeleton: { width: 96, height: 24, borderRadius: 12 },
   widePage: {
     width: "100%",
     maxWidth: CONTENT_MAX,

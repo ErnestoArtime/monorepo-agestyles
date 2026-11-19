@@ -1,5 +1,6 @@
 import { Platform } from "react-native";
 import { Stack } from "expo-router";
+import { MenuButton } from "../../../../components/menu-button";
 import { NotificationHeaderBell } from "../../../../components/notification-header-bell";
 import { Colors } from "../../../../constants/theme";
 import { useColorScheme } from "../../../../hooks/use-color-scheme";
@@ -32,7 +33,11 @@ export default function AccountLayout() {
     >
       <Stack.Screen
         name="index"
-        options={{ title: "Cuenta", headerRight: () => <NotificationHeaderBell /> }}
+        options={{
+          title: "Cuenta",
+          headerRight: () => <NotificationHeaderBell />,
+          ...(isWideWeb ? {} : { headerLeft: () => <MenuButton /> }),
+        }}
       />
       <Stack.Screen
         name="login"
@@ -55,7 +60,14 @@ export default function AccountLayout() {
           ...(isWideWeb ? { contentStyle: webFormStyle(colors.background) } : {}),
         }}
       />
-      <Stack.Screen name="orders" options={{ title: "Mis compras" }} />
+      <Stack.Screen
+        name="orders"
+        options={{
+          title: "Mis compras",
+          // Reached from the side menu: the menu button, not a way back to Cuenta.
+          ...(isWideWeb ? {} : { headerLeft: () => <MenuButton /> }),
+        }}
+      />
       <Stack.Screen name="orders/[id]" options={{ title: "Detalles de compra" }} />
     </Stack>
   );
