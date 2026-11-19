@@ -102,7 +102,9 @@ export function HomeEditor({
   load: loadData,
   save: saveData,
   upload: adminUpload,
+  backLabel,
 }: {
+  backLabel?: string;
   title: string;
   subtitle: string;
   emptyBanners: string;
@@ -255,6 +257,7 @@ export function HomeEditor({
 
   return (
     <OperationList
+      backLabel={backLabel}
       title={title}
       subtitle={subtitle}
       loading={loading}

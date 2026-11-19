@@ -107,7 +107,8 @@ export default function ForgotPasswordScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { flexGrow: 1, padding: 24, gap: 28, justifyContent: "center" },
+  // Top-aligned like «Crear cuenta», so every account screen starts at the same place.
+  content: { flexGrow: 1, padding: 24, gap: 28 },
   intro: { gap: 8 },
   title: { fontSize: 27, fontWeight: "700" },
   description: { fontSize: 15, lineHeight: 22 },

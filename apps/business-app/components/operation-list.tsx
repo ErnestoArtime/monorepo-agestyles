@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { Icon } from "@agestyles/icons";
+import { useRouter } from "expo-router";
 import { useBusinessTheme, type BusinessTheme } from "../hooks/use-business-theme";
 import { CONTENT_MAX, useResponsive } from "../hooks/use-responsive";
 export { hasPermission } from "../lib/permissions";
@@ -21,8 +22,14 @@ export function OperationList({
   empty,
   isEmpty,
   onRefresh,
+  backLabel,
   children,
 }: {
+  /**
+   * Secondary screens (opened from «Más») show «← backLabel» above the title on phones;
+   * a wide browser already reaches every section from the side menu.
+   */
+  backLabel?: string;
   title: string;
   subtitle: string;
   loading: boolean;
@@ -36,6 +43,7 @@ export function OperationList({
   const theme = useBusinessTheme();
   const styles = createStyles(theme);
   const { isWideWeb } = useResponsive();
+  const router = useRouter();
   // Children are often a list of conditionals (`cond ? <X/> : null`), which is truthy even
   // when every branch rendered nothing, so count what actually renders.
   const nothingRendered = Children.toArray(children).length === 0;
@@ -51,6 +59,18 @@ export function OperationList({
         ) : undefined
       }
     >
+      {backLabel && !isWideWeb ? (
+        <Pressable
+          onPress={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)/more"))}
+          accessibilityRole="button"
+          accessibilityLabel={`Volver: ${backLabel}`}
+          hitSlop={6}
+          style={({ pressed }) => [styles.back, pressed && { opacity: 0.6 }]}
+        >
+          <Icon name="arrowLeft" size={18} color={theme.action} />
+          <Text style={styles.backText}>{backLabel}</Text>
+        </Pressable>
+      ) : null}
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.subtitle}>{subtitle}</Text>
       {loading && nothingRendered ? (
@@ -129,6 +149,15 @@ export function Section({ title, children }: { title: string; children: ReactNod
 
 const createStyles = (theme: BusinessTheme) =>
   StyleSheet.create({
+    back: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      alignSelf: "flex-start",
+      marginBottom: 10,
+      minHeight: 32,
+    },
+    backText: { color: theme.action, fontSize: 15, fontWeight: "600" },
     page: { flex: 1, backgroundColor: theme.background },
     content: { padding: 20, paddingBottom: 42 },
     // Web layout: a centred page with room around it, like a back office.

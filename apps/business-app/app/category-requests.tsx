@@ -107,6 +107,7 @@ export default function CategoryRequestsScreen() {
 
   return (
     <OperationList
+      backLabel="Más"
       title="Solicitar categoría"
       subtitle="Propón una categoría para todo el catálogo. La administración decide si va como categoría principal o dentro de otra."
       loading={loading}

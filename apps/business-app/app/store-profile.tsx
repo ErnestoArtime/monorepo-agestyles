@@ -125,6 +125,7 @@ export default function StoreProfileScreen() {
 
   return (
     <OperationList
+      backLabel="Más"
       title="Perfil de la tienda"
       subtitle="Logo, portada y descripción que ven los compradores en la Tienda."
       loading={loading}

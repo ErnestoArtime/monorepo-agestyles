@@ -5,7 +5,9 @@ import { Colors } from "../../../constants/theme";
 import { useFavorites } from "../../../context/favorites-context";
 import { useRegion } from "../../../context/region-context";
 import { useColorScheme } from "../../../hooks/use-color-scheme";
-import { sdk } from "../../../config";
+import { buyerPath, sdk } from "../../../config";
+import { Icon } from "@agestyles/icons";
+import { useRouter } from "expo-router";
 import { listStoreProducts } from "@agestyles/api-client/store";
 import type { HttpTypes } from "@medusajs/types";
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -21,6 +23,7 @@ import {
 const PAGE_SIZE = 100;
 
 export default function FavoritesScreen() {
+  const router = useRouter();
   const { columns, isWideWeb } = useResponsive();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
@@ -101,7 +104,7 @@ export default function FavoritesScreen() {
           </View>
         }
         ListEmptyComponent={
-          <View style={styles.emptyState}>
+          <View style={[styles.emptyState, isWideWeb && styles.wide]}>
             {(!ready || loading) && (
               <>
                 <ActivityIndicator color={colors.tint} />
@@ -126,7 +129,24 @@ export default function FavoritesScreen() {
               </>
             ) : null}
             {!error && ready && !loading && (
-              <Text style={[styles.emptyText, { color: colors.icon }]}>{message}</Text>
+              <>
+                <Icon name="heart" size={32} color={colors.icon} />
+                <Text style={[styles.emptyText, { color: colors.icon }]}>{message}</Text>
+                <TouchableOpacity
+                  accessibilityRole="link"
+                  onPress={() =>
+                    router.push({
+                      pathname: buyerPath("/(drawer)/(tabs)/(home)"),
+                      params: { filtro: "todos" },
+                    } as never)
+                  }
+                  style={[styles.retryButton, { backgroundColor: colors.tint }]}
+                >
+                  <Text style={[styles.retryText, { color: colors.onTint }]}>
+                    Explorar productos
+                  </Text>
+                </TouchableOpacity>
+              </>
             )}
           </View>
         }

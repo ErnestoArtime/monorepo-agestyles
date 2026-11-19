@@ -38,6 +38,8 @@ type BusinessContextValue = {
 const baseUrl = process.env.EXPO_PUBLIC_MEDUSA_URL || "http://127.0.0.1:19081";
 const publishableKey = process.env.EXPO_PUBLIC_MEDUSA_PUBLISHABLE_API_KEY || "";
 const SESSION_PREFIX = "agestyles.business.actor.";
+/** Last store opened, so a reload or a shared link reopens it (AG-41). */
+const SELECTED_SELLER_KEY = "agestyles.business.selected-seller";
 const storage = {
   getItem: (key: string) => AsyncStorage.getItem(`${SESSION_PREFIX}${key}`),
   setItem: (key: string, value: string) => AsyncStorage.setItem(`${SESSION_PREFIX}${key}`, value),
@@ -156,6 +158,7 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
         body: { seller_id: choice.id },
       });
       setSeller(choice);
+      void AsyncStorage.setItem(SELECTED_SELLER_KEY, choice.id).catch(() => undefined);
       const result: any = await sdk.client.fetch(
         "/vendor/members/me?fields=id,is_owner,role_id,permissions,member.email,member.first_name,member.last_name",
         {
@@ -186,6 +189,7 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
     }
     await sdk.auth.logout();
     await logoutAdmin();
+    await AsyncStorage.removeItem(SELECTED_SELLER_KEY).catch(() => undefined);
     setSeller(null);
     setMember(null);
     setSellers([]);
@@ -232,7 +236,14 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
     sdk.client
       .fetch("/vendor/sellers?limit=50")
       .then(async () => {
-        await reloadSellers();
+        const choices = await reloadSellers();
+        // Reopen the last store (or the only one) before the screens ask for data, so a
+        // reload or a direct link lands on the page instead of «Elige una tienda».
+        const saved = await AsyncStorage.getItem(SELECTED_SELLER_KEY).catch(() => null);
+        const choice =
+          choices.find((entry: Seller) => entry.id === saved) ??
+          (choices.length === 1 ? choices[0] : undefined);
+        if (choice && active) await selectSeller(choice).catch(() => undefined);
         if (active) setReady(true);
       })
       .catch(() => {
@@ -241,7 +252,7 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
     return () => {
       active = false;
     };
-  }, [reloadSellers]);
+  }, [reloadSellers, selectSeller]);
 
   const value = useMemo(
     () => ({

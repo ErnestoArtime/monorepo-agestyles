@@ -32,6 +32,7 @@ export default function StoreHomeScreen() {
       load={load}
       save={save}
       upload={upload}
+      backLabel="Más"
     />
   );
 }

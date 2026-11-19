@@ -129,6 +129,7 @@ export default function AnalyticsScreen() {
 
   return (
     <OperationList
+      backLabel="Más"
       title="Análisis"
       subtitle="Ventas, productos y pedidos de tu tienda en el período elegido."
       loading={loading && !data}

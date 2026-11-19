@@ -126,6 +126,7 @@ export default function StoreSectionsScreen() {
 
   return (
     <OperationList
+      backLabel="Más"
       title="Secciones de mi tienda"
       subtitle="Agrupa tus productos como quieras en tu página de la Tienda. No necesitan aprobación."
       loading={loading}

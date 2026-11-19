@@ -1,9 +1,14 @@
-import { Redirect } from "expo-router";
+import { Redirect, useLocalSearchParams } from "expo-router";
 import React from "react";
-import { buyerHref } from "../../../config";
+import { buyerPath } from "../../../config";
 
+/**
+ * `/` also matches the home group: keep the query (`?filtro=novedades`, a category, a
+ * store…) so shared and reloaded links open the same listing.
+ */
 const MainScreen = () => {
-  return <Redirect href={buyerHref("/(drawer)/(tabs)/(home)")} />;
+  const params = useLocalSearchParams();
+  return <Redirect href={{ pathname: buyerPath("/(drawer)/(tabs)/(home)"), params } as never} />;
 };
 
 export default MainScreen;
