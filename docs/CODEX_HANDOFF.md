@@ -1438,3 +1438,14 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - **Comprobado en producción (1440 px):** catálogo 39 productos, primera página 24 y la segunda (offset 24) al hacer scroll; carrusel y «Destacados»; directorio de tiendas; página de Bodega La Esquina con portada y logo. Primera respuesta del catálogo 0,66 s (con índice frío).
 - **No comprobado:** la pantalla «Portada» de Negocio en producción (espera la ruta de Cloudflare del gateway de administración, AG-32) y «Perfil de la tienda» con una cuenta de vendedor real. Nueva APK no generada.
 - **Codex:** revisar las rutas nuevas y las reglas de los gateways.
+
+## 2026-11-19 — Claude: AG-34 portada propia de cada tienda (desplegado)
+
+- Pedido del usuario: el superadministrador decide el carrusel y los destacados de toda la Tienda, y cada tienda los de su propia página.
+- **API** (`2dedff5`): `GET POST /vendor/agestyles/store-home` guarda banners y destacados en `metadata.agestyles_home` del seller (`updateSellersWorkflow` de Mercur). Solo pueden guardar el titular o el rol `role_seller_administration` (mismo criterio que comisiones); solo productos con oferta de esa tienda y sin enlaces a otras tiendas. `GET /store/agestyles/home?seller_id=` devuelve la portada de esa tienda (destacados filtrados a sus productos disponibles).
+- **Negocio:** el editor de portada es ahora `components/home-editor.tsx`, común a Administración → «Portada de la Tienda» y a la nueva «Portada de mi tienda» (`app/store-home.tsx`, en el menú «Tienda» y en «Más»).
+- **Tienda:** la página de cada tienda muestra portada y logo, su carrusel y su fila «Destacados» encima de sus productos.
+- **Despliegue:** volcado `db-backups/before-2dedff5-*.dump` (1541 entradas), copia de `compose.env`; imagen `sha256:1e089adb…`; `seller-gateway` recreado; webs de Tienda y Negocio publicadas desde `2dedff5`.
+- **Contenido:** cada tienda de demostración tiene 1 banner (enlace a un producto propio) y 4 destacados, cargados con la cuenta de su titular. Quedan 5 imágenes subidas sin uso (primer intento, repetía la portada).
+- **Comprobado en producción:** destacar un producto de otra tienda → 400 «Solo puedes destacar productos de tu tienda.»; escribir con el `x-seller-id` de otra tienda → 403; miembro con rol de inventario → `can_edit=false` y POST 403. Captura de la página de Juguetería Arcoíris y de «Portada de mi tienda» con su titular.
+- **Codex:** revisar `store-home` (autorización y validación) y la regla nueva del gateway de vendedores.
