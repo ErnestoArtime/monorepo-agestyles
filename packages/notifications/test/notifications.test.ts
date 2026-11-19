@@ -385,16 +385,51 @@ console.log("notifications expo client: ok");
 
 // AG-40: administration recipient and new process steps.
 {
-  const { renderNotification: render, EVENTS: events, RECIPIENT_TYPES: types } = await import("../src/rules.ts")
-  assert.ok(types.includes("user"))
-  for (const code of ["admin_store_registered", "admin_product_review", "admin_payment_proof", "admin_category_request"]) {
-    assert.equal((events as Record<string, { recipient: string; group: string }>)[code].recipient, "user")
-    assert.equal((events as Record<string, { recipient: string; group: string }>)[code].group, "marketplace")
+  const {
+    renderNotification: render,
+    EVENTS: events,
+    RECIPIENT_TYPES: types,
+  } = await import("../src/rules.ts");
+  assert.ok(types.includes("user"));
+  for (const code of [
+    "admin_store_registered",
+    "admin_product_review",
+    "admin_payment_proof",
+    "admin_category_request",
+  ]) {
+    assert.equal(
+      (events as Record<string, { recipient: string; group: string }>)[code].recipient,
+      "user",
+    );
+    assert.equal(
+      (events as Record<string, { recipient: string; group: string }>)[code].group,
+      "marketplace",
+    );
   }
-  assert.equal(render("admin_category_request", { store: "Bodega", request: "Artesanía" }).body, "Bodega pide la categoría «Artesanía».")
-  assert.equal(render("seller_category_request_resolved", { outcome: "approved", category: "Artesanía" }).title, "Categoría creada")
-  assert.match(render("seller_category_request_resolved", { outcome: "rejected", request: "X", note: "Ya existe" }).body, /Motivo: Ya existe/)
-  assert.equal(render("agent_commission_earned", { amount: "1,50 US$" }).body, "Una compra online con tu código de gestor te genera 1,50 US$ de comisión.")
-  assert.equal(render("seller_payment_verified", { order_id: "order_1" }).target?.params?.id, "order_1")
-  console.log("notifications AG-40: ok")
+  assert.equal(
+    render("admin_category_request", { store: "Bodega", request: "Artesanía" }).body,
+    "Bodega pide la categoría «Artesanía».",
+  );
+  assert.equal(
+    render("seller_category_request_resolved", { outcome: "approved", category: "Artesanía" })
+      .title,
+    "Categoría creada",
+  );
+  assert.match(
+    render("seller_category_request_resolved", {
+      outcome: "rejected",
+      request: "X",
+      note: "Ya existe",
+    }).body,
+    /Motivo: Ya existe/,
+  );
+  assert.equal(
+    render("agent_commission_earned", { amount: "1,50 US$" }).body,
+    "Una compra online con tu código de gestor te genera 1,50 US$ de comisión.",
+  );
+  assert.equal(
+    render("seller_payment_verified", { order_id: "order_1" }).target?.params?.id,
+    "order_1",
+  );
+  console.log("notifications AG-40: ok");
 }
