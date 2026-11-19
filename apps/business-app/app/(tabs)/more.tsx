@@ -48,6 +48,11 @@ export default function MoreScreen() {
           detail="Logo, portada y descripción que ven los compradores."
           action={() => router.push("/store-profile")}
         />
+        <Row
+          title="Portada de mi tienda"
+          detail="Carrusel y productos destacados de tu página en la Tienda."
+          action={() => router.push("/store-home")}
+        />
         {member?.is_owner || member?.permissions?.members === "manage" ? (
           <Row
             title="Equipo y permisos"

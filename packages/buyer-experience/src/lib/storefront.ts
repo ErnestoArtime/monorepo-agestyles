@@ -67,11 +67,12 @@ export function fetchCatalog(params: CatalogParams) {
   });
 }
 
-export function fetchHome(regionId: string) {
+/** The marketplace home, or with `sellerId` that store's own page (its banners and products). */
+export function fetchHome(regionId: string, sellerId?: string | null) {
   return sdk.client.fetch<{ banners: HomeBanner[]; featured: CatalogCard[] }>(
     "/store/agestyles/home",
     {
-      query: { region_id: regionId },
+      query: { region_id: regionId, ...(sellerId ? { seller_id: sellerId } : {}) },
     },
   );
 }

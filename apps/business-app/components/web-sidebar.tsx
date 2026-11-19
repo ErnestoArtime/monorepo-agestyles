@@ -79,6 +79,12 @@ export function WebSidebar() {
           href: "/store-profile",
           match: (p) => p.startsWith("/store-profile"),
         },
+        {
+          label: "Portada de mi tienda",
+          icon: "home",
+          href: "/store-home",
+          match: (p) => p.startsWith("/store-home"),
+        },
         ...(hasPermission(member, "products", "edit")
           ? [
               {

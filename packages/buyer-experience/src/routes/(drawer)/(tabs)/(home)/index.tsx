@@ -221,10 +221,14 @@ export default function HomeScreen() {
     }
   };
 
+  // The marketplace home, or the store's own banners and featured products on its page.
+  const homeSellerId = menuFilter?.kind === "tienda" ? menuFilter.seller : null;
   useEffect(() => {
     if (!selectedRegion) return;
     let active = true;
-    fetchHome(selectedRegion.id)
+    setBanners([]);
+    setFeatured([]);
+    fetchHome(selectedRegion.id, homeSellerId)
       .then((home) => {
         if (!active) return;
         setBanners(home.banners);
@@ -240,7 +244,7 @@ export default function HomeScreen() {
     return () => {
       active = false;
     };
-  }, [selectedRegion, reloadKey]);
+  }, [selectedRegion, reloadKey, homeSellerId]);
 
   const products = useMemo(() => items.map(cardAsProduct), [items]);
   const directOffers = useMemo(
@@ -432,6 +436,15 @@ export default function HomeScreen() {
                 )}
               </View>
             ) : null}
+            {homeSellerId && banners.length ? (
+              <View style={[styles.carousel, styles.storeCarousel]}>
+                <HomeCarousel
+                  banners={banners}
+                  height={isWideWeb ? 320 : 200}
+                  onOpen={openBanner}
+                />
+              </View>
+            ) : null}
             {isWideWeb || isListing ? null : (
               <View style={[styles.betaNotice, { backgroundColor: colors.surfaceMuted }]}>
                 <Icon name="help" size={16} color={colors.tint} />
@@ -502,7 +515,9 @@ export default function HomeScreen() {
                 {isWideWeb ? null : <AndroidAppLink />}
               </>
             )}
-            {isListing || debouncedSearch || activeFilterCount(filters) ? null : (
+            {(isListing && !homeSellerId) ||
+            debouncedSearch ||
+            activeFilterCount(filters) ? null : (
               <FeaturedRow
                 cards={featured}
                 tileWidth={isWideWeb ? 250 : 172}
@@ -701,6 +716,7 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   carousel: { marginHorizontal: 16 },
+  storeCarousel: { marginBottom: 6 },
   fill: { width: "100%", height: "100%" },
   storeHero: {
     marginTop: 6,

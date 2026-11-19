@@ -1,6 +1,7 @@
 import type { MedusaContainer } from "@medusajs/framework/types";
 import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils";
 import { updateStoresWorkflow } from "@medusajs/medusa/core-flows";
+import { updateSellersWorkflow } from "@mercurjs/core/workflows";
 
 /**
  * Tienda's home content (AG-34): the banner carousel and the featured products, edited in
@@ -104,6 +105,65 @@ export async function writeHomeContent(scope: Scope, content: HomeContent) {
     input: {
       selector: { id: store.id },
       update: { metadata: { ...(store.metadata ?? {}), [KEY]: content } },
+    },
+  });
+  return content;
+}
+
+/**
+ * A store's own page (AG-34): banners and featured products of one seller, kept in the
+ * seller's metadata and edited by its owner or administration from Negocio.
+ */
+async function sellerRecord(scope: Scope, sellerId: string) {
+  const query = scope.resolve(ContainerRegistrationKeys.QUERY) as unknown as {
+    graph(input: {
+      entity: string;
+      fields: string[];
+      filters: Record<string, unknown>;
+    }): Promise<{ data: { id: string; metadata?: Record<string, unknown> | null }[] }>;
+  };
+  const { data } = await query.graph({
+    entity: "seller",
+    fields: ["id", "metadata"],
+    filters: { id: sellerId },
+  });
+  if (!data[0]) throw new MedusaError(MedusaError.Types.NOT_FOUND, "Store not found.");
+  return data[0];
+}
+
+export async function readSellerHome(scope: Scope, sellerId: string): Promise<HomeContent> {
+  const seller = await sellerRecord(scope, sellerId);
+  const stored = seller.metadata?.[KEY] as HomeContent | undefined;
+  return stored ? { ...EMPTY, ...stored } : EMPTY;
+}
+
+/**
+ * A store may only feature and link to its own products, and may not link to another store.
+ * `ownProductIds` are the products this seller has offers for.
+ */
+export function checkSellerHome(
+  content: HomeContent,
+  sellerId: string,
+  ownProductIds: Set<string>,
+) {
+  for (const id of content.featured_product_ids) {
+    if (!ownProductIds.has(id)) invalid("Solo puedes destacar productos de tu tienda.");
+  }
+  for (const banner of content.banners) {
+    if (banner.link.kind === "product" && !ownProductIds.has(banner.link.value ?? ""))
+      invalid(`El banner «${banner.title}» debe llevar a un producto de tu tienda.`);
+    if (banner.link.kind === "seller" && banner.link.value !== sellerId)
+      invalid(`El banner «${banner.title}» no puede llevar a otra tienda.`);
+  }
+  return content;
+}
+
+export async function writeSellerHome(scope: Scope, sellerId: string, content: HomeContent) {
+  const seller = await sellerRecord(scope, sellerId);
+  await updateSellersWorkflow(scope as MedusaContainer).run({
+    input: {
+      selector: { id: sellerId },
+      update: { metadata: { ...(seller.metadata ?? {}), [KEY]: content } },
     },
   });
   return content;
