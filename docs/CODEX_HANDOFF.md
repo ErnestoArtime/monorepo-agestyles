@@ -1608,3 +1608,21 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
   - Acceso con diseño web en navegador ancho (`components/auth-frame.tsx`, también en la recuperación de contraseña), sin el margen superior de la app en la web móvil.
   - Menú lateral en acordeón: «<tienda>» y «Administración del marketplace»; al abrir uno se pliega el otro.
 - **Pendiente:** el correo personal del usuario figura entre las cuentas importadas con rol antiguo `admin`. Tras su primer acceso en la Tienda se le puede dar la administración (y, si quiere, la tienda) enlazando su identidad desde el servidor.
+
+## 2026-11-19 — Claude: AG-44 (mantenimiento, contraseñas visibles, destacados en lista), desplegado
+
+- **Mantenimiento:**
+  - `lib/maintenance.ts`, guardado en `metadata.agestyles_maintenance` de la tienda base.
+  - Rutas: `GET/POST /admin/agestyles/maintenance`, `GET /store/agestyles/maintenance` y `GET /agestyles/maintenance` (sin clave publicable, solo `enabled`, para el gateway).
+  - Negocio → Administración → «Mantenimiento»: estado, activar/desactivar, título, mensaje y «Volvemos…» con vista previa.
+  - Tienda: `components/maintenance-gate.tsx` muestra la página a pantalla completa. Dentro de Negocio solo pone un aviso, porque `buyerExit()` existe.
+  - Catálogo: el layout muestra la página (ISR de 5 min).
+  - `buyer-lab-gateway.mjs` consulta el estado cada 15 s y responde 503 a escrituras en `/store/carts`, `/store/payment-collections` y `/store/order-quotes`.
+- **Contraseñas:** `FormField` (Tienda), `AuthInput` y el acceso de Negocio (`components/password-input.tsx`) con botón mostrar/ocultar.
+- **Destacados:** `home-editor.tsx` muestra la lista de productos con foto para pulsar y destacar, filtrable y con «Ver más». Sirve para la portada general y la de cada tienda.
+- **Despliegue:** API `sha256:83375ae5…` (`d22ee8e`), volcado previo, gateways de compradores y administración recreados, Tienda, Negocio y Catálogo publicados.
+- **Prueba real:** activado → Tienda con la página de mantenimiento y `POST /store/carts` 503; desactivado → 200 (queda un carrito vacío de prueba).
+- **Sobre el aviso del usuario («2 peticiones con 401 y la contraseña en texto plano»):**
+  - Los dos 401 son el comportamiento esperado: Negocio prueba `member` y `user` con las mismas credenciales, y su correo personal aún no es cuenta de equipo ni de administración.
+  - La contraseña viaja por HTTPS: TLS 1.3, AES-256-GCM, y HTTP redirige 301 a HTTPS. DevTools la muestra antes del cifrado.
+  - Recomendación al usuario: activar HSTS en Cloudflare.
