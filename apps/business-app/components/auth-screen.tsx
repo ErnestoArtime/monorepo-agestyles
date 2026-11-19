@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { StyleSheet, Text, TextInput, View, type TextInputProps } from "react-native";
 import { useBusinessTheme } from "../hooks/use-business-theme";
 import { AuthFrame } from "./auth-frame";
+import { PasswordInput } from "./password-input";
 
 /** Public page (no session needed) for the account recovery screens. */
 export function AuthScreen({
@@ -27,13 +28,18 @@ export function AuthScreen({
   );
 }
 
-export function AuthInput({ label, ...props }: TextInputProps & { label: string }) {
+export function AuthInput({
+  label,
+  secureTextEntry,
+  ...props
+}: TextInputProps & { label: string }) {
   const theme = useBusinessTheme();
   const styles = createStyles(theme);
+  const Input = secureTextEntry ? PasswordInput : TextInput;
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
-      <TextInput
+      <Input
         accessibilityLabel={label}
         placeholderTextColor={theme.placeholderText}
         style={styles.input}

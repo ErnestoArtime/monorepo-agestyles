@@ -130,6 +130,8 @@ export function HomeEditor({
   const [editing, setEditing] = useState<Banner | null>(null);
   const [uploading, setUploading] = useState(false);
   const [productQuery, setProductQuery] = useState("");
+  // Browsing list of products to feature (not only by search); grows on demand.
+  const [listSize, setListSize] = useState(24);
   const [linkQuery, setLinkQuery] = useState("");
 
   const load = useCallback(async () => {
@@ -241,14 +243,12 @@ export function HomeEditor({
   const filteredLinkChoices = linkChoices
     .filter((choice) => !linkQuery.trim() || matches(choice.name, linkQuery.trim()))
     .slice(0, 12);
-  const featuredCandidates = productQuery.trim()
-    ? products
-        .filter(
-          (p) =>
-            !content.featured_product_ids.includes(p.id) && matches(p.title, productQuery.trim()),
-        )
-        .slice(0, 8)
-    : [];
+  const candidatePool = products.filter(
+    (p) =>
+      !content.featured_product_ids.includes(p.id) &&
+      (!productQuery.trim() || matches(p.title, productQuery.trim())),
+  );
+  const featuredCandidates = candidatePool.slice(0, listSize);
 
   const linkSummary = (banner: Banner) =>
     banner.link.kind === "none"
@@ -534,29 +534,58 @@ export function HomeEditor({
             <TextInput
               value={productQuery}
               onChangeText={setProductQuery}
-              placeholder="Buscar un producto para destacar"
+              placeholder="Filtrar la lista de productos"
               placeholderTextColor={theme.muted}
-              accessibilityLabel="Buscar un producto para destacar"
+              accessibilityLabel="Filtrar la lista de productos"
               style={styles.input}
             />
-            {featuredCandidates.map((product) => (
-              <Pressable
-                key={product.id}
-                accessibilityRole="button"
-                accessibilityLabel={`Destacar ${product.title}`}
-                onPress={() => {
-                  change({
-                    ...content,
-                    featured_product_ids: [...content.featured_product_ids, product.id],
-                  });
-                  setProductQuery("");
-                }}
-                style={styles.choice}
-              >
-                <Icon name="plus" size={16} color={theme.action} />
-                <Text style={styles.choiceText}>{product.title}</Text>
-              </Pressable>
-            ))}
+            <Text style={styles.muted}>
+              {candidatePool.length
+                ? `Pulsa un producto para destacarlo (${candidatePool.length} disponibles).`
+                : "No hay más productos que coincidan."}
+            </Text>
+            <View style={styles.pickGrid}>
+              {featuredCandidates.map((product) => (
+                <Pressable
+                  key={product.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Destacar ${product.title}`}
+                  onPress={() =>
+                    change({
+                      ...content,
+                      featured_product_ids: [...content.featured_product_ids, product.id],
+                    })
+                  }
+                  style={({ hovered }: { hovered?: boolean }) => [
+                    styles.pick,
+                    hovered && { borderColor: theme.action },
+                  ]}
+                >
+                  <View style={styles.pickThumb}>
+                    {product.thumbnail ? (
+                      <Image
+                        source={{ uri: mediaVariant(product.thumbnail, 400) }}
+                        style={StyleSheet.absoluteFill}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <Icon name="package" size={20} color={theme.muted} />
+                    )}
+                  </View>
+                  <Text style={styles.pickText} numberOfLines={2}>
+                    {product.title}
+                  </Text>
+                  <Icon name="plus" size={16} color={theme.action} />
+                </Pressable>
+              ))}
+            </View>
+            {candidatePool.length > featuredCandidates.length ? (
+              <Button
+                title={`Ver más (${candidatePool.length - featuredCandidates.length})`}
+                variant="secondary"
+                onPress={() => setListSize(listSize + 24)}
+              />
+            ) : null}
           </View>
         ) : null}
       </Section>
@@ -624,6 +653,29 @@ function IconButton({
 
 const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
   StyleSheet.create({
+    pickGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+    pick: {
+      width: 220,
+      flexGrow: 1,
+      minHeight: 56,
+      padding: 8,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: theme.border,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+    },
+    pickThumb: {
+      width: 40,
+      height: 40,
+      borderRadius: 8,
+      overflow: "hidden",
+      backgroundColor: theme.quietSurface,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    pickText: { flex: 1, color: theme.text, fontSize: 14 },
     notice: { color: theme.successText, fontSize: 14, lineHeight: 20, marginBottom: 12 },
     saveBar: {
       flexDirection: "row",

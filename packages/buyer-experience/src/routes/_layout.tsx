@@ -18,6 +18,7 @@ import { useColorScheme } from "../hooks/use-color-scheme";
 import { useResponsive } from "../hooks/use-responsive";
 import { webContentStyle, webPageHeaderOption } from "../components/web-page-header";
 import { rememberAgentCode } from "../lib/agent-code";
+import { MaintenanceGate } from "../components/maintenance-gate";
 
 export default function RootLayout() {
   return (
@@ -168,6 +169,7 @@ function RootNavigation() {
             </CartProvider>
           </RegionProvider>
         </ThemeProvider>
+        <MaintenanceGate />
       </GestureHandlerRootView>
     </UiThemeProvider>
   );

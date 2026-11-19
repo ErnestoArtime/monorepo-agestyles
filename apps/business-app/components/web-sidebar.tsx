@@ -199,6 +199,12 @@ export function WebSidebar() {
         href: "/admin/categorias",
         match: (p) => p.startsWith("/admin/categorias"),
       },
+      {
+        label: "Mantenimiento",
+        icon: "settings",
+        href: "/admin/mantenimiento",
+        match: (p) => p.startsWith("/admin/mantenimiento"),
+      },
     ],
   };
   // The store sections need a selected store; the administration needs an administrator.

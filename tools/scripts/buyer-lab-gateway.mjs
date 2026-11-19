@@ -15,6 +15,36 @@ const allowedOrigins = new Set(
 if (!/^(\/[a-z0-9-]+)?$/.test(prefix) || !listenPort || !upstreamPort) {
   throw new Error("Invalid gateway configuration");
 }
+// Maintenance flag (AG-44), read on the loopback every 15 s; unknown counts as off.
+let maintenanceOn = false;
+function pollMaintenance() {
+  const check = request(
+    {
+      host: "127.0.0.1",
+      port: upstreamPort,
+      path: "/agestyles/maintenance",
+      method: "GET",
+      timeout: 5000,
+    },
+    (response) => {
+      let body = "";
+      response.on("data", (chunk) => (body += chunk));
+      response.on("end", () => {
+        try {
+          maintenanceOn = response.statusCode === 200 && JSON.parse(body).enabled === true;
+        } catch {
+          maintenanceOn = false;
+        }
+      });
+    },
+  );
+  check.on("error", () => undefined);
+  check.on("timeout", () => check.destroy());
+  check.end();
+}
+pollMaintenance();
+setInterval(pollMaintenance, 15_000).unref();
+
 const clientRequests = new Map();
 const authAttempts = new Map();
 let totalRequests = 0;
@@ -31,7 +61,7 @@ const rules = [
   ["GET", /^\/store\/sellers\/sel_[a-z0-9]+$/i],
   ["GET", /^\/store\/catalog-comparison$/],
   ["GET", /^\/store\/agestyles\/exchange-rate$/],
-  ["GET", /^\/store\/agestyles\/(catalog|home)$/],
+  ["GET", /^\/store\/agestyles\/(catalog|home|maintenance)$/],
   ["GET", /^\/store\/agestyles\/sales-agents\/[a-z0-9]{4,12}$/i],
   ["GET", /^\/store\/products(?:\/prod_[a-z0-9]+)?$/i],
   ["POST", /^\/store\/carts$/],
@@ -122,6 +152,20 @@ createServer({ requestTimeout: 30_000, headersTimeout: 10_000 }, (incoming, outg
     authAttempts.set(client, attempts + 1);
   }
   totalRequests += 1;
+
+  // Maintenance (AG-44): no carts or checkout while the administration has it on.
+  if (
+    maintenanceOn &&
+    incoming.method !== "GET" &&
+    /^\/store\/(carts|payment-collections|order-quotes)/.test(path)
+  ) {
+    return reply(
+      outgoing,
+      503,
+      "AgeStyles está en mantenimiento. Vuelve a intentarlo en un rato.",
+      corsHeaders,
+    );
+  }
 
   if (
     incoming.headers["transfer-encoding"] ||

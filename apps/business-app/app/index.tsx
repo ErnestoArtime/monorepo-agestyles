@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Icon } from "@agestyles/icons";
 import { AuthFrame } from "../components/auth-frame";
+import { PasswordInput } from "../components/password-input";
 import { useAdmin } from "../context/admin-context";
 import { Seller, useBusiness } from "../context/business-context";
 import { useBusinessTheme } from "../hooks/use-business-theme";
@@ -92,11 +93,10 @@ export default function EntryScreen() {
             style={styles.input}
           />
           <Text style={styles.label}>Contraseña</Text>
-          <TextInput
+          <PasswordInput
             accessibilityLabel="Contraseña"
             value={password}
             onChangeText={setPassword}
-            secureTextEntry
             autoComplete="password"
             placeholder="Tu contraseña"
             placeholderTextColor={theme.placeholderText}

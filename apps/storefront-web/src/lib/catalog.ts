@@ -281,6 +281,27 @@ export async function getCupRate() {
   return getCupExchangeRate(sdk.client);
 }
 
+export type Maintenance = {
+  enabled: boolean;
+  title: string;
+  message: string;
+  back_at: string | null;
+};
+
+/** Maintenance mode (AG-44), switched from Negocio; never blocks the site if the API fails. */
+export async function getMaintenance(): Promise<Maintenance | null> {
+  if (!sdk) return null;
+  try {
+    const { maintenance } = await sdk.client.fetch<{ maintenance: Maintenance }>(
+      "/store/agestyles/maintenance",
+      { next: { revalidate: 15 } } as never,
+    );
+    return maintenance;
+  } catch {
+    return null;
+  }
+}
+
 /** Categories with products, in the order the shop wants them, for the «Catálogos» menu. */
 export async function getMenuCategories(): Promise<PublicProductCategory[]> {
   if (!sdk) return [];

@@ -7,7 +7,7 @@ import { CartProvider } from "@/components/cart-provider";
 import { QuickViewProvider } from "@/components/quick-view";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { getPublicStoreConfig } from "@/lib/catalog";
+import { getMaintenance, getPublicStoreConfig } from "@/lib/catalog";
 
 const siteUrl = process.env.SITE_URL || "https://catalogo.eav-labs.com";
 
@@ -30,7 +30,25 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const buyerAppUrl = process.env.BUYER_APP_URL || "https://tienda.eav-labs.com";
-  const config = await getPublicStoreConfig();
+  const [config, maintenance] = await Promise.all([getPublicStoreConfig(), getMaintenance()]);
+  if (maintenance?.enabled) {
+    return (
+      <html lang="es">
+        <body>
+          <main className="comparison-page">
+            <section className="wrap comparison-content">
+              <div className="comparison-heading">
+                <p className="eyebrow">AGESTYLES · MANTENIMIENTO</p>
+                <h1>{maintenance.title}</h1>
+                <p>{maintenance.message}</p>
+                {maintenance.back_at ? <p>Volvemos {maintenance.back_at}.</p> : null}
+              </div>
+            </section>
+          </main>
+        </body>
+      </html>
+    );
+  }
   return (
     <html lang="es">
       <body>
