@@ -57,9 +57,42 @@ async function loadItems(container: MedusaContainer, ids: string[]): Promise<Ite
   }
 }
 
-function label(item: Item): string | undefined {
-  const product = item.variants?.find((variant) => variant.product?.title)?.product?.title;
-  return product ?? item.title ?? item.sku ?? undefined;
+/**
+ * Product name for each inventory item. Mercur keeps one inventory item per offer, linked
+ * through `inventory_item_link`; the item's own title is the variant's («Default»).
+ */
+async function productTitles(
+  container: MedusaContainer,
+  sellerIds: string[],
+): Promise<Map<string, string>> {
+  const titles = new Map<string, string>();
+  if (!sellerIds.length) return titles;
+  const { data } = await queryGraph(container).graph({
+    entity: "offer",
+    fields: ["product.title", "inventory_item_link.inventory_item_id"],
+    filters: { seller_id: sellerIds },
+  });
+  for (const offer of data as {
+    product?: { title?: string | null } | null;
+    inventory_item_link?: { inventory_item_id?: string | null }[] | null;
+  }[]) {
+    const title = offer.product?.title;
+    if (!title) continue;
+    for (const link of offer.inventory_item_link ?? [])
+      if (link.inventory_item_id) titles.set(link.inventory_item_id, title);
+  }
+  return titles;
+}
+
+function label(item: Item, titles: Map<string, string>): string | undefined {
+  const product =
+    titles.get(item.id) ?? item.variants?.find((variant) => variant.product?.title)?.product?.title;
+  return (
+    product ??
+    (item.title && item.title !== "Default" ? item.title : undefined) ??
+    item.sku ??
+    undefined
+  );
 }
 
 /**
@@ -90,6 +123,7 @@ export default async function lowStockAlerts(container: MedusaContainer) {
               link.seller_id,
             ]),
           );
+          const titles = await productTitles(container, [...new Set(sellerByItem.values())]);
           for (const item of await loadItems(container, [...sellerByItem.keys()])) {
             const units = available(item);
             const sellerId = sellerByItem.get(item.id);
@@ -97,7 +131,7 @@ export default async function lowStockAlerts(container: MedusaContainer) {
             await notifySellerMembers(container, {
               event_code: "seller_low_stock",
               seller_id: sellerId,
-              params: { product: label(item), available: Math.max(units, 0) },
+              params: { product: label(item, titles), available: Math.max(units, 0) },
               key: ["low_stock", item.id, week],
             });
             alerts += 1;
