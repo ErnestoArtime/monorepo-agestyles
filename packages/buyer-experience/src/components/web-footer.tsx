@@ -63,7 +63,7 @@ export function WebFooter() {
               style={styles.app}
             >
               <Icon name="phone" size={18} color={colors.tint} />
-              <Text style={[styles.link, { color: colors.tint }]}>Descargar AgeStyles 1.3.0</Text>
+              <Text style={[styles.link, { color: colors.tint }]}>Descargar AgeStyles 1.4.0</Text>
             </Pressable>
             <Text style={styles.small}>Android 7.0 o superior</Text>
           </View>
