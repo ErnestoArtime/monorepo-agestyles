@@ -1,52 +1,51 @@
-import {
-  ArrowDownToLine,
-  ArrowLeft,
-  ArrowRight,
-  ArrowUpRight,
-  Bell,
-  Boxes,
-  Check,
-  ChevronDown,
-  ChevronRight,
-  ChevronUp,
-  CircleHelp,
-  CircleUserRound,
-  Code2,
-  CreditCard,
-  Eye,
-  EyeOff,
-  Heart,
-  Share2,
-  Home,
-  List,
-  MapPin,
-  Menu,
-  Minus,
-  Monitor,
-  Moon,
-  MoreHorizontal,
-  Package,
-  Phone,
-  Plus,
-  RefreshCw,
-  ScanLine,
-  Search,
-  Send,
-  Settings2,
-  ShieldCheck,
-  ShoppingBag,
-  ShoppingCart,
-  SlidersHorizontal,
-  Store,
-  Sun,
-  Tag,
-  Trash2,
-  TriangleAlert,
-  Truck,
-  UserRound,
-  Warehouse,
-  X,
-} from "lucide-react";
+// One file per icon: importing the package index pulls in all ~2,000 icons (AG-36).
+import ArrowDownToLine from "lucide-react/icons/arrow-down-to-line";
+import ArrowLeft from "lucide-react/icons/arrow-left";
+import ArrowRight from "lucide-react/icons/arrow-right";
+import ArrowUpRight from "lucide-react/icons/arrow-up-right";
+import Bell from "lucide-react/icons/bell";
+import Boxes from "lucide-react/icons/boxes";
+import Check from "lucide-react/icons/check";
+import ChevronDown from "lucide-react/icons/chevron-down";
+import ChevronRight from "lucide-react/icons/chevron-right";
+import ChevronUp from "lucide-react/icons/chevron-up";
+import CircleHelp from "lucide-react/icons/circle-question-mark";
+import CircleUserRound from "lucide-react/icons/circle-user-round";
+import Code2 from "lucide-react/icons/code-xml";
+import CreditCard from "lucide-react/icons/credit-card";
+import Eye from "lucide-react/icons/eye";
+import EyeOff from "lucide-react/icons/eye-off";
+import Heart from "lucide-react/icons/heart";
+import Share2 from "lucide-react/icons/share-2";
+import Home from "lucide-react/icons/house";
+import List from "lucide-react/icons/list";
+import MapPin from "lucide-react/icons/map-pin";
+import Menu from "lucide-react/icons/menu";
+import Minus from "lucide-react/icons/minus";
+import Monitor from "lucide-react/icons/monitor";
+import Moon from "lucide-react/icons/moon";
+import MoreHorizontal from "lucide-react/icons/ellipsis";
+import Package from "lucide-react/icons/package";
+import Phone from "lucide-react/icons/phone";
+import Plus from "lucide-react/icons/plus";
+import RefreshCw from "lucide-react/icons/refresh-cw";
+import ScanLine from "lucide-react/icons/scan-line";
+import Search from "lucide-react/icons/search";
+import Send from "lucide-react/icons/send";
+import Settings2 from "lucide-react/icons/settings-2";
+import ShieldCheck from "lucide-react/icons/shield-check";
+import ShoppingBag from "lucide-react/icons/shopping-bag";
+import ShoppingCart from "lucide-react/icons/shopping-cart";
+import SlidersHorizontal from "lucide-react/icons/sliders-horizontal";
+import Store from "lucide-react/icons/store";
+import Sun from "lucide-react/icons/sun";
+import Tag from "lucide-react/icons/tag";
+import Trash2 from "lucide-react/icons/trash";
+import TriangleAlert from "lucide-react/icons/triangle-exclamation-point";
+import Truck from "lucide-react/icons/truck";
+import UserRound from "lucide-react/icons/user-round";
+import Warehouse from "lucide-react/icons/warehouse";
+import X from "lucide-react/icons/x";
 
 const glyphs = {
   alert: TriangleAlert,
