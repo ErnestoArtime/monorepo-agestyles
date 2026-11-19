@@ -24,7 +24,7 @@ export function AndroidAppLink() {
         <View style={styles.messageText}>
           <Text style={[styles.label, { color: theme.text }]}>Lleva AgeStyles contigo</Text>
           <Text style={[styles.caption, { color: theme.icon }]}>
-            Versión 1.2.0 · Android 7.0 o superior
+            Versión 1.3.0 · Android 7.0 o superior
           </Text>
         </View>
       </View>
