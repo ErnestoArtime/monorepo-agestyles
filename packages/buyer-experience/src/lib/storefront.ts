@@ -42,6 +42,8 @@ export type CatalogParams = {
   q?: string;
   categoryIds?: string[];
   sellerId?: string;
+  /** A store's own section (only with `sellerId`). */
+  section?: string;
   minPrice?: number;
   maxPrice?: number;
   color?: string | null;
@@ -57,6 +59,7 @@ export function fetchCatalog(params: CatalogParams) {
       ...(params.q ? { q: params.q } : {}),
       ...(params.categoryIds?.length ? { category_ids: params.categoryIds.join(",") } : {}),
       ...(params.sellerId ? { seller_id: params.sellerId } : {}),
+      ...(params.sellerId && params.section ? { section: params.section } : {}),
       ...(params.minPrice !== undefined ? { min_price: String(params.minPrice) } : {}),
       ...(params.maxPrice !== undefined ? { max_price: String(params.maxPrice) } : {}),
       ...(params.color ? { color: params.color } : {}),
@@ -69,12 +72,14 @@ export function fetchCatalog(params: CatalogParams) {
 
 /** The marketplace home, or with `sellerId` that store's own page (its banners and products). */
 export function fetchHome(regionId: string, sellerId?: string | null) {
-  return sdk.client.fetch<{ banners: HomeBanner[]; featured: CatalogCard[] }>(
-    "/store/agestyles/home",
-    {
-      query: { region_id: regionId, ...(sellerId ? { seller_id: sellerId } : {}) },
-    },
-  );
+  return sdk.client.fetch<{
+    banners: HomeBanner[];
+    featured: CatalogCard[];
+    /** A store's own sections with products available now. */
+    sections?: { id: string; name: string }[];
+  }>("/store/agestyles/home", {
+    query: { region_id: regionId, ...(sellerId ? { seller_id: sellerId } : {}) },
+  });
 }
 
 /** The product cards render Store API products; a catalog card carries what they need. */

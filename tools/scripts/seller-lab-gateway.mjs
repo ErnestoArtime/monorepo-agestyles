@@ -49,7 +49,7 @@ const rules = [
   ["POST", /^\/store\/order-quotes\/[a-z0-9_-]+\/accept$/i],
   ["GET", /^\/vendor\/sellers$/],
   ["GET POST", /^\/vendor\/sellers\/me$/],
-  ["GET POST", /^\/vendor\/agestyles\/store-home$/],
+  ["GET POST", /^\/vendor\/agestyles\/(store-home|store-sections|category-requests)$/],
   ["POST", /^\/vendor\/sellers\/select$/],
   ["GET", /^\/vendor\/members\/me$/],
   // One rule per path: the first path match decides, so GET and POST must share it.

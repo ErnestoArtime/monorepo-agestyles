@@ -95,14 +95,9 @@ export function ProductExtras({
       return;
     }
     let active = true;
-    fetchCatalog({ regionId, categoryIds: categoriesKey.split(","), sort: "featured", limit: 13 })
+    fetchCatalog({ regionId, categoryIds: categoriesKey.split(","), sort: "featured", limit: 25 })
       .then((page) => {
-        if (active)
-          setRelated(
-            page.products
-              .filter((card) => card.id !== productId)
-              .slice(0, Math.max(columns * 2, 4)),
-          );
+        if (active) setRelated(page.products.filter((card) => card.id !== productId).slice(0, 24));
       })
       .catch(() => active && setRelated([]));
     return () => {
@@ -110,7 +105,10 @@ export function ProductExtras({
     };
   }, [categoriesKey, columns, productId, regionId]);
 
-  if (!sameStore.length && !related.length) return null;
+  // Related products do not repeat what the store row already shows.
+  const shown = new Set(sameStore.map((card) => card.id));
+  const relatedOnly = related.filter((card) => !shown.has(card.id));
+  if (!sameStore.length && !relatedOnly.length) return null;
   return (
     <View style={styles.extras}>
       {seller && sameStore.length ? (
@@ -121,11 +119,11 @@ export function ProductExtras({
           action={<StoreLink seller={seller} label="Ver la tienda" />}
         />
       ) : null}
-      {related.length ? (
+      {relatedOnly.length ? (
         <View style={styles.related}>
           <RelatedTitle />
           <View style={styles.grid}>
-            {related.map((card) => (
+            {relatedOnly.slice(0, Math.max(columns * 2, 4)).map((card) => (
               // A fixed width per column: the card itself grows to fill it.
               <View key={card.id} style={{ width: `${100 / columns}%` }}>
                 <ProductCard

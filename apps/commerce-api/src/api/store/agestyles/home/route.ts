@@ -2,6 +2,7 @@ import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http";
 import { MedusaError } from "@medusajs/framework/utils";
 import { catalogIndex } from "../../../../lib/storefront-catalog";
 import { readHomeContent, readSellerHome } from "../../../../lib/storefront-home";
+import { readSections } from "../../../../lib/store-sections";
 
 /**
  * Tienda's home (AG-34): active banners and the featured products that can be bought now.
@@ -20,9 +21,10 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
     typeof req.query.seller_id === "string" && /^sel_[A-Za-z0-9]+$/.test(req.query.seller_id)
       ? req.query.seller_id
       : null;
-  const [home, cards] = await Promise.all([
+  const [home, cards, sections] = await Promise.all([
     sellerId ? readSellerHome(req.scope, sellerId) : readHomeContent(req.scope),
     catalogIndex(regionId, key),
+    sellerId ? readSections(req.scope, sellerId) : Promise.resolve([]),
   ]);
   const byId = new Map(
     cards
@@ -33,5 +35,9 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
   res.json({
     banners: home.banners.filter((banner) => banner.active),
     featured: home.featured_product_ids.map((id) => byId.get(id)).filter(Boolean),
+    // A store's sections with at least one product that can be bought now.
+    sections: sections
+      .filter((section) => section.product_ids.some((id) => byId.has(id)))
+      .map((section) => ({ id: section.id, name: section.name })),
   });
 }

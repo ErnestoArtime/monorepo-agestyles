@@ -82,6 +82,9 @@ export default function HomeScreen() {
   // Home banners and «Destacados», managed from Negocio's administration.
   const [banners, setBanners] = useState<HomeBanner[]>([]);
   const [featured, setFeatured] = useState<CatalogCard[]>([]);
+  // A store's own sections (its page only) and the one chosen.
+  const [storeSections, setStoreSections] = useState<{ id: string; name: string }[]>([]);
+  const [section, setSection] = useState<string | null>(null);
   // Filters opened from the side menu (categories with their subcategories, a store, novelties).
   const params = useLocalSearchParams<{
     filtro?: string;
@@ -109,6 +112,7 @@ export default function HomeScreen() {
     setFilters(EMPTY_FILTERS);
     setSearchTerm("");
     setDebouncedSearch("");
+    setSection(null);
   }, [params.filtro, params.ids, params.tienda]);
 
   // A store's page shows its cover, logo and description above its products.
@@ -158,6 +162,7 @@ export default function HomeScreen() {
           ? menuFilter.ids
           : undefined,
       sellerId: menuFilter?.kind === "tienda" ? menuFilter.seller : undefined,
+      section: menuFilter?.kind === "tienda" && section ? section : undefined,
       minPrice: min ?? undefined,
       maxPrice: max ?? undefined,
       color: filters.color ?? undefined,
@@ -165,7 +170,7 @@ export default function HomeScreen() {
         filters.sort === "featured" && menuFilter?.kind === "novedades" ? "newest" : filters.sort,
       limit: PAGE_SIZE,
     } as const;
-  }, [debouncedSearch, filters, menuFilter, selectedRegion]);
+  }, [debouncedSearch, filters, menuFilter, section, selectedRegion]);
 
   // Only the latest request may write the list (fast typing, quick filter changes).
   const requestId = useRef(0);
@@ -228,11 +233,13 @@ export default function HomeScreen() {
     let active = true;
     setBanners([]);
     setFeatured([]);
+    setStoreSections([]);
     fetchHome(selectedRegion.id, homeSellerId)
       .then((home) => {
         if (!active) return;
         setBanners(home.banners);
         setFeatured(home.featured);
+        setStoreSections(home.sections ?? []);
       })
       .catch(() => {
         // The home works without banners or featured products.
@@ -558,7 +565,24 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               </View>
             </View>
-            {categories.length > 0 && menuFilter?.kind !== "categoria" ? (
+            {homeSellerId && storeSections.length ? (
+              // A store's page groups its products by its own sections.
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.categoryList}
+              >
+                <PillGroup
+                  accessibilityLabel="Secciones de la tienda"
+                  value={section ?? "__all__"}
+                  onChange={(value) => setSection(value === "__all__" ? null : value)}
+                  options={[
+                    { value: "__all__", label: "Todos los productos" },
+                    ...storeSections.map((entry) => ({ value: entry.id, label: entry.name })),
+                  ]}
+                />
+              </ScrollView>
+            ) : categories.length > 0 && menuFilter?.kind !== "categoria" ? (
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}

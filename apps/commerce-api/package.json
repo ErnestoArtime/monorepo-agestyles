@@ -8,7 +8,7 @@
     ]
   },
   "scripts": {
-    "build:workspace-modules": "pnpm --filter @agestyles/quotations build && pnpm --filter @agestyles/catalog-pim build && pnpm --filter @agestyles/manual-payments build && pnpm --filter @agestyles/inventory-movements build && pnpm --filter @agestyles/sales-commissions build && pnpm --filter @agestyles/ai-studio build && pnpm --filter @agestyles/notifications build",
+    "build:workspace-modules": "pnpm --filter @agestyles/quotations build && pnpm --filter @agestyles/catalog-pim build && pnpm --filter @agestyles/manual-payments build && pnpm --filter @agestyles/inventory-movements build && pnpm --filter @agestyles/sales-commissions build && pnpm --filter @agestyles/ai-studio build && pnpm --filter @agestyles/notifications build && pnpm --filter @agestyles/category-requests build",
     "build": "pnpm build:workspace-modules && medusa build",
     "typecheck": "pnpm build:workspace-modules && tsc --noEmit",
     "test": "node --test test/*.test.mjs",
@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@agestyles/catalog-pim": "workspace:*",
+    "@agestyles/category-requests": "workspace:*",
     "@agestyles/domain": "workspace:*",
     "@agestyles/inventory-movements": "workspace:*",
     "@agestyles/manual-payments": "workspace:*",

@@ -56,6 +56,8 @@ const rules = [
   ["POST", new RegExp(`^/admin/manual-payments/${ID}/(verify|reject)$`, "i")],
   // Tienda's home: banners and featured products, and the banner images.
   ["GET POST", /^\/admin\/agestyles\/home$/],
+  ["GET", /^\/admin\/agestyles\/category-requests$/],
+  ["POST", /^\/admin\/agestyles\/category-requests\/catreq_[A-Za-z0-9]+$/],
   ["POST", /^\/admin\/uploads$/],
   // Product publication review.
   ["GET", /^\/admin\/product-changes$/],

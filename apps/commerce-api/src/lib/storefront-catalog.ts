@@ -163,6 +163,9 @@ export type CatalogQuery = {
   min_price?: number;
   max_price?: number;
   color?: string;
+  /** A store's own section (AG-35), resolved to its product ids by the route. */
+  section?: string;
+  product_ids?: Set<string>;
   sort?: "featured" | "newest" | "price_asc" | "price_desc";
   offset: number;
   limit: number;
@@ -186,6 +189,10 @@ export function parseCatalogQuery(raw: Record<string, unknown>): CatalogQuery {
     min_price: num(raw.min_price),
     max_price: num(raw.max_price),
     color: typeof raw.color === "string" && raw.color ? raw.color : undefined,
+    section:
+      typeof raw.section === "string" && /^sec_[a-z0-9]{1,30}$/.test(raw.section)
+        ? raw.section
+        : undefined,
     sort,
     offset: Math.max(0, Math.floor(num(raw.offset) ?? 0)),
     limit: Math.min(48, Math.max(1, Math.floor(num(raw.limit) ?? 24))),
@@ -207,6 +214,7 @@ export function queryCatalog(
       (!q || normalize(card.title).includes(q)) &&
       (!categories.size || card.categories.some((category) => categories.has(category.id))) &&
       (!query.seller_id || card.sellers.some((seller) => seller.id === query.seller_id)) &&
+      (!query.product_ids || query.product_ids.has(card.id)) &&
       (query.min_price === undefined || (card.price ?? 0) >= query.min_price) &&
       (query.max_price === undefined || (card.price ?? 0) <= query.max_price),
   );

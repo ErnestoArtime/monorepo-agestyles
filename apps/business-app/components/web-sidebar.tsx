@@ -85,6 +85,18 @@ export function WebSidebar() {
           href: "/store-home",
           match: (p) => p.startsWith("/store-home"),
         },
+        {
+          label: "Secciones de mi tienda",
+          icon: "list",
+          href: "/store-sections",
+          match: (p) => p.startsWith("/store-sections"),
+        },
+        {
+          label: "Solicitar categoría",
+          icon: "plus",
+          href: "/category-requests",
+          match: (p) => p.startsWith("/category-requests"),
+        },
         ...(hasPermission(member, "products", "edit")
           ? [
               {
@@ -158,6 +170,12 @@ export function WebSidebar() {
         icon: "home",
         href: "/admin/portada",
         match: (p) => p.startsWith("/admin/portada"),
+      },
+      {
+        label: "Categorías",
+        icon: "boxes",
+        href: "/admin/categorias",
+        match: (p) => p.startsWith("/admin/categorias"),
       },
     ],
   };

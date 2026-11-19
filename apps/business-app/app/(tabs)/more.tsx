@@ -53,6 +53,16 @@ export default function MoreScreen() {
           detail="Carrusel y productos destacados de tu página en la Tienda."
           action={() => router.push("/store-home")}
         />
+        <Row
+          title="Secciones de mi tienda"
+          detail="Agrupa tus productos en tu página de la Tienda."
+          action={() => router.push("/store-sections")}
+        />
+        <Row
+          title="Solicitar categoría"
+          detail="Propón una categoría nueva para todo el catálogo."
+          action={() => router.push("/category-requests")}
+        />
         {member?.is_owner || member?.permissions?.members === "manage" ? (
           <Row
             title="Equipo y permisos"
@@ -97,6 +107,11 @@ export default function MoreScreen() {
             title="Portada de la Tienda"
             detail="Banners de la página inicial y productos destacados."
             action={() => router.push("/admin/portada")}
+          />
+          <Row
+            title="Categorías"
+            detail="Solicitudes de categorías de las tiendas."
+            action={() => router.push("/admin/categorias")}
           />
         </Section>
       ) : null}

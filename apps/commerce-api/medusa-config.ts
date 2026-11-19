@@ -202,6 +202,7 @@ module.exports = withMercur({
     { resolve: "../../packages/sales-commissions" },
     { resolve: "../../packages/ai-studio" },
     { resolve: "../../packages/notifications" },
+    { resolve: "../../packages/category-requests" },
     ...(emailModule ? [emailModule] : []),
     { resolve: "@mercurjs/core/modules/admin-ui", options: { disable: true } },
     { resolve: "@mercurjs/core/modules/vendor-ui", options: { disable: true } },

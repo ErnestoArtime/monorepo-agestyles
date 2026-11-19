@@ -1,0 +1,33 @@
+{
+  "name": "@agestyles/category-requests",
+  "version": "0.0.0",
+  "private": true,
+  "description": "AgeStyles module for category requests from stores, reviewed by the marketplace administration (Medusa v2)",
+  "keywords": [
+    "agestyles",
+    "medusa-module",
+    "catalog",
+    "categories"
+  ],
+  "medusaModule": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./validation": {
+      "types": "./dist/validation.d.ts",
+      "default": "./dist/validation.js"
+    }
+  },
+  "peerDependencies": {
+    "@medusajs/framework": "2.22.3"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "node test/category-requests.test.ts"
+  }
+}
