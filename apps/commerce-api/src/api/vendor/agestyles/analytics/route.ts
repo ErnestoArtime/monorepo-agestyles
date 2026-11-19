@@ -92,7 +92,7 @@ export async function GET(req: Request, res: MedusaResponse) {
     : [];
 
   const service = commissionsService(req);
-  const [agentSales, agents, stockLinks, pendingPayments] = await Promise.all([
+  const [agentSales, agents, stockOffers, pendingPayments] = await Promise.all([
     service.listAgentSales(
       { seller_id: sellerId, created_at: { $gte: historyFrom } },
       { take: 20_000, order: { created_at: "ASC" } },
@@ -101,8 +101,16 @@ export async function GET(req: Request, res: MedusaResponse) {
       { id: string; code: string; member_email: string | null }[]
     >,
     query.graph({
-      entity: "inventory_item_seller",
-      fields: ["inventory_item_id"],
+      entity: "offer",
+      fields: [
+        "product_id",
+        "product.id",
+        "product.title",
+        "product.thumbnail",
+        "inventory_item_link.required_quantity",
+        "inventory_item_link.inventory_item.location_levels.stocked_quantity",
+        "inventory_item_link.inventory_item.location_levels.reserved_quantity",
+      ],
       filters: { seller_id: sellerId },
     }),
     req.scope
@@ -112,41 +120,38 @@ export async function GET(req: Request, res: MedusaResponse) {
       .catch(() => 0),
   ]);
 
-  const itemIds = (stockLinks.data as { inventory_item_id: string }[]).map(
-    (link) => link.inventory_item_id,
-  );
-  const items = itemIds.length
-    ? ((
-        await query.graph({
-          entity: "inventory_item",
-          fields: [
-            "id",
-            "title",
-            "location_levels.stocked_quantity",
-            "location_levels.reserved_quantity",
-            "variants.product.id",
-            "variants.product.title",
-            "variants.product.thumbnail",
-          ],
-          filters: { id: itemIds },
-        })
-      ).data as {
-        title?: string | null;
-        location_levels?: { stocked_quantity?: number | null; reserved_quantity?: number | null }[];
-        variants?: { product?: { id: string; title: string; thumbnail?: string | null } | null }[];
-      }[])
-    : [];
-  const stock: StockItem[] = items.map((item) => {
-    const product = item.variants?.find((variant) => variant.product)?.product ?? null;
-    return {
-      product_id: product?.id ?? null,
-      title: product?.title ?? item.title ?? "Producto",
-      thumbnail: product?.thumbnail ?? null,
-      available: (item.location_levels ?? []).reduce(
+  // Stock of this store's own offers (Mercur keeps one inventory item per offer).
+  type OfferStock = {
+    product_id?: string | null;
+    product?: { id: string; title: string; thumbnail?: string | null } | null;
+    inventory_item_link?:
+      | {
+          required_quantity?: number | null;
+          inventory_item?: {
+            location_levels?: {
+              stocked_quantity?: number | null;
+              reserved_quantity?: number | null;
+            }[];
+          } | null;
+        }[]
+      | null;
+  };
+  const stock: StockItem[] = (stockOffers.data as OfferStock[]).map((offer) => {
+    const links = offer.inventory_item_link ?? [];
+    // An offer made of several items is available as many times as its scarcest item allows.
+    const perItem = links.map((link) => {
+      const units = (link.inventory_item?.location_levels ?? []).reduce(
         (sum, level) =>
           sum + Number(level.stocked_quantity ?? 0) - Number(level.reserved_quantity ?? 0),
         0,
-      ),
+      );
+      return Math.floor(units / Math.max(1, Number(link.required_quantity ?? 1)));
+    });
+    return {
+      product_id: offer.product?.id ?? offer.product_id ?? null,
+      title: offer.product?.title ?? "Producto",
+      thumbnail: offer.product?.thumbnail ?? null,
+      available: perItem.length ? Math.min(...perItem) : 0,
     };
   });
 
