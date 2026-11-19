@@ -1633,3 +1633,8 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - Cambios: `packages/api-client/src/store.ts` usa `/customer`; `customer-context.tsx` trata el vínculo del carrito como «mejor esfuerzo» en login y registro; test de `features-buyer` actualizado (pasa).
 - Producción (autorizado por el usuario): copia `before-promote-admin-20261119-2204.dump`; `legacy-promote-admin.ts` (montado, prueba en seco y luego real) dio administración a la cuenta antigua de administrador recién migrada → usuario `user_01M7TT27KFHZK41G4JM3J7NJCZ`. Tienda y Negocio republicadas.
 - Revisión cruzada pendiente (Codex): ruta de vínculo del carrito y alta de administrador.
+
+## 2026-11-19 22:30 · Claude · AG-32: cuenta del titular en el equipo de AgeStyles
+
+- Nuevo `apps/commerce-api/src/scripts/add-store-member.ts`: añade una identidad existente al equipo de una tienda con los flujos de Mercur `createMemberInvitesWorkflow` + `acceptMemberInviteWorkflow` (sin contraseña nueva; imprime solo ids).
+- Producción (autorizado por el usuario): copia `before-store-member-*.dump`; prueba en seco y luego real → miembro `mem_01M7TVWPVKKWTE4Z45E648SGDQ` en `sel_01M7NH1254S7Z1HZ7YQTJT39N7` con `role_seller_administration`. La identidad conserva `user_id` y `customer_id`.
