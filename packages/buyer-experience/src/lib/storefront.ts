@@ -12,6 +12,8 @@ export type CatalogCard = {
   currency_code: string | null;
   categories: { id: string; name: string }[];
   colors: string[];
+  sizes?: string[];
+  brand?: string | null;
   sellers: { id: string; name: string }[];
   variants_count: number;
   offers_count: number;
@@ -22,7 +24,14 @@ export type CatalogPage = {
   count: number;
   offset: number;
   limit: number;
-  facets: { categories: { id: string; name: string }[]; colors: string[]; max_price: number };
+  facets: {
+    categories: { id: string; name: string }[];
+    colors: string[];
+    max_price: number;
+    /** Codificadores (AG-43); absent from older API versions. */
+    sizes?: string[];
+    brands?: string[];
+  };
 };
 export type HomeBanner = {
   id: string;
@@ -47,6 +56,8 @@ export type CatalogParams = {
   minPrice?: number;
   maxPrice?: number;
   color?: string | null;
+  size?: string | null;
+  brand?: string | null;
   sort?: string;
   offset?: number;
   limit?: number;
@@ -63,6 +74,8 @@ export function fetchCatalog(params: CatalogParams) {
       ...(params.minPrice !== undefined ? { min_price: String(params.minPrice) } : {}),
       ...(params.maxPrice !== undefined ? { max_price: String(params.maxPrice) } : {}),
       ...(params.color ? { color: params.color } : {}),
+      ...(params.size ? { size: params.size } : {}),
+      ...(params.brand ? { brand: params.brand } : {}),
       sort: params.sort ?? "featured",
       offset: params.offset ?? 0,
       limit: params.limit ?? 24,

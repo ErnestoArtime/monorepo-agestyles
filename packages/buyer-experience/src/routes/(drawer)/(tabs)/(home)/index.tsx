@@ -77,7 +77,7 @@ export default function HomeScreen() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const selectedCategory = filters.category;
   const setSelectedCategory = (category: string | null) =>
-    setFilters((current) => ({ ...current, category, color: null }));
+    setFilters((current) => ({ ...current, category, color: null, size: null, brand: null }));
   // Product opened in the bottom sheet (reference POS behaviour).
   const [sheetProductId, setSheetProductId] = useState<string | null>(null);
   // Home banners and «Destacados», managed from Negocio's administration.
@@ -167,6 +167,8 @@ export default function HomeScreen() {
       minPrice: min ?? undefined,
       maxPrice: max ?? undefined,
       color: filters.color ?? undefined,
+      size: filters.size ?? undefined,
+      brand: filters.brand ?? undefined,
       sort:
         filters.sort === "featured" && menuFilter?.kind === "novedades" ? "newest" : filters.sort,
       limit: PAGE_SIZE,
@@ -658,6 +660,8 @@ export default function HomeScreen() {
         onClose={() => setFiltersOpen(false)}
         categories={categories}
         colors={facets.colors}
+        sizes={facets.sizes ?? []}
+        brands={facets.brands ?? []}
         maxPriceHint={facets.max_price}
         resultCount={count}
       />

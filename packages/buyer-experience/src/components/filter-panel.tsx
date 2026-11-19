@@ -20,6 +20,8 @@ export type CatalogFilters = {
   minPrice: string;
   maxPrice: string;
   color: string | null;
+  size: string | null;
+  brand: string | null;
 };
 
 export const EMPTY_FILTERS: CatalogFilters = {
@@ -28,6 +30,8 @@ export const EMPTY_FILTERS: CatalogFilters = {
   minPrice: "",
   maxPrice: "",
   color: null,
+  size: null,
+  brand: null,
 };
 
 /** How many criteria differ from the defaults (for the «Filtros» badge). */
@@ -38,6 +42,8 @@ export function activeFilterCount(filters: CatalogFilters): number {
     Boolean(filters.minPrice.trim()),
     Boolean(filters.maxPrice.trim()),
     Boolean(filters.color),
+    Boolean(filters.size),
+    Boolean(filters.brand),
   ].filter(Boolean).length;
 }
 
@@ -122,6 +128,8 @@ export function FilterPanel({
   onClose,
   categories,
   colors,
+  sizes = [],
+  brands = [],
   maxPriceHint,
   resultCount,
 }: {
@@ -131,6 +139,9 @@ export function FilterPanel({
   onClose: () => void;
   categories: { value: string; label: string }[];
   colors: string[];
+  /** Sizes and brands of the products in view (codificadores, AG-42/43). */
+  sizes?: string[];
+  brands?: string[];
   maxPriceHint: number;
   resultCount: number;
 }) {
@@ -224,6 +235,34 @@ export function FilterPanel({
                   options={[
                     { value: "__all__", label: "Todos" },
                     ...colors.map((value) => ({ value, label: value })),
+                  ]}
+                />
+              </View>
+            ) : null}
+            {sizes.length ? (
+              <View style={styles.section}>
+                <Text style={[styles.heading, { color: color.text }]}>Talla</Text>
+                <PillGroup
+                  accessibilityLabel="Talla"
+                  value={filters.size ?? "__all__"}
+                  onChange={(value) => set({ size: value === "__all__" ? null : value })}
+                  options={[
+                    { value: "__all__", label: "Todas" },
+                    ...sizes.map((value) => ({ value, label: value })),
+                  ]}
+                />
+              </View>
+            ) : null}
+            {brands.length ? (
+              <View style={styles.section}>
+                <Text style={[styles.heading, { color: color.text }]}>Marca</Text>
+                <PillGroup
+                  accessibilityLabel="Marca"
+                  value={filters.brand ?? "__all__"}
+                  onChange={(value) => set({ brand: value === "__all__" ? null : value })}
+                  options={[
+                    { value: "__all__", label: "Todas" },
+                    ...brands.map((value) => ({ value, label: value })),
                   ]}
                 />
               </View>

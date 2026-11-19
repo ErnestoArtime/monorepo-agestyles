@@ -17,6 +17,9 @@ export type CatalogCard = {
   currency_code: string | null;
   categories: { id: string; name: string }[];
   colors: string[];
+  /** Sizes offered (variant-axis attributes named «Talla…»: codifiers of AG-42 or the product's own). */
+  sizes: string[];
+  brand: string | null;
   sellers: { id: string; name: string }[];
   variants_count: number;
   offers_count: number;
@@ -33,6 +36,8 @@ type StoreProduct = {
   categories?: { id: string; name: string }[] | null;
   options?: { title?: string | null; values?: { value?: string | null }[] | null }[] | null;
   variants?: { id: string }[] | null;
+  /** Mercur's computed attributes (product-scoped and global ones). */
+  attributes?: { name?: string | null; values?: { name?: string | null }[] | null }[] | null;
 };
 type StoreOffer = {
   id: string;
@@ -82,12 +87,31 @@ async function fetchAll<T>(
   return rows;
 }
 
+function attributeValues(product: StoreProduct, name: RegExp): string[] {
+  return (product.attributes ?? [])
+    .filter((attribute) => name.test((attribute.name ?? "").trim()))
+    .flatMap((attribute) => (attribute.values ?? []).map((value) => (value.name ?? "").trim()))
+    .filter(Boolean);
+}
+
+/** Clothes sizes in their natural order, then numbers, then the rest. */
+const LETTER_SIZES = ["XXS", "XS", "S", "M", "L", "XL", "XXL", "XXXL"];
+export function compareSizes(a: string, b: string) {
+  const la = LETTER_SIZES.indexOf(a.toUpperCase());
+  const lb = LETTER_SIZES.indexOf(b.toUpperCase());
+  if (la !== -1 || lb !== -1) return (la === -1 ? 99 : la) - (lb === -1 ? 99 : lb);
+  const na = Number(a.replace(",", "."));
+  const nb = Number(b.replace(",", "."));
+  if (Number.isFinite(na) && Number.isFinite(nb)) return na - nb;
+  return a.localeCompare(b, "es");
+}
+
 async function buildIndex(regionId: string, publishableKey: string): Promise<CatalogCard[]> {
   const [products, offers] = await Promise.all([
     fetchAll<StoreProduct>("/store/products", "products", publishableKey, {
       region_id: regionId,
       fields:
-        "id,title,handle,thumbnail,created_at,*categories,*options,*options.values,variants.id",
+        "id,title,handle,thumbnail,created_at,*categories,*options,*options.values,variants.id,*product_attribute_values,product_attribute_values.attribute.name",
     }),
     fetchAll<StoreOffer>("/store/offers", "offers", publishableKey, {
       region_id: regionId,
@@ -131,10 +155,18 @@ async function buildIndex(regionId: string, publishableKey: string): Promise<Cat
         id: category.id,
         name: category.name,
       })),
-      colors: (product.options ?? [])
-        .filter((option) => /^colou?r$/i.test(option.title ?? ""))
-        .flatMap((option) => (option.values ?? []).map((value) => value.value ?? ""))
-        .filter(Boolean),
+      colors: [
+        ...new Set(
+          [
+            ...(product.options ?? [])
+              .filter((option) => /^colou?r$/i.test(option.title ?? ""))
+              .flatMap((option) => (option.values ?? []).map((value) => value.value ?? "")),
+            ...attributeValues(product, /^colou?r$/i),
+          ].filter(Boolean),
+        ),
+      ],
+      sizes: [...new Set(attributeValues(product, /^talla/i))],
+      brand: attributeValues(product, /^marca$/i)[0] ?? null,
       sellers: [...sellers.values()],
       variants_count: variantsCount,
       offers_count: productOffers.length,
@@ -163,6 +195,8 @@ export type CatalogQuery = {
   min_price?: number;
   max_price?: number;
   color?: string;
+  size?: string;
+  brand?: string;
   /** A store's own section (AG-35), resolved to its product ids by the route. */
   section?: string;
   product_ids?: Set<string>;
@@ -189,6 +223,8 @@ export function parseCatalogQuery(raw: Record<string, unknown>): CatalogQuery {
     min_price: num(raw.min_price),
     max_price: num(raw.max_price),
     color: typeof raw.color === "string" && raw.color ? raw.color : undefined,
+    size: typeof raw.size === "string" && raw.size ? raw.size.slice(0, 20) : undefined,
+    brand: typeof raw.brand === "string" && raw.brand ? raw.brand.slice(0, 80) : undefined,
     section:
       typeof raw.section === "string" && /^sec_[a-z0-9]{1,30}$/.test(raw.section)
         ? raw.section
@@ -228,10 +264,17 @@ export function queryCatalog(
       a.localeCompare(b, "es"),
     ),
     max_price: Math.max(0, ...filtered.map((card) => card.price ?? 0)),
+    sizes: [...new Set(filtered.flatMap((card) => card.sizes))].sort(compareSizes),
+    brands: [
+      ...new Set(filtered.map((card) => card.brand).filter((brand): brand is string => !!brand)),
+    ].sort((a, b) => a.localeCompare(b, "es")),
   };
-  const colored = query.color
-    ? filtered.filter((card) => card.colors.includes(query.color!))
-    : filtered;
+  const colored = filtered.filter(
+    (card) =>
+      (!query.color || card.colors.includes(query.color)) &&
+      (!query.size || card.sizes.includes(query.size)) &&
+      (!query.brand || card.brand === query.brand),
+  );
   const rank = new Map(featuredIds.map((id, index) => [id, index]));
   const sorted = [...colored].sort((a, b) => {
     if (query.sort === "price_asc") return (a.price ?? Infinity) - (b.price ?? Infinity);
