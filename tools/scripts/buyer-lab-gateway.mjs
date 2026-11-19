@@ -28,6 +28,7 @@ reset.unref();
 const rules = [
   ["GET", /^\/store\/(regions|offers|shipping-options|payment-providers)$/],
   ["GET", /^\/store\/(product-categories|sellers)$/],
+  ["GET", /^\/store\/sellers\/sel_[a-z0-9]+$/i],
   ["GET", /^\/store\/catalog-comparison$/],
   ["GET", /^\/store\/agestyles\/exchange-rate$/],
   ["GET", /^\/store\/agestyles\/(catalog|home)$/],

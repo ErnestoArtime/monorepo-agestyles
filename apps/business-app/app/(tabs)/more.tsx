@@ -43,6 +43,11 @@ export default function MoreScreen() {
           title={seller?.name ?? "Tienda"}
           detail={`${role} · ${seller?.handle ? `@${seller.handle}` : "AgeStyles"}`}
         />
+        <Row
+          title="Perfil de la tienda"
+          detail="Logo, portada y descripción que ven los compradores."
+          action={() => router.push("/store-profile")}
+        />
         {member?.is_owner || member?.permissions?.members === "manage" ? (
           <Row
             title="Equipo y permisos"

@@ -73,6 +73,12 @@ export function WebSidebar() {
     {
       title: "Tienda",
       items: [
+        {
+          label: "Perfil de la tienda",
+          icon: "store",
+          href: "/store-profile",
+          match: (p) => p.startsWith("/store-profile"),
+        },
         ...(hasPermission(member, "products", "edit")
           ? [
               {

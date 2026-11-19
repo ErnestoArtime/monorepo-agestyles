@@ -26,6 +26,7 @@ import {
   type CatalogPage,
   type HomeBanner,
 } from "../../../../lib/storefront";
+import { sdk } from "../../../../config";
 import type { HttpTypes } from "@medusajs/types";
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -109,6 +110,36 @@ export default function HomeScreen() {
     setSearchTerm("");
     setDebouncedSearch("");
   }, [params.filtro, params.ids, params.tienda]);
+
+  // A store's page shows its cover, logo and description above its products.
+  const [storeProfile, setStoreProfile] = useState<{
+    id: string;
+    name: string;
+    description?: string | null;
+    logo?: string | null;
+    banner?: string | null;
+  } | null>(null);
+  useEffect(() => {
+    const sellerId = menuFilter?.kind === "tienda" ? menuFilter.seller : null;
+    if (!sellerId) {
+      setStoreProfile(null);
+      return;
+    }
+    let active = true;
+    sdk.client
+      .fetch<{ seller: NonNullable<typeof storeProfile> }>(`/store/sellers/${sellerId}`, {
+        query: { fields: "id,name,description,logo,banner" },
+      })
+      .then(({ seller }) => {
+        if (active) setStoreProfile(seller);
+      })
+      .catch(() => {
+        if (active) setStoreProfile(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [menuFilter]);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchTerm.trim()), 300);
@@ -332,12 +363,73 @@ export default function HomeScreen() {
                   <Icon name="arrowLeft" size={16} color={colors.tint} />
                   <Text style={[styles.listingBackText, { color: colors.tint }]}>Inicio</Text>
                 </TouchableOpacity>
-                <Text
-                  accessibilityRole="header"
-                  style={[styles.listingTitle, { color: colors.text }]}
-                >
-                  {listingTitle}
-                </Text>
+                {storeProfile ? (
+                  <View
+                    style={[
+                      styles.storeHero,
+                      { backgroundColor: colors.cardBackground, borderColor: colors.border },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.storeCover,
+                        isWideWeb && styles.storeCoverWide,
+                        { backgroundColor: colors.surfaceMuted },
+                      ]}
+                    >
+                      {storeProfile.banner ? (
+                        <Image
+                          source={{ uri: storeProfile.banner }}
+                          style={styles.fill}
+                          contentFit="cover"
+                          accessibilityIgnoresInvertColors
+                        />
+                      ) : null}
+                    </View>
+                    <View style={styles.storeIdentity}>
+                      <View
+                        style={[
+                          styles.storeLogo,
+                          {
+                            backgroundColor: colors.surfaceMuted,
+                            borderColor: colors.cardBackground,
+                          },
+                        ]}
+                      >
+                        {storeProfile.logo ? (
+                          <Image
+                            source={{ uri: storeProfile.logo }}
+                            style={styles.fill}
+                            contentFit="cover"
+                            accessibilityLabel={`Logo de ${storeProfile.name}`}
+                          />
+                        ) : (
+                          <Icon name="store" size={30} color={colors.tint} />
+                        )}
+                      </View>
+                      <View style={styles.storeText}>
+                        <Text
+                          accessibilityRole="header"
+                          style={[styles.listingTitle, { color: colors.text }]}
+                        >
+                          {storeProfile.name}
+                        </Text>
+                        {storeProfile.description ? (
+                          <Text style={[styles.storeDescription, { color: colors.icon }]}>
+                            {storeProfile.description}
+                          </Text>
+                        ) : null}
+                      </View>
+                    </View>
+                  </View>
+                ) : (
+                  <Text
+                    accessibilityRole="header"
+                    style={[styles.listingTitle, { color: colors.text }]}
+                  >
+                    {listingTitle}
+                  </Text>
+                )}
               </View>
             ) : null}
             {isWideWeb || isListing ? null : (
@@ -609,6 +701,28 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   carousel: { marginHorizontal: 16 },
+  fill: { width: "100%", height: "100%" },
+  storeHero: {
+    marginTop: 6,
+    borderRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: "hidden",
+  },
+  storeCover: { aspectRatio: 16 / 6 },
+  storeCoverWide: { aspectRatio: undefined, height: 280 },
+  storeIdentity: { flexDirection: "row", alignItems: "flex-end", gap: 16, padding: 16 },
+  storeLogo: {
+    width: 96,
+    height: 96,
+    borderRadius: 22,
+    borderWidth: 4,
+    marginTop: -60,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  storeText: { flex: 1, gap: 4 },
+  storeDescription: { fontSize: 14, lineHeight: 20 },
   moreLoading: {
     flexDirection: "row",
     alignItems: "center",

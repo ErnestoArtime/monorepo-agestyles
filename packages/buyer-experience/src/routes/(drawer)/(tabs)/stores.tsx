@@ -15,6 +15,7 @@ import {
   View,
 } from "react-native";
 import { buyerPath } from "../../../config";
+import { CONTENT_MAX, useResponsive } from "../../../hooks/use-responsive";
 
 type Store = {
   id: string;
@@ -22,6 +23,7 @@ type Store = {
   handle?: string | null;
   description?: string | null;
   logo?: string | null;
+  banner?: string | null;
 };
 
 /** Store directory, as in the legacy catalog's «Tiendas». Opens the store's products in the catalog. */
@@ -29,6 +31,8 @@ export default function StoresScreen() {
   const colors = Colors[useColorScheme() ?? "light"];
   const styles = useMemo(() => createStyles(colors), [colors]);
   const router = useRouter();
+  const { isWideWeb, width } = useResponsive();
+  const columns = isWideWeb ? (width >= 1180 ? 3 : 2) : 1;
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -38,7 +42,7 @@ export default function StoresScreen() {
     setError("");
     try {
       const { sellers } = await sdk.client.fetch<{ sellers: Store[] }>("/store/sellers", {
-        query: { limit: 100, fields: "id,name,handle,description,logo" },
+        query: { limit: 100, fields: "id,name,handle,description,logo,banner" },
       });
       setStores([...sellers].sort((a, b) => a.name.localeCompare(b.name, "es")));
     } catch {
@@ -65,6 +69,9 @@ export default function StoresScreen() {
       style={styles.page}
       contentContainerStyle={styles.content}
       data={stores}
+      key={`stores-${columns}`}
+      numColumns={columns}
+      columnWrapperStyle={columns > 1 ? styles.row : undefined}
       keyExtractor={(store) => store.id}
       refreshControl={
         <RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.tint} />
@@ -90,24 +97,35 @@ export default function StoresScreen() {
           }
           accessibilityRole="button"
           accessibilityLabel={`Ver los productos de ${item.name}`}
-          style={({ pressed }) => [styles.card, pressed && { opacity: 0.7 }]}
+          style={({ pressed }) => [
+            styles.card,
+            columns > 1 && { maxWidth: `${100 / columns}%` },
+            pressed && { opacity: 0.7 },
+          ]}
         >
-          {item.logo ? (
-            <Image source={{ uri: item.logo }} style={styles.logo} contentFit="cover" />
-          ) : (
-            <View style={[styles.logo, styles.logoFallback]}>
-              <Icon name="store" size={22} color={colors.tint} />
-            </View>
-          )}
-          <View style={styles.text}>
-            <Text style={styles.name}>{item.name}</Text>
-            {item.description ? (
-              <Text style={styles.description} numberOfLines={2}>
-                {item.description}
-              </Text>
+          <View style={styles.cover}>
+            {item.banner ? (
+              <Image source={{ uri: item.banner }} style={styles.fill} contentFit="cover" />
             ) : null}
           </View>
-          <Icon name="chevronRight" size={20} color={colors.icon} />
+          <View style={styles.body}>
+            <View style={[styles.logo, styles.logoFallback]}>
+              {item.logo ? (
+                <Image source={{ uri: item.logo }} style={styles.fill} contentFit="cover" />
+              ) : (
+                <Icon name="store" size={22} color={colors.tint} />
+              )}
+            </View>
+            <View style={styles.text}>
+              <Text style={styles.name}>{item.name}</Text>
+              {item.description ? (
+                <Text style={styles.description} numberOfLines={2}>
+                  {item.description}
+                </Text>
+              ) : null}
+            </View>
+            <Icon name="chevronRight" size={20} color={colors.icon} />
+          </View>
         </Pressable>
       )}
     />
@@ -117,7 +135,8 @@ export default function StoresScreen() {
 const createStyles = (colors: (typeof Colors)[keyof typeof Colors]) =>
   StyleSheet.create({
     page: { flex: 1, backgroundColor: colors.background },
-    content: { padding: 16, gap: 12 },
+    content: { padding: 16, gap: 16, width: "100%", maxWidth: CONTENT_MAX, alignSelf: "center" },
+    row: { gap: 16 },
     center: {
       flex: 1,
       alignItems: "center",
@@ -125,17 +144,25 @@ const createStyles = (colors: (typeof Colors)[keyof typeof Colors]) =>
       backgroundColor: colors.background,
     },
     card: {
-      minHeight: 72,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 12,
-      padding: 12,
+      flex: 1,
+      overflow: "hidden",
       borderRadius: 14,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
       backgroundColor: colors.cardBackground,
     },
-    logo: { width: 48, height: 48, borderRadius: 12 },
+    cover: { aspectRatio: 16 / 6, backgroundColor: colors.surfaceMuted },
+    fill: { width: "100%", height: "100%" },
+    body: { flexDirection: "row", alignItems: "center", gap: 12, padding: 12 },
+    logo: {
+      width: 56,
+      height: 56,
+      borderRadius: 14,
+      marginTop: -34,
+      overflow: "hidden",
+      borderWidth: 3,
+      borderColor: colors.cardBackground,
+    },
     logoFallback: {
       alignItems: "center",
       justifyContent: "center",
