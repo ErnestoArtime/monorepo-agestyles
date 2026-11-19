@@ -4,7 +4,7 @@ import { BottomSheet, Button, Card, LargeTitle, PillGroup } from "@agestyles/ui-
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Image,
   Platform,
@@ -15,7 +15,15 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { CategoryPicker, categoryPath, type CategoryNode } from "../components/category-picker";
 import { hasPermission, OperationList } from "../components/operation-list";
+import {
+  activeValues,
+  ATTRIBUTE_FIELDS,
+  isBrandAttribute,
+  isSizeAttribute,
+  type Attribute,
+} from "../lib/codifiers";
 import { useBusiness } from "../context/business-context";
 import { useBusinessTheme } from "../hooks/use-business-theme";
 
@@ -90,6 +98,51 @@ export default function NewProductScreen() {
   const [cutout, setCutout] = useState<{ index: number; original: string; url: string } | null>(
     null,
   );
+  // Codificadores (AG-42): marketplace categories, brands and sizes chosen from lists.
+  const [categoryOptions, setCategoryOptions] = useState<CategoryNode[]>([]);
+  const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [codifiers, setCodifiers] = useState<Attribute[]>([]);
+  const [brandValueId, setBrandValueId] = useState<string | null>(null);
+  const [brandQuery, setBrandQuery] = useState("");
+  const [sizeAttributeId, setSizeAttributeId] = useState<string | null>(null);
+  const [sizeValueIds, setSizeValueIds] = useState<string[]>([]);
+  const brandAttribute = useMemo(() => codifiers.find(isBrandAttribute) ?? null, [codifiers]);
+  const brandValues = brandAttribute ? activeValues(brandAttribute) : [];
+  const sizeAttributes = useMemo(
+    () => codifiers.filter((a) => isSizeAttribute(a) && a.is_active !== false),
+    [codifiers],
+  );
+  const sizeAttribute = sizeAttributes.find((a) => a.id === sizeAttributeId) ?? null;
+
+  useEffect(() => {
+    if (!seller) return;
+    request<{ product_categories: CategoryNode[] }>(
+      "/vendor/product-categories?limit=500&fields=id,name,parent_category_id,is_active",
+    )
+      .then((data) =>
+        setCategoryOptions(
+          (data.product_categories ?? []).filter(
+            (c) => (c as CategoryNode & { is_active?: boolean }).is_active !== false,
+          ),
+        ),
+      )
+      .catch(() => setCategoryOptions([]));
+    request<{ product_attributes: Attribute[] }>(
+      `/vendor/product-attributes?limit=200&fields=${ATTRIBUTE_FIELDS}`,
+    )
+      .then((data) => setCodifiers(data.product_attributes ?? []))
+      .catch(() => setCodifiers([]));
+  }, [request, seller]);
+
+  // The AI copy and the checklist read the chosen names.
+  useEffect(() => {
+    if (categoryId) setCategory(categoryPath(categoryOptions, categoryId));
+  }, [categoryId, categoryOptions]);
+  useEffect(() => {
+    const value = brandValues.find((v) => v.id === brandValueId);
+    if (value) setBrand(value.name);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [brandValueId]);
 
   useEffect(() => {
     if (!seller) return;
@@ -232,17 +285,38 @@ export default function NewProductScreen() {
     setError("");
     try {
       const urls = photos.map((photo) => photo.url);
+      // One variant per chosen size (the size attribute is Mercur's variant axis).
+      const sizes = sizeAttribute
+        ? activeValues(sizeAttribute).filter((v) => sizeValueIds.includes(v.id))
+        : [];
+      const attributes = [
+        ...(brandAttribute && brandValueId
+          ? [{ id: brandAttribute.id, value_ids: [brandValueId] }]
+          : []),
+        ...(sizeAttribute && sizes.length
+          ? [{ id: sizeAttribute.id, value_ids: sizes.map((v) => v.id) }]
+          : []),
+      ];
+      const variants = sizes.length
+        ? sizes.map((size) => ({
+            title: size.name,
+            options: { [sizeAttribute!.name]: size.name },
+            ...(sku.trim() ? { sku: `${sku.trim()}-${size.name}`.toUpperCase() } : {}),
+          }))
+        : [
+            {
+              title: variantTitle.trim() || "Única",
+              ...(sku.trim() ? { sku: sku.trim() } : {}),
+            },
+          ];
       await request("/vendor/products", "POST", {
         title: name,
         ...(description.trim() ? { description: description.trim() } : {}),
         status: "proposed",
         ...(urls.length ? { images: urls.map((url) => ({ url })), thumbnail: urls[0] } : {}),
-        variants: [
-          {
-            title: variantTitle.trim() || "Única",
-            ...(sku.trim() ? { sku: sku.trim() } : {}),
-          },
-        ],
+        ...(categoryId ? { categories: [{ id: categoryId }] } : {}),
+        ...(attributes.length ? { attributes } : {}),
+        variants,
       });
       setDone(true);
     } catch {
@@ -259,6 +333,10 @@ export default function NewProductScreen() {
     setDescription("");
     setVariantTitle("");
     setSku("");
+    setCategoryId(null);
+    setBrandValueId(null);
+    setSizeAttributeId(null);
+    setSizeValueIds([]);
     setPhotos([]);
     setDone(false);
   }
@@ -460,19 +538,15 @@ export default function NewProductScreen() {
               style={styles.input}
             />
           </Field>
-          <View style={styles.row}>
-            <Field label="Marca" optional styles={styles} flex>
-              <TextInput
-                value={brand}
-                onChangeText={setBrand}
-                maxLength={60}
-                placeholder="Ej.: Nike"
-                placeholderTextColor={theme.placeholderText}
-                accessibilityLabel="Marca"
-                style={styles.input}
-              />
-            </Field>
-            <Field label="Tipo" optional styles={styles} flex>
+          {categoryOptions.length ? (
+            <CategoryPicker
+              label="Categoría"
+              categories={categoryOptions}
+              value={categoryId}
+              onChange={setCategoryId}
+            />
+          ) : (
+            <Field label="Tipo" optional styles={styles}>
               <TextInput
                 value={category}
                 onChangeText={setCategory}
@@ -483,7 +557,52 @@ export default function NewProductScreen() {
                 style={styles.input}
               />
             </Field>
-          </View>
+          )}
+          {brandValues.length ? (
+            <Field label="Marca" optional styles={styles}>
+              <TextInput
+                value={brandQuery}
+                onChangeText={setBrandQuery}
+                placeholder="Buscar marca"
+                placeholderTextColor={theme.placeholderText}
+                accessibilityLabel="Buscar marca"
+                style={styles.input}
+              />
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsRow}>
+                <PillGroup
+                  accessibilityLabel="Marca"
+                  value={brandValueId ?? "__none__"}
+                  onChange={(value) => {
+                    setBrandValueId(value === "__none__" ? null : value);
+                    if (value === "__none__") setBrand("");
+                  }}
+                  options={[
+                    { value: "__none__", label: "Sin marca" },
+                    ...brandValues
+                      .filter(
+                        (v) =>
+                          !brandQuery.trim() ||
+                          v.name.toLowerCase().includes(brandQuery.trim().toLowerCase()),
+                      )
+                      .slice(0, 30)
+                      .map((v) => ({ value: v.id, label: v.name })),
+                  ]}
+                />
+              </ScrollView>
+            </Field>
+          ) : (
+            <Field label="Marca" optional styles={styles}>
+              <TextInput
+                value={brand}
+                onChangeText={setBrand}
+                maxLength={60}
+                placeholder="Ej.: Nike"
+                placeholderTextColor={theme.placeholderText}
+                accessibilityLabel="Marca"
+                style={styles.input}
+              />
+            </Field>
+          )}
         </Card>
 
         <Card style={styles.card}>
@@ -580,21 +699,81 @@ export default function NewProductScreen() {
 
         <Card style={styles.card}>
           <SectionHeader title="Variante" styles={styles} />
-          <Text style={styles.hint}>
-            Si vendes tallas o colores, podrás añadir más variantes cuando la ficha esté aprobada.
-          </Text>
+          {sizeAttributes.length ? (
+            <>
+              <Text style={styles.hint}>
+                Si el producto tiene tallas, elige el tipo y marca las que vendes: cada talla será
+                una variante con su precio y existencias.
+              </Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsRow}>
+                <PillGroup
+                  accessibilityLabel="Tipo de talla"
+                  value={sizeAttributeId ?? "__none__"}
+                  onChange={(value) => {
+                    setSizeAttributeId(value === "__none__" ? null : value);
+                    setSizeValueIds([]);
+                  }}
+                  options={[
+                    { value: "__none__", label: "Sin tallas" },
+                    ...sizeAttributes.map((a) => ({ value: a.id, label: a.name })),
+                  ]}
+                />
+              </ScrollView>
+              {sizeAttribute ? (
+                <View style={styles.sizeGrid}>
+                  {activeValues(sizeAttribute).map((value) => {
+                    const on = sizeValueIds.includes(value.id);
+                    return (
+                      <Pressable
+                        key={value.id}
+                        accessibilityRole="checkbox"
+                        accessibilityState={{ checked: on }}
+                        accessibilityLabel={`Talla ${value.name}`}
+                        onPress={() =>
+                          setSizeValueIds(
+                            on
+                              ? sizeValueIds.filter((id) => id !== value.id)
+                              : [...sizeValueIds, value.id],
+                          )
+                        }
+                        style={[
+                          styles.sizeChip,
+                          {
+                            borderColor: on ? theme.action : theme.border,
+                            backgroundColor: on ? theme.action : theme.surface,
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[styles.sizeText, { color: on ? theme.onAction : theme.text }]}
+                        >
+                          {value.name}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              ) : null}
+            </>
+          ) : (
+            <Text style={styles.hint}>
+              Si vendes tallas o colores, podrás añadir más variantes cuando la ficha esté aprobada.
+            </Text>
+          )}
           <View style={styles.row}>
-            <Field label="Nombre" optional styles={styles} flex>
-              <TextInput
-                value={variantTitle}
-                onChangeText={setVariantTitle}
-                maxLength={120}
-                placeholder="Única"
-                placeholderTextColor={theme.placeholderText}
-                accessibilityLabel="Nombre de la variante"
-                style={styles.input}
-              />
-            </Field>
+            {sizeValueIds.length ? null : (
+              <Field label="Nombre" optional styles={styles} flex>
+                <TextInput
+                  value={variantTitle}
+                  onChangeText={setVariantTitle}
+                  maxLength={120}
+                  placeholder="Única"
+                  placeholderTextColor={theme.placeholderText}
+                  accessibilityLabel="Nombre de la variante"
+                  style={styles.input}
+                />
+              </Field>
+            )}
             <Field label="SKU" optional styles={styles} flex>
               <TextInput
                 value={sku}
@@ -742,6 +921,18 @@ function Field({
 
 const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
   StyleSheet.create({
+    chipsRow: { marginTop: 8, flexGrow: 0 },
+    sizeGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10, marginBottom: 6 },
+    sizeChip: {
+      minWidth: 48,
+      minHeight: 40,
+      paddingHorizontal: 12,
+      borderRadius: 10,
+      borderWidth: 1,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    sizeText: { fontSize: 15, fontWeight: "600" },
     screen: { flex: 1, backgroundColor: theme.background },
     content: {
       padding: 16,

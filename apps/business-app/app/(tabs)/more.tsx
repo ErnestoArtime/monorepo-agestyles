@@ -119,8 +119,13 @@ export default function MoreScreen() {
             action={() => router.push("/admin/portada")}
           />
           <Row
-            title="Categorías"
-            detail="Solicitudes de categorías de las tiendas."
+            title="Codificadores"
+            detail="Categorías, tallas y marcas del catálogo."
+            action={() => router.push("/admin/codificadores")}
+          />
+          <Row
+            title="Solicitudes de categoría"
+            detail="Categorías que piden las tiendas."
             action={() => router.push("/admin/categorias")}
           />
         </Section>

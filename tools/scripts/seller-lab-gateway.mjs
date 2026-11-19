@@ -51,6 +51,9 @@ const rules = [
   ["GET POST", /^\/vendor\/sellers\/me$/],
   ["GET POST", /^\/vendor\/agestyles\/(store-home|store-sections|category-requests)$/],
   ["GET", /^\/vendor\/agestyles\/analytics$/],
+  // Product form (AG-42): marketplace categories, sizes and brands to choose from.
+  ["GET", /^\/vendor\/product-categories$/],
+  ["GET", /^\/vendor\/product-attributes$/],
   ["POST", /^\/vendor\/sellers\/select$/],
   ["GET", /^\/vendor\/members\/me$/],
   // One rule per path: the first path match decides, so GET and POST must share it.

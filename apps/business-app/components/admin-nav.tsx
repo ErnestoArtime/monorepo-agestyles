@@ -13,7 +13,8 @@ const SECTIONS = [
   { value: "/admin/pedidos", label: "Pedidos" },
   { value: "/admin/revision", label: "Revisión" },
   { value: "/admin/portada", label: "Portada" },
-  { value: "/admin/categorias", label: "Categorías" },
+  { value: "/admin/codificadores", label: "Codificadores" },
+  { value: "/admin/categorias", label: "Solicitudes" },
 ];
 
 /** On phones (no side menu) the administration sections are tabs at the top. */

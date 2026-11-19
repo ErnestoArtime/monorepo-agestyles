@@ -58,6 +58,17 @@ const rules = [
   ["GET POST", /^\/admin\/agestyles\/home$/],
   ["GET", /^\/admin\/agestyles\/category-requests$/],
   ["GET", /^\/admin\/agestyles\/notifications$/],
+  // Codificadores (AG-42): categories through Medusa, sizes and brands as Mercur global
+  // attributes. Deleting a category only through the guarded AgeStyles route; attributes
+  // and values are deactivated, never deleted, so products keep their data.
+  ["GET", /^\/admin\/agestyles\/codifiers\/categories$/],
+  ["DELETE", /^\/admin\/agestyles\/codifiers\/categories\/pcat_[A-Za-z0-9]+$/],
+  ["GET POST", /^\/admin\/product-categories$/],
+  ["GET POST", /^\/admin\/product-categories\/pcat_[A-Za-z0-9]+$/],
+  ["GET POST", /^\/admin\/product-attributes$/],
+  ["GET POST", /^\/admin\/product-attributes\/pattr_[A-Za-z0-9]+$/],
+  ["POST", /^\/admin\/product-attributes\/pattr_[A-Za-z0-9]+\/values$/],
+  ["POST", /^\/admin\/product-attributes\/pattr_[A-Za-z0-9]+\/values\/pattrval_[A-Za-z0-9]+$/],
   ["POST", /^\/admin\/agestyles\/notifications\/read$/],
   ["POST", /^\/admin\/agestyles\/category-requests\/catreq_[A-Za-z0-9]+$/],
   ["POST", /^\/admin\/uploads$/],

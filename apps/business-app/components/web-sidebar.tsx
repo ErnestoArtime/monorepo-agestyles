@@ -188,7 +188,13 @@ export function WebSidebar() {
         match: (p) => p.startsWith("/admin/portada"),
       },
       {
-        label: "Categorías",
+        label: "Codificadores",
+        icon: "tag",
+        href: "/admin/codificadores",
+        match: (p) => p.startsWith("/admin/codificadores"),
+      },
+      {
+        label: "Solicitudes de categoría",
         icon: "boxes",
         href: "/admin/categorias",
         match: (p) => p.startsWith("/admin/categorias"),
