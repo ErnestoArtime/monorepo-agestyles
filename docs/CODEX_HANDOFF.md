@@ -1660,3 +1660,13 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - **Descargas:** `docker cp` de APK y `.sha256` a `utilitaria-downloads`; tarjetas actualizadas (copia del índice anterior en `~/.local/share/agestyles-deploy/apks/index.before-140.html`). 200 y checksums públicos = locales. Se conservan 1.3.0/1.1.0 (y 1.2.0/1.0.1) en `releases/`.
 - **Tienda web:** `BUYER_WEB_ANDROID_APK_URL` a la 1.4.0 (copia previa en `env-backups-20261120/env.buyer-web.before-140`), republicada.
 - **Disco:** con permiso del usuario se borraron las imágenes de la API `8c409be` y `ac57ee3` (se conservan `7e5fd4c` en uso y `d22ee8e`); carpetas `android/` generadas borradas al terminar.
+
+## 2026-11-20 · Claude · AG-48: esqueletos de carga y plantilla común de Negocio
+
+- `packages/ui-native/src/skeleton.tsx` (nuevo, exportado): `SkeletonBlock` (pulso con `Animated`, color `quietSurface` del tema), `SkeletonRows`, `SkeletonCards`, `SkeletonStats`. Contenedor con `accessibilityLabel="Cargando"`.
+- `apps/business-app/components/operation-list.tsx`: prop `skeleton` (`rows` por defecto, `cards`, `stats`). En la primera carga muestra el esqueleto y oculta el contenido, para que una sección ya visible no diga «No hay…» antes de tener datos. Las recargas siguen mostrando el contenido con el indicador de arrastre.
+- `app/analytics.tsx` y `app/commissions.tsx`: `skeleton="stats"`.
+- Comprobado: `tsc` sin errores nuevos (los 26 de rutas tipadas ya existían), `eslint` sin errores, prettier, y `build-business-web.mjs` exporta.
+- **No hecho:** repaso visual pantalla a pantalla en ancho web y móvil (sin navegador de prueba aquí), ni cambios de diseño de cada pantalla. No desplegado.
+- **No tocado a propósito:** `app/(tabs)/index.tsx` (AG-25 de Codex, en curso).
+- Observación: los nombres de la pestaña móvil y del menú lateral difieren («Revisión» / «Productos en revisión», «Pedidos» / «Pedidos del marketplace», «Solicitudes» / «Solicitudes de categoría»). Unificar en una pasada posterior.

@@ -242,6 +242,7 @@ export default function CommissionsScreen() {
 
   return (
     <OperationList
+      skeleton="stats"
       backLabel="Más"
       title="Comisiones"
       subtitle={

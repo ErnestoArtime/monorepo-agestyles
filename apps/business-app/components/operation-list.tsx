@@ -1,14 +1,7 @@
-import { Children, ReactNode } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Children, ReactNode, useEffect, useState } from "react";
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Icon } from "@agestyles/icons";
+import { SkeletonCards, SkeletonRows, SkeletonStats } from "@agestyles/ui-native";
 import { useRouter } from "expo-router";
 import { useBusinessTheme, type BusinessTheme } from "../hooks/use-business-theme";
 import { CONTENT_MAX, useResponsive } from "../hooks/use-responsive";
@@ -23,8 +16,11 @@ export function OperationList({
   isEmpty,
   onRefresh,
   backLabel,
+  skeleton = "rows",
   children,
 }: {
+  /** Shape of the placeholder shown while the first data is loading (AG-48). */
+  skeleton?: "rows" | "cards" | "stats";
   /**
    * Secondary screens (opened from «Más») show «← backLabel» above the title on phones;
    * a wide browser already reaches every section from the side menu.
@@ -44,6 +40,13 @@ export function OperationList({
   const styles = createStyles(theme);
   const { isWideWeb } = useResponsive();
   const router = useRouter();
+  // The first load shows the placeholder instead of the content, so a section that is
+  // already on screen does not announce «no hay…» before the data arrives (AG-48).
+  const [loaded, setLoaded] = useState(!loading);
+  useEffect(() => {
+    if (!loading) setLoaded(true);
+  }, [loading]);
+  const firstLoad = loading && !loaded;
   // Children are often a list of conditionals (`cond ? <X/> : null`), which is truthy even
   // when every branch rendered nothing, so count what actually renders.
   const nothingRendered = Children.toArray(children).length === 0;
@@ -73,8 +76,16 @@ export function OperationList({
       ) : null}
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.subtitle}>{subtitle}</Text>
-      {loading && nothingRendered ? (
-        <ActivityIndicator style={{ marginTop: 28 }} color={theme.action} />
+      {firstLoad || (loading && nothingRendered) ? (
+        <View style={styles.placeholder} accessibilityLabel="Cargando">
+          {skeleton === "cards" ? (
+            <SkeletonCards />
+          ) : skeleton === "stats" ? (
+            <SkeletonStats />
+          ) : (
+            <SkeletonRows />
+          )}
+        </View>
       ) : null}
       {error ? (
         <View style={styles.message}>
@@ -82,12 +93,12 @@ export function OperationList({
           <Text style={styles.error}>{error}</Text>
         </View>
       ) : null}
-      {!loading && !error && showEmpty && empty ? (
+      {!loading && !error && !firstLoad && showEmpty && empty ? (
         <View style={styles.message}>
           <Text style={styles.empty}>{empty}</Text>
         </View>
       ) : null}
-      {children}
+      {firstLoad ? null : children}
     </ScrollView>
   );
 }
@@ -199,6 +210,7 @@ const createStyles = (theme: BusinessTheme) =>
     },
     error: { color: theme.error, flex: 1, fontSize: 14, lineHeight: 20 },
     empty: { color: theme.muted, fontSize: 14, lineHeight: 20 },
+    placeholder: { marginTop: 14 },
     section: { marginTop: 19 },
     sectionTitle: { color: theme.text, fontWeight: "700", fontSize: 18, marginBottom: 10 },
     sectionBody: {
