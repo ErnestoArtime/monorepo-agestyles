@@ -4,6 +4,7 @@ import { Icon } from "@agestyles/icons";
 import { OperationList, Section } from "../../components/operation-list";
 import { useBusiness } from "../../context/business-context";
 import { useBusinessTheme } from "../../hooks/use-business-theme";
+import { useResponsive } from "../../hooks/use-responsive";
 
 type SellerMember = {
   id: string;
@@ -38,6 +39,7 @@ function memberName(member: SellerMember) {
 
 export default function TeamScreen() {
   const theme = useBusinessTheme();
+  const { isWideWeb } = useResponsive();
   const styles = createStyles(theme);
   const { seller, member, request } = useBusiness();
   const [members, setMembers] = useState<SellerMember[]>([]);
@@ -177,109 +179,114 @@ export default function TeamScreen() {
           <Text style={styles.noticeText}>{notice}</Text>
         </View>
       ) : null}
-      <Section title="Invitar a la tienda">
-        <View style={styles.form}>
-          <Text style={styles.label}>Correo electrónico</Text>
-          <TextInput
-            value={email}
-            onChangeText={setEmail}
-            placeholder="persona@ejemplo.com"
-            placeholderTextColor={theme.placeholderText}
-            autoCapitalize="none"
-            autoComplete="email"
-            keyboardType="email-address"
-            accessibilityLabel="Correo electrónico de la persona invitada"
-            style={styles.input}
-          />
-          <Text style={styles.label}>Permisos iniciales</Text>
-          <View style={styles.roleChoices}>
-            {roles.map((role) => (
-              <RoleChoice
-                key={role.id}
-                role={role}
-                selected={inviteRole === role.id}
-                onPress={() => setInviteRole(role.id)}
+      <View style={isWideWeb ? styles.columns : undefined}>
+        <View style={isWideWeb ? styles.columnInvite : undefined}>
+          <Section title="Invitar a la tienda">
+            <View style={styles.form}>
+              <Text style={styles.label}>Correo electrónico</Text>
+              <TextInput
+                value={email}
+                onChangeText={setEmail}
+                placeholder="persona@ejemplo.com"
+                placeholderTextColor={theme.placeholderText}
+                autoCapitalize="none"
+                autoComplete="email"
+                keyboardType="email-address"
+                accessibilityLabel="Correo electrónico de la persona invitada"
+                style={styles.input}
               />
-            ))}
-          </View>
-          <Pressable
-            onPress={() => void inviteMember()}
-            disabled={saving || loading}
-            accessibilityRole="button"
-            style={({ pressed }) => [
-              styles.primaryButton,
-              pressed && styles.pressed,
-              (saving || loading) && styles.disabled,
-            ]}
-          >
-            <Text style={styles.primaryText}>{saving ? "Guardando…" : "Crear invitación"}</Text>
-          </Pressable>
-        </View>
-      </Section>
-
-      <Section title={`Miembros (${members.length})`}>
-        {members.length === 0 && !loading ? (
-          <Text style={styles.empty}>Todavía no hay miembros en esta tienda.</Text>
-        ) : null}
-        {members.map((person) => (
-          <View key={person.id} style={styles.memberCard}>
-            <View style={styles.memberHeading}>
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>
-                  {memberName(person).slice(0, 1).toUpperCase()}
-                </Text>
-              </View>
-              <View style={styles.memberInfo}>
-                <Text style={styles.memberName}>{memberName(person)}</Text>
-                {person.member?.email ? (
-                  <Text style={styles.memberEmail}>{person.member.email}</Text>
-                ) : null}
-              </View>
-              <Text style={styles.roleBadge}>
-                {person.is_owner ? "Propietario" : roleName(person.role_id)}
-              </Text>
-            </View>
-            {!person.is_owner ? (
-              <View style={styles.memberActions}>
-                <Pressable
-                  onPress={() => setRolePicker(rolePicker === person.id ? null : person.id)}
-                  disabled={saving}
-                  accessibilityRole="button"
-                  style={styles.secondaryButton}
-                >
-                  <Text style={styles.secondaryText}>
-                    {rolePicker === person.id ? "Cerrar" : "Cambiar permisos"}
-                  </Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => revokeMember(person)}
-                  disabled={saving}
-                  accessibilityRole="button"
-                  style={styles.revokeButton}
-                >
-                  <Text style={styles.revokeText}>Revocar acceso</Text>
-                </Pressable>
-              </View>
-            ) : (
-              <Text style={styles.ownerNote}>
-                El propietario mantiene el control de esta tienda.
-              </Text>
-            )}
-            {rolePicker === person.id ? (
+              <Text style={styles.label}>Permisos iniciales</Text>
               <View style={styles.roleChoices}>
                 {roles.map((role) => (
                   <RoleChoice
                     key={role.id}
                     role={role}
-                    selected={person.role_id === role.id}
-                    onPress={() => void changeRole(person, role.id)}
+                    selected={inviteRole === role.id}
+                    onPress={() => setInviteRole(role.id)}
                   />
                 ))}
               </View>
+              <Pressable
+                onPress={() => void inviteMember()}
+                disabled={saving || loading}
+                accessibilityRole="button"
+                style={({ pressed }) => [
+                  styles.primaryButton,
+                  pressed && styles.pressed,
+                  (saving || loading) && styles.disabled,
+                ]}
+              >
+                <Text style={styles.primaryText}>{saving ? "Guardando…" : "Crear invitación"}</Text>
+              </Pressable>
+            </View>
+          </Section>
+        </View>
+        <View style={isWideWeb ? styles.columnMembers : undefined}>
+          <Section title={`Miembros (${members.length})`}>
+            {members.length === 0 && !loading ? (
+              <Text style={styles.empty}>Todavía no hay miembros en esta tienda.</Text>
             ) : null}
-          </View>
-        ))}
-      </Section>
+            {members.map((person) => (
+              <View key={person.id} style={styles.memberCard}>
+                <View style={styles.memberHeading}>
+                  <View style={styles.avatar}>
+                    <Text style={styles.avatarText}>
+                      {memberName(person).slice(0, 1).toUpperCase()}
+                    </Text>
+                  </View>
+                  <View style={styles.memberInfo}>
+                    <Text style={styles.memberName}>{memberName(person)}</Text>
+                    {person.member?.email ? (
+                      <Text style={styles.memberEmail}>{person.member.email}</Text>
+                    ) : null}
+                  </View>
+                  <Text style={styles.roleBadge}>
+                    {person.is_owner ? "Propietario" : roleName(person.role_id)}
+                  </Text>
+                </View>
+                {!person.is_owner ? (
+                  <View style={styles.memberActions}>
+                    <Pressable
+                      onPress={() => setRolePicker(rolePicker === person.id ? null : person.id)}
+                      disabled={saving}
+                      accessibilityRole="button"
+                      style={styles.secondaryButton}
+                    >
+                      <Text style={styles.secondaryText}>
+                        {rolePicker === person.id ? "Cerrar" : "Cambiar permisos"}
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => revokeMember(person)}
+                      disabled={saving}
+                      accessibilityRole="button"
+                      style={styles.revokeButton}
+                    >
+                      <Text style={styles.revokeText}>Revocar acceso</Text>
+                    </Pressable>
+                  </View>
+                ) : (
+                  <Text style={styles.ownerNote}>
+                    El propietario mantiene el control de esta tienda.
+                  </Text>
+                )}
+                {rolePicker === person.id ? (
+                  <View style={styles.roleChoices}>
+                    {roles.map((role) => (
+                      <RoleChoice
+                        key={role.id}
+                        role={role}
+                        selected={person.role_id === role.id}
+                        onPress={() => void changeRole(person, role.id)}
+                      />
+                    ))}
+                  </View>
+                ) : null}
+              </View>
+            ))}
+          </Section>
+        </View>
+      </View>
       <View style={styles.accessNotice}>
         <Icon name="shieldCheck" color={theme.action} size={20} />
         <Text style={styles.accessText}>
@@ -323,6 +330,9 @@ function RoleChoice({
 
 const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
   StyleSheet.create({
+    columns: { flexDirection: "row", alignItems: "flex-start", gap: 24 },
+    columnInvite: { width: 400, flexShrink: 0 },
+    columnMembers: { flex: 1, minWidth: 0 },
     form: { padding: 16 },
     label: { color: theme.text, fontSize: 13, fontWeight: "600", marginBottom: 8, marginTop: 6 },
     input: {

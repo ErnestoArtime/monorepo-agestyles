@@ -15,19 +15,22 @@ export function ScreenFrame({ backLabel, children }: { backLabel: string; childr
   const wide = isWideWeb ? styles.wide : null;
   return (
     <SafeAreaView edges={["top"]} style={styles.page}>
-      <View style={[styles.header, wide]}>
-        <Pressable
-          onPress={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)"))}
-          accessibilityRole="button"
-          accessibilityLabel={`Volver: ${backLabel}`}
-          hitSlop={6}
-          style={({ pressed }) => [styles.back, pressed && { opacity: 0.6 }]}
-        >
-          <Icon name="arrowLeft" size={18} color={theme.action} />
-          <Text style={styles.backText}>{backLabel}</Text>
-        </Pressable>
-      </View>
-      <View style={[styles.body, wide]}>{children}</View>
+      {/* The side menu already reaches every section in a wide browser. */}
+      {isWideWeb ? null : (
+        <View style={[styles.header, wide]}>
+          <Pressable
+            onPress={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)"))}
+            accessibilityRole="button"
+            accessibilityLabel={`Volver: ${backLabel}`}
+            hitSlop={6}
+            style={({ pressed }) => [styles.back, pressed && { opacity: 0.6 }]}
+          >
+            <Icon name="arrowLeft" size={18} color={theme.action} />
+            <Text style={styles.backText}>{backLabel}</Text>
+          </Pressable>
+        </View>
+      )}
+      <View style={[styles.body, wide, isWideWeb && styles.bodyWide]}>{children}</View>
     </SafeAreaView>
   );
 }
@@ -46,4 +49,5 @@ const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
     },
     backText: { color: theme.action, fontSize: 15, fontWeight: "500" },
     body: { flex: 1 },
+    bodyWide: { paddingTop: 40 },
   });

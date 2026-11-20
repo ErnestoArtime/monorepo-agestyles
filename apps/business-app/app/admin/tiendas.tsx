@@ -200,9 +200,7 @@ export default function AdminStoresScreen() {
                 accessibilityLabel={`${store.name}, ${status.label}`}
               >
                 <View style={styles.cardTop}>
-                  <Text style={styles.cardTitle} numberOfLines={1}>
-                    {store.name}
-                  </Text>
+                  <Text style={styles.cardTitle}>{store.name}</Text>
                   <StatusBadge label={status.label} tone={status.tone} />
                 </View>
                 <Text style={styles.muted}>
@@ -314,10 +312,11 @@ const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
     cardTop: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 10,
+      flexWrap: "wrap",
+      gap: 6,
       justifyContent: "space-between",
     },
-    cardTitle: { color: theme.text, fontSize: 15, fontWeight: "600", flexShrink: 1 },
+    cardTitle: { color: theme.text, fontSize: 15, fontWeight: "600", flexShrink: 1, flexGrow: 1 },
     muted: { color: theme.muted, fontSize: 13, lineHeight: 18, marginTop: 4 },
     sheet: { gap: 10 },
     actions: { flexDirection: "row", gap: 10, flexWrap: "wrap", marginTop: 4 },

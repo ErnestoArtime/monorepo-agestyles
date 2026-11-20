@@ -6,6 +6,7 @@ import { useAdmin } from "../../context/admin-context";
 import { useBusinessTheme } from "../../hooks/use-business-theme";
 import { adminError, inviteLink, personName, shortDate, STORE_ROLES } from "../../lib/admin";
 import { memberRoleLabel } from "../../lib/roles";
+import { useResponsive } from "../../hooks/use-responsive";
 
 type PersonStore = {
   seller_member_id: string;
@@ -71,6 +72,7 @@ export default function AdminUsersScreen() {
   const theme = useBusinessTheme();
   const styles = createStyles(theme);
   const { adminRequest, admin } = useAdmin();
+  const { isWideWeb } = useResponsive();
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -393,6 +395,11 @@ export default function AdminUsersScreen() {
         </Text>
       ) : null}
       <View style={styles.toolbar}>
+        <SearchField
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Buscar por nombre o correo"
+        />
         <PillGroup
           accessibilityLabel="Tipo de usuario"
           value={filter}
@@ -402,17 +409,31 @@ export default function AdminUsersScreen() {
             label: `${item.label} (${counts[item.value] ?? 0})`,
           }))}
         />
-        <SearchField
-          value={query}
-          onChangeText={setQuery}
-          placeholder="Buscar por nombre o correo"
-        />
       </View>
 
       <Section title={`Personas (${visible.length})`}>
         {visible.length ? (
           visible.map((person) => {
             const expanded = open === person.email;
+            const badgesEl = (
+              <View style={styles.badges}>
+                {person.user_id ? <StatusBadge label="Administración" tone="success" /> : null}
+                {person.stores.length ? (
+                  <StatusBadge
+                    label={
+                      person.stores.length === 1
+                        ? `${person.stores[0].seller_name} · ${memberRoleLabel(person.stores[0])}`
+                        : `${person.stores.length} tiendas`
+                    }
+                    tone="neutral"
+                  />
+                ) : null}
+                {!person.user_id && !person.stores.length && person.customer_id ? (
+                  <StatusBadge label="Cliente" tone="neutral" />
+                ) : null}
+                {!person.has_password ? <StatusBadge label="Sin activar" tone="warning" /> : null}
+              </View>
+            );
             return (
               <View key={person.email}>
                 <Pressable
@@ -420,36 +441,21 @@ export default function AdminUsersScreen() {
                   accessibilityState={{ expanded }}
                   onPress={() => toggle(person)}
                   style={({ hovered }: { hovered?: boolean }) => [
-                    styles.row,
+                    styles.personRow,
                     (hovered || expanded) && styles.rowActive,
                   ]}
                 >
-                  <View style={styles.flex}>
-                    <Text style={styles.rowTitle}>{personName(person)}</Text>
-                    {personName(person) !== person.email ? (
-                      <Text style={styles.muted}>{person.email}</Text>
-                    ) : null}
+                  <View style={styles.personMain}>
+                    <View style={styles.flex}>
+                      <Text style={styles.rowTitle}>{personName(person)}</Text>
+                      {personName(person) !== person.email ? (
+                        <Text style={styles.muted}>{person.email}</Text>
+                      ) : null}
+                    </View>
+                    {isWideWeb ? badgesEl : null}
+                    <Text style={styles.chevron}>{expanded ? "▴" : "▾"}</Text>
                   </View>
-                  <View style={styles.badges}>
-                    {person.user_id ? <StatusBadge label="Administración" tone="success" /> : null}
-                    {person.stores.length ? (
-                      <StatusBadge
-                        label={
-                          person.stores.length === 1
-                            ? `${person.stores[0].seller_name} · ${memberRoleLabel(person.stores[0])}`
-                            : `${person.stores.length} tiendas`
-                        }
-                        tone="neutral"
-                      />
-                    ) : null}
-                    {!person.user_id && !person.stores.length && person.customer_id ? (
-                      <StatusBadge label="Cliente" tone="neutral" />
-                    ) : null}
-                    {!person.has_password ? (
-                      <StatusBadge label="Sin activar" tone="warning" />
-                    ) : null}
-                  </View>
-                  <Text style={styles.chevron}>{expanded ? "▴" : "▾"}</Text>
+                  {isWideWeb ? null : badgesEl}
                 </Pressable>
                 {expanded ? renderActions(person) : null}
               </View>
@@ -539,6 +545,15 @@ const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
     },
     rowActive: { backgroundColor: theme.paper },
     badges: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+    personRow: {
+      minHeight: 60,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      gap: 8,
+      borderBottomColor: theme.border,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+    },
+    personMain: { flexDirection: "row", alignItems: "center", gap: 12 },
     chevron: { color: theme.muted, fontSize: 14 },
     panel: {
       paddingHorizontal: 18,

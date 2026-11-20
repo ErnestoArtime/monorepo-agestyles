@@ -222,7 +222,7 @@ export function WebSidebar() {
       ? [
           {
             key: "admin" as const,
-            title: both ? "Administración del marketplace" : undefined,
+            title: both ? "Administración" : undefined,
             groups: both ? [{ items: adminGroup.items }] : [adminGroup],
           },
         ]

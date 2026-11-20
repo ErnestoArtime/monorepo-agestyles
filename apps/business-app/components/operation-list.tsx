@@ -207,6 +207,7 @@ const createStyles = (theme: BusinessTheme) =>
       alignItems: "center",
       gap: 11,
       marginTop: 8,
+      marginBottom: 12,
     },
     error: { color: theme.error, flex: 1, fontSize: 14, lineHeight: 20 },
     empty: { color: theme.muted, fontSize: 14, lineHeight: 20 },
