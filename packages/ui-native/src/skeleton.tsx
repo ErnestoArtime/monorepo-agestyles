@@ -43,7 +43,7 @@ export function SkeletonBlock({
   return (
     <Animated.View
       style={[
-        { width, height, borderRadius: radius, backgroundColor: color.quietSurface },
+        { width, height, borderRadius: radius, backgroundColor: color.border },
         { opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] }) },
         style,
       ]}

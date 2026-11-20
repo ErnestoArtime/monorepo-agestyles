@@ -1,21 +1,14 @@
 import { Button } from "../../../../components/ui/button";
 import { Colors } from "../../../../constants/theme";
 import { useCustomer } from "../../../../context/customer-context";
-import { LargeTitle } from "@agestyles/ui-native";
+import { LargeTitle, SkeletonRows } from "@agestyles/ui-native";
 import { sdk } from "../../../../config";
 import { listBuyerOrderGroups } from "@agestyles/api-client/buyer-orders";
 import type { BuyerOrderGroup } from "@agestyles/api-client/buyer-orders";
 import { useColorScheme } from "../../../../hooks/use-color-scheme";
 import { router } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { buyerHref } from "../../../../config";
 import { OrderGroupRow } from "../../../../components/account/order-group-row";
 
@@ -50,10 +43,13 @@ export default function OrdersScreen() {
 
   if (customerLoading || loading) {
     return (
-      <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <ActivityIndicator color={colors.tint} />
-        <Text style={{ color: colors.icon }}>Cargando tus compras…</Text>
-      </View>
+      <ScrollView
+        contentContainerStyle={[styles.content, { backgroundColor: colors.background }]}
+        accessibilityLabel="Cargando tus compras"
+      >
+        <LargeTitle title="Mis pedidos" />
+        <SkeletonRows rows={4} />
+      </ScrollView>
     );
   }
 

@@ -2,10 +2,10 @@ import { Icon, type IconName } from "@agestyles/icons";
 import { listBuyerOrderGroups, type BuyerOrderGroup } from "@agestyles/api-client/buyer-orders";
 import { unreadLabel } from "@agestyles/api-client/notifications";
 import { useOptionalNotifications } from "@agestyles/features-notifications";
+import { SkeletonBlock, SkeletonCards, SkeletonRows } from "@agestyles/ui-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Platform,
   Pressable,
@@ -100,10 +100,14 @@ export default function AccountScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <ActivityIndicator color={colors.tint} />
-        <Text style={styles.muted}>Verificando tu cuenta…</Text>
-      </View>
+      <ScrollView contentContainerStyle={[styles.page, { backgroundColor: colors.background }]}>
+        <View style={styles.stack} accessibilityLabel="Cargando tu cuenta">
+          <SkeletonBlock width="40%" height={30} />
+          <SkeletonBlock width="65%" height={14} />
+          <SkeletonRows rows={3} />
+          <SkeletonCards count={2} />
+        </View>
+      </ScrollView>
     );
   }
 
@@ -326,7 +330,7 @@ function SummarySection({
           </Pressable>
         </View>
         {orders === null ? (
-          <ActivityIndicator color={colors.tint} />
+          <SkeletonRows rows={2} />
         ) : orders.length ? (
           <View style={styles.stackSmall}>
             {orders.map((group) => (
@@ -452,6 +456,7 @@ function ProfileSection({ styles }: { styles: ReturnType<typeof createStyles> })
           label="Correo electrónico"
           value={customer?.email ?? ""}
           editable={false}
+          style={{ opacity: 0.6 }}
           accessibilityHint="El correo con el que entras no se puede cambiar aquí"
         />
         {error ? (
@@ -596,7 +601,7 @@ function AddressesSection({
       ) : null}
 
       {book.loading && !book.addresses.length ? (
-        <ActivityIndicator color={colors.tint} />
+        <SkeletonCards count={2} />
       ) : book.addresses.length ? (
         <View style={styles.grid}>
           {book.addresses.map((item) => (
