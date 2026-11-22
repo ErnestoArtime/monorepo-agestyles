@@ -4,6 +4,7 @@ import path from "node:path";
 import type { ExecArgs } from "@medusajs/framework/types";
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils";
 import {
+  batchLinksWorkflow,
   createCustomersWorkflow,
   createLocationFulfillmentSetWorkflow,
   createProductCategoriesWorkflow,
@@ -517,7 +518,7 @@ async function seed(container: ExecArgs["container"], query: Query) {
         const variantId = variants.find((row) => row.title === title)?.id ?? variants[index]?.id;
         if (!variantId) continue;
         const sku = `DEMO-${store.slug}-${product.slug}-${index + 1}`.toUpperCase();
-        await createOffersWorkflow(container).run({
+        const { result: offers } = await createOffersWorkflow(container).run({
           input: {
             offers: [
               {
@@ -540,9 +541,68 @@ async function seed(container: ExecArgs["container"], query: Query) {
             ],
           },
         });
+        await alignNewDemoVariantInventory(container, query, variantId, offers[0].id);
       }
     }
   }
+}
+
+async function alignNewDemoVariantInventory(
+  container: ExecArgs["container"],
+  query: Query,
+  variantId: string,
+  offerId: string,
+) {
+  // Each demo variant has exactly one offer. Both checkout paths must use its stock item.
+  const [{ data: variants }, { data: offers }] = await Promise.all([
+    query.graph({
+      entity: "product_variant",
+      fields: [
+        "inventory_items.inventory_item_id",
+        "inventory_items.inventory.sku",
+        "inventory_items.inventory.location_levels.id",
+      ],
+      filters: { id: variantId },
+    }),
+    query.graph({
+      entity: "offer",
+      fields: ["variant_id", "inventory_item_link.inventory_item_id"],
+      filters: { id: offerId },
+    }),
+  ]);
+  const offer = offers[0];
+  const inventoryItemId = offer?.inventory_item_link?.[0]?.inventory_item_id;
+  if (
+    offer?.variant_id !== variantId ||
+    offer.inventory_item_link?.length !== 1 ||
+    typeof inventoryItemId !== "string"
+  ) {
+    throw new Error(`No se pudo identificar el inventario de la oferta demo ${offerId}.`);
+  }
+
+  const [placeholder, ...otherLinks] = variants[0]?.inventory_items ?? [];
+  if (placeholder?.inventory_item_id === inventoryItemId && !otherLinks.length) return;
+  if (
+    !variants[0] ||
+    otherLinks.length ||
+    (placeholder &&
+      (!placeholder.inventory?.location_levels ||
+        placeholder.inventory.sku ||
+        placeholder.inventory.location_levels.length))
+  ) {
+    throw new Error(`La variante demo ${variantId} ya tiene vínculos de inventario que revisar.`);
+  }
+
+  const linkTo = (id: string) => ({
+    [Modules.PRODUCT]: { variant_id: variantId },
+    [Modules.INVENTORY]: { inventory_item_id: id },
+  });
+  await batchLinksWorkflow(container).run({
+    input: {
+      create: [{ ...linkTo(inventoryItemId), data: { required_quantity: 1 } }],
+      delete: placeholder ? [linkTo(placeholder.inventory_item_id)] : [],
+    },
+  });
 }
 
 async function uploadImage(
