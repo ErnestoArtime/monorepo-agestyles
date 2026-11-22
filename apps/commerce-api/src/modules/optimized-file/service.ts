@@ -4,12 +4,7 @@ import { MedusaError } from "@medusajs/framework/utils";
 import fs from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
-import {
-  optimizeImage,
-  VARIANT_WIDTHS,
-  variantKey,
-  webpName,
-} from "../../lib/image-optimizer";
+import { optimizeImage, VARIANT_WIDTHS, variantKey, webpName } from "../../lib/image-optimizer";
 
 /** Same decoding as Medusa's local provider: base64, or a binary string. */
 function decode(content: string) {
@@ -20,7 +15,7 @@ function decode(content: string) {
 /** Server-side allowlist: only real image content, verified with sharp. */
 const ALLOWED_IMAGE_FORMATS = new Set(["jpeg", "png", "webp", "avif", "tiff"]);
 /** Per-file limit for public uploads through this provider. */
-const MAX_FILE_BYTES = 5 * 1024 * 1024;
+const MAX_FILE_BYTES = 8 * 1024 * 1024;
 
 /**
  * Verify the bytes are really one of the allowed image formats. The declared
@@ -29,14 +24,14 @@ const MAX_FILE_BYTES = 5 * 1024 * 1024;
  */
 async function assertAllowedImage(content: Buffer): Promise<void> {
   if (content.length > MAX_FILE_BYTES) {
-    throw new MedusaError(
-      MedusaError.Types.INVALID_DATA,
-      "The file exceeds the 5 MB limit.",
-    );
+    throw new MedusaError(MedusaError.Types.INVALID_DATA, "The file exceeds the 8 MB limit.");
   }
   let format: string | undefined;
   try {
-    ({ format } = await sharp(content, { failOn: "error" }).metadata());
+    const metadata = await sharp(content, { failOn: "error" }).metadata();
+    // libvips reports AVIF as HEIF with AV1 compression.
+    format =
+      metadata.format === "heif" && metadata.compression === "av1" ? "avif" : metadata.format;
   } catch {
     throw new MedusaError(
       MedusaError.Types.INVALID_DATA,
@@ -55,7 +50,7 @@ async function assertAllowedImage(content: Buffer): Promise<void> {
  * Medusa's local file provider (public `LocalFileService` of @medusajs/file-local) with
  * image optimisation on upload (AG-36): public photos are stored as WebP (≤1600 px) with
  * 400 and 800 px variants next to them. Public uploads are allowlisted on the server:
- * only images verified by content with sharp (jpeg/png/webp/avif/tiff, ≤5 MB) are
+ * only images verified by content with sharp (jpeg/png/webp/avif/tiff, ≤8 MB) are
  * accepted; anything else is rejected instead of being stored unchanged.
  * Private uploads keep the plain provider behaviour.
  *
@@ -79,10 +74,7 @@ export class OptimizedLocalFileService extends LocalFileService {
     } catch {
       // sharp already verified the bytes, so this should not happen; fail
       // closed rather than storing an unprocessed file.
-      throw new MedusaError(
-        MedusaError.Types.INVALID_DATA,
-        "The image could not be processed.",
-      );
+      throw new MedusaError(MedusaError.Types.INVALID_DATA, "The image could not be processed.");
     }
     const result = await super.upload({
       ...file,

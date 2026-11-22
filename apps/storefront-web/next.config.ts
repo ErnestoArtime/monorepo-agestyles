@@ -23,14 +23,15 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            // default-src 'self' and frame-ancestors 'none' (P1). Narrow allowances the
-            // catalog already needs: Google Fonts (@import in src/app/styles.css) and
-            // product photos, which Medusa serves from the deployment's backend host
-            // (MEDUSA_BACKEND_URL, not pinned here) — narrow img-src to that host when
-            // it is fixed. Client fetches are same-origin only (/api/*).
+            value: "frame-ancestors 'none'; object-src 'none'; base-uri 'self'",
+          },
+          {
+            // Next.js emits inline bootstrap scripts and styles, including on cached pages.
+            // Observe the stricter policy until those pages can use nonces or hashes.
+            key: "Content-Security-Policy-Report-Only",
             value: [
               "default-src 'self'",
-              "frame-ancestors 'none'",
+              "script-src 'self'",
               "style-src 'self' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: https:",

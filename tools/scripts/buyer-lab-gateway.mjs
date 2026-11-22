@@ -84,7 +84,7 @@ const rules = [
   ["GET", /^\/store\/sellers\/sel_[a-z0-9]+$/i],
   ["GET", /^\/store\/catalog-comparison$/],
   ["GET", /^\/store\/agestyles\/exchange-rate$/],
-  ["GET", /^\/store\/agestyles\/(catalog|home|maintenance)$/],
+  ["GET", /^\/store\/agestyles\/(catalog|home|maintenance|shipping-options)$/],
   ["GET", /^\/store\/agestyles\/sales-agents\/[a-z0-9]{4,12}$/i],
   ["GET", /^\/store\/products(?:\/prod_[a-z0-9]+)?$/i],
   ["POST", /^\/store\/carts$/],
@@ -247,8 +247,7 @@ createServer({ requestTimeout: 30_000, headersTimeout: 10_000 }, (incoming, outg
     (response) => {
       if (
         response.statusCode === 401 &&
-        (path.startsWith("/auth/customer/emailpass") ||
-          path === "/store/agestyles/legacy-login")
+        (path.startsWith("/auth/customer/emailpass") || path === "/store/agestyles/legacy-login")
       ) {
         logFailedLogin(client, path, response.statusCode);
       }

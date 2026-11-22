@@ -1,6 +1,8 @@
 import { configureBuyerExperience } from "@agestyles/buyer-experience/config";
 import Medusa from "@medusajs/js-sdk";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
+import { Platform } from "react-native";
 import {
   createBusinessBuyerSession,
   createBuyerActorStorage,
@@ -8,16 +10,19 @@ import {
 
 /**
  * JWT storage backed by the OS keychain/keystore (expo-secure-store) instead of
- * AsyncStorage, which keeps the token in plaintext. On web SecureStore falls back
- * to localStorage, so the web build keeps working with the same degraded
- * protection as before. Existing sessions stored in AsyncStorage are not
+ * AsyncStorage, which keeps the token in plaintext. expo-secure-store has no web
+ * implementation (its web module is empty), so the web build keeps AsyncStorage
+ * (localStorage) as before and only native builds use the keychain. Existing sessions stored in AsyncStorage are not
  * migrated: users sign in once again after this change.
  */
-const secureTokenStorage = {
-  getItem: (key: string) => SecureStore.getItemAsync(key),
-  setItem: (key: string, value: string) => SecureStore.setItemAsync(key, value),
-  removeItem: (key: string) => SecureStore.deleteItemAsync(key),
-};
+const secureTokenStorage =
+  Platform.OS === "web"
+    ? AsyncStorage
+    : {
+        getItem: (key: string) => SecureStore.getItemAsync(key),
+        setItem: (key: string, value: string) => SecureStore.setItemAsync(key, value),
+        removeItem: (key: string) => SecureStore.deleteItemAsync(key),
+      };
 
 const storage = createBuyerActorStorage(secureTokenStorage);
 

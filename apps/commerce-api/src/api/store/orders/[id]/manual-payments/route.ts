@@ -1,5 +1,5 @@
 import type { AuthenticatedMedusaRequest, MedusaResponse } from "@medusajs/framework/http";
-import { MedusaError, Modules } from "@medusajs/framework/utils";
+import { ContainerRegistrationKeys, MedusaError, Modules } from "@medusajs/framework/utils";
 import { z } from "zod";
 import {
   AGESTYLES_EVENTS,
@@ -13,7 +13,6 @@ type OrderRecord = {
   customer_id: string;
   currency_code: string;
   total: number;
-  order_group_id?: string | null;
 };
 
 type OrderServiceLike = {
@@ -69,7 +68,6 @@ const manualPaymentBodySchema = z.object({
     .optional()
     .nullable(),
   notes: z.string().trim().max(500).optional().nullable(),
-  order_group_id: z.string().trim().max(120).optional().nullable(),
   seller_id: z.string().trim().max(120).optional().nullable(),
 });
 
@@ -141,6 +139,13 @@ export async function POST(req: AuthenticatedMedusaRequest, res: MedusaResponse)
     );
   }
 
+  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY);
+  const { data: groups } = await query.graph({
+    entity: "order_group_order",
+    fields: ["order_group_id"],
+    filters: { order_id: order.id },
+  });
+
   const service = req.scope.resolve("agestylesManualPayments") as unknown as ManualPayments;
   const payment = await service.submitPayment({
     amount: body.amount,
@@ -153,7 +158,7 @@ export async function POST(req: AuthenticatedMedusaRequest, res: MedusaResponse)
     customer_id: actorId,
     // Forced from the order (see above): any seller_id in the body is ignored.
     seller_id: sellerId,
-    order_group_id: body.order_group_id ?? order.order_group_id ?? null,
+    order_group_id: groups[0]?.order_group_id ?? null,
   });
 
   const paymentId = (payment as { id?: string } | null)?.id;
