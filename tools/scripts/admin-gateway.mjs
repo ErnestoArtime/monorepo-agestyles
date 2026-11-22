@@ -18,14 +18,33 @@ if (!/^(\/[a-z0-9-]+)?$/.test(prefix) || !listenPort || !upstreamPort) {
 }
 const clientRequests = new Map();
 const authAttempts = new Map();
-let totalRequests = 0;
 
 const reset = setInterval(() => {
   clientRequests.clear();
   authAttempts.clear();
-  totalRequests = 0;
 }, 60_000);
 reset.unref();
+
+// Sent on every gateway response, including errors and proxied ones (P1 hardening).
+const securityHeaders = {
+  "strict-transport-security": "max-age=31536000; includeSubDomains",
+  "x-content-type-options": "nosniff",
+  "x-frame-options": "DENY",
+  "referrer-policy": "no-referrer",
+};
+
+// Failed sign-ins, without request bodies or credentials: IP, path and upstream status only.
+function logFailedLogin(client, path, status) {
+  console.warn(
+    JSON.stringify({
+      event: "failed_login",
+      ip: client,
+      path,
+      status,
+      at: new Date().toISOString(),
+    }),
+  );
+}
 
 const ID = "[a-z0-9_]+";
 const rules = [
@@ -84,6 +103,7 @@ function reply(response, status, message, headers = {}) {
   response.writeHead(status, {
     "content-type": "application/json",
     "cache-control": "no-store",
+    ...securityHeaders,
     ...headers,
   });
   response.end(JSON.stringify({ message }));
@@ -91,7 +111,11 @@ function reply(response, status, message, headers = {}) {
 
 createServer({ requestTimeout: 30_000, headersTimeout: 10_000 }, (incoming, outgoing) => {
   if (incoming.url === "/healthz") {
-    outgoing.writeHead(200, { "content-type": "text/plain", "cache-control": "no-store" });
+    outgoing.writeHead(200, {
+      "content-type": "text/plain",
+      "cache-control": "no-store",
+      ...securityHeaders,
+    });
     return outgoing.end("ok\n");
   }
 
@@ -133,7 +157,7 @@ createServer({ requestTimeout: 30_000, headersTimeout: 10_000 }, (incoming, outg
     ) {
       return reply(outgoing, 403, "Method not allowed", corsHeaders);
     }
-    outgoing.writeHead(204, corsHeaders);
+    outgoing.writeHead(204, { ...securityHeaders, ...corsHeaders });
     return outgoing.end();
   }
 
@@ -146,18 +170,21 @@ createServer({ requestTimeout: 30_000, headersTimeout: 10_000 }, (incoming, outg
     typeof clientIp === "string" && isIP(clientIp)
       ? clientIp
       : (incoming.socket.remoteAddress ?? "unknown");
+  // Per-IP limits only: the old shared global cap (300/min across all clients) let one
+  // busy IP deny service to everyone. Redis-backed counters shared across gateway
+  // replicas are the follow-up; see the P1 report.
   const count = clientRequests.get(client) ?? 0;
-  if (count >= 90 || totalRequests >= 300)
-    return reply(outgoing, 429, "Retry in a minute", corsHeaders);
+  if (count >= 90) return reply(outgoing, 429, "Retry in a minute", corsHeaders);
   clientRequests.set(client, count + 1);
 
   if (path === "/auth/user/emailpass" || path === "/auth/user/emailpass/register") {
     const attempts = authAttempts.get(client) ?? 0;
-    if (attempts >= 5)
+    if (attempts >= 5) {
+      logFailedLogin(client, path, 429);
       return reply(outgoing, 429, "Too many sign-in attempts. Retry in a minute.", corsHeaders);
+    }
     authAttempts.set(client, attempts + 1);
   }
-  totalRequests += 1;
 
   if (
     incoming.headers["transfer-encoding"] ||
@@ -191,9 +218,16 @@ createServer({ requestTimeout: 30_000, headersTimeout: 10_000 }, (incoming, outg
       timeout: 30_000,
     },
     (response) => {
+      if (
+        response.statusCode === 401 &&
+        (path === "/auth/user/emailpass" || path === "/auth/user/emailpass/register")
+      ) {
+        logFailedLogin(client, path, response.statusCode);
+      }
       outgoing.writeHead(response.statusCode ?? 502, {
         "content-type": response.headers["content-type"] ?? "application/json",
         "cache-control": "no-store",
+        ...securityHeaders,
         ...corsHeaders,
       });
       response.pipe(outgoing);

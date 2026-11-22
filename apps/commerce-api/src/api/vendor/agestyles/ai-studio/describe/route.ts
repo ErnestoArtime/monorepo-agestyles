@@ -1,5 +1,6 @@
 import type { MedusaResponse } from "@medusajs/framework/http";
 import { MedusaError } from "@medusajs/framework/utils";
+import { z } from "zod";
 import { describeProduct, type CopyTone } from "@agestyles/ai-studio";
 import {
   finishAiRequest,
@@ -11,19 +12,42 @@ import {
   type AiStudioRequest,
 } from "../../../../../lib/ai-studio";
 
-type Body = {
-  title?: string;
-  brand?: string;
-  category?: string;
-  notes?: string;
-  tone?: CopyTone;
-  image_url?: string;
-};
+/**
+ * Route-level shape for AI Studio drafts. Limits mirror
+ * `validateDescribeInput` in `@agestyles/ai-studio` (title 120, brand/category
+ * 60, notes 600) so an oversized or mistyped body is rejected with 400 before
+ * it reserves monthly quota or reaches a provider. The service validation
+ * stays authoritative downstream.
+ */
+const describeBodySchema = z.object({
+  title: z.string().trim().min(1).max(120),
+  brand: z.string().trim().max(60).optional(),
+  category: z.string().trim().max(60).optional(),
+  notes: z.string().trim().max(600).optional(),
+  tone: z.enum(["commercial", "technical", "direct"]).optional(),
+  image_url: z.string().trim().max(2048).optional(),
+});
+
+function invalidBody(error: z.ZodError): MedusaError {
+  return new MedusaError(
+    MedusaError.Types.INVALID_DATA,
+    error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`).join("; "),
+  );
+}
 
 /** Title and description draft from the sheet and, optionally, an uploaded photo. */
 export async function POST(req: AiStudioRequest, res: MedusaResponse) {
   const actor = await requireAiAccess(req);
-  const body = (req.body ?? {}) as Body;
+  const parsed = describeBodySchema.safeParse(req.body ?? {});
+  if (!parsed.success) throw invalidBody(parsed.error);
+  const body = parsed.data as {
+    title: string;
+    brand?: string;
+    category?: string;
+    notes?: string;
+    tone?: CopyTone;
+    image_url?: string;
+  };
   const providers = textProviders();
   if (!providers.length) {
     throw new MedusaError(
@@ -36,7 +60,7 @@ export async function POST(req: AiStudioRequest, res: MedusaResponse) {
   try {
     const result = await describeProduct(
       {
-        title: body.title ?? "",
+        title: body.title,
         brand: body.brand,
         category: body.category,
         notes: body.notes,

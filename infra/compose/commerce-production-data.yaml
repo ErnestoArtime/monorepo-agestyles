@@ -7,6 +7,7 @@ services:
     env_file:
       - ${AGESTYLES_PRODUCTION_API_ENV_FILE:?Set the path to the private production API env file}
     environment:
+      NODE_ENV: production
       AGESTYLES_COMMERCE_ENV: production
       REDIS_URL: redis://127.0.0.1:16393
     command: ["pnpm", "exec", "medusa", "start", "--host", "127.0.0.1", "--port", "19085"]

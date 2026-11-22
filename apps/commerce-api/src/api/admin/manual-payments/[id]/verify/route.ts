@@ -24,6 +24,14 @@ type OrderServiceLike = {
  * currency must match the order, otherwise the administrator would confirm a
  * payment that does not exist. The check is repeated here, not only at submit
  * time, because the order could have changed between both moments.
+ *
+ * Partial payments: a proof for less than the order total is accepted at
+ * submit time (`assertPaymentWithinOrder` only caps the amount at the total),
+ * but it can never be verified — `assertPaymentMatchesOrder` below requires
+ * the amount to equal the order total exactly, and proofs are not summed.
+ * A buyer who paid in parts must submit a proof for the full order total.
+ * PENDING: decide whether partial proofs should be summed at verification
+ * or rejected at submit time instead.
  */
 export async function POST(req: AuthenticatedMedusaRequest, res: MedusaResponse) {
   const service = req.scope.resolve("agestylesManualPayments") as unknown as ManualPayments;
