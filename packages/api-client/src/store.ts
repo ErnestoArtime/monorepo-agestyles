@@ -172,7 +172,7 @@ export function transferCart(client: StoreClient, cartId: string) {
 }
 
 export function listShippingOptions(client: StoreClient, cartId: string) {
-  return client.fetch<{ shipping_options: ShippingOptions }>("/store/shipping-options", {
+  return client.fetch<{ shipping_options: ShippingOptions }>("/store/agestyles/shipping-options", {
     query: { cart_id: cartId },
   });
 }
