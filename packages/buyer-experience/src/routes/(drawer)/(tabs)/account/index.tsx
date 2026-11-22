@@ -204,13 +204,14 @@ export default function AccountScreen() {
     section === "datos" ? (
       <ProfileSection styles={styles} />
     ) : section === "direcciones" ? (
-      <AddressesSection styles={styles} colors={colors} book={addressBook} />
+      <AddressesSection key={customer.id} styles={styles} colors={colors} book={addressBook} />
     ) : (
       <SummarySection
+        key={customer.id}
         styles={styles}
         colors={colors}
         firstName={customer.first_name ?? ""}
-        addresses={addressBook.addresses}
+        book={addressBook}
         onOpen={go}
       />
     );
@@ -291,13 +292,13 @@ function SummarySection({
   styles,
   colors,
   firstName,
-  addresses,
+  book,
   onOpen,
 }: {
   styles: ReturnType<typeof createStyles>;
   colors: Palette;
   firstName: string;
-  addresses: SavedAddress[];
+  book: ReturnType<typeof useSavedAddresses>;
   onOpen: (section: Section) => void;
 }) {
   const [orders, setOrders] = useState<BuyerOrderGroup[] | null>(null);
@@ -310,6 +311,7 @@ function SummarySection({
       active = false;
     };
   }, []);
+  const { addresses } = book;
   const main = addresses[0];
 
   return (
@@ -360,7 +362,9 @@ function SummarySection({
           <View style={styles.cardHeader}>
             <Text style={styles.h2}>Dirección de entrega</Text>
             <Pressable accessibilityRole="link" onPress={() => onOpen("direcciones")}>
-              <Text style={styles.link}>{addresses.length ? "Gestionar" : "Añadir"}</Text>
+              <Text style={styles.link}>
+                {addresses.length || book.loading || book.error ? "Gestionar" : "Añadir"}
+              </Text>
             </Pressable>
           </View>
           {main ? (
@@ -373,6 +377,10 @@ function SummarySection({
                 </Text>
               ) : null}
             </>
+          ) : book.loading ? (
+            <SkeletonRows rows={1} />
+          ) : book.error ? (
+            <Text style={styles.error}>{book.error}</Text>
           ) : (
             <Text style={styles.muted}>
               Guarda dónde quieres recibir tus pedidos y elígela al pagar.
@@ -553,7 +561,13 @@ function AddressesSection({
           <Text style={styles.h1}>Direcciones de entrega</Text>
           <Text style={styles.body}>Elige una de ellas al pagar y no tendrás que escribirla.</Text>
         </View>
-        {editing === null ? <Button title="Añadir dirección" onPress={() => open("new")} /> : null}
+        {editing === null ? (
+          <Button
+            title="Añadir dirección"
+            disabled={book.loading || Boolean(book.error)}
+            onPress={() => open("new")}
+          />
+        ) : null}
       </View>
 
       {editing !== null ? (
@@ -600,7 +614,21 @@ function AddressesSection({
         </View>
       ) : null}
 
-      {book.loading && !book.addresses.length ? (
+      {book.error ? (
+        <View style={[styles.card, styles.form]}>
+          <Text accessibilityRole="alert" style={styles.error}>
+            {book.error}
+          </Text>
+          <Button
+            title="Reintentar"
+            variant="secondary"
+            loading={book.loading}
+            onPress={() => void book.reload()}
+          />
+        </View>
+      ) : null}
+
+      {book.loading && !book.addresses.length && !book.error ? (
         <SkeletonCards count={2} />
       ) : book.addresses.length ? (
         <View style={styles.grid}>
@@ -651,7 +679,7 @@ function AddressesSection({
             </View>
           ))}
         </View>
-      ) : editing === null ? (
+      ) : editing === null && !book.error ? (
         <View style={[styles.card, styles.emptyCard]}>
           <Icon name="mapPin" size={28} color={colors.icon} />
           <Text style={styles.body}>Aún no has guardado ninguna dirección.</Text>

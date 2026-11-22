@@ -10,7 +10,7 @@ import { Colors } from "../constants/theme";
 import { useCart } from "../context/cart-context";
 import { useCustomer } from "../context/customer-context";
 import { useColorScheme } from "../hooks/use-color-scheme";
-import { sdk } from "../config";
+import { buyerPath, sdk } from "../config";
 import { forgetAgentCode } from "../lib/agent-code";
 import { fieldsFromSaved, isSaved, useSavedAddresses } from "../lib/addresses";
 import { rememberOrderWhatsAppLinks, snapshotCartBySeller } from "../lib/order-whatsapp";
@@ -18,7 +18,6 @@ import type { HttpTypes } from "@medusajs/types";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import { Alert, StyleSheet, Text, View } from "react-native";
-import { buyerPath } from "../config";
 
 type CheckoutStep = "delivery" | "shipping" | "payment";
 
@@ -67,6 +66,8 @@ export default function CheckoutScreen() {
   const [saveAddress, setSaveAddress] = useState(true);
   const canSaveAddress =
     Boolean(customer) &&
+    !addressBook.loading &&
+    !addressBook.error &&
     Boolean(shippingAddress.address.trim()) &&
     !isSaved(shippingAddress, addressBook.addresses);
 

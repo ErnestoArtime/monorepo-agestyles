@@ -1,5 +1,5 @@
 import type { HttpTypes } from "@medusajs/types";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { sdk } from "../config";
 import { useCustomer } from "../context/customer-context";
 
@@ -82,35 +82,59 @@ export function isSaved(fields: AddressFields, saved: SavedAddress[]) {
 /** The signed-in customer's delivery addresses, default first. Empty when signed out. */
 export function useSavedAddresses() {
   const { customer } = useCustomer();
-  const [addresses, setAddresses] = useState<SavedAddress[]>([]);
-  const [loading, setLoading] = useState(false);
+  const customerId = customer?.id;
+  const session = useMemo(() => ({ customerId }), [customerId]);
+  const activeSession = useRef<typeof session | null>(null);
+  const latestRequest = useRef(0);
+  const [result, setResult] = useState<{
+    session: typeof session;
+    addresses: SavedAddress[];
+    error: string | null;
+  } | null>(null);
+  const [pendingSession, setPendingSession] = useState<typeof session | null>(null);
 
   const reload = useCallback(async () => {
-    if (!customer) {
-      setAddresses([]);
-      return;
-    }
-    setLoading(true);
+    if (!session.customerId || activeSession.current !== session) return;
+    const request = ++latestRequest.current;
+    const isCurrent = () => activeSession.current === session && latestRequest.current === request;
+    setPendingSession(session);
     try {
       const { addresses: list } = await sdk.store.customer.listAddress({ limit: 50 });
-      setAddresses(
-        [...(list ?? [])].sort(
-          (a, b) => Number(Boolean(b.is_default_shipping)) - Number(Boolean(a.is_default_shipping)),
-        ),
+      if (!isCurrent()) return;
+      const addresses = [...(list ?? [])].sort(
+        (a, b) => Number(Boolean(b.is_default_shipping)) - Number(Boolean(a.is_default_shipping)),
       );
+      setResult({ session, addresses, error: null });
     } catch {
-      setAddresses([]);
+      if (isCurrent()) {
+        setResult((previous) => ({
+          session,
+          addresses: previous?.session === session ? previous.addresses : [],
+          error: "No se pudieron cargar tus direcciones.",
+        }));
+      }
     } finally {
-      setLoading(false);
+      if (isCurrent()) setPendingSession(null);
     }
-  }, [customer]);
+  }, [session]);
 
   useEffect(() => {
+    activeSession.current = session;
     void reload();
-  }, [reload]);
+    return () => {
+      activeSession.current = null;
+    };
+  }, [reload, session]);
+
+  const requireSession = useCallback(() => {
+    if (!session.customerId || activeSession.current !== session) {
+      throw new Error("La sesión ha cambiado.");
+    }
+  }, [session]);
 
   const save = useCallback(
     async (fields: AddressFields, options: { id?: string; name?: string; isDefault?: boolean }) => {
+      requireSession();
       const body = {
         ...savedFromFields(fields, options.name),
         ...(options.isDefault === undefined ? {} : { is_default_shipping: options.isDefault }),
@@ -119,24 +143,37 @@ export function useSavedAddresses() {
       else await sdk.store.customer.createAddress(body);
       await reload();
     },
-    [reload],
+    [reload, requireSession],
   );
 
   const remove = useCallback(
     async (id: string) => {
+      requireSession();
       await sdk.store.customer.deleteAddress(id);
       await reload();
     },
-    [reload],
+    [reload, requireSession],
   );
 
   const makeDefault = useCallback(
     async (id: string) => {
+      requireSession();
       await sdk.store.customer.updateAddress(id, { is_default_shipping: true });
       await reload();
     },
-    [reload],
+    [reload, requireSession],
   );
 
-  return { addresses, loading, reload, save, remove, makeDefault };
+  const current = result?.session === session ? result : null;
+  return {
+    addresses: current?.addresses ?? EMPTY_SAVED_ADDRESSES,
+    error: current?.error ?? null,
+    loading: Boolean(customerId && (!current || pendingSession === session)),
+    reload,
+    save,
+    remove,
+    makeDefault,
+  };
 }
+
+const EMPTY_SAVED_ADDRESSES: SavedAddress[] = [];
