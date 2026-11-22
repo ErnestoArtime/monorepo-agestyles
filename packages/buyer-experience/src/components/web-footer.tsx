@@ -5,8 +5,10 @@ import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { BrandLockup } from "./brand-lockup";
 import { Colors } from "../constants/theme";
 import { useColorScheme } from "../hooks/use-color-scheme";
+import { useCupRate } from "../hooks/use-cup-rate";
 import { CONTENT_MAX } from "../hooks/use-responsive";
 import { androidApkUrl, buyerHref, buyerPath } from "../config";
+import { rateSourceLine } from "@agestyles/api-client/exchange-rate";
 
 const HOME = "/(drawer)/(tabs)/(home)";
 
@@ -16,6 +18,7 @@ export function WebFooter() {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const router = useRouter();
   const apkUrl = androidApkUrl();
+  const cupSource = rateSourceLine(useCupRate());
 
   const link = (label: string, href: Href) => (
     <Pressable key={label} onPress={() => router.push(href)} accessibilityRole="link">
@@ -74,6 +77,7 @@ export function WebFooter() {
           © {new Date().getFullYear()} AgeStyles · Fase piloto: los pedidos son reales; si algo
           falla, avísanos.
         </Text>
+        {cupSource ? <Text style={styles.small}>Equivalencias en CUP: {cupSource}.</Text> : null}
       </View>
     </View>
   );

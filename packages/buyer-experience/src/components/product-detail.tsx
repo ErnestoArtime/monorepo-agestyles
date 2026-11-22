@@ -10,7 +10,7 @@ import { useRegion } from "../context/region-context";
 import { useCupRate } from "../hooks/use-cup-rate";
 import { formatPrice } from "../lib/format-price";
 import { sdk } from "../config";
-import { formatCupEquivalent } from "@agestyles/api-client/exchange-rate";
+import { formatCupEquivalent, rateSourceLine } from "@agestyles/api-client/exchange-rate";
 import { listProductOffers } from "@agestyles/api-client/offers";
 import { Icon } from "@agestyles/icons";
 import {
@@ -160,6 +160,7 @@ export function ProductDetail(
   const price = selectedOffer?.price?.amount;
   const currency = selectedOffer?.price?.currency_code ?? selectedRegion?.currency_code;
   const cup = formatCupEquivalent(price, currency, cupRate);
+  const cupSource = cup ? rateSourceLine(cupRate) : null;
   const inStock = !!selectedOffer;
 
   async function add() {
@@ -211,6 +212,9 @@ export function ProductDetail(
             </Text>
           )}
           {cup ? <Text style={[styles.cup, { color: color.muted }]}>{cup}</Text> : null}
+          {cupSource ? (
+            <Text style={[styles.cupSource, { color: color.muted }]}>{cupSource}</Text>
+          ) : null}
         </View>
       </View>
       {offersLoading ? (
@@ -494,6 +498,7 @@ const styles = StyleSheet.create({
   priceBlock: { alignItems: "flex-end" },
   price: { fontSize: 20, fontWeight: "700" },
   cup: { fontSize: 13, marginTop: 2 },
+  cupSource: { fontSize: 11, marginTop: 1 },
   description: { fontSize: 14, lineHeight: 21 },
   group: { gap: 10 },
   groupTitle: { fontSize: 15, fontWeight: "600" },

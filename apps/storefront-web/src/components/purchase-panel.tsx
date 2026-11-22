@@ -1,7 +1,7 @@
 "use client";
 
 import { Icon } from "@agestyles/icons";
-import { formatCupEquivalent } from "@agestyles/api-client/exchange-rate";
+import { formatCupEquivalent, rateSourceLine } from "@agestyles/api-client/exchange-rate";
 import { useMemo, useState } from "react";
 import { formatPrice } from "@/lib/catalog-format";
 import {
@@ -39,6 +39,7 @@ export function PurchasePanel({
   const offer = offerFor(sellers, selection);
   const seller = sellers.find((item) => item.id === selection?.sellerId);
   const cup = offer ? formatCupEquivalent(offer.amount, offer.currency, data.cupRate) : null;
+  const cupSource = cup ? rateSourceLine(data.cupRate) : null;
 
   if (!sellers.length) {
     return (
@@ -68,6 +69,7 @@ export function PurchasePanel({
           <>
             <strong>{formatPrice(offer.amount, offer.currency)}</strong>
             {cup ? <span>{cup} · referencia, se cobra en USD</span> : null}
+            {cupSource ? <small className="purchase-source">{cupSource}</small> : null}
           </>
         ) : null}
       </div>

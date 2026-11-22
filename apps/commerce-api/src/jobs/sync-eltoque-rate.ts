@@ -1,46 +1,76 @@
 import type { MedusaContainer } from "@medusajs/framework/types";
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils";
-import { isValidRate, writeExchangeRate } from "../lib/exchange-rate";
+import {
+  evaluateRate,
+  fetchRateFromApi,
+  fetchRateFromWeb,
+  type ElToqueSnapshot,
+} from "../lib/eltoque-rates";
+import { readExchangeRate, writeExchangeRate } from "../lib/exchange-rate";
 
 /**
- * Refreshes the informational CUP-per-USD rate from elTOQUE's TRMI API
- * (https://tasas.eltoque.com) when ELTOQUE_API_TOKEN is configured. Without a
- * token the job does nothing and the rate is set manually through the Admin
- * route. The web page itself blocks automated downloads, so only the API is used.
+ * Keeps the informational CUP-per-USD rate fresh (AG-54). Layers, in order:
+ *  1. elTOQUE's official API when ELTOQUE_API_TOKEN is set (the stable, sanctioned route).
+ *  2. The public page's `Dataset` data (CC BY 4.0, shown with «Fuente: elTOQUE»), unless
+ *     ELTOQUE_WEB_SYNC is "false". If Cloudflare challenges the request nothing is forced.
+ *  3. Otherwise the last good value stays published; the administrator can still set it by
+ *     hand through the Admin route. A bad read never replaces a good value (see
+ *     `evaluateRate`: range, 48 h freshness, 25 % jump).
  */
 export default async function syncElToqueRate(container: MedusaContainer) {
-  const token = process.env.ELTOQUE_API_TOKEN;
-  if (!token) return;
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER);
   const now = new Date();
-  const from = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-  const format = (date: Date) => date.toISOString().slice(0, 19).replace("T", " ");
-  const url = new URL("https://tasas.eltoque.com/v1/trmi");
-  url.searchParams.set("date_from", format(from));
-  url.searchParams.set("date_to", format(now));
-  try {
-    const response = await fetch(url, {
-      headers: { authorization: `Bearer ${token}`, accept: "application/json" },
-      signal: AbortSignal.timeout(15_000),
-    });
-    if (!response.ok) {
-      logger.warn(`elTOQUE rate sync failed with HTTP ${response.status}`);
-      return;
+  const failures: string[] = [];
+  let snapshot: ElToqueSnapshot | null = null;
+  let source = "";
+
+  const token = process.env.ELTOQUE_API_TOKEN;
+  if (token) {
+    const api = await fetchRateFromApi(token, now);
+    if (api.ok) {
+      snapshot = api.snapshot;
+      source = "elTOQUE (API)";
+    } else {
+      failures.push(`API: ${api.reason} ${api.detail}`);
     }
-    const body = (await response.json()) as { tasas?: Record<string, unknown> };
-    const rate = Number(body.tasas?.USD);
-    if (!isValidRate(rate)) {
-      logger.warn("elTOQUE rate sync returned no valid USD rate");
-      return;
-    }
-    await writeExchangeRate(container, rate, "elTOQUE");
-    logger.info(`elTOQUE CUP-per-USD rate updated to ${rate}`);
-  } catch (error) {
-    logger.warn(`elTOQUE rate sync error: ${error instanceof Error ? error.message : "unknown"}`);
   }
+
+  if (!snapshot && !["false", "0"].includes((process.env.ELTOQUE_WEB_SYNC ?? "").toLowerCase())) {
+    const web = await fetchRateFromWeb();
+    if (web.ok) {
+      snapshot = web.snapshot;
+      source = "elTOQUE (web)";
+    } else {
+      failures.push(`web: ${web.reason} ${web.detail}`);
+    }
+  }
+
+  if (!snapshot) {
+    logger.warn(
+      `elTOQUE rate sync: no value read, keeping the last one${failures.length ? ` (${failures.join("; ")})` : " (no source enabled)"}`,
+    );
+    return;
+  }
+
+  const current = await readExchangeRate(container);
+  const verdict = evaluateRate({ candidate: snapshot, current, now });
+  if (!verdict.ok) {
+    logger.warn(
+      `elTOQUE rate sync: ${snapshot.usd} not published (${verdict.reason}: ${verdict.detail}); keeping ${current?.rate ?? "none"}`,
+    );
+    return;
+  }
+  const saved = await writeExchangeRate(
+    container,
+    snapshot.usd,
+    source,
+    snapshot.source_updated_at,
+  );
+  logger.info(`elTOQUE CUP-per-USD rate updated to ${saved.rate} (${source})`);
 }
 
 export const config = {
   name: "sync-eltoque-cup-rate",
-  schedule: "15 */4 * * *",
+  // Every 30 minutes: one request per run, well within what the site tolerates.
+  schedule: "*/30 * * * *",
 };

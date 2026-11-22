@@ -3,7 +3,7 @@ import { Loading } from "../../../../components/loading";
 import { useCart } from "../../../../context/cart-context";
 import { useCupRate } from "../../../../hooks/use-cup-rate";
 import { formatPrice } from "../../../../lib/format-price";
-import { formatCupEquivalent } from "@agestyles/api-client/exchange-rate";
+import { formatCupEquivalent, rateSourceLine } from "@agestyles/api-client/exchange-rate";
 import { Icon } from "@agestyles/icons";
 import { Button, KeyValueRow, LargeTitle, useUiTheme } from "@agestyles/ui-native";
 import { useRouter } from "expo-router";
@@ -40,6 +40,7 @@ export default function CartScreen() {
 
   const currency = cart.currency_code;
   const cup = formatCupEquivalent(cart.total, currency, cupRate);
+  const cupSource = cup ? rateSourceLine(cupRate) : null;
   const units = cart.items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
@@ -79,6 +80,9 @@ export default function CartScreen() {
             {cup} · referencia, se cobra en USD
           </Text>
         ) : null}
+        {cupSource ? (
+          <Text style={[styles.cupSource, { color: color.muted }]}>{cupSource}</Text>
+        ) : null}
         <View style={styles.actions}>
           <Button
             title="Seguir comprando"
@@ -109,6 +113,7 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   cup: { fontSize: 12, textAlign: "right", marginBottom: 4 },
+  cupSource: { fontSize: 11, textAlign: "right", marginBottom: 8 },
   actions: { flexDirection: "row", gap: 12, marginTop: 10 },
   action: { flex: 1 },
   empty: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24, gap: 12 },

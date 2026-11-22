@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { cupEquivalent, formatCupEquivalent } from "../src/exchange-rate.ts";
+import { cupEquivalent, formatCupEquivalent, rateSourceLine } from "../src/exchange-rate.ts";
 import {
   buildWhatsAppOrderMessage,
   buildWhatsAppOrderUrl,
@@ -23,6 +23,22 @@ assert.equal(cupEquivalent(50, "usd", null), null, "no rate, no equivalent");
 assert.equal(cupEquivalent(-1, "usd", rate), null);
 assert.equal(cupEquivalent(undefined, "usd", rate), null);
 assert.equal(formatCupEquivalent(50, "usd", rate)?.replace(/\s/g, " "), "≈ 19.775 CUP");
+
+// The source line names elTOQUE (CC BY 4.0) and uses elTOQUE's own date when it has one.
+assert.equal(
+  rateSourceLine({
+    ...rate,
+    source: "elTOQUE (web)",
+    source_updated_at: "2026-11-22T10:44:08.000Z",
+  }),
+  "Tasa informativa · Fuente: elTOQUE · 22 nov 2026",
+);
+assert.equal(rateSourceLine({ ...rate, source: "manual" }), "Tasa informativa · 17 nov 2026");
+assert.equal(rateSourceLine(null), null);
+assert.equal(
+  rateSourceLine({ ...rate, updated_at: "no-date" }),
+  "Tasa informativa · Fuente: elTOQUE",
+);
 assert.equal(formatCupEquivalent(50, "usd", null), null);
 
 assert.equal(normalizeWhatsAppPhone("+53 5309-3096"), "5353093096");

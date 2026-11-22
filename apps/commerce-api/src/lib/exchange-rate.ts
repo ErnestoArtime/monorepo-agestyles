@@ -12,6 +12,8 @@ export type ExchangeRate = {
   rate: number;
   source: string;
   updated_at: string;
+  /** The publisher's own timestamp (elTOQUE), when known; null for manual values. */
+  source_updated_at: string | null;
 };
 
 const METADATA_KEY = "agestyles_cup_per_usd";
@@ -35,6 +37,8 @@ export async function readExchangeRate(container: MedusaContainer): Promise<Exch
     rate: stored.rate,
     source: typeof stored.source === "string" ? stored.source : "manual",
     updated_at: stored.updated_at,
+    source_updated_at:
+      typeof stored.source_updated_at === "string" ? stored.source_updated_at : null,
   };
 }
 
@@ -42,6 +46,7 @@ export async function writeExchangeRate(
   container: MedusaContainer,
   rate: number,
   source: string,
+  sourceUpdatedAt: string | null = null,
 ): Promise<ExchangeRate> {
   if (!isValidRate(rate)) throw new Error("invalid_exchange_rate");
   const storeService = container.resolve(Modules.STORE);
@@ -53,6 +58,7 @@ export async function writeExchangeRate(
     rate: Math.round(rate * 100) / 100,
     source: source.slice(0, 80),
     updated_at: new Date().toISOString(),
+    source_updated_at: sourceUpdatedAt,
   };
   await storeService.updateStores(store.id, {
     metadata: { ...(store.metadata ?? {}), [METADATA_KEY]: value },

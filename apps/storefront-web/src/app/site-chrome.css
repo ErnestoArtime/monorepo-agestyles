@@ -405,6 +405,12 @@
   color: var(--muted);
   font-size: 12px;
 }
+.purchase-price .purchase-source {
+  display: block;
+  margin-top: 1px;
+  color: var(--muted);
+  font-size: 11px;
+}
 .purchase-seller {
   margin: 0;
   color: var(--muted);
