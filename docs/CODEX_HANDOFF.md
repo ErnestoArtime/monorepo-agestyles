@@ -1688,3 +1688,11 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - **No es un fallo (comprobado):** la lista del menú lateral de la tienda parece cortada pero se desplaza.
 - **No cubierto:** Análisis, Comisiones, Movimientos, Secciones, Importar, Producto nuevo y Portada con datos reales (sin datos simulados completos); el panel de inicio (AG-25 de Codex); notificaciones de la Tienda (indicador clásico). Formato de importes de la Tienda en `en-US` (`$8,400.00`) en lugar de `es-ES`: pendiente de decidir.
 - **Comprobado:** `tsc` (buyer-experience y ui-native sin errores; Negocio con los 26 de rutas tipadas anteriores), eslint 0 errores, prettier. No desplegado.
+
+
+## Codex · AG-16, AG-49 y preparación de AG-11
+
+- `df -h /`: 3,6 GB libres, 99 % usado. `docker system df`: 29,5 GB potencialmente recuperables en imágenes, 3,5 GB en volúmenes y 1,356 GB de caché de build. Estos totales incluyen otros proyectos y no son una lista de borrado.
+- `du -xhd1`: candidatos acotados a los subdirectorios generados de `/tmp/agestyles-react-types-alignment` (`.next` 397 MiB y `node_modules` 680 MiB) y `/tmp/agestyles-release-artifact-cad60d5` (`.next` 359 MiB y `node_modules` 416 MiB). No se observaron referencias a esas rutas en los procesos accesibles. El primer directorio tiene cambios en su copia de Git; conservar los árboles y limitar cualquier limpieza a esos cuatro subdirectorios previa autorización. No se borraron archivos.
+- AG-49: `3760651` descarta resultados de otra sesión y de cargas anteriores. Mi cuenta distingue error y lista vacía, permite reintentar y reinicia el formulario al cambiar de cliente. El checkout sigue admitiendo direcciones manuales si falla la libreta. Pasaron el typecheck de buyer-experience, ESLint y Prettier de los archivos modificados. Pendientes la revisión cruzada, una prueba con sesión y el despliegue.
+- AG-11: el tablero detalla el recorrido de compra con dos vendedores, pago, stock por tienda y seguimiento. La comprobación CUP queda ligada a AG-01. El piloto en producción requiere acordar el pago y autorizar la escritura de pedidos de prueba.
