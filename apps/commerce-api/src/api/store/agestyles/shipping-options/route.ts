@@ -15,6 +15,12 @@ type ShippingOptionProjection = {
   service_zone?: { fulfillment_set?: { location?: { id?: string } } };
 };
 
+type CartLine = Omit<ShippingLine, "offer"> & {
+  offer?: (NonNullable<ShippingLine["offer"]> & { id: string }) | null;
+};
+
+type InventoryLink = { offer_id: string; inventory_item_id: string; required_quantity: number };
+
 export async function GET(req: StoreRequest, res: MedusaResponse) {
   const cartId = req.query.cart_id;
   if (typeof cartId !== "string" || !/^cart_[a-z0-9]+$/i.test(cartId)) {
@@ -31,9 +37,8 @@ export async function GET(req: StoreRequest, res: MedusaResponse) {
     fields: [
       "sales_channel_id",
       "items.quantity",
+      "items.offer.id",
       "items.offer.seller_id",
-      "items.offer.inventory_item_link.inventory_item_id",
-      "items.offer.inventory_item_link.required_quantity",
       "items.offer.inventory_items.id",
       "items.offer.inventory_items.requires_shipping",
       "items.offer.inventory_items.location_levels.location_id",
@@ -42,15 +47,36 @@ export async function GET(req: StoreRequest, res: MedusaResponse) {
     ],
     filters: { id: cartId },
   });
-  const cart = carts[0] as { sales_channel_id: string | null; items?: ShippingLine[] } | undefined;
+  const cart = carts[0] as { sales_channel_id: string | null; items?: CartLine[] } | undefined;
   if (!cart?.sales_channel_id || !channelIds.includes(cart.sales_channel_id)) {
     throw new MedusaError(MedusaError.Types.NOT_FOUND, "No se encontró el carrito.");
   }
-  const lines = cart.items ?? [];
-
   const { result } = await listSellerShippingOptionsForCartWorkflow(req.scope).run({
     input: { cart_id: cartId, is_return: false },
   });
+  const cartLines = cart.items ?? [];
+  const offerIds = [...new Set(cartLines.flatMap(({ offer }) => (offer ? [offer.id] : [])))];
+  const hasShortage = Object.values(result).some((options) =>
+    options.some((option) => (option as ShippingOptionProjection).insufficient_inventory),
+  );
+  const linksByOffer = new Map<string, InventoryLink[]>();
+  if (hasShortage && offerIds.length) {
+    // Graph omits the link's extra columns when traversing cart → line → offer.
+    const { data } = await query.graph({
+      entity: "offer_inventory_item",
+      fields: ["offer_id", "inventory_item_id", "required_quantity"],
+      filters: { offer_id: offerIds },
+    });
+    for (const link of data as InventoryLink[]) {
+      const links = linksByOffer.get(link.offer_id) ?? [];
+      links.push(link);
+      linksByOffer.set(link.offer_id, links);
+    }
+  }
+  const lines: ShippingLine[] = cartLines.map(({ quantity, offer }) => ({
+    quantity,
+    offer: offer && { ...offer, inventory_item_link: linksByOffer.get(offer.id) },
+  }));
   const shippingOptions = Object.fromEntries(
     Object.entries(result).map(([sellerId, options]) => [
       sellerId,
