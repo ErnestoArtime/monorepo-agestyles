@@ -69,8 +69,7 @@ export function WebSidebar() {
   // Badge real del carrito: suma de cantidades, como en web-top-bar.tsx
   // (el tab bar usa cart.items.length; aquí se usa la suma, que coincide
   // con el storefront-web y con lo que el cliente espera pagar).
-  const cartCount =
-    cart?.items?.reduce((sum, item) => sum + Number(item.quantity ?? 0), 0) ?? 0;
+  const cartCount = cart?.items?.reduce((sum, item) => sum + Number(item.quantity ?? 0), 0) ?? 0;
 
   const customerName = [customer?.first_name, customer?.last_name].filter(Boolean).join(" ");
   const customerInitials = (
@@ -170,7 +169,7 @@ export function WebSidebar() {
         accessibilityLabel={
           collapsed ? (badge > 0 ? `${item.label}, ${badge} artículos` : item.label) : undefined
         }
-        style={({ hovered }: { hovered?: boolean }) => [
+        style={({ hovered, pressed }: { hovered?: boolean; pressed: boolean }) => [
           styles.item,
           collapsed && styles.itemCollapsed,
           active && styles.itemActive,
@@ -209,7 +208,7 @@ export function WebSidebar() {
           onPress={() => setCollapsed((v) => !v)}
           accessibilityRole="button"
           accessibilityLabel={collapsed ? "Expandir menú" : "Colapsar menú"}
-          style={({ hovered }: { hovered?: boolean }) => [
+          style={({ hovered, pressed }: { hovered?: boolean; pressed: boolean }) => [
             styles.collapseButton,
             hovered && { backgroundColor: colors.surfaceMuted },
           ]}
@@ -236,7 +235,7 @@ export function WebSidebar() {
         <Pressable
           onPress={() => router.replace(exit.href)}
           accessibilityRole="link"
-          style={({ hovered }: { hovered?: boolean }) => [
+          style={({ hovered, pressed }: { hovered?: boolean; pressed: boolean }) => [
             styles.exit,
             hovered && { backgroundColor: colors.surfaceMuted },
           ]}
@@ -278,7 +277,7 @@ export function WebSidebar() {
   );
 }
 
-const createStyles = (colors: (typeof Colors)["light"]) =>
+const createStyles = (colors: (typeof Colors)[keyof typeof Colors]) =>
   StyleSheet.create({
     sidebar: {
       width: 260,

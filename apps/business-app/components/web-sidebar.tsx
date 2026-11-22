@@ -320,11 +320,7 @@ export function WebSidebar() {
           ]}
         >
           {/* No hay chevronLeft en @agestyles/icons: se usan arrowLeft/arrowRight. */}
-          <Icon
-            name={collapsed ? "arrowRight" : "arrowLeft"}
-            size={18}
-            color={theme.muted}
-          />
+          <Icon name={collapsed ? "arrowRight" : "arrowLeft"} size={18} color={theme.muted} />
         </Pressable>
         {collapsed ? null : <NotificationBell onPress={() => router.push("/notifications")} />}
       </View>
