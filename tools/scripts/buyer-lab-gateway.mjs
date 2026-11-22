@@ -47,13 +47,36 @@ setInterval(pollMaintenance, 15_000).unref();
 
 const clientRequests = new Map();
 const authAttempts = new Map();
-let totalRequests = 0;
+// Password-reset requests (AG-19): a tighter per-IP bucket than sign-in, so the emailed
+// link cannot be used to spam an inbox or to guess reset tokens.
+const resetAttempts = new Map();
 const reset = setInterval(() => {
   clientRequests.clear();
   authAttempts.clear();
-  totalRequests = 0;
+  resetAttempts.clear();
 }, 60_000);
 reset.unref();
+
+// Sent on every gateway response, including errors and proxied ones (P1 hardening).
+const securityHeaders = {
+  "strict-transport-security": "max-age=31536000; includeSubDomains",
+  "x-content-type-options": "nosniff",
+  "x-frame-options": "DENY",
+  "referrer-policy": "no-referrer",
+};
+
+// Failed sign-ins, without request bodies or credentials: IP, path and upstream status only.
+function logFailedLogin(client, path, status) {
+  console.warn(
+    JSON.stringify({
+      event: "failed_login",
+      ip: client,
+      path,
+      status,
+      at: new Date().toISOString(),
+    }),
+  );
+}
 
 const rules = [
   ["GET", /^\/store\/(regions|offers|shipping-options|payment-providers)$/],
@@ -61,7 +84,7 @@ const rules = [
   ["GET", /^\/store\/sellers\/sel_[a-z0-9]+$/i],
   ["GET", /^\/store\/catalog-comparison$/],
   ["GET", /^\/store\/agestyles\/exchange-rate$/],
-  ["GET", /^\/store\/agestyles\/(catalog|home|maintenance|shipping-options)$/],
+  ["GET", /^\/store\/agestyles\/(catalog|home|maintenance)$/],
   ["GET", /^\/store\/agestyles\/sales-agents\/[a-z0-9]{4,12}$/i],
   ["GET", /^\/store\/products(?:\/prod_[a-z0-9]+)?$/i],
   ["POST", /^\/store\/carts$/],
@@ -81,6 +104,9 @@ const rules = [
   ["POST DELETE", /^\/store\/customers\/me\/addresses\/caddr_[a-z0-9]+$/i],
   ["GET", /^\/store\/order-groups(?:\/og_[a-z0-9]+)?$/i],
   ["GET", /^\/store\/orders\/order_[a-z0-9]+\/tracking$/i],
+  // Payment proofs for one of the customer's own orders (P1 fix): the server forces a
+  // customer actor (AUTHENTICATE) and only returns proofs of orders that belong to them.
+  ["GET POST", /^\/store\/orders\/order_[a-z0-9]+\/manual-payments$/i],
   // Notifications (AG-19): inbox, push devices and channel preferences of the signed-in customer.
   ["GET", /^\/store\/agestyles\/notifications$/],
   ["POST", /^\/store\/agestyles\/notifications\/read$/],
@@ -95,6 +121,7 @@ function reply(response, status, message, headers = {}) {
   response.writeHead(status, {
     "content-type": "application/json",
     "cache-control": "no-store",
+    ...securityHeaders,
     ...headers,
   });
   response.end(JSON.stringify({ message }));
@@ -134,7 +161,7 @@ createServer({ requestTimeout: 30_000, headersTimeout: 10_000 }, (incoming, outg
     if (typeof requestedMethod !== "string" || !methods.includes(requestedMethod)) {
       return reply(outgoing, 403, "Method not allowed", corsHeaders);
     }
-    outgoing.writeHead(204, corsHeaders);
+    outgoing.writeHead(204, { ...securityHeaders, ...corsHeaders });
     return outgoing.end();
   }
 
@@ -144,17 +171,34 @@ createServer({ requestTimeout: 30_000, headersTimeout: 10_000 }, (incoming, outg
   const clientIp = incoming.headers["cf-connecting-ip"];
   const client =
     typeof clientIp === "string" && isIP(clientIp) ? clientIp : incoming.socket.remoteAddress;
+  // Per-IP limits only: the old shared global cap (600/min across all clients) let one
+  // busy IP deny service to everyone. Redis-backed counters shared across gateway
+  // replicas are the follow-up; see the P1 report.
   const count = clientRequests.get(client) ?? 0;
-  if (count >= 120 || totalRequests >= 600)
-    return reply(outgoing, 429, "Retry in a minute", corsHeaders);
+  if (count >= 120) return reply(outgoing, 429, "Retry in a minute", corsHeaders);
   clientRequests.set(client, count + 1);
   if (path.startsWith("/auth/customer/emailpass") || path === "/store/agestyles/legacy-login") {
     const attempts = authAttempts.get(client) ?? 0;
-    if (attempts >= 10)
+    if (attempts >= 10) {
+      logFailedLogin(client, path, 429);
       return reply(outgoing, 429, "Too many sign-in attempts. Retry in a minute.", corsHeaders);
+    }
     authAttempts.set(client, attempts + 1);
   }
-  totalRequests += 1;
+  if (
+    path === "/auth/customer/emailpass/reset-password" ||
+    path === "/auth/customer/emailpass/update"
+  ) {
+    const resets = resetAttempts.get(client) ?? 0;
+    if (resets >= 5)
+      return reply(
+        outgoing,
+        429,
+        "Too many password-reset attempts. Retry in a minute.",
+        corsHeaders,
+      );
+    resetAttempts.set(client, resets + 1);
+  }
 
   // Maintenance (AG-44): no carts or checkout while the administration has it on.
   if (
@@ -201,9 +245,17 @@ createServer({ requestTimeout: 30_000, headersTimeout: 10_000 }, (incoming, outg
       timeout: 30_000,
     },
     (response) => {
+      if (
+        response.statusCode === 401 &&
+        (path.startsWith("/auth/customer/emailpass") ||
+          path === "/store/agestyles/legacy-login")
+      ) {
+        logFailedLogin(client, path, response.statusCode);
+      }
       outgoing.writeHead(response.statusCode, {
         "content-type": response.headers["content-type"] ?? "application/json",
         "cache-control": "no-store",
+        ...securityHeaders,
         ...corsHeaders,
       });
       response.pipe(outgoing);

@@ -594,8 +594,9 @@ export default async function seedDemoData({ container }: ExecArgs) {
 
   logger.info("Finished seeding global product attributes.");
 
-  const SELLER_PASSWORD =
-    process.env.AGESTYLES_LAB_SEEDED_PASSWORD ?? "supersecret";
+  const SELLER_PASSWORD = process.env.AGESTYLES_LAB_SEEDED_PASSWORD;
+  // No default password: seeding demo sellers with a known fallback would
+  // leave guessable credentials in any database the seed ever touches.
   const SELLER_CONFIGS = [
     { name: "Sole Society", email: "seller@mercur.dev", first_name: "Demo", last_name: "Seller", city: "Berlin", country_code: "DE", address_1: "Alexanderplatz 1" },
     { name: "Kickz Corner", email: "kickz@mercur.dev", first_name: "Kai", last_name: "Corner", city: "Amsterdam", country_code: "NL", address_1: "Damrak 12" },
@@ -622,6 +623,12 @@ export default async function seedDemoData({ container }: ExecArgs) {
     );
     logger.info("Finished seeding.");
     return;
+  }
+
+  if (!SELLER_PASSWORD) {
+    throw new Error(
+      "AGESTYLES_LAB_SEEDED_PASSWORD is required to seed demo sellers: set it in a private env file, there is no default password.",
+    );
   }
 
   const authModuleService = container.resolve(Modules.AUTH);

@@ -1,6 +1,7 @@
 import type { AuthenticatedMedusaRequest, MedusaResponse } from "@medusajs/framework/http";
 import type { MedusaContainer } from "@medusajs/framework/types";
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils";
+import { z } from "zod";
 import { createUserAccountWorkflow, removeUserAccountWorkflow } from "@medusajs/medusa/core-flows";
 import {
   acceptMemberInviteWorkflow,
@@ -82,12 +83,29 @@ export async function GET(req: AuthenticatedMedusaRequest, res: MedusaResponse) 
 }
 
 /**
+ * Route-level envelope for a people action: only type and length. The rules
+ * (known action, valid role, `sel_` seller id) stay in `parsePeopleAction`
+ * (`apps/commerce-api/src/lib/people.ts`), which remains authoritative; this
+ * gate only stops a mistyped or absurdly long body from reaching it.
+ */
+const peopleActionBodySchema = z.object({
+  action: z.string().min(1).max(40),
+  email: z.string().min(1).max(254),
+  seller_id: z.string().max(120).optional(),
+  role_id: z.string().max(120).optional(),
+  seller_member_id: z.string().max(120).optional(),
+});
+
+/**
  * Administrative actions on one person. Every rule is checked here, not in the screen:
  * an account needs its own password before it can be an administrator or join a store,
  * nobody removes their own administration or the last administrator, and store owners
  * keep their role (ownership is changed only from the store).
  */
 export async function POST(req: AuthenticatedMedusaRequest, res: MedusaResponse) {
+  if (!peopleActionBodySchema.safeParse(req.body ?? {}).success) {
+    return res.status(400).json({ message: "La acción no tiene un formato válido." });
+  }
   let action;
   try {
     action = parsePeopleAction(req.body);

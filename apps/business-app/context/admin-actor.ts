@@ -1,5 +1,5 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import Medusa from "@medusajs/js-sdk";
+import * as SecureStore from "expo-secure-store";
 
 /**
  * Marketplace administration (AG-32): the `user` actor of Medusa, kept apart from the store
@@ -8,11 +8,24 @@ import Medusa from "@medusajs/js-sdk";
  */
 const ADMIN_SESSION_PREFIX = "agestyles.business.admin.actor.";
 
+/**
+ * JWT storage backed by the OS keychain/keystore (expo-secure-store) instead of
+ * AsyncStorage, which keeps the token in plaintext. On web SecureStore falls back
+ * to localStorage, so the web build keeps working with the same degraded
+ * protection as before. Existing sessions stored in AsyncStorage are not
+ * migrated: users sign in once again after this change.
+ */
+const secureTokenStorage = {
+  getItem: (key: string) => SecureStore.getItemAsync(key),
+  setItem: (key: string, value: string) => SecureStore.setItemAsync(key, value),
+  removeItem: (key: string) => SecureStore.deleteItemAsync(key),
+};
+
 const storage = {
-  getItem: (key: string) => AsyncStorage.getItem(`${ADMIN_SESSION_PREFIX}${key}`),
+  getItem: (key: string) => secureTokenStorage.getItem(`${ADMIN_SESSION_PREFIX}${key}`),
   setItem: (key: string, value: string) =>
-    AsyncStorage.setItem(`${ADMIN_SESSION_PREFIX}${key}`, value),
-  removeItem: (key: string) => AsyncStorage.removeItem(`${ADMIN_SESSION_PREFIX}${key}`),
+    secureTokenStorage.setItem(`${ADMIN_SESSION_PREFIX}${key}`, value),
+  removeItem: (key: string) => secureTokenStorage.removeItem(`${ADMIN_SESSION_PREFIX}${key}`),
 };
 
 function adminBaseUrl() {

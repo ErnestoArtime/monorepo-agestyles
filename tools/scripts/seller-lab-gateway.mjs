@@ -17,14 +17,37 @@ if (!/^(\/[a-z0-9-]+)?$/.test(prefix) || !listenPort || !upstreamPort) {
 }
 const clientRequests = new Map();
 const authAttempts = new Map();
-let totalRequests = 0;
+// Password-reset requests (AG-19): a tighter per-IP bucket than sign-in, so the emailed
+// link cannot be used to spam an inbox or to guess reset tokens.
+const resetAttempts = new Map();
 
 const reset = setInterval(() => {
   clientRequests.clear();
   authAttempts.clear();
-  totalRequests = 0;
+  resetAttempts.clear();
 }, 60_000);
 reset.unref();
+
+// Sent on every gateway response, including errors and proxied ones (P1 hardening).
+const securityHeaders = {
+  "strict-transport-security": "max-age=31536000; includeSubDomains",
+  "x-content-type-options": "nosniff",
+  "x-frame-options": "DENY",
+  "referrer-policy": "no-referrer",
+};
+
+// Failed sign-ins, without request bodies or credentials: IP, path and upstream status only.
+function logFailedLogin(client, path, status) {
+  console.warn(
+    JSON.stringify({
+      event: "failed_login",
+      ip: client,
+      path,
+      status,
+      at: new Date().toISOString(),
+    }),
+  );
+}
 
 const rules = [
   ["POST", /^\/auth\/member\/emailpass$/],
@@ -99,6 +122,7 @@ function reply(response, status, message, headers = {}) {
   response.writeHead(status, {
     "content-type": "application/json",
     "cache-control": "no-store",
+    ...securityHeaders,
     ...headers,
   });
   response.end(JSON.stringify({ message }));
@@ -106,7 +130,11 @@ function reply(response, status, message, headers = {}) {
 
 createServer({ requestTimeout: 30_000, headersTimeout: 10_000 }, (incoming, outgoing) => {
   if (incoming.url === "/healthz") {
-    outgoing.writeHead(200, { "content-type": "text/plain", "cache-control": "no-store" });
+    outgoing.writeHead(200, {
+      "content-type": "text/plain",
+      "cache-control": "no-store",
+      ...securityHeaders,
+    });
     return outgoing.end("ok\n");
   }
 
@@ -148,7 +176,7 @@ createServer({ requestTimeout: 30_000, headersTimeout: 10_000 }, (incoming, outg
     ) {
       return reply(outgoing, 403, "Method not allowed", corsHeaders);
     }
-    outgoing.writeHead(204, corsHeaders);
+    outgoing.writeHead(204, { ...securityHeaders, ...corsHeaders });
     return outgoing.end();
   }
 
@@ -161,18 +189,32 @@ createServer({ requestTimeout: 30_000, headersTimeout: 10_000 }, (incoming, outg
     typeof clientIp === "string" && isIP(clientIp)
       ? clientIp
       : (incoming.socket.remoteAddress ?? "unknown");
+  // Per-IP limits only: the old shared global cap (600/min across all clients) let one
+  // busy IP deny service to everyone. Redis-backed counters shared across gateway
+  // replicas are the follow-up; see the P1 report.
   const count = clientRequests.get(client) ?? 0;
-  if (count >= 120 || totalRequests >= 600)
-    return reply(outgoing, 429, "Retry in a minute", corsHeaders);
+  if (count >= 120) return reply(outgoing, 429, "Retry in a minute", corsHeaders);
   clientRequests.set(client, count + 1);
 
   if (path === "/auth/member/emailpass" || path === "/auth/customer/emailpass") {
     const attempts = authAttempts.get(client) ?? 0;
-    if (attempts >= 8)
+    if (attempts >= 8) {
+      logFailedLogin(client, path, 429);
       return reply(outgoing, 429, "Too many sign-in attempts. Retry in a minute.", corsHeaders);
+    }
     authAttempts.set(client, attempts + 1);
   }
-  totalRequests += 1;
+  if (/^\/auth\/(member|customer)\/emailpass\/(reset-password|update)$/.test(path)) {
+    const resets = resetAttempts.get(client) ?? 0;
+    if (resets >= 5)
+      return reply(
+        outgoing,
+        429,
+        "Too many password-reset attempts. Retry in a minute.",
+        corsHeaders,
+      );
+    resetAttempts.set(client, resets + 1);
+  }
 
   if (
     incoming.headers["transfer-encoding"] ||
@@ -208,9 +250,16 @@ createServer({ requestTimeout: 30_000, headersTimeout: 10_000 }, (incoming, outg
       timeout: 30_000,
     },
     (response) => {
+      if (
+        response.statusCode === 401 &&
+        (path === "/auth/member/emailpass" || path === "/auth/customer/emailpass")
+      ) {
+        logFailedLogin(client, path, response.statusCode);
+      }
       outgoing.writeHead(response.statusCode ?? 502, {
         "content-type": response.headers["content-type"] ?? "application/json",
         "cache-control": "no-store",
+        ...securityHeaders,
         ...corsHeaders,
       });
       response.pipe(outgoing);

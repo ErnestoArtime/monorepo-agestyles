@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Medusa from "@medusajs/js-sdk";
+import * as SecureStore from "expo-secure-store";
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { loginBusinessAndBuyerActors } from "@agestyles/features-buyer/business-buyer-session";
 import { unregisterThisDevice } from "@agestyles/features-notifications";
@@ -40,10 +41,24 @@ const publishableKey = process.env.EXPO_PUBLIC_MEDUSA_PUBLISHABLE_API_KEY || "";
 const SESSION_PREFIX = "agestyles.business.actor.";
 /** Last store opened, so a reload or a shared link reopens it (AG-41). */
 const SELECTED_SELLER_KEY = "agestyles.business.selected-seller";
+/**
+ * JWT storage backed by the OS keychain/keystore (expo-secure-store) instead of
+ * AsyncStorage, which keeps the token in plaintext. On web SecureStore falls back
+ * to localStorage, so the web build keeps working with the same degraded
+ * protection as before. Existing sessions stored in AsyncStorage are not
+ * migrated: users sign in once again after this change. The selected store id
+ * is not a credential and stays in AsyncStorage.
+ */
+const secureTokenStorage = {
+  getItem: (key: string) => SecureStore.getItemAsync(key),
+  setItem: (key: string, value: string) => SecureStore.setItemAsync(key, value),
+  removeItem: (key: string) => SecureStore.deleteItemAsync(key),
+};
 const storage = {
-  getItem: (key: string) => AsyncStorage.getItem(`${SESSION_PREFIX}${key}`),
-  setItem: (key: string, value: string) => AsyncStorage.setItem(`${SESSION_PREFIX}${key}`, value),
-  removeItem: (key: string) => AsyncStorage.removeItem(`${SESSION_PREFIX}${key}`),
+  getItem: (key: string) => secureTokenStorage.getItem(`${SESSION_PREFIX}${key}`),
+  setItem: (key: string, value: string) =>
+    secureTokenStorage.setItem(`${SESSION_PREFIX}${key}`, value),
+  removeItem: (key: string) => secureTokenStorage.removeItem(`${SESSION_PREFIX}${key}`),
 };
 const sdk: any = new Medusa({
   baseUrl,

@@ -14,7 +14,7 @@ const redisUrl = production ? "redis://127.0.0.1:16393" : "redis://127.0.0.1:163
 const fileStorageProvider = process.env.AGESTYLES_FILE_STORAGE_PROVIDER || "local";
 const minioPort = production ? "19086" : "19083";
 const localOrigins = "http://localhost:18081,http://127.0.0.1:18081";
-const buyerOrigins = `${localOrigins},https://tienda.eav-labs.com`;
+const buyerOrigins = `${localOrigins},https://tienda.eav-labs.com,https://catalogo.eav-labs.com`;
 
 if (
   (environment !== "lab" && !production) ||

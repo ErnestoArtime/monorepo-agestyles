@@ -1,9 +1,10 @@
 import { LocalFileService } from "@medusajs/file-local";
 import type { FileTypes } from "@medusajs/framework/types";
+import { MedusaError } from "@medusajs/framework/utils";
 import fs from "node:fs/promises";
 import path from "node:path";
+import sharp from "sharp";
 import {
-  isOptimizable,
   optimizeImage,
   VARIANT_WIDTHS,
   variantKey,
@@ -16,23 +17,72 @@ function decode(content: string) {
   return base64.toString("base64") === content ? base64 : Buffer.from(content, "binary");
 }
 
+/** Server-side allowlist: only real image content, verified with sharp. */
+const ALLOWED_IMAGE_FORMATS = new Set(["jpeg", "png", "webp", "avif", "tiff"]);
+/** Per-file limit for public uploads through this provider. */
+const MAX_FILE_BYTES = 5 * 1024 * 1024;
+
+/**
+ * Verify the bytes are really one of the allowed image formats. The declared
+ * `mimeType` is client-controlled and is never trusted: sharp reads the
+ * actual file header, so a renamed executable or script is rejected here.
+ */
+async function assertAllowedImage(content: Buffer): Promise<void> {
+  if (content.length > MAX_FILE_BYTES) {
+    throw new MedusaError(
+      MedusaError.Types.INVALID_DATA,
+      "The file exceeds the 5 MB limit.",
+    );
+  }
+  let format: string | undefined;
+  try {
+    ({ format } = await sharp(content, { failOn: "error" }).metadata());
+  } catch {
+    throw new MedusaError(
+      MedusaError.Types.INVALID_DATA,
+      "Only JPEG, PNG, WebP, AVIF or TIFF images are allowed.",
+    );
+  }
+  if (!format || !ALLOWED_IMAGE_FORMATS.has(format)) {
+    throw new MedusaError(
+      MedusaError.Types.INVALID_DATA,
+      "Only JPEG, PNG, WebP, AVIF or TIFF images are allowed.",
+    );
+  }
+}
+
 /**
  * Medusa's local file provider (public `LocalFileService` of @medusajs/file-local) with
  * image optimisation on upload (AG-36): public photos are stored as WebP (≤1600 px) with
- * 400 and 800 px variants next to them. Anything else (or a photo sharp cannot read) is
- * stored unchanged, as before. Registered in medusa-config instead of the plain provider.
+ * 400 and 800 px variants next to them. Public uploads are allowlisted on the server:
+ * only images verified by content with sharp (jpeg/png/webp/avif/tiff, ≤5 MB) are
+ * accepted; anything else is rejected instead of being stored unchanged.
+ * Private uploads keep the plain provider behaviour.
+ *
+ * LIMITATION: this allowlist only covers the local provider. In S3 mode
+ * (medusa-config.ts, `AGESTYLES_FILE_STORAGE_PROVIDER=s3`) uploads go
+ * straight to `@medusajs/medusa/file-s3` with no validation, so the same
+ * content check and size limit must be applied there (or uploads restricted
+ * to this provider) before S3 mode can be considered covered.
+ * Registered in medusa-config instead of the plain provider.
  */
 export class OptimizedLocalFileService extends LocalFileService {
   static identifier = "optimized-local";
 
   async upload(file: FileTypes.ProviderUploadFileDTO): Promise<FileTypes.ProviderFileResultDTO> {
-    if (file?.access !== "public" || !isOptimizable(file.mimeType)) return super.upload(file);
+    if (file?.access !== "public") return super.upload(file);
+    const content = decode(file.content);
+    await assertAllowedImage(content);
     let optimized;
     try {
-      optimized = await optimizeImage(decode(file.content));
+      optimized = await optimizeImage(content);
     } catch {
-      // Not a readable image: keep the original, as the plain provider would.
-      return super.upload(file);
+      // sharp already verified the bytes, so this should not happen; fail
+      // closed rather than storing an unprocessed file.
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        "The image could not be processed.",
+      );
     }
     const result = await super.upload({
       ...file,
