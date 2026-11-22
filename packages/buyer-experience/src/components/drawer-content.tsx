@@ -1,7 +1,8 @@
 import { Icon, type IconName } from "@agestyles/icons";
+import { SearchField } from "@agestyles/ui-native";
 import { DrawerContentComponentProps, DrawerContentScrollView } from "@react-navigation/drawer";
 import { useRouter, type Href } from "expo-router";
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Colors } from "../constants/theme";
 import { useCustomer } from "../context/customer-context";
@@ -24,11 +25,18 @@ export function DrawerContent(props: DrawerContentComponentProps) {
   const { preference, setPreference } = useThemePreference();
   const hasCountryChoice = useHasCountryChoice();
   const topCategories = useTopCategories();
+  // Búsqueda del drawer (móvil): la home lee q con useLocalSearchParams
+  // y busca en el servidor, igual que la búsqueda del sidebar web.
+  const [query, setQuery] = useState("");
 
   function go(href: Href) {
     props.navigation.closeDrawer();
     router.push(href);
   }
+
+  const submitSearch = () => {
+    go(buyerHref({ pathname: HOME, params: { q: query.trim() } }));
+  };
 
   const item = (label: string, onPress: () => void, icon?: Parameters<typeof Icon>[0]["name"]) => (
     <Pressable
@@ -54,6 +62,17 @@ export function DrawerContent(props: DrawerContentComponentProps) {
         <Text style={styles.title} accessibilityRole="header">
           Menú principal
         </Text>
+
+        <View style={styles.searchWrap}>
+          <SearchField
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Buscar productos"
+            accessibilityLabel="Buscar productos"
+            returnKeyType="search"
+            onSubmitEditing={submitSearch}
+          />
+        </View>
 
         {exit ? (
           // Inside Negocio (AG-31): back to the managed store, keeping both sessions.
@@ -160,6 +179,7 @@ const createStyles = (colors: (typeof Colors)[keyof typeof Colors]) =>
       paddingHorizontal: 8,
       marginBottom: 8,
     },
+    searchWrap: { marginHorizontal: 8, marginBottom: 4 },
     section: {
       paddingVertical: 8,
       borderTopColor: colors.border,

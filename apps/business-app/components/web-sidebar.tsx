@@ -1,8 +1,27 @@
+// REVISIÓN PRECISA (2026-11-22, commit deb0e37 del monorepo):
+// Este archivo es el sidebar REAL de Negocio. NO es Next.js ni Tailwind:
+// es React Native + Expo Router + StyleSheet + tokens de
+// @agestyles/design-tokens, con <Icon name="…"> de @agestyles/icons
+// (lucide-react solo vive dentro de packages/icons, nunca se importa
+// directo en una app) y SearchField de @agestyles/ui-native.
+// Cambios del reel de Memorisely aplicados aquí, sin tocar el resto:
+//  - colapsable 260 → 72 px, solo iconos, con accessibilityLabel;
+//  - búsqueda arriba con SearchField, cableada: pasa el texto como
+//    parámetro q a Productos (app/(tabs)/products.tsx lo lee con
+//    useLocalSearchParams y filtra por título o SKU);
+//  - badge rojo (theme.error + theme.onError) a la derecha de
+//    Notificaciones, con el unreadCount real que ya existía;
+//  - NO se añaden Ajustes ni Soporte: esas rutas no existen en el repo.
+//  - NO se añade badge de Pedidos: no hay contador reutilizable
+//    (openOrders es local del Resumen, con tope de 50).
+// Móvil: este sidebar solo se monta en web ancha (app/_layout.tsx:
+// isWideWeb y vendedor/admin); en móvil Negocio usa la tab bar.
 import { NotificationBell, useOptionalNotifications } from "@agestyles/features-notifications";
 import { Icon, type IconName } from "@agestyles/icons";
+import { SearchField } from "@agestyles/ui-native";
 import { usePathname, useRouter, type Href } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { BrandLockup } from "./brand-lockup";
 import { useAdmin } from "../context/admin-context";
 import { useBusiness } from "../context/business-context";
@@ -10,7 +29,14 @@ import { useBusinessTheme, type BusinessTheme } from "../hooks/use-business-them
 import { hasPermission } from "../lib/permissions";
 import { memberDisplayName, memberRoleLabel } from "../lib/roles";
 
-type Item = { label: string; icon: IconName; href: string; match: (path: string) => boolean };
+type Item = {
+  label: string;
+  icon: IconName;
+  href: string;
+  match: (path: string) => boolean;
+  /** Solo si hay un contador real detrás. No inventes insignias. */
+  badge?: number;
+};
 
 /**
  * Side menu of Negocio in a wide browser, like any web back office: every section is one
@@ -25,6 +51,38 @@ export function WebSidebar() {
   const { seller, sellers, member, logout } = useBusiness();
   const unread = useOptionalNotifications()?.unreadCount ?? 0;
   const { admin } = useAdmin();
+  const [collapsed, setCollapsed] = useState(false);
+  const [query, setQuery] = useState("");
+
+  // Atajo web: Ctrl/Cmd+K o "/" enfoca la búsqueda, Esc la suelta.
+  // (En React Native no hay ref de foco verificada en SearchField, por
+  // eso el atajo solo limpia/enfoca cuando el campo lo permite; en web
+  // el input nativo recibe el foco con el listener de abajo.)
+  useEffect(() => {
+    if (Platform.OS !== "web" || typeof window === "undefined") return;
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const typing = target?.tagName === "INPUT" || target?.tagName === "TEXTAREA";
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        document.querySelector<HTMLInputElement>('input[aria-label="Buscar en Negocio"]')?.focus();
+      } else if (event.key === "/" && !typing) {
+        event.preventDefault();
+        document.querySelector<HTMLInputElement>('input[aria-label="Buscar en Negocio"]')?.focus();
+      } else if (event.key === "Escape") {
+        (document.activeElement as HTMLElement | null)?.blur?.();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const onSubmitSearch = () => {
+    // La búsqueda pasa el texto por ruta: Productos lee q con
+    // useLocalSearchParams y filtra por título o SKU.
+    if (!query.trim()) return;
+    router.push({ pathname: "/(tabs)/products", params: { q: query.trim() } } as Href);
+  };
 
   const storeGroups: { title?: string; items: Item[] }[] = [
     {
@@ -128,10 +186,11 @@ export function WebSidebar() {
             ]
           : []),
         {
-          label: unread ? `Notificaciones (${unread})` : "Notificaciones",
+          label: "Notificaciones",
           icon: "bell",
           href: "/notifications",
           match: (p) => p.startsWith("/notifications"),
+          badge: unread,
         },
         {
           label: "Avisos",
@@ -244,12 +303,40 @@ export function WebSidebar() {
   const accountEmail = member?.member?.email ?? admin?.email ?? "";
 
   return (
-    <View style={styles.sidebar} role="navigation" accessibilityLabel="Menú de Negocio">
+    <View
+      style={[styles.sidebar, collapsed && styles.sidebarCollapsed]}
+      role="navigation"
+      accessibilityLabel="Menú de Negocio"
+    >
       <View style={styles.top}>
-        <BrandLockup />
-        <NotificationBell onPress={() => router.push("/notifications")} />
+        {collapsed ? null : <BrandLockup />}
+        <Pressable
+          onPress={() => setCollapsed((v) => !v)}
+          accessibilityRole="button"
+          accessibilityLabel={collapsed ? "Expandir menú" : "Colapsar menú"}
+          style={({ hovered }: { hovered?: boolean }) => [
+            styles.collapseButton,
+            hovered && { backgroundColor: theme.quietSurface },
+          ]}
+        >
+          {/* No hay chevronLeft en @agestyles/icons: se usan arrowLeft/arrowRight. */}
+          <Icon name={collapsed ? "arrowRight" : "arrowLeft"} size={18} color={theme.muted} />
+        </Pressable>
+        {collapsed ? null : <NotificationBell onPress={() => router.push("/notifications")} />}
       </View>
-      {seller ? (
+      {collapsed ? null : (
+        <View style={styles.searchWrap}>
+          <SearchField
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Buscar en Negocio"
+            accessibilityLabel="Buscar en Negocio"
+            returnKeyType="search"
+            onSubmitEditing={onSubmitSearch}
+          />
+        </View>
+      )}
+      {seller && !collapsed ? (
         <Pressable
           onPress={() => router.push("/(tabs)/more" as Href)}
           accessibilityRole="button"
@@ -278,7 +365,7 @@ export function WebSidebar() {
           const expanded = !section.title || open[section.key];
           return (
             <View key={section.key} style={styles.section}>
-              {section.title ? (
+              {section.title && !collapsed ? (
                 <Pressable
                   onPress={() =>
                     // Accordion: opening one block folds the other, so its options are in view.
@@ -314,29 +401,57 @@ export function WebSidebar() {
               {expanded
                 ? section.groups.map((group, index) => (
                     <View key={group.title ?? index} style={styles.group}>
-                      {group.title ? <Text style={styles.heading}>{group.title}</Text> : null}
+                      {group.title && !collapsed ? (
+                        <Text style={styles.heading}>{group.title}</Text>
+                      ) : null}
                       {group.items.map((item) => {
                         const active = item.match(pathname);
+                        const badge = item.badge ?? 0;
                         return (
                           <Pressable
                             key={item.href}
                             onPress={() => router.push(item.href as Href)}
                             accessibilityRole="link"
                             accessibilityState={{ selected: active }}
+                            accessibilityLabel={
+                              collapsed
+                                ? badge > 0
+                                  ? `${item.label}, ${badge} sin leer`
+                                  : item.label
+                                : undefined
+                            }
                             style={({ hovered }: { hovered?: boolean }) => [
                               styles.item,
+                              collapsed && styles.itemCollapsed,
                               active && styles.itemActive,
                               hovered && !active && { backgroundColor: theme.quietSurface },
                             ]}
                           >
-                            <Icon
-                              name={item.icon}
-                              size={18}
-                              color={active ? theme.action : theme.muted}
-                            />
-                            <Text style={[styles.itemText, active && styles.itemTextActive]}>
-                              {item.label}
-                            </Text>
+                            <View>
+                              <Icon
+                                name={item.icon}
+                                size={18}
+                                color={active ? theme.action : theme.muted}
+                              />
+                              {collapsed && badge > 0 ? <View style={styles.badgeDot} /> : null}
+                            </View>
+                            {collapsed ? null : (
+                              <>
+                                <Text
+                                  style={[styles.itemText, active && styles.itemTextActive]}
+                                  numberOfLines={1}
+                                >
+                                  {item.label}
+                                </Text>
+                                {badge > 0 ? (
+                                  <View style={styles.badge}>
+                                    <Text style={styles.badgeText}>
+                                      {badge > 99 ? "99+" : String(badge)}
+                                    </Text>
+                                  </View>
+                                ) : null}
+                              </>
+                            )}
                           </Pressable>
                         );
                       })}
@@ -349,29 +464,32 @@ export function WebSidebar() {
       </ScrollView>
       <View style={styles.bottom}>
         <View
-          style={styles.account}
+          style={[styles.account, collapsed && styles.accountCollapsed]}
           accessibilityLabel={`Sesión de ${accountName}, ${accountRole}`}
         >
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{accountName.slice(0, 1).toUpperCase()}</Text>
           </View>
-          <View style={styles.flex}>
-            <Text style={styles.storeName} numberOfLines={1}>
-              {accountName}
-            </Text>
-            <Text style={styles.muted} numberOfLines={1}>
-              {accountRole}
-              {accountEmail ? ` · ${accountEmail}` : ""}
-            </Text>
-          </View>
+          {collapsed ? null : (
+            <View style={styles.flex}>
+              <Text style={styles.storeName} numberOfLines={1}>
+                {accountName}
+              </Text>
+              <Text style={styles.muted} numberOfLines={1}>
+                {accountRole}
+                {accountEmail ? ` · ${accountEmail}` : ""}
+              </Text>
+            </View>
+          )}
         </View>
         <Pressable
           onPress={() => router.push("/tienda" as Href)}
           accessibilityRole="link"
-          style={styles.item}
+          accessibilityLabel={collapsed ? "Comprar en AgeStyles" : undefined}
+          style={[styles.item, collapsed && styles.itemCollapsed]}
         >
           <Icon name="shoppingBag" size={18} color={theme.muted} />
-          <Text style={styles.itemText}>Comprar en AgeStyles</Text>
+          {collapsed ? null : <Text style={styles.itemText}>Comprar en AgeStyles</Text>}
         </Pressable>
         <Pressable
           onPress={async () => {
@@ -379,10 +497,11 @@ export function WebSidebar() {
             router.replace("/");
           }}
           accessibilityRole="button"
-          style={styles.item}
+          accessibilityLabel={collapsed ? "Cerrar sesión" : undefined}
+          style={[styles.item, collapsed && styles.itemCollapsed]}
         >
           <Icon name="arrowLeft" size={18} color={theme.muted} />
-          <Text style={styles.itemText}>Cerrar sesión</Text>
+          {collapsed ? null : <Text style={styles.itemText}>Cerrar sesión</Text>}
         </Pressable>
       </View>
     </View>
@@ -416,6 +535,36 @@ const createStyles = (theme: BusinessTheme) =>
       paddingHorizontal: 12,
       paddingTop: 16,
       paddingBottom: 12,
+    },
+    sidebarCollapsed: { width: 72, paddingHorizontal: 8 },
+    collapseButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 8,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    searchWrap: { marginTop: 12 },
+    itemCollapsed: { justifyContent: "center", paddingHorizontal: 0 },
+    accountCollapsed: { justifyContent: "center", paddingHorizontal: 0 },
+    badge: {
+      minWidth: 20,
+      height: 20,
+      paddingHorizontal: 6,
+      borderRadius: 10,
+      backgroundColor: theme.error,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    badgeText: { color: theme.onError, fontSize: 11, fontWeight: "700" },
+    badgeDot: {
+      position: "absolute",
+      top: -2,
+      right: -4,
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: theme.error,
     },
     top: {
       flexDirection: "row",
@@ -458,7 +607,7 @@ const createStyles = (theme: BusinessTheme) =>
       gap: 12,
     },
     itemActive: { backgroundColor: theme.selectedSurface },
-    itemText: { color: theme.text, fontSize: 14 },
+    itemText: { flex: 1, color: theme.text, fontSize: 14 },
     itemTextActive: { color: theme.action, fontWeight: "600" },
     account: {
       flexDirection: "row",
