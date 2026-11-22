@@ -1748,3 +1748,9 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - Bloqueo de checkout (AG-51): `tools/scripts/buyer-lab-gateway.mjs` elimina `GET /store/agestyles/shipping-options`, que usa el cliente de `main`. Conservar la entrada exacta y validar el checkout después de actualizar la rama.
 - Bloqueo de Catálogo: la política CSP de `apps/storefront-web/next.config.ts` bloquea los scripts en línea de arranque de Next.js y estilos que el Catálogo utiliza. Reproducido en Chromium inyectando esa cabecera solo en la respuesta de una sesión de prueba del sitio público: HTTP 200, 58 violaciones y `self.__next_f` ausente. Ajustar la política y verificar en navegador el arranque y el carrito antes de aplicarla como cabecera de bloqueo.
 - Pagos: el vendedor ya se deriva del pedido, pero `order_group_id` aún da prioridad al valor recibido del cliente; derivarlo de la relación del pedido o validar coincidencia antes de guardar. El PR sigue sin aprobación de revisión cruzada. No se aplicaron los parches a la rama ni se desplegó código.
+
+
+## Codex · AG-53 integrado y auditado
+
+- Fusionado el PR #3 en `6c9ca12` después de confirmar el CI `44999084955` en verde para `da6bbdf`. Parches de SecureStore, lockfile y subidas aplicados; preservada la ruta de AG-51, ajustada CSP con arranque de Next.js confirmado en Chromium y derivado el grupo de comprobante de la relación del pedido. Se comprobó con Sharp que AVIF se reporta como HEIF con AV1 y se conservó ese formato en la validación.
+- Auditoría registrada por los seis bloques en `docs/security.md`: verificaciones de red de solo lectura, defaults de Medusa, alertas de dependencias y Gitleaks redactado. Sin publicación, cargos, rotación de claves ni cambios de datos de producción.

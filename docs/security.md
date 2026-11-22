@@ -81,24 +81,11 @@ revocarse o confirmarse su revocación tras la migración**:
 
 ## 4. Vida del JWT y del token de reset
 
-Lo que se sabe del código del repo (sin inventar defaults de Medusa):
+La revisión de las dependencias fijadas en **Medusa 2.22.3** verificó estos valores:
 
-- `medusa-config.ts` configura solo `jwtSecret` y `cookieSecret`; **no hay
-  TTL configurado en el repo** para el JWT ni para el token de reset.
-- El token de reset lo emite Medusa con el evento `auth.password_reset`;
-  `apps/commerce-api/src/subscribers/send-password-reset-email.ts` lo mete
-  en el enlace sin guardarlo ni registrarlo (el hash sha256 del token solo
-  se usa como `idempotency_key` de la notificación). No hay en el repo
-  ninguna caducidad explícita ni ninguna purga de tokens de reset.
-- Pendiente explícito: verificar contra Medusa 2.22.3 (la versión fijada
-  en `apps/commerce-api/package.json`) cuál es la caducidad por defecto
-  del JWT de auth y del token de reset, y documentarla aquí con la fuente
-  (código de `@medusajs/auth` / `@medusajs/medusa` 2.22.3 o docs oficiales).
-  Hasta verificarlo, no se afirma ningún plazo.
-- Recomendación si el default resulta largo o no existe: fijar una
-  caducidad explícita corta para el reset (p. ej. 1 hora) y una sesión
-  acotada para el JWT, y documentar el cambio aquí. Eso es trabajo
-  pendiente, no hecho en este arreglo.
+- JWT de sesión: el framework usa **1 día** por defecto (`@medusajs/framework/dist/config/config.js`). AgeStyles no sobrescribe ese valor.
+- Recuperación: el workflow de Medusa usa **15 minutos** (`@medusajs/core-flows/dist/auth/workflows/generate-reset-password-token.js`). El suscriptor de AgeStyles construye un enlace HTTPS para cliente o miembro y usa un hash como clave de idempotencia.
+- Crear y usar un enlace con el proveedor de correo real, y verificar su rechazo tras el primer uso y tras caducar, siguen pendientes de una prueba de integración.
 
 ## 5. Decisión Bearer-only
 
@@ -115,3 +102,26 @@ Lo que se sabe del código del repo (sin inventar defaults de Medusa):
 - Las cabeceras de seguridad de la API (incluida HSTS) y `NODE_ENV`
   siguen pendientes de verificación en vivo (Cloudflare/VPS); ver los
   pendientes de la auditoría del 22 nov 2026.
+
+## Revisión de seguridad de AG-53
+
+El [PR #3](https://github.com/ErnestoArtime/monorepo-agestyles/pull/3) se integró en `6c9ca12`. Estas comprobaciones cubren los temas facilitados en seis bloques. Se revisaron el código, el historial accesible de `main` y del PR, el CI y algunos controles públicos de la versión que ya estaba en producción. El PR integrado espera despliegue.
+
+| Bloque | Qué quedó comprobado o integrado | Qué queda por comprobar o corregir |
+|---|---|---|
+| **Acceso y sesiones** | Administración sin sesión responde 401 en su ruta pública. El CI ejercita autenticación, permisos de vendedor y separación de tiendas. El PR almacena tokens nuevos de Android/iOS en SecureStore y mantiene AsyncStorage en web para conservar el login. Medusa fija 1 día de sesión y 15 minutos para el reset. Los gateways registran fallos de login sin cuerpo ni contraseña. | Probar registro de administrador e invitación de punta a punta con una cuenta desechable. Separar el permiso de administrar administradores de AG-45, activar MFA si se decide, verificar entrega y uso único del reset, centralizar alertas y definir revocación de sesiones. La web sigue usando un token Bearer accesible a JavaScript y las APK pendientes necesitan recompilarse y volver a iniciar sesión. Revisar la limpieza del almacenamiento anterior y la política de cookies si se adopta una sesión web con HttpOnly. |
+| **Secretos y entorno** | Los archivos `.env` versionados son ejemplos. La clave publicable de Medusa es la que utiliza el cliente Store; la revisión no encontró backend secrets publicados por las aplicaciones. Gitleaks revisó 336 commits con salida redactada: 8 coincidencias, 6 en fixtures de CI y 2 en referencias técnicas de documentación. Ninguna coincide con los secretos de producción contrastados localmente. | Activar escaneo en CI y revisar secretos fuera del historial de estas ramas, como logs, almacenamientos externos y credenciales antiguas. Confirmar la revocación de la `service_role` del legado por el procedimiento de esta guía. Sin señal de una credencial activa en el alcance auditado, no se rotaron claves. |
+| **Datos y código** | PostgreSQL, Redis, API interna y gateways escuchan en loopback. El PR añade validación Zod para comprobantes, revisión administrativa e IA, y mantiene las comprobaciones de propiedad del pedido y el aislamiento en el servidor. | Completar la revisión de consultas y formularios fuera de las rutas del PR, de cualquier contenido que llegue a HTML y de las políticas externas de datos. La auditoría no certifica ausencia de inyección en toda la aplicación. AG-02 sigue pendiente de copia externa cifrada y restauración aislada. |
+| **Red y navegador** | TLS válido en Tienda, Negocio, Catálogo y API; HTTP de Tienda redirige a HTTPS. En CORS, un preflight de Tienda devuelve 204 con su propio origen y uno ajeno devuelve 403. Los gateways del PR añaden cabeceras y límites de login y reset por IP. Usan Authorization Bearer y no reenvían cookies de sesión. El Catálogo aplica restricciones de marcos, objetos y URL base. Chromium ejecutó el arranque de Next.js con las cabeceras propuestas en una sesión interceptada. | Probar estas cabeceras y los límites tras publicar. La CSP estricta del Catálogo está solo en modo informe, pendiente de resolver scripts y estilos en línea sin perder el caché actual. Los contadores siguen en memoria, sin coordinación mediante Redis. Revalidar controles de origen y CSRF si se habilitan cookies de autenticación. |
+| **Archivos y pagos** | El proveedor optimizado local valida por contenido las imágenes públicas y limita cada archivo a 8 MiB, incluido AVIF identificado como HEIF con AV1. El comprobante deriva vendedor y grupo del servidor, valida comprador, moneda e importe contra el pedido y no usa el cuerpo como fuente del pedido. La confirmación exige conciliar el importe con el total del servidor. | Probar carga de móvil, incluidos el límite total del gateway y multipart, y añadir una política equivalente en S3. No se probaron subidas con un bucket real ni pagos reales. Decidir qué hacer con comprobantes parciales: hoy pueden enviarse, pero por sí solos no se verifican. |
+| **Servidor y cierre** | El Compose del PR fija NODE_ENV en producción y las apps usan debug solo en desarrollo. En los archivos publicados por Nginx de Tienda y Negocio no aparecieron `.env`, `.git`, `.pem` ni mapas de fuentes. CI verde en instalación congelada, formato, lint, pruebas, tipos, imagen, humo de API, permisos y exportaciones web. | Verificar NODE_ENV y archivos publicados tras desplegar. La revisión de paquetes retiró dependencias directas que la rama ya no usa, pero aún falta mantenimiento de transitivas, revisión de otras superficies y pruebas de login y checkout de la versión integrada en un entorno de aceptación. |
+
+### Dependencias pendientes
+
+La auditoría de producción de pnpm obtuvo **0 críticas, 5 altas y 8 moderadas**, con los mismos avisos en el PR y en `main` antes de la fusión. Los altos se concentran en `postcss` de Expo/Metro, `image-size` de Metro y `decode-uri-component` de Expo Router. Se requiere actualizar las transitivas con versiones compatibles y repetir los builds nativos y web.
+
+- PostCSS: [GHSA-6g55-p6wh-862q](https://github.com/advisories/GHSA-6g55-p6wh-862q) y [GHSA-r28c-9q8g-f849](https://github.com/advisories/GHSA-r28c-9q8g-f849).
+- image-size: [GHSA-5p2g-fcmc-qvqq](https://github.com/advisories/GHSA-5p2g-fcmc-qvqq) y [GHSA-w3rx-r6r6-pgpr](https://github.com/advisories/GHSA-w3rx-r6r6-pgpr).
+- decode-uri-component: [GHSA-qr28-fpjm-wq7f](https://github.com/advisories/GHSA-qr28-fpjm-wq7f).
+
+Evidencia de integración: [CI del commit final](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/44999084955).
