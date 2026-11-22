@@ -92,6 +92,7 @@ export default function HomeScreen() {
     nombre?: string;
     ids?: string;
     tienda?: string;
+    q?: string;
   }>();
   const menuFilter = useMemo(() => {
     if (params.filtro === "categoria" && params.ids) {
@@ -110,11 +111,22 @@ export default function HomeScreen() {
 
   useEffect(() => {
     // Opening a page from the menu starts from a clean list.
+    // Excepto cuando llega una búsqueda (params.q): no borrarla, que
+    // el efecto de q de abajo la aplica.
     setFilters(EMPTY_FILTERS);
-    setSearchTerm("");
-    setDebouncedSearch("");
+    if (!params.q) {
+      setSearchTerm("");
+      setDebouncedSearch("");
+    }
     setSection(null);
   }, [params.filtro, params.ids, params.tienda]);
+
+  // Búsqueda que llega desde el sidebar o el drawer: ?q=texto.
+  // Va después del efecto de limpieza para que q no se borre.
+  useEffect(() => {
+    setSearchTerm(params.q ?? "");
+    setDebouncedSearch((params.q ?? "").trim());
+  }, [params.q]);
 
   // A store's page shows its cover, logo and description above its products.
   const [storeProfile, setStoreProfile] = useState<{

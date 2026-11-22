@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { CardGrid } from "../../components/card-grid";
 import { useResponsive } from "../../hooks/use-responsive";
 import { Image, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { Icon } from "@agestyles/icons";
 import { useBusiness } from "../../context/business-context";
 import { hasPermission, OperationList } from "../../components/operation-list";
@@ -68,6 +68,8 @@ export default function ProductsScreen() {
   const theme = useBusinessTheme();
   const styles = createStyles(theme);
   const { request, seller, member } = useBusiness();
+  // Búsqueda que llega desde el sidebar: ?q=texto (web-sidebar.tsx).
+  const { q } = useLocalSearchParams<{ q?: string }>();
   const [items, setItems] = useState<SellerProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -91,7 +93,7 @@ export default function ProductsScreen() {
   const [loadedVariantsByProduct, setLoadedVariantsByProduct] = useState<
     Record<string, SellerVariant[]>
   >({});
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(q ?? "");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [openId, setOpenId] = useState<string | null>(null);
   const [removal, setRemoval] = useState<{ item: SellerProduct; variant: SellerVariant } | null>(
@@ -129,6 +131,11 @@ export default function ProductsScreen() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Si el sidebar (u otra pantalla) navega con ?q=, aplica ese texto.
+  useEffect(() => {
+    setQuery(q ?? "");
+  }, [q]);
 
   function beginEdit(item: SellerProduct) {
     if (!canEdit) return;
