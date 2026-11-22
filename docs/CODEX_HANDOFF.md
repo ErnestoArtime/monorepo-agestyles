@@ -1739,3 +1739,12 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - La rama fallaba el typecheck de CI: en `packages/buyer-experience/src/components/web-sidebar.tsx`, `createStyles` aceptaba solo la paleta clara y los estilos de `Pressable` no declaraban `pressed`. Corregido en `62e0570` (más prettier en los dos sidebars). CI en verde (lint, formato, pruebas, typecheck, humo de API, exportaciones de webs).
 - Fusionada a `main` en `71ed957` (merge sin avance rápido, sin conflictos). Comprobado después: typecheck de Tienda sin errores, Negocio con los 26 de rutas tipadas anteriores.
 - **Pendiente:** el sidebar nuevo de Tienda no está montado en `(drawer)/_layout.tsx`, así que no se ve; falta probarlo en navegador. No desplegado.
+
+
+## Codex · Revisión cruzada del PR #3 de seguridad
+
+- Verificado en `origin/main`: PR #2 de AG-52 integrado en `71ed957`, con `2913bd5` de registro. AG-50 y AG-51 también son ancestros de `main`.
+- PR #3, `muse/seguridad-checklist-27`, cabeza `4cda029`: CI `44995931721` falló en instalación de dependencias y omitió las comprobaciones siguientes. Los tres parches de Claude aplican en orden sobre esa cabeza, comprobados en un índice temporal de Git. `git merge-tree` puede combinar la rama con `main` sin conflicto textual, pero la rama cambia el comportamiento del gateway.
+- Bloqueo de checkout (AG-51): `tools/scripts/buyer-lab-gateway.mjs` elimina `GET /store/agestyles/shipping-options`, que usa el cliente de `main`. Conservar la entrada exacta y validar el checkout después de actualizar la rama.
+- Bloqueo de Catálogo: la política CSP de `apps/storefront-web/next.config.ts` bloquea los scripts en línea de arranque de Next.js y estilos que el Catálogo utiliza. Reproducido en Chromium inyectando esa cabecera solo en la respuesta de una sesión de prueba del sitio público: HTTP 200, 58 violaciones y `self.__next_f` ausente. Ajustar la política y verificar en navegador el arranque y el carrito antes de aplicarla como cabecera de bloqueo.
+- Pagos: el vendedor ya se deriva del pedido, pero `order_group_id` aún da prioridad al valor recibido del cliente; derivarlo de la relación del pedido o validar coincidencia antes de guardar. El PR sigue sin aprobación de revisión cruzada. No se aplicaron los parches a la rama ni se desplegó código.
