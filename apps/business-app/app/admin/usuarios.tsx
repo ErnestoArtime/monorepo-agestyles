@@ -1,3 +1,4 @@
+import { Icon } from "@agestyles/icons";
 import { Button, PillGroup, SearchField, StatusBadge } from "@agestyles/ui-native";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, Platform, Pressable, Share, StyleSheet, Text, TextInput, View } from "react-native";
@@ -6,7 +7,11 @@ import { useAdmin } from "../../context/admin-context";
 import { useBusinessTheme } from "../../hooks/use-business-theme";
 import { adminError, inviteLink, personName, shortDate, STORE_ROLES } from "../../lib/admin";
 import { memberRoleLabel } from "../../lib/roles";
-import { useResponsive } from "../../hooks/use-responsive";
+import {
+  UserDirectoryPanel,
+  UserDirectoryTable,
+  type UserSort,
+} from "../../components/admin-user-directory";
 
 type PersonStore = {
   seller_member_id: string;
@@ -37,6 +42,29 @@ const FILTERS: { value: Filter; label: string; test: (p: Person) => boolean }[] 
   { value: "customers", label: "Clientes", test: (p) => Boolean(p.customer_id) },
   { value: "legacy", label: "Catálogo antiguo", test: (p) => Boolean(p.legacy_role) },
 ];
+
+const PAGE_SIZE = 20;
+const byName = new Intl.Collator("es", { numeric: true, sensitivity: "base" });
+
+function searchValue(value: string) {
+  return value.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+}
+
+function accessLabel(person: Person) {
+  return (
+    [
+      person.user_id && "Administración",
+      person.stores.length > 0 && "Equipo de tienda",
+      person.customer_id && "Cliente",
+    ]
+      .filter(Boolean)
+      .join(" · ") || "Sin acceso asignado"
+  );
+}
+
+function storeCount(person: Person) {
+  return person.stores.length === 1 ? "1 tienda" : `${person.stores.length} tiendas`;
+}
 
 const LEGACY_ROLE: Record<string, string> = {
   admin: "administrador",
@@ -72,9 +100,15 @@ export default function AdminUsersScreen() {
   const theme = useBusinessTheme();
   const styles = createStyles(theme);
   const { adminRequest, admin } = useAdmin();
-  const { isWideWeb } = useResponsive();
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
+  const [width, setWidth] = useState(0);
+  const [showFilters, setShowFilters] = useState(false);
+  const [view, setView] = useState<"people" | "invites">("people");
+  const [inviting, setInviting] = useState(false);
+  const [sort, setSort] = useState<UserSort>({ key: "name", direction: "ascending" });
+  const [page, setPage] = useState(0);
+  const wide = Platform.OS === "web" && width >= 750;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -123,16 +157,44 @@ export default function AdminUsersScreen() {
   );
   const visible = useMemo(() => {
     const test = FILTERS.find((item) => item.value === filter)?.test ?? (() => true);
-    const text = query.trim().toLowerCase();
-    return people.filter(
-      (person) =>
-        test(person) &&
-        (!text ||
-          `${person.email} ${person.first_name ?? ""} ${person.last_name ?? ""}`
-            .toLowerCase()
-            .includes(text)),
-    );
-  }, [filter, people, query]);
+    const terms = searchValue(query).trim().split(/\s+/).filter(Boolean);
+    return people
+      .filter((person) => {
+        if (!test(person)) return false;
+        const searchable = searchValue(
+          [
+            personName(person),
+            person.email,
+            accessLabel(person),
+            ...person.stores.flatMap((store) => [store.seller_name, memberRoleLabel(store)]),
+          ].join(" "),
+        );
+        return terms.every((term) => searchable.includes(term));
+      })
+      .sort((a, b) => {
+        const nameOrder = byName.compare(personName(a), personName(b));
+        const order =
+          sort.key === "name"
+            ? nameOrder
+            : (Date.parse(a.created_at ?? "") || 0) - (Date.parse(b.created_at ?? "") || 0) ||
+              nameOrder;
+        return sort.direction === "ascending" ? order : -order;
+      });
+  }, [filter, people, query, sort]);
+  const lastPage = Math.max(0, Math.ceil(visible.length / PAGE_SIZE) - 1);
+  const currentPage = Math.min(page, lastPage);
+  const start = currentPage * PAGE_SIZE;
+  const pagePeople = visible.slice(start, start + PAGE_SIZE);
+  const selected = people.find((person) => person.email === open);
+
+  function changeSort(key: UserSort["key"]) {
+    setSort((current) => ({
+      key,
+      direction:
+        current.key === key && current.direction === "ascending" ? "descending" : "ascending",
+    }));
+    setPage(0);
+  }
 
   async function act(body: Record<string, unknown>, done: string, confirm?: string) {
     if (confirm && !(await confirmAction(confirm))) return;
@@ -205,8 +267,9 @@ export default function AdminUsersScreen() {
     }
   }
 
-  function toggle(person: Person) {
-    setOpen((current) => (current === person.email ? null : person.email));
+  function showPerson(person: Person) {
+    setError("");
+    setOpen(person.email);
     setAddStore(null);
     setAddRole(STORE_ROLES[0].value);
   }
@@ -384,132 +447,270 @@ export default function AdminUsersScreen() {
   return (
     <OperationList
       title="Usuarios"
-      subtitle="Todas las personas del marketplace: administración, equipos de tienda y clientes. Abre una para gestionar sus permisos."
+      subtitle="Gestiona las personas y sus permisos en el marketplace."
       loading={loading}
-      error={error}
+      error={selected || inviting ? "" : error}
       onRefresh={() => void load()}
     >
-      {notice ? (
-        <Text accessibilityRole="alert" style={styles.notice}>
-          {notice}
-        </Text>
-      ) : null}
-      <View style={styles.toolbar}>
-        <SearchField
-          value={query}
-          onChangeText={setQuery}
-          placeholder="Buscar por nombre o correo"
-        />
-        <PillGroup
-          accessibilityLabel="Tipo de usuario"
-          value={filter}
-          onChange={(value) => setFilter(value as Filter)}
-          options={FILTERS.map((item) => ({
-            value: item.value,
-            label: `${item.label} (${counts[item.value] ?? 0})`,
-          }))}
-        />
-      </View>
-
-      <Section title={`Personas (${visible.length})`}>
-        {visible.length ? (
-          visible.map((person) => {
-            const expanded = open === person.email;
-            const badgesEl = (
-              <View style={styles.badges}>
-                {person.user_id ? <StatusBadge label="Administración" tone="success" /> : null}
-                {person.stores.length ? (
-                  <StatusBadge
-                    label={
-                      person.stores.length === 1
-                        ? `${person.stores[0].seller_name} · ${memberRoleLabel(person.stores[0])}`
-                        : `${person.stores.length} tiendas`
-                    }
-                    tone="neutral"
+      <View style={styles.directory} onLayout={(event) => setWidth(event.nativeEvent.layout.width)}>
+        {notice && !selected && !inviting ? (
+          <Text accessibilityRole="alert" style={styles.notice}>
+            {notice}
+          </Text>
+        ) : null}
+        <View style={styles.toolbar}>
+          <PillGroup
+            accessibilityLabel="Vista de usuarios"
+            value={view}
+            onChange={(value) => setView(value === "invites" ? "invites" : "people")}
+            options={[
+              { value: "people", label: `Personas (${people.length})` },
+              { value: "invites", label: `Invitaciones (${invites.length})` },
+            ]}
+          />
+          <View style={styles.inline}>
+            {view === "people" ? (
+              <>
+                <View style={styles.flex}>
+                  <SearchField
+                    value={query}
+                    onChangeText={(value) => {
+                      setQuery(value);
+                      setPage(0);
+                    }}
+                    placeholder="Buscar nombre, correo, tienda o rol"
                   />
-                ) : null}
-                {!person.user_id && !person.stores.length && person.customer_id ? (
-                  <StatusBadge label="Cliente" tone="neutral" />
-                ) : null}
-                {!person.has_password ? <StatusBadge label="Sin activar" tone="warning" /> : null}
-              </View>
-            );
-            return (
-              <View key={person.email}>
+                </View>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityState={{ expanded }}
-                  onPress={() => toggle(person)}
-                  style={({ hovered }: { hovered?: boolean }) => [
+                  accessibilityState={{ expanded: showFilters }}
+                  style={styles.filterButton}
+                  onPress={() => setShowFilters((value) => !value)}
+                >
+                  <Text style={styles.rowTitle}>Filtrar</Text>
+                  <Icon
+                    name={showFilters ? "chevronUp" : "chevronDown"}
+                    size={16}
+                    color={theme.text}
+                  />
+                </Pressable>
+              </>
+            ) : null}
+            <Button
+              title="Invitar"
+              onPress={() => {
+                setError("");
+                setNotice("");
+                setInviting(true);
+              }}
+            />
+          </View>
+
+          {view === "people" && showFilters ? (
+            <PillGroup
+              accessibilityLabel="Tipo de usuario"
+              value={filter}
+              onChange={(value) => {
+                setFilter(value as Filter);
+                setPage(0);
+              }}
+              options={FILTERS.map((item) => ({
+                value: item.value,
+                label: `${item.label} (${counts[item.value] ?? 0})`,
+              }))}
+            />
+          ) : null}
+        </View>
+
+        {view === "people" ? (
+          <Section title={`Personas (${visible.length})`}>
+            {!wide && visible.length ? (
+              <View style={[styles.inline, styles.block]}>
+                <Text style={styles.muted}>Ordenar por</Text>
+                {(["name", "date"] as const).map((key) => (
+                  <Pressable
+                    key={key}
+                    style={styles.filterButton}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: sort.key === key }}
+                    onPress={() => changeSort(key)}
+                  >
+                    <Text style={styles.rowTitle}>
+                      {key === "name" ? "Nombre" : "Fecha de alta"}
+                    </Text>
+                    {sort.key === key ? (
+                      <Icon
+                        name={sort.direction === "ascending" ? "chevronUp" : "chevronDown"}
+                        size={16}
+                        color={theme.text}
+                      />
+                    ) : null}
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+            {wide && pagePeople.length ? (
+              <UserDirectoryTable
+                sort={sort}
+                onSort={changeSort}
+                users={pagePeople.map((person) => ({
+                  name: personName(person),
+                  email: person.email,
+                  access: accessLabel(person),
+                  stores: person.stores.length ? storeCount(person) : "—",
+                  active: person.has_password,
+                  date: person.created_at ? shortDate(person.created_at) : null,
+                  edit: () => showPerson(person),
+                }))}
+              />
+            ) : (
+              pagePeople.map((person) => (
+                <Pressable
+                  key={person.email}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Ver permisos de ${personName(person)}`}
+                  onPress={() => showPerson(person)}
+                  style={({ hovered, pressed }) => [
                     styles.personRow,
-                    (hovered || expanded) && styles.rowActive,
+                    (hovered || pressed) && styles.rowActive,
                   ]}
                 >
                   <View style={styles.personMain}>
-                    <View style={styles.flex}>
+                    <View style={styles.personIdentity}>
                       <Text style={styles.rowTitle}>{personName(person)}</Text>
                       {personName(person) !== person.email ? (
                         <Text style={styles.muted}>{person.email}</Text>
                       ) : null}
                     </View>
-                    {isWideWeb ? badgesEl : null}
-                    <Text style={styles.chevron}>{expanded ? "▴" : "▾"}</Text>
+                    <Icon name="chevronRight" size={18} color={theme.muted} />
                   </View>
-                  {isWideWeb ? null : badgesEl}
+                  <View style={styles.badges}>
+                    <Text style={styles.muted}>
+                      {accessLabel(person)}
+                      {person.stores.length ? ` · ${storeCount(person)}` : ""}
+                    </Text>
+                    <StatusBadge
+                      label={person.has_password ? "Activo" : "Sin activar"}
+                      tone={person.has_password ? "success" : "warning"}
+                    />
+                  </View>
                 </Pressable>
-                {expanded ? renderActions(person) : null}
+              ))
+            )}
+            {!visible.length ? (
+              <Text style={[styles.muted, styles.block]}>No hay personas que coincidan.</Text>
+            ) : null}
+            {visible.length > PAGE_SIZE ? (
+              <View style={styles.pagination}>
+                <Text accessibilityLiveRegion="polite" style={styles.muted}>
+                  {start + 1}–{start + pagePeople.length} de {visible.length}
+                </Text>
+                <View style={styles.inline}>
+                  <Button
+                    title="Anterior"
+                    variant="secondary"
+                    disabled={!currentPage}
+                    onPress={() => setPage(currentPage - 1)}
+                  />
+                  <Button
+                    title="Siguiente"
+                    variant="secondary"
+                    disabled={currentPage === lastPage}
+                    onPress={() => setPage(currentPage + 1)}
+                  />
+                </View>
               </View>
-            );
-          })
+            ) : null}
+          </Section>
         ) : (
-          <Text style={[styles.muted, styles.block]}>No hay personas que coincidan.</Text>
+          <Section title="Invitaciones pendientes">
+            {invites.length ? (
+              invites.map((item) => (
+                <View key={item.id} style={styles.row}>
+                  <View style={styles.flex}>
+                    <Text style={styles.rowTitle}>{item.email}</Text>
+                    <Text style={styles.muted}>
+                      {item.expires_at ? `Caduca el ${shortDate(item.expires_at)}` : "Pendiente"}
+                    </Text>
+                  </View>
+                  <Pressable
+                    onPress={() => void copyInvite(item)}
+                    accessibilityRole="button"
+                    style={styles.inviteAction}
+                  >
+                    <Text style={styles.link}>Copiar enlace</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => void revoke(item)}
+                    disabled={busy}
+                    accessibilityRole="button"
+                    style={styles.inviteAction}
+                  >
+                    <Text style={styles.danger}>Retirar</Text>
+                  </Pressable>
+                </View>
+              ))
+            ) : (
+              <Text style={[styles.muted, styles.block]}>No hay invitaciones pendientes.</Text>
+            )}
+          </Section>
         )}
-      </Section>
-
-      <Section title="Invitar administrador">
-        <View style={styles.block}>
-          <Text style={styles.muted}>
-            Para alguien que aún no tiene cuenta. Recibe un enlace para crear su contraseña;
-            mientras el correo no esté configurado, copia el enlace y envíaselo tú.
-          </Text>
-          <View style={styles.inline}>
+      </View>
+      {selected ? (
+        <UserDirectoryPanel title={personName(selected)} wide={wide} onClose={() => setOpen(null)}>
+          <View style={styles.block}>
+            <Text style={styles.muted}>{selected.email}</Text>
+            {notice ? (
+              <Text accessibilityRole="alert" style={styles.notice}>
+                {notice}
+              </Text>
+            ) : null}
+            {error ? (
+              <Text accessibilityRole="alert" style={styles.danger}>
+                {error}
+              </Text>
+            ) : null}
+          </View>
+          {renderActions(selected)}
+        </UserDirectoryPanel>
+      ) : null}
+      {inviting ? (
+        <UserDirectoryPanel
+          title="Invitar a Administración"
+          wide={wide}
+          onClose={() => setInviting(false)}
+        >
+          <View style={styles.block}>
+            <Text style={styles.muted}>
+              Crea un enlace de invitación para que la persona pueda establecer su contraseña.
+            </Text>
+            <Text style={styles.rowTitle}>Correo electrónico</Text>
             <TextInput
               value={inviteEmail}
               onChangeText={setInviteEmail}
+              onSubmitEditing={() => {
+                if (!busy) void invite();
+              }}
               placeholder="correo@ejemplo.com"
               placeholderTextColor={theme.muted}
               autoCapitalize="none"
               keyboardType="email-address"
               accessibilityLabel="Correo de la persona a invitar"
-              style={[styles.input, styles.flex]}
+              style={styles.input}
             />
-            <Button title="Invitar" onPress={() => void invite()} loading={busy} />
+            {error ? (
+              <Text accessibilityRole="alert" style={styles.danger}>
+                {error}
+              </Text>
+            ) : null}
+            {notice ? (
+              <Text accessibilityRole="alert" style={styles.notice}>
+                {notice}
+              </Text>
+            ) : null}
+            <Button title="Crear invitación" onPress={() => void invite()} loading={busy} />
           </View>
-        </View>
-      </Section>
-      {invites.length ? (
-        <Section title={`Invitaciones pendientes (${invites.length})`}>
-          {invites.map((item) => (
-            <View key={item.id} style={styles.row}>
-              <View style={styles.flex}>
-                <Text style={styles.rowTitle}>{item.email}</Text>
-                <Text style={styles.muted}>
-                  {item.expires_at ? `Caduca el ${shortDate(item.expires_at)}` : "Pendiente"}
-                </Text>
-              </View>
-              <Pressable onPress={() => void copyInvite(item)} accessibilityRole="button">
-                <Text style={styles.link}>Copiar enlace</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => void revoke(item)}
-                disabled={busy}
-                accessibilityRole="button"
-              >
-                <Text style={styles.danger}>Retirar</Text>
-              </Pressable>
-            </View>
-          ))}
-        </Section>
+        </UserDirectoryPanel>
       ) : null}
     </OperationList>
   );
@@ -517,7 +718,31 @@ export default function AdminUsersScreen() {
 
 const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
   StyleSheet.create({
-    toolbar: { gap: 12, marginBottom: 6 },
+    directory: { minWidth: 0 },
+    toolbar: { gap: 12, marginBottom: 8 },
+    filterButton: {
+      minHeight: 44,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 12,
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: 8,
+      flexDirection: "row",
+      gap: 8,
+      backgroundColor: theme.surface,
+    },
+    pagination: {
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: theme.border,
+      padding: 12,
+      flexDirection: "row",
+      flexWrap: "wrap",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 10,
+    },
+    inviteAction: { minHeight: 44, justifyContent: "center" },
     notice: { color: theme.successText, fontSize: 14, lineHeight: 20, marginBottom: 12 },
     block: { padding: 14, gap: 10 },
     inline: { flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" },
@@ -544,7 +769,7 @@ const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
       borderBottomWidth: StyleSheet.hairlineWidth,
     },
     rowActive: { backgroundColor: theme.paper },
-    badges: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+    badges: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8 },
     personRow: {
       minHeight: 60,
       paddingHorizontal: 14,
@@ -554,7 +779,7 @@ const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
       borderBottomWidth: StyleSheet.hairlineWidth,
     },
     personMain: { flexDirection: "row", alignItems: "center", gap: 12 },
-    chevron: { color: theme.muted, fontSize: 14 },
+    personIdentity: { flex: 1, minWidth: 0, gap: 3 },
     panel: {
       paddingHorizontal: 18,
       paddingVertical: 14,
