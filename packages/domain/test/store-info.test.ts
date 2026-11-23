@@ -79,6 +79,7 @@ fails(() => parseStoreInfo(null), /Faltan los datos/);
 fails(() => normalizePhone("abc"), /solo puede llevar números/);
 fails(() => normalizePhone("123"), /entre 6 y 15 cifras/);
 fails(() => parseStoreInfo({ phones: ["111111", "222222", "333333", "444444"] }), /como máximo 3/);
+fails(() => parseStoreInfo({ whatsapp: "5249703" }), /prefijo del país/);
 fails(() => parseStoreInfo({ email: "no-es-correo" }), /correo/);
 fails(() => parseStoreInfo({ location: { lat: 99, lng: 0 } }), /latitud/);
 fails(() => parseStoreInfo({ location: { lat: 10 } }), /latitud y longitud/);

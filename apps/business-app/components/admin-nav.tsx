@@ -26,7 +26,12 @@ export function AdminNav() {
   const { seller } = useBusiness();
   const { isWideWeb } = useResponsive();
   if (isWideWeb) return null;
-  const current = SECTIONS.find((section) => pathname.startsWith(section.value))?.value ?? "";
+  const current =
+    SECTIONS.find((section) =>
+      section.value === "/admin/tiendas"
+        ? pathname.startsWith("/admin/tiendas") || pathname.startsWith("/admin/tienda-info")
+        : pathname.startsWith(section.value),
+    )?.value ?? "";
   const options = [...SECTIONS, ...(seller ? [{ value: "/(tabs)", label: "Mi negocio" }] : [])];
   return (
     <SafeAreaView edges={["top"]} style={{ backgroundColor: theme.surface }}>

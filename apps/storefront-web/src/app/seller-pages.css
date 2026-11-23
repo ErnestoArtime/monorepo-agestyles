@@ -342,3 +342,79 @@
     color: #f4f2ee;
   }
 }
+
+/* Información pública de la tienda (AG-55) */
+.store-info {
+  margin-top: 22px;
+  padding: 20px 22px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper);
+}
+.store-info-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.store-info-head h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 20px;
+}
+.store-info-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.store-chip {
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--soft);
+  font-size: 13px;
+  font-weight: 600;
+}
+.store-chip-open {
+  color: #1d6b3f;
+}
+.store-chip-closed {
+  color: #a32a2a;
+}
+.store-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 22px;
+  margin-top: 18px;
+}
+.store-info-block h3 {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.store-info-block p,
+.store-info-block li {
+  margin: 0 0 3px;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.store-info-block ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.store-info-block li span {
+  display: inline-block;
+  min-width: 84px;
+  color: var(--muted);
+}
+.store-info-block .store-info-muted {
+  color: var(--muted);
+}
+.store-info-block a {
+  color: var(--navy);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

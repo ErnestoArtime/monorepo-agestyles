@@ -49,6 +49,11 @@ export default function MoreScreen() {
           action={() => router.push("/store-profile")}
         />
         <Row
+          title="Información de la tienda"
+          detail="Recogida o envío, contacto, dirección, horario y redes."
+          action={() => router.push("/store-info")}
+        />
+        <Row
           title="Portada de mi tienda"
           detail="Carrusel y productos destacados de tu página en la Tienda."
           action={() => router.push("/store-home")}

@@ -148,6 +148,12 @@ export function WebSidebar() {
           match: (p) => p.startsWith("/store-profile"),
         },
         {
+          label: "Información de la tienda",
+          icon: "mapPin",
+          href: "/store-info",
+          match: (p) => p.startsWith("/store-info"),
+        },
+        {
           label: "Portada de mi tienda",
           icon: "home",
           href: "/store-home",
@@ -226,7 +232,7 @@ export function WebSidebar() {
         label: "Tiendas",
         icon: "store",
         href: "/admin/tiendas",
-        match: (p) => p.startsWith("/admin/tiendas"),
+        match: (p) => p.startsWith("/admin/tiendas") || p.startsWith("/admin/tienda-info"),
       },
       {
         label: "Pedidos del marketplace",

@@ -1,3 +1,4 @@
+import { useRouter, type Href } from "expo-router";
 import {
   BottomSheet,
   Button,
@@ -64,6 +65,7 @@ export default function AdminStoresScreen() {
   const theme = useBusinessTheme();
   const styles = createStyles(theme);
   const { adminRequest } = useAdmin();
+  const router = useRouter();
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -249,6 +251,18 @@ export default function AdminStoresScreen() {
                 />
               ) : null}
             </View>
+
+            <Button
+              title="Editar información pública"
+              variant="secondary"
+              onPress={() => {
+                const target = open;
+                setOpen(null);
+                router.push(
+                  `/admin/tienda-info?id=${encodeURIComponent(target.id)}&name=${encodeURIComponent(target.name)}` as Href,
+                );
+              }}
+            />
 
             <Text style={styles.heading}>Equipo</Text>
             {members.length ? (

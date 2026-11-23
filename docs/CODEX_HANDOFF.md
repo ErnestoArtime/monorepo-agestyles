@@ -1777,3 +1777,14 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - **Comprobado:** 15 pruebas nuevas (muestras reales de la página, bloqueo, red caída, host del token), 36/36 en la API, suite de dominio, `tsc` de API, Tienda, Catálogo y dominio, eslint 0 errores, prettier.
 - **No comprobado:** la lectura real contra eltoque.com desde el código nuevo (el permiso de ejecutarla fue denegado en la sesión); solo se probó antes con `curl`/Node y con Playwright. El valor real aparecerá tras desplegar.
 - **Para revisión cruzada (codex):** reglas de `evaluateRate`, comportamiento si Cloudflare bloquea, y que no se intente evadir el desafío.
+
+## 2026-11-23 · Claude · AG-55: información pública de la tienda (sin desplegar)
+
+- **Pedido:** una pantalla de información de cada tienda (recogida/envío, teléfonos, dirección y ubicación, horarios, redes…, como la ficha «Info» de elyerromenu.com) y su gestión por la propia tienda y por el superadmin. Diseño: `docs/design/AG-55-informacion-de-tienda.md`.
+- **Dominio:** `packages/domain/src/store-info.ts` (tipos, validación en español, normalización de teléfonos y redes, `storeOpenStatus`, resumen de horarios, enlaces) + `test/store-info.test.ts`.
+- **API:** `lib/store-info.ts`, rutas `vendor/agestyles/store-info`, `admin/agestyles/stores/[id]/info` y `store/agestyles/store-info`; dato en `seller.metadata.agestyles_info`; el WhatsApp se sincroniza con `metadata.whatsapp_phone` (ya usado por los avisos de pedidos). Reglas en los gateways `seller-lab`, `admin` y `buyer-lab`.
+- **Negocio:** `components/store-info-editor.tsx` (un editor para las dos vías), `app/store-info.tsx`, `app/admin/tienda-info.tsx`, entradas en «Más», menú lateral y hoja de cada tienda en Administración → Tiendas.
+- **Tienda y Catálogo:** `store-info-panel.tsx` bajo la portada de la tienda; `store-info-card.tsx` en `/tiendas/[handle]`; solo tiendas abiertas con algo publicado.
+- **Comprobado:** 42 pruebas de la API y la suite de dominio; `tsc` de API, Tienda, Catálogo y api-client sin errores (Negocio solo con los errores de rutas tipadas que CI regenera); eslint 0 errores; prettier; y capturas en navegador (ancho y móvil, claro) del editor propio, el de administración y el panel público, con datos simulados.
+- **No comprobado:** con una tienda real en producción, ni el modo oscuro de las pantallas nuevas, ni la geolocalización del botón «Usar mi ubicación actual».
+- **Conflicto previsible:** el PR #3 (seguridad, `muse/seguridad-checklist-27`) también toca los tres gateways; las líneas de AG-55 son una por archivo y se resuelven a mano al fusionar.

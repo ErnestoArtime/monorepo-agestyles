@@ -113,6 +113,14 @@ export function normalizePhone(value: unknown, label = "El teléfono"): string |
   return `${raw.startsWith("+") ? "+" : ""}${digits}`;
 }
 
+/** WhatsApp links need the country prefix: at least 8 digits, as the order links require. */
+function normalizeWhatsapp(value: unknown): string | null {
+  const phone = normalizePhone(value, "El WhatsApp");
+  if (phone && phone.replace(/\D/g, "").length < 8)
+    throw new StoreInfoError("El WhatsApp debe incluir el prefijo del país (de 8 a 15 cifras).");
+  return phone;
+}
+
 function normalizeEmail(value: unknown): string | null {
   const email = text(value, 120, "El correo");
   if (!email) return null;
@@ -235,7 +243,7 @@ export function parseStoreInfo(body: unknown): StoreInfo {
         phones.findIndex((other) => other.replace(/\D/g, "") === phone.replace(/\D/g, "")) ===
         index,
     ),
-    whatsapp: normalizePhone(body.whatsapp, "El WhatsApp"),
+    whatsapp: normalizeWhatsapp(body.whatsapp),
     email: normalizeEmail(body.email),
     address: {
       line: text(address.line, 120, "La dirección"),

@@ -9,6 +9,7 @@ import {
   type CatalogFilters,
 } from "../../../../components/filter-panel";
 import { ProductDetail } from "../../../../components/product-detail";
+import { StoreInfoPanel } from "../../../../components/store-info-panel";
 import { HomeCarousel, openBannerLink } from "../../../../components/home-carousel";
 import { FeaturedRow } from "../../../../components/featured-row";
 import { PillGroup, SearchField } from "@agestyles/ui-native";
@@ -390,66 +391,69 @@ export default function HomeScreen() {
                   <Text style={[styles.listingBackText, { color: colors.tint }]}>Inicio</Text>
                 </TouchableOpacity>
                 {storeProfile ? (
-                  <View
-                    style={[
-                      styles.storeHero,
-                      { backgroundColor: colors.cardBackground, borderColor: colors.border },
-                    ]}
-                  >
+                  <>
                     <View
                       style={[
-                        styles.storeCover,
-                        isWideWeb && styles.storeCoverWide,
-                        { backgroundColor: colors.surfaceMuted },
+                        styles.storeHero,
+                        { backgroundColor: colors.cardBackground, borderColor: colors.border },
                       ]}
                     >
-                      {storeProfile.banner ? (
-                        <Image
-                          source={{
-                            uri: mediaVariant(storeProfile.banner, isWideWeb ? 1600 : 800),
-                          }}
-                          style={styles.fill}
-                          contentFit="cover"
-                          accessibilityIgnoresInvertColors
-                        />
-                      ) : null}
-                    </View>
-                    <View style={styles.storeIdentity}>
                       <View
                         style={[
-                          styles.storeLogo,
-                          {
-                            backgroundColor: colors.surfaceMuted,
-                            borderColor: colors.cardBackground,
-                          },
+                          styles.storeCover,
+                          isWideWeb && styles.storeCoverWide,
+                          { backgroundColor: colors.surfaceMuted },
                         ]}
                       >
-                        {storeProfile.logo ? (
+                        {storeProfile.banner ? (
                           <Image
-                            source={{ uri: mediaVariant(storeProfile.logo, 400) }}
+                            source={{
+                              uri: mediaVariant(storeProfile.banner, isWideWeb ? 1600 : 800),
+                            }}
                             style={styles.fill}
                             contentFit="cover"
-                            accessibilityLabel={`Logo de ${storeProfile.name}`}
+                            accessibilityIgnoresInvertColors
                           />
-                        ) : (
-                          <Icon name="store" size={30} color={colors.tint} />
-                        )}
-                      </View>
-                      <View style={styles.storeText}>
-                        <Text
-                          accessibilityRole="header"
-                          style={[styles.listingTitle, { color: colors.text }]}
-                        >
-                          {storeProfile.name}
-                        </Text>
-                        {storeProfile.description ? (
-                          <Text style={[styles.storeDescription, { color: colors.icon }]}>
-                            {storeProfile.description}
-                          </Text>
                         ) : null}
                       </View>
+                      <View style={styles.storeIdentity}>
+                        <View
+                          style={[
+                            styles.storeLogo,
+                            {
+                              backgroundColor: colors.surfaceMuted,
+                              borderColor: colors.cardBackground,
+                            },
+                          ]}
+                        >
+                          {storeProfile.logo ? (
+                            <Image
+                              source={{ uri: mediaVariant(storeProfile.logo, 400) }}
+                              style={styles.fill}
+                              contentFit="cover"
+                              accessibilityLabel={`Logo de ${storeProfile.name}`}
+                            />
+                          ) : (
+                            <Icon name="store" size={30} color={colors.tint} />
+                          )}
+                        </View>
+                        <View style={styles.storeText}>
+                          <Text
+                            accessibilityRole="header"
+                            style={[styles.listingTitle, { color: colors.text }]}
+                          >
+                            {storeProfile.name}
+                          </Text>
+                          {storeProfile.description ? (
+                            <Text style={[styles.storeDescription, { color: colors.icon }]}>
+                              {storeProfile.description}
+                            </Text>
+                          ) : null}
+                        </View>
+                      </View>
                     </View>
-                  </View>
+                    <StoreInfoPanel sellerId={storeProfile.id} />
+                  </>
                 ) : (
                   <Text
                     accessibilityRole="header"

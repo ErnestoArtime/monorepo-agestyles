@@ -3,7 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { ProductExplorer } from "@/components/product-explorer";
-import { getSellerCatalog } from "@/lib/catalog";
+import { StoreInfoCard } from "@/components/store-info-card";
+import { getSellerCatalog, getStoreInfo } from "@/lib/catalog";
 import { lowestOfferPrices } from "@/lib/catalog-format";
 
 export const revalidate = 300;
@@ -34,6 +35,7 @@ export default async function StorePage({ params }: PageProps) {
   if (!data) notFound();
 
   const { seller, products, offers, currency } = data;
+  const storeInfo = await getStoreInfo(seller.handle);
   const sortedProducts = [...products].sort((a, b) => a.title.localeCompare(b.title, "es"));
 
   return (
@@ -84,6 +86,8 @@ export default async function StorePage({ params }: PageProps) {
           </div>
         </div>
       </section>
+
+      {storeInfo ? <StoreInfoCard info={storeInfo} /> : null}
 
       <section className="wrap seller-store-catalog" aria-label={`Productos de ${seller.name}`}>
         <div className="section-heading">

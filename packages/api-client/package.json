@@ -10,6 +10,7 @@
     "./buyer-orders": "./src/buyer-orders.ts",
     "./order-tracking": "./src/order-tracking.ts",
     "./exchange-rate": "./src/exchange-rate.ts",
+    "./store-info": "./src/store-info.ts",
     "./seller-contacts": "./src/seller-contacts.ts",
     "./catalog-comparison": "./src/catalog-comparison.ts",
     "./notifications": "./src/notifications.ts",

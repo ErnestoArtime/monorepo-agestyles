@@ -6,6 +6,7 @@ import {
   type CatalogComparisonResponse,
 } from "@agestyles/api-client/catalog-comparison";
 import { getCupExchangeRate } from "@agestyles/api-client/exchange-rate";
+import { getPublicStoreInfo } from "@agestyles/api-client/store-info";
 import { toQuickViewOffers, type QuickViewData } from "./quick-view-model";
 
 const backendUrl = process.env.MEDUSA_BACKEND_URL || process.env.NEXT_PUBLIC_MEDUSA_URL;
@@ -273,6 +274,12 @@ export async function getCatalogComparison(
 ): Promise<CatalogComparisonResponse> {
   if (!sdk) throw new Error("La comparación no está disponible.");
   return compareStoreProducts(sdk.client, productIds);
+}
+
+/** Public information of an open store (AG-55); null when it published none or on any error. */
+export async function getStoreInfo(handle: string) {
+  if (!sdk) return null;
+  return getPublicStoreInfo(sdk.client, { handle });
 }
 
 /** Informational CUP-per-USD rate; null when not configured or unreachable. */

@@ -51,6 +51,19 @@ async function findSeller(
   return data[0] ?? null;
 }
 
+/**
+ * `metadata.whatsapp_phone` already feeds the WhatsApp links of orders (public through
+ * `/store/sellers`). The information's WhatsApp is the same number: it is kept in sync on write,
+ * and an existing one pre-fills the editor and the public page.
+ */
+const LEGACY_WHATSAPP = "whatsapp_phone";
+function withLegacyWhatsapp(info: StoreInfo, metadata: Record<string, unknown> | null | undefined) {
+  const legacy = metadata?.[LEGACY_WHATSAPP];
+  return !info.whatsapp && typeof legacy === "string" && legacy.trim()
+    ? { ...info, whatsapp: legacy.trim() }
+    : info;
+}
+
 export const isSellerId = (value: unknown): value is string =>
   typeof value === "string" && /^sel_[A-Za-z0-9]+$/.test(value);
 
@@ -69,7 +82,8 @@ export async function parseInfoBody(body: unknown): Promise<StoreInfo> {
 export async function readSellerInfo(scope: Scope, sellerId: string): Promise<StoreInfo> {
   const seller = await findSeller(scope, { id: sellerId });
   if (!seller) throw new MedusaError(MedusaError.Types.NOT_FOUND, "Store not found.");
-  return (await loadRules()).readStoreInfo(seller.metadata?.[KEY]);
+  const info = (await loadRules()).readStoreInfo(seller.metadata?.[KEY]);
+  return withLegacyWhatsapp(info, seller.metadata);
 }
 
 export async function writeSellerInfo(
@@ -79,11 +93,11 @@ export async function writeSellerInfo(
 ): Promise<StoreInfo> {
   const seller = await findSeller(scope, { id: sellerId });
   if (!seller) throw new MedusaError(MedusaError.Types.NOT_FOUND, "Store not found.");
+  const metadata: Record<string, unknown> = { ...(seller.metadata ?? {}), [KEY]: info };
+  if (info.whatsapp) metadata[LEGACY_WHATSAPP] = info.whatsapp;
+  else delete metadata[LEGACY_WHATSAPP];
   await updateSellersWorkflow(scope as MedusaContainer).run({
-    input: {
-      selector: { id: sellerId },
-      update: { metadata: { ...(seller.metadata ?? {}), [KEY]: info } },
-    },
+    input: { selector: { id: sellerId }, update: { metadata } },
   });
   return info;
 }
@@ -102,6 +116,6 @@ export async function readPublicInfo(
   );
   if (!seller || seller.status !== "open") return null;
   const { readStoreInfo, hasStoreInfo } = await loadRules();
-  const info = readStoreInfo(seller.metadata?.[KEY]);
+  const info = withLegacyWhatsapp(readStoreInfo(seller.metadata?.[KEY]), seller.metadata);
   return hasStoreInfo(info) ? { seller_id: seller.id, info } : null;
 }

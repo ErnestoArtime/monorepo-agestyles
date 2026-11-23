@@ -69,6 +69,18 @@ export function adminError(cause: unknown, fallback: string) {
   return fallback;
 }
 
+/**
+ * For forms the API validates in Spanish (400/409): its own message tells the person what to
+ * fix. Anything else gets the generic message.
+ */
+export function serverMessage(cause: unknown, fallback: string) {
+  const status = (cause as { status?: number })?.status;
+  const message = (cause as { message?: string })?.message;
+  if ((status === 400 || status === 409) && message && /[áéíóúñ¿]|^[A-Z]/.test(message))
+    return message;
+  return adminError(cause, fallback);
+}
+
 /** Address of Negocio where an invited administrator accepts the invitation. */
 export function inviteLink(token: string) {
   const base =

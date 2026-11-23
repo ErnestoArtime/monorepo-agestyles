@@ -81,3 +81,15 @@ test("only well-formed seller ids are accepted", () => {
     assert.equal(isSellerId(value), false);
   }
 });
+
+test("the WhatsApp already used by the order links pre-fills the information", async () => {
+  const legacy = scopeWith([seller({ metadata: { whatsapp_phone: "5352497039" } })]);
+  assert.equal((await readSellerInfo(legacy, "sel_ABC")).whatsapp, "5352497039");
+  const publicInfo = await readPublicInfo(legacy, { sellerId: "sel_ABC" });
+  assert.equal(publicInfo?.info.whatsapp, "5352497039");
+  // What the store typed in the information wins over the old value.
+  const both = scopeWith([
+    seller({ metadata: { whatsapp_phone: "111", agestyles_info: { whatsapp: "+34600111222" } } }),
+  ]);
+  assert.equal((await readSellerInfo(both, "sel_ABC")).whatsapp, "+34600111222");
+});
