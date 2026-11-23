@@ -84,7 +84,7 @@ const rules = [
   ["GET", /^\/store\/sellers\/sel_[a-z0-9]+$/i],
   ["GET", /^\/store\/catalog-comparison$/],
   ["GET", /^\/store\/agestyles\/exchange-rate$/],
-  ["GET", /^\/store\/agestyles\/(catalog|home|maintenance|shipping-options)$/],
+  ["GET", /^\/store\/agestyles\/(catalog|home|maintenance|shipping-options|store-info)$/],
   ["GET", /^\/store\/agestyles\/sales-agents\/[a-z0-9]{4,12}$/i],
   ["GET", /^\/store\/products(?:\/prod_[a-z0-9]+)?$/i],
   ["POST", /^\/store\/carts$/],

@@ -72,7 +72,7 @@ const rules = [
   ["POST", /^\/store\/order-quotes\/[a-z0-9_-]+\/accept$/i],
   ["GET", /^\/vendor\/sellers$/],
   ["GET POST", /^\/vendor\/sellers\/me$/],
-  ["GET POST", /^\/vendor\/agestyles\/(store-home|store-sections|category-requests)$/],
+  ["GET POST", /^\/vendor\/agestyles\/(store-home|store-sections|store-info|category-requests)$/],
   ["GET", /^\/vendor\/agestyles\/analytics$/],
   // Product form (AG-42): marketplace categories, sizes and brands to choose from.
   ["GET", /^\/vendor\/product-categories$/],
