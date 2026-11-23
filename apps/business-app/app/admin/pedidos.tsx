@@ -1,21 +1,24 @@
-import { Button, ConfirmDialog, PillGroup, SearchField, StatusBadge } from "@agestyles/ui-native";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { ManagementPager, ManagementPanel } from "../../components/management-list";
+import { Button, ConfirmDialog, PillGroup, SearchField } from "@agestyles/ui-native";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Linking, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { OperationList, Section } from "../../components/operation-list";
 import { useAdmin } from "../../context/admin-context";
 import { useBusinessTheme } from "../../hooks/use-business-theme";
-import { adminError, money, ORDER_STATUS, PAYMENT_STATUS, shortDate } from "../../lib/admin";
+import { adminError, money, shortDate } from "../../lib/admin";
+import { OrderDirectory } from "../../components/order-directory";
+import { OrderDetails } from "../../components/order-details";
+import { useResponsive } from "../../hooks/use-responsive";
+import {
+  orderTitle,
+  ORDER_DETAIL_FIELDS,
+  ORDER_PROGRESS_FIELDS,
+  type BusinessOrder as Order,
+} from "../../lib/order-details";
 
-type Order = {
-  id: string;
-  display_id?: number;
-  status?: string;
-  total?: number;
-  currency_code?: string;
-  email?: string | null;
-  created_at?: string;
-  payment_status?: string;
-};
+const PAGE_SIZE = 20;
+
 type ManualPayment = {
   id: string;
   order_id: string;
@@ -44,53 +47,94 @@ export default function AdminOrdersScreen() {
   const theme = useBusinessTheme();
   const styles = createStyles(theme);
   const { adminRequest } = useAdmin();
+  const { isWideWeb } = useResponsive();
+  const router = useRouter();
+  const { pedido } = useLocalSearchParams<{ pedido?: string }>();
+  const detailId =
+    typeof pedido === "string" && /^order_[a-z0-9_-]+$/i.test(pedido) ? pedido : null;
+  const [detail, setDetail] = useState<Order | null>(null);
+  const [detailError, setDetailError] = useState("");
   const [orders, setOrders] = useState<Order[]>([]);
   const [payments, setPayments] = useState<ManualPayment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [query, setQuery] = useState("");
+  const [search, setSearch] = useState("");
+  const [offset, setOffset] = useState(0);
+  const [count, setCount] = useState(0);
+  const loadVersion = useRef(0);
   const [status, setStatus] = useState("all");
   const [verify, setVerify] = useState<ManualPayment | null>(null);
   const [rejecting, setRejecting] = useState<ManualPayment | null>(null);
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearch(query.trim().replace(/^#(?=\d)/, ""));
+      setOffset(0);
+    }, 280);
+    return () => clearTimeout(timer);
+  }, [query]);
+
   const load = useCallback(async () => {
+    const version = ++loadVersion.current;
     setLoading(true);
     setError("");
     try {
+      const params = new URLSearchParams({
+        limit: String(PAGE_SIZE),
+        offset: String(offset),
+        order: "-created_at",
+        fields: `${ORDER_PROGRESS_FIELDS},seller.name`,
+      });
+      if (status !== "all") params.set("status", status);
+      if (search) params.set(search.startsWith("order_") ? "id" : "q", search);
       const [orderData, paymentData] = await Promise.all([
-        adminRequest<{ orders: Order[] }>(
-          "/admin/orders?limit=100&order=-created_at&fields=id,display_id,status,total,currency_code,email,created_at,payment_status",
-        ),
+        adminRequest<{ orders: Order[]; count?: number }>(`/admin/orders?${params}`),
         adminRequest<{ manual_payments: ManualPayment[] }>("/admin/manual-payments?status=pending"),
       ]);
+      if (version !== loadVersion.current) return;
       setOrders(orderData.orders ?? []);
+      setCount(orderData.count ?? orderData.orders?.length ?? 0);
       setPayments(paymentData.manual_payments ?? []);
     } catch (cause) {
-      setError(adminError(cause, "No se pudieron cargar los pedidos."));
+      if (version === loadVersion.current)
+        setError(adminError(cause, "No se pudieron cargar los pedidos."));
     } finally {
-      setLoading(false);
+      if (version === loadVersion.current) setLoading(false);
     }
-  }, [adminRequest]);
+  }, [adminRequest, offset, search, status]);
 
   useEffect(() => {
+    const versionRef = loadVersion;
     void load();
+    return () => {
+      versionRef.current++;
+    };
   }, [load]);
 
-  const visible = useMemo(
-    () =>
-      orders.filter(
-        (order) =>
-          (status === "all" || order.status === status) &&
-          (!query.trim() ||
-            `${order.display_id ?? ""} ${order.email ?? ""} ${order.id}`
-              .toLowerCase()
-              .includes(query.trim().toLowerCase())),
-      ),
-    [orders, query, status],
-  );
+  useEffect(() => {
+    if (!detailId) return;
+    let active = true;
+    setDetail(null);
+    setDetailError("");
+    adminRequest<{ order?: Order }>(
+      `/admin/orders/${detailId}?fields=${ORDER_DETAIL_FIELDS},seller.name`,
+    )
+      .then(({ order }) => {
+        if (!order) throw new Error("Pedido no disponible");
+        if (active) setDetail(order);
+      })
+      .catch((cause) => {
+        if (active) setDetailError(adminError(cause, "No se pudo abrir el pedido."));
+      });
+    return () => {
+      active = false;
+    };
+  }, [adminRequest, detailId]);
+
   const orderNumber = (orderId: string) =>
     orders.find((order) => order.id === orderId)?.display_id ?? orderId.slice(-6);
 
@@ -149,74 +193,76 @@ export default function AdminOrdersScreen() {
         </Text>
       ) : null}
 
-      <Section title={`Pagos por verificar (${payments.length})`}>
-        {payments.length ? (
-          payments.map((payment) => (
-            <View key={payment.id} style={styles.row}>
-              <View style={styles.flex}>
-                <Text style={styles.rowTitle}>
-                  Pedido #{orderNumber(payment.order_id)} ·{" "}
-                  {money(payment.amount, payment.currency_code)}
-                </Text>
-                <Text style={styles.muted}>
-                  {METHOD[payment.method] ?? "Pago"} · referencia {payment.reference}
-                  {payment.created_at ? ` · ${shortDate(payment.created_at)}` : ""}
-                </Text>
-                {payment.notes ? <Text style={styles.muted}>Nota: {payment.notes}</Text> : null}
-                {payment.receipt_url ? (
-                  <Pressable
-                    onPress={() => void Linking.openURL(payment.receipt_url as string)}
-                    accessibilityRole="link"
-                  >
-                    <Text style={styles.link}>Ver comprobante</Text>
-                  </Pressable>
-                ) : null}
-                {rejecting?.id === payment.id ? (
-                  <View style={styles.reject}>
-                    <TextInput
-                      value={reason}
-                      onChangeText={setReason}
-                      placeholder="Motivo para el comprador (p. ej., el importe no coincide)"
-                      placeholderTextColor={theme.muted}
-                      accessibilityLabel="Motivo del rechazo"
-                      style={styles.input}
-                    />
-                    <View style={styles.actions}>
-                      <Button
-                        title="Rechazar pago"
-                        variant="secondary"
-                        onPress={() => void confirmReject(payment)}
-                        loading={busy}
+      {payments.length ? (
+        <Section title={`Pagos por verificar (${payments.length})`}>
+          {payments.length ? (
+            payments.map((payment) => (
+              <View key={payment.id} style={styles.row}>
+                <View style={styles.flex}>
+                  <Text style={styles.rowTitle}>
+                    Pedido #{orderNumber(payment.order_id)} ·{" "}
+                    {money(payment.amount, payment.currency_code)}
+                  </Text>
+                  <Text style={styles.muted}>
+                    {METHOD[payment.method] ?? "Pago"} · referencia {payment.reference}
+                    {payment.created_at ? ` · ${shortDate(payment.created_at)}` : ""}
+                  </Text>
+                  {payment.notes ? <Text style={styles.muted}>Nota: {payment.notes}</Text> : null}
+                  {payment.receipt_url ? (
+                    <Pressable
+                      onPress={() => void Linking.openURL(payment.receipt_url as string)}
+                      accessibilityRole="link"
+                    >
+                      <Text style={styles.link}>Ver comprobante</Text>
+                    </Pressable>
+                  ) : null}
+                  {rejecting?.id === payment.id ? (
+                    <View style={styles.reject}>
+                      <TextInput
+                        value={reason}
+                        onChangeText={setReason}
+                        placeholder="Motivo para el comprador (p. ej., el importe no coincide)"
+                        placeholderTextColor={theme.muted}
+                        accessibilityLabel="Motivo del rechazo"
+                        style={styles.input}
                       />
-                      <Pressable onPress={() => setRejecting(null)} accessibilityRole="button">
-                        <Text style={styles.link}>Cancelar</Text>
-                      </Pressable>
+                      <View style={styles.actions}>
+                        <Button
+                          title="Rechazar pago"
+                          variant="secondary"
+                          onPress={() => void confirmReject(payment)}
+                          loading={busy}
+                        />
+                        <Pressable onPress={() => setRejecting(null)} accessibilityRole="button">
+                          <Text style={styles.link}>Cancelar</Text>
+                        </Pressable>
+                      </View>
                     </View>
-                  </View>
-                ) : null}
-              </View>
-              {rejecting?.id === payment.id ? null : (
-                <View style={styles.side}>
-                  <Button title="Verificar" onPress={() => setVerify(payment)} />
-                  <Pressable
-                    onPress={() => {
-                      setRejecting(payment);
-                      setReason("");
-                    }}
-                    accessibilityRole="button"
-                  >
-                    <Text style={styles.danger}>Rechazar</Text>
-                  </Pressable>
+                  ) : null}
                 </View>
-              )}
-            </View>
-          ))
-        ) : (
-          <Text style={[styles.muted, styles.pad]}>No hay pagos esperando verificación.</Text>
-        )}
-      </Section>
+                {rejecting?.id === payment.id ? null : (
+                  <View style={styles.side}>
+                    <Button title="Verificar" onPress={() => setVerify(payment)} />
+                    <Pressable
+                      onPress={() => {
+                        setRejecting(payment);
+                        setReason("");
+                      }}
+                      accessibilityRole="button"
+                    >
+                      <Text style={styles.danger}>Rechazar</Text>
+                    </Pressable>
+                  </View>
+                )}
+              </View>
+            ))
+          ) : (
+            <Text style={[styles.muted, styles.pad]}>No hay pagos esperando verificación.</Text>
+          )}
+        </Section>
+      ) : null}
 
-      <Section title={`Pedidos (${visible.length})`}>
+      <Section title={`Pedidos (${count})`}>
         <View style={styles.pad}>
           <SearchField
             value={query}
@@ -226,7 +272,10 @@ export default function AdminOrdersScreen() {
           <PillGroup
             accessibilityLabel="Estado del pedido"
             value={status}
-            onChange={setStatus}
+            onChange={(value) => {
+              setStatus(value);
+              setOffset(0);
+            }}
             options={[
               { value: "all", label: "Todos" },
               { value: "pending", label: "Pendientes" },
@@ -235,38 +284,41 @@ export default function AdminOrdersScreen() {
             ]}
           />
         </View>
-        {visible.map((order) => {
-          const payment = PAYMENT_STATUS[order.payment_status ?? ""];
-          return (
-            <View key={order.id} style={styles.row}>
-              <View style={styles.flex}>
-                <Text style={styles.rowTitle}>
-                  Pedido #{order.display_id ?? order.id.slice(-6)} ·{" "}
-                  {money(order.total, order.currency_code)}
-                </Text>
-                <Text style={styles.muted}>
-                  {order.email ?? "Sin correo"}
-                  {order.created_at ? ` · ${shortDate(order.created_at)}` : ""}
-                </Text>
-              </View>
-              <StatusBadge
-                label={ORDER_STATUS[order.status ?? ""] ?? "Sin estado"}
-                tone={
-                  order.status === "canceled"
-                    ? "error"
-                    : order.status === "completed"
-                      ? "success"
-                      : "neutral"
-                }
-              />
-              {payment ? <StatusBadge label={payment.label} tone={payment.tone} /> : null}
-            </View>
-          );
-        })}
-        {!visible.length ? (
+        {orders.length ? (
+          <OrderDirectory
+            caption="Pedidos del marketplace"
+            orders={orders}
+            onOpen={(order) => router.setParams({ pedido: order.id })}
+          />
+        ) : null}
+        {!orders.length ? (
           <Text style={[styles.muted, styles.pad]}>No hay pedidos que coincidan.</Text>
         ) : null}
+        <ManagementPager
+          count={count}
+          offset={offset}
+          limit={PAGE_SIZE}
+          loading={loading}
+          onChange={setOffset}
+        />
       </Section>
+
+      {detailId ? (
+        <ManagementPanel
+          wide={isWideWeb}
+          fullScreen
+          title={detail ? orderTitle(detail) : "Detalle del pedido"}
+          onClose={() => router.setParams({ pedido: "" })}
+        >
+          {detail ? (
+            <OrderDetails order={detail} />
+          ) : (
+            <Text accessibilityLiveRegion="polite" style={[styles.muted, styles.pad]}>
+              {detailError || "Cargando el detalle…"}
+            </Text>
+          )}
+        </ManagementPanel>
+      ) : null}
 
       <ConfirmDialog
         visible={!!verify}

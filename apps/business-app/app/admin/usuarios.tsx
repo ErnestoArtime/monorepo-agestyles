@@ -1,3 +1,4 @@
+import { ManagementPanel } from "../../components/management-list";
 import { Icon } from "@agestyles/icons";
 import { Button, PillGroup, SearchField, StatusBadge } from "@agestyles/ui-native";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -7,11 +8,7 @@ import { useAdmin } from "../../context/admin-context";
 import { useBusinessTheme } from "../../hooks/use-business-theme";
 import { adminError, inviteLink, personName, shortDate, STORE_ROLES } from "../../lib/admin";
 import { memberRoleLabel } from "../../lib/roles";
-import {
-  UserDirectoryPanel,
-  UserDirectoryTable,
-  type UserSort,
-} from "../../components/admin-user-directory";
+import { UserDirectoryTable, type UserSort } from "../../components/admin-user-directory";
 
 type PersonStore = {
   seller_member_id: string;
@@ -657,7 +654,7 @@ export default function AdminUsersScreen() {
         )}
       </View>
       {selected ? (
-        <UserDirectoryPanel title={personName(selected)} wide={wide} onClose={() => setOpen(null)}>
+        <ManagementPanel title={personName(selected)} wide={wide} onClose={() => setOpen(null)}>
           <View style={styles.block}>
             <Text style={styles.muted}>{selected.email}</Text>
             {notice ? (
@@ -672,10 +669,10 @@ export default function AdminUsersScreen() {
             ) : null}
           </View>
           {renderActions(selected)}
-        </UserDirectoryPanel>
+        </ManagementPanel>
       ) : null}
       {inviting ? (
-        <UserDirectoryPanel
+        <ManagementPanel
           title="Invitar a Administración"
           wide={wide}
           onClose={() => setInviting(false)}
@@ -710,7 +707,7 @@ export default function AdminUsersScreen() {
             ) : null}
             <Button title="Crear invitación" onPress={() => void invite()} loading={busy} />
           </View>
-        </UserDirectoryPanel>
+        </ManagementPanel>
       ) : null}
     </OperationList>
   );

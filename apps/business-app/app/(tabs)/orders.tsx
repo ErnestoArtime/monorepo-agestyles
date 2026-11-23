@@ -1,79 +1,27 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { CardGrid } from "../../components/card-grid";
+import { ManagementPager, ManagementPanel } from "../../components/management-list";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { OrderDirectory } from "../../components/order-directory";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Icon } from "@agestyles/icons";
 import { hasPermission, OperationList, Row, Section } from "../../components/operation-list";
 import { useBusiness } from "../../context/business-context";
 import { useBusinessTheme } from "../../hooks/use-business-theme";
-import { orderStatusLabel } from "../../lib/status-labels";
+import { OrderDetails } from "../../components/order-details";
+import { useResponsive } from "../../hooks/use-responsive";
 import {
-  BottomSheet,
-  Button,
-  Card,
-  PillGroup,
-  StatusBadge,
-  type BadgeTone,
-} from "@agestyles/ui-native";
-import type { IconName } from "@agestyles/icons";
+  deliveryLines,
+  orderDeliveryStatus,
+  orderTitle,
+  ORDER_DETAIL_FIELDS,
+  ORDER_PROGRESS_FIELDS,
+  type BusinessOrder as Order,
+  type DeliveryStage as Stage,
+} from "../../lib/order-details";
+import { Button, PillGroup } from "@agestyles/ui-native";
 
-type Order = {
-  id: string;
-  display_id?: number | string;
-  status?: string;
-  fulfillment_status?: string;
-  created_at?: string;
-  currency_code?: string;
-  total?: number;
-  fulfillments?: {
-    id: string;
-    packed_at?: string | null;
-    shipped_at?: string | null;
-    delivered_at?: string | null;
-    canceled_at?: string | null;
-  }[];
-};
-
-type OrderDetails = Order & {
-  items?: { id: string; title?: string; variant_title?: string; quantity: number }[];
-  fulfillments?: {
-    id: string;
-    packed_at?: string | null;
-    shipped_at?: string | null;
-    delivered_at?: string | null;
-    canceled_at?: string | null;
-    items?: { line_item_id?: string | null; quantity: number }[];
-  }[];
-};
+const PAGE_SIZE = 20;
 
 type StockLocation = { id: string; name: string };
-
-type Stage = "pending" | "preparing" | "ready" | "dispatched" | "delivered" | "other";
-
-/** Stage, Spanish label, badge tone and icon of an order (AG-04 lifecycle). */
-function progressView(order: Order): {
-  stage: Stage;
-  label: string;
-  tone: BadgeTone;
-  icon: IconName;
-} {
-  const active = (order.fulfillments ?? []).filter((fulfillment) => !fulfillment.canceled_at);
-  if (active.some((fulfillment) => fulfillment.delivered_at))
-    return { stage: "delivered", label: "Entregado", tone: "success", icon: "check" };
-  if (active.some((fulfillment) => fulfillment.shipped_at))
-    return { stage: "dispatched", label: "Despachado", tone: "neutral", icon: "truck" };
-  if (active.some((fulfillment) => fulfillment.packed_at))
-    return { stage: "ready", label: "Listo para envío", tone: "neutral", icon: "package" };
-  if (active.length)
-    return { stage: "preparing", label: "En preparación", tone: "warning", icon: "package" };
-  if (order.status === "canceled")
-    return { stage: "other", label: "Cancelado", tone: "error", icon: "close" };
-  return {
-    stage: "pending",
-    label: orderStatusLabel(order.fulfillment_status ?? order.status),
-    tone: "warning",
-    icon: "alert",
-  };
-}
 
 const STAGE_FILTERS: { value: Stage | "all"; label: string }[] = [
   { value: "all", label: "Todos" },
@@ -81,116 +29,132 @@ const STAGE_FILTERS: { value: Stage | "all"; label: string }[] = [
   { value: "preparing", label: "En preparación" },
   { value: "ready", label: "Listos" },
   { value: "dispatched", label: "Despachados" },
+  { value: "partial", label: "Entrega parcial" },
   { value: "delivered", label: "Entregados" },
 ];
-
-function money(amount: number | undefined, currency: string | undefined) {
-  if (amount == null) return "";
-  return new Intl.NumberFormat("es-ES", {
-    style: "currency",
-    currency: (currency ?? "usd").toUpperCase(),
-  }).format(amount);
-}
-
-function remainingItems(order: OrderDetails) {
-  const fulfilled = new Map<string, number>();
-  for (const fulfillment of order.fulfillments ?? []) {
-    if (fulfillment.canceled_at) continue;
-    for (const item of fulfillment.items ?? []) {
-      if (item.line_item_id) {
-        fulfilled.set(
-          item.line_item_id,
-          (fulfilled.get(item.line_item_id) ?? 0) + Number(item.quantity),
-        );
-      }
-    }
-  }
-  return (order.items ?? [])
-    .map((item) => ({
-      ...item,
-      remaining: Math.max(0, Number(item.quantity) - (fulfilled.get(item.id) ?? 0)),
-    }))
-    .filter((item) => item.remaining > 0);
-}
 
 export default function OrdersScreen() {
   const theme = useBusinessTheme();
   const styles = createStyles(theme);
+  const { isWideWeb } = useResponsive();
   const { request, seller, member } = useBusiness();
   const [items, setItems] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [offset, setOffset] = useState(0);
+  const [count, setCount] = useState(0);
+  const [detailStale, setDetailStale] = useState(false);
+  const storeScope = useRef(seller?.id);
+  const loadVersion = useRef(0);
+  const sellerId = seller?.id;
   const [detailLoading, setDetailLoading] = useState(false);
   const [fulfilling, setFulfilling] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [selectedOrder, setSelectedOrder] = useState<OrderDetails | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [locations, setLocations] = useState<StockLocation[]>([]);
   const [locationId, setLocationId] = useState("");
   const canFulfill = hasPermission(member, "orders", "edit");
+  const canOperate = canFulfill && !detailStale && selectedOrder?.status !== "canceled";
   const [stageFilter, setStageFilter] = useState<Stage | "all">("all");
 
   const load = useCallback(async () => {
-    if (!seller) return;
+    if (!sellerId) return;
+    const version = ++loadVersion.current;
     setLoading(true);
     setError("");
     try {
-      const data = await request<{ orders?: Order[] }>(
-        "/vendor/orders?limit=50&fields=id,display_id,status,fulfillment_status,created_at,currency_code,total,fulfillments.id,fulfillments.packed_at,fulfillments.shipped_at,fulfillments.delivered_at,fulfillments.canceled_at",
+      const data = await request<{ orders?: Order[]; count?: number }>(
+        `/vendor/orders?limit=${PAGE_SIZE}&offset=${offset}&order=-created_at&fields=${ORDER_PROGRESS_FIELDS}`,
       );
+      if (version !== loadVersion.current || storeScope.current !== sellerId) return;
       setItems(data?.orders ?? []);
+      setCount(data?.count ?? data?.orders?.length ?? 0);
     } catch {
-      setError("Tu rol no puede consultar los pedidos de esta tienda.");
+      if (version === loadVersion.current)
+        setError("Tu rol no puede consultar los pedidos de esta tienda.");
     } finally {
-      setLoading(false);
+      if (version === loadVersion.current) setLoading(false);
     }
-  }, [request, seller]);
+  }, [request, sellerId, offset]);
 
   useEffect(() => {
+    storeScope.current = sellerId;
     setSelectedOrder(null);
     setLocations([]);
     setLocationId("");
+    setItems([]);
+    setCount(0);
+    setOffset(0);
+    setDetailLoading(false);
+    setFulfilling(false);
+    setStageFilter("all");
+  }, [sellerId]);
+
+  useEffect(() => {
+    const versionRef = loadVersion;
     void load();
+    return () => {
+      versionRef.current++;
+    };
   }, [load]);
 
   const outstanding = useMemo(
-    () => (selectedOrder ? remainingItems(selectedOrder) : []),
+    () =>
+      selectedOrder ? deliveryLines(selectedOrder, false).filter((line) => line.remaining > 0) : [],
     [selectedOrder],
   );
 
+  async function fetchDetail(id: string) {
+    const detail = await request<{ order?: Order }>(
+      `/vendor/orders/${id}?fields=${ORDER_DETAIL_FIELDS}`,
+    );
+    if (!detail.order) throw new Error("Pedido no disponible");
+    return detail.order;
+  }
+
   async function openOrder(order: Order) {
-    if (selectedOrder?.id === order.id) {
-      setSelectedOrder(null);
-      return;
-    }
     setDetailLoading(true);
     setError("");
     setNotice("");
     try {
-      const detail = await request<{ order?: OrderDetails }>(
-        `/vendor/orders/${order.id}?fields=id,display_id,status,fulfillment_status,items.id,items.title,items.variant_title,items.quantity,fulfillments.id,fulfillments.packed_at,fulfillments.shipped_at,fulfillments.delivered_at,fulfillments.canceled_at,fulfillments.items.line_item_id,fulfillments.items.quantity`,
-      );
-      setSelectedOrder(detail.order ?? null);
-      setLocationId("");
-      if (canFulfill) {
-        const locationData = await request<{ stock_locations?: StockLocation[] }>(
-          "/vendor/stock-locations?limit=50&fields=id,name",
-        );
-        const choices = locationData.stock_locations ?? [];
-        setLocations(choices);
-        if (choices.length === 1) setLocationId(choices[0].id);
-      } else {
-        setLocations([]);
-      }
+      const [detail, locationData] = await Promise.all([
+        fetchDetail(order.id),
+        canFulfill
+          ? request<{ stock_locations?: StockLocation[] }>(
+              "/vendor/stock-locations?limit=50&fields=id,name",
+            )
+          : null,
+      ]);
+      if (storeScope.current !== sellerId) return;
+      setDetailStale(false);
+      const choices = locationData?.stock_locations ?? [];
+      setLocations(choices);
+      setLocationId(choices.length === 1 ? choices[0].id : "");
+      setSelectedOrder(detail);
     } catch {
-      setSelectedOrder(null);
-      setError("No se pudo abrir el pedido.");
+      if (storeScope.current === sellerId) setError("No se pudo abrir el pedido.");
     } finally {
-      setDetailLoading(false);
+      if (storeScope.current === sellerId) setDetailLoading(false);
+    }
+  }
+
+  async function refreshAfterChange(order: Order) {
+    try {
+      const detail = await fetchDetail(order.id);
+      if (storeScope.current !== sellerId) return;
+      setDetailStale(false);
+      setError("");
+      setSelectedOrder((current) => (current?.id === detail.id ? detail : current));
+      setItems((current) => current.map((entry) => (entry.id === detail.id ? detail : entry)));
+    } catch {
+      if (storeScope.current !== sellerId) return;
+      setDetailStale(true);
+      setError("Se guardó el cambio, pero no se pudo actualizar el detalle.");
     }
   }
 
   async function prepareOrder() {
-    if (!canFulfill || !selectedOrder || !locationId || !outstanding.length || fulfilling) return;
+    if (!canOperate || !selectedOrder || !locationId || !outstanding.length || fulfilling) return;
     setFulfilling(true);
     setError("");
     setNotice("");
@@ -200,33 +164,31 @@ export default function OrdersScreen() {
         location_id: locationId,
         items: outstanding.map((item) => ({ id: item.id, quantity: item.remaining })),
       });
+      if (storeScope.current !== sellerId) return;
       setNotice(
         `Pedido ${selectedOrder.display_id ?? selectedOrder.id.slice(-6)}: preparación iniciada.`,
       );
-      setSelectedOrder(null);
-      await load();
+      await refreshAfterChange(selectedOrder);
     } catch {
-      setError("No se pudo preparar el pedido.");
+      if (storeScope.current === sellerId) setError("No se pudo preparar el pedido.");
     } finally {
-      setFulfilling(false);
+      if (storeScope.current === sellerId) setFulfilling(false);
     }
   }
 
   const activeFulfillment = [...(selectedOrder?.fulfillments ?? [])]
     .reverse()
-    .find((fulfillment) => !fulfillment.canceled_at);
+    .find((fulfillment) => !fulfillment.canceled_at && !fulfillment.delivered_at);
   const nextAction = activeFulfillment
-    ? activeFulfillment.delivered_at
-      ? null
-      : activeFulfillment.shipped_at
-        ? "deliver"
-        : activeFulfillment.packed_at
-          ? "dispatch"
-          : "ready"
+    ? activeFulfillment.shipped_at
+      ? "deliver"
+      : activeFulfillment.packed_at
+        ? "dispatch"
+        : "ready"
     : null;
 
   async function advanceOrder(action: "ready" | "dispatch" | "deliver") {
-    if (!canFulfill || !selectedOrder || !activeFulfillment || fulfilling) return;
+    if (!canOperate || !selectedOrder || !activeFulfillment || fulfilling) return;
     setFulfilling(true);
     setError("");
     setNotice("");
@@ -235,38 +197,47 @@ export default function OrdersScreen() {
         action,
         fulfillment_id: activeFulfillment.id,
       });
-      const labels = { ready: "listo para envío", dispatch: "despachado", deliver: "entregado" };
-      setNotice(
-        `Pedido ${selectedOrder.display_id ?? selectedOrder.id.slice(-6)}: ${labels[action]}.`,
-      );
-      setSelectedOrder(null);
-      await load();
+      if (storeScope.current !== sellerId) return;
+      const labels = {
+        ready: "Preparación del envío completada.",
+        dispatch: "Despacho del envío registrado.",
+        deliver: "Entrega del envío registrada.",
+      };
+      setNotice(labels[action]);
+      await refreshAfterChange(selectedOrder);
     } catch {
-      setError("No se pudo actualizar la etapa del pedido.");
+      if (storeScope.current === sellerId) setError("No se pudo actualizar la etapa del pedido.");
     } finally {
-      setFulfilling(false);
+      if (storeScope.current === sellerId) setFulfilling(false);
     }
   }
+
+  const visible = items.filter(
+    (order) => stageFilter === "all" || orderDeliveryStatus(order).stage === stageFilter,
+  );
 
   return (
     <OperationList
       title="Pedidos"
       subtitle="Consulta los pedidos de la tienda y prepara los artículos pendientes de envío."
       loading={loading}
-      error={error}
+      error={selectedOrder ? "" : error}
       empty="No hay pedidos para mostrar."
       isEmpty={!items.length}
       onRefresh={() => void load()}
     >
-      {notice ? (
+      {notice && !selectedOrder ? (
         <Text accessibilityRole="alert" style={styles.notice}>
           {notice}
         </Text>
       ) : null}
       {items.length ? (
         <View style={styles.filters}>
+          {count > PAGE_SIZE ? (
+            <Text style={{ color: theme.muted }}>Etapa en esta página</Text>
+          ) : null}
           <PillGroup
-            accessibilityLabel="Filtrar por estado"
+            accessibilityLabel="Filtrar por etapa en esta página"
             value={stageFilter}
             onChange={setStageFilter}
             options={STAGE_FILTERS}
@@ -274,128 +245,130 @@ export default function OrdersScreen() {
         </View>
       ) : null}
       {items.length ? (
-        <CardGrid>
-          {items
-            .filter((item) => stageFilter === "all" || progressView(item).stage === stageFilter)
-            .map((item) => {
-              const view = progressView(item);
-              return (
-                <Card
-                  key={item.id}
-                  onPress={detailLoading ? undefined : () => void openOrder(item)}
-                  accessibilityLabel={`Pedido ${item.display_id ?? item.id.slice(-6)}, ${view.label}`}
-                >
-                  <View style={styles.cardLine}>
-                    <Text style={styles.cardTitle}>
-                      Pedido #{item.display_id ?? item.id.slice(-6)}
-                    </Text>
-                    <Text style={styles.cardDate}>
-                      {item.created_at
-                        ? new Intl.DateTimeFormat("es-ES", { dateStyle: "medium" }).format(
-                            new Date(item.created_at),
-                          )
-                        : ""}
-                    </Text>
-                  </View>
-                  <View style={styles.cardLine}>
-                    <Text style={styles.cardTotal}>{money(item.total, item.currency_code)}</Text>
-                    <StatusBadge label={view.label} tone={view.tone} icon={view.icon} />
-                  </View>
-                </Card>
-              );
-            })}
-        </CardGrid>
+        <Section title="Pedidos de la tienda">
+          <OrderDirectory
+            caption="Pedidos de la tienda"
+            orders={visible}
+            onOpen={(order) => {
+              if (!detailLoading) void openOrder(order);
+            }}
+          />
+          {!visible.length ? <Text style={styles.muted}>No hay pedidos en esta etapa.</Text> : null}
+          <ManagementPager
+            count={count}
+            offset={offset}
+            limit={PAGE_SIZE}
+            loading={loading}
+            onChange={setOffset}
+          />
+        </Section>
       ) : null}
       {detailLoading ? <Text style={styles.muted}>Cargando el detalle del pedido…</Text> : null}
-      <BottomSheet
-        visible={!!selectedOrder}
-        onClose={() => setSelectedOrder(null)}
-        title={
-          selectedOrder
-            ? `Pedido #${selectedOrder.display_id ?? selectedOrder.id.slice(-6)}`
-            : undefined
-        }
-      >
-        {selectedOrder ? (
-          <Section title="Artículos por preparar">
-            {outstanding.length ? (
-              outstanding.map((item) => (
-                <Row
-                  key={item.id}
-                  title={item.title ?? "Artículo"}
-                  detail={
-                    item.variant_title
-                      ? `${item.variant_title} · ${item.remaining} por preparar`
-                      : `${item.remaining} por preparar`
-                  }
-                />
-              ))
-            ) : (
-              <Text style={styles.muted}>
-                Todos los artículos de este pedido ya tienen preparación registrada.
+      {selectedOrder ? (
+        <ManagementPanel
+          wide={isWideWeb}
+          fullScreen
+          title={orderTitle(selectedOrder)}
+          onClose={() => setSelectedOrder(null)}
+        >
+          <OrderDetails order={selectedOrder} storeName={seller?.name}>
+            {detailStale ? (
+              <Button
+                title="Actualizar detalle"
+                variant="secondary"
+                onPress={() => void refreshAfterChange(selectedOrder)}
+              />
+            ) : null}
+            {notice ? (
+              <Text accessibilityRole="alert" style={styles.notice}>
+                {notice}
               </Text>
-            )}
-            {canFulfill && outstanding.length && !activeFulfillment ? (
-              <View style={styles.fulfillmentPanel}>
-                <Text style={styles.panelTitle}>Ubicación de preparación</Text>
-                {locations.length ? (
-                  locations.map((location) => (
-                    <Pressable
-                      key={location.id}
-                      onPress={() => setLocationId(location.id)}
-                      accessibilityRole="radio"
-                      accessibilityState={{ checked: locationId === location.id }}
-                      accessibilityLabel={location.name}
-                      style={[
-                        styles.locationChoice,
-                        locationId === location.id && styles.locationSelected,
-                      ]}
-                    >
-                      <Icon
-                        name={locationId === location.id ? "check" : "warehouse"}
-                        size={19}
-                        color={locationId === location.id ? theme.action : theme.muted}
-                      />
-                      <Text style={styles.locationText}>{location.name}</Text>
-                    </Pressable>
-                  ))
-                ) : (
-                  <Text style={styles.muted}>Esta tienda no tiene almacenes habilitados.</Text>
-                )}
-                <Button
-                  title="Iniciar preparación"
-                  onPress={() => void prepareOrder()}
-                  loading={fulfilling}
-                  disabled={!locationId || !locations.length}
-                />
-              </View>
             ) : null}
-            {canFulfill && activeFulfillment && nextAction ? (
-              <View style={styles.fulfillmentPanel}>
-                <Text style={styles.panelTitle}>
-                  Etapa actual:{" "}
-                  {activeFulfillment.shipped_at
-                    ? "Despachado"
-                    : activeFulfillment.packed_at
-                      ? "Listo para envío"
-                      : "En preparación"}
+            {error ? (
+              <Text accessibilityRole="alert" style={styles.muted}>
+                {error}
+              </Text>
+            ) : null}
+            <Section title="Artículos por preparar">
+              {outstanding.length ? (
+                outstanding.map((item) => (
+                  <Row
+                    key={item.id}
+                    title={item.title ?? "Artículo"}
+                    detail={
+                      item.variant_title
+                        ? `${item.variant_title} · ${item.remaining} por preparar`
+                        : `${item.remaining} por preparar`
+                    }
+                  />
+                ))
+              ) : (
+                <Text style={styles.muted}>
+                  Todos los artículos de este pedido ya tienen preparación registrada.
                 </Text>
-                <Button
-                  title={
-                    nextAction === "ready"
-                      ? "Marcar como listo"
-                      : nextAction === "dispatch"
-                        ? "Marcar como despachado"
-                        : "Confirmar entrega"
-                  }
-                  onPress={() => void advanceOrder(nextAction)}
-                  loading={fulfilling}
-                />
-              </View>
-            ) : null}
-          </Section>
-        ) : null}
-      </BottomSheet>
+              )}
+              {canOperate && outstanding.length && !activeFulfillment ? (
+                <View style={styles.fulfillmentPanel}>
+                  <Text style={styles.panelTitle}>Ubicación de preparación</Text>
+                  {locations.length ? (
+                    locations.map((location) => (
+                      <Pressable
+                        key={location.id}
+                        onPress={() => setLocationId(location.id)}
+                        accessibilityRole="radio"
+                        accessibilityState={{ checked: locationId === location.id }}
+                        accessibilityLabel={location.name}
+                        style={[
+                          styles.locationChoice,
+                          locationId === location.id && styles.locationSelected,
+                        ]}
+                      >
+                        <Icon
+                          name={locationId === location.id ? "check" : "warehouse"}
+                          size={19}
+                          color={locationId === location.id ? theme.action : theme.muted}
+                        />
+                        <Text style={styles.locationText}>{location.name}</Text>
+                      </Pressable>
+                    ))
+                  ) : (
+                    <Text style={styles.muted}>Esta tienda no tiene almacenes habilitados.</Text>
+                  )}
+                  <Button
+                    title="Iniciar preparación"
+                    onPress={() => void prepareOrder()}
+                    loading={fulfilling}
+                    disabled={!locationId || !locations.length}
+                  />
+                </View>
+              ) : null}
+              {canOperate && activeFulfillment && nextAction ? (
+                <View style={styles.fulfillmentPanel}>
+                  <Text style={styles.panelTitle}>
+                    Etapa actual:{" "}
+                    {activeFulfillment.shipped_at
+                      ? "Despachado"
+                      : activeFulfillment.packed_at
+                        ? "Listo para envío"
+                        : "En preparación"}
+                  </Text>
+                  <Button
+                    title={
+                      nextAction === "ready"
+                        ? "Marcar como listo"
+                        : nextAction === "dispatch"
+                          ? "Marcar como despachado"
+                          : "Confirmar entrega"
+                    }
+                    onPress={() => void advanceOrder(nextAction)}
+                    loading={fulfilling}
+                  />
+                </View>
+              ) : null}
+            </Section>
+          </OrderDetails>
+        </ManagementPanel>
+      ) : null}
     </OperationList>
   );
 }
@@ -425,14 +398,4 @@ const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
     locationText: { color: theme.text, fontSize: 14, flex: 1 },
     notice: { color: theme.successText, fontSize: 14, lineHeight: 20, marginBottom: 12 },
     filters: { marginBottom: 12 },
-    cards: { gap: 12 },
-    cardLine: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: 12,
-    },
-    cardTitle: { color: theme.text, fontSize: 17, fontWeight: "600" },
-    cardDate: { color: theme.muted, fontSize: 13 },
-    cardTotal: { color: theme.text, fontSize: 15, fontWeight: "600" },
   });

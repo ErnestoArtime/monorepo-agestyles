@@ -1,3 +1,5 @@
+import { ManagementPanel, ResponsiveManagementList } from "../../components/management-list";
+import { SearchField } from "@agestyles/ui-native";
 import { Icon } from "@agestyles/icons";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
@@ -38,10 +40,19 @@ export default function InventoryScreen() {
   const [saving, setSaving] = useState("");
   const [notice, setNotice] = useState("");
   const [open, setOpen] = useState("");
+  const [detailKey, setDetailKey] = useState("");
+  const [query, setQuery] = useState("");
   const [type, setType] = useState<MovementType>("alta");
   const [quantity, setQuantity] = useState("");
   const [reason, setReason] = useState("");
   const editable = hasPermission(member, "inventory_items", "edit");
+
+  useEffect(() => {
+    setOpen("");
+    setDetailKey("");
+    setItems([]);
+    setNames(new Map());
+  }, [seller?.id]);
 
   const load = useCallback(async () => {
     if (!seller) return;
@@ -148,6 +159,149 @@ export default function InventoryScreen() {
     if (done) setOpen("");
   }
 
+  const rows = items.flatMap((item) =>
+    (item.location_levels?.length ? item.location_levels : [{} as Level]).map((level, index) => ({
+      key: `${item.id}-${level.location_id ?? index}`,
+      item,
+      level,
+      title: (item.sku && names.get(item.sku)) || item.title || item.sku || "Artículo",
+    })),
+  );
+  const text = query.trim().toLowerCase();
+  const visible = rows.filter(({ item, level, title }) =>
+    `${title} ${item.sku ?? ""} ${level.location?.name ?? ""}`.toLowerCase().includes(text),
+  );
+  const selected = rows.find(({ key }) => key === detailKey);
+
+  function renderLevel({ item, level, key, title }: (typeof rows)[number]) {
+    const busy = saving === key;
+    const help = MOVEMENT_TYPE_OPTIONS.find((option) => option.value === type)?.help;
+    return (
+      <View key={key} style={styles.itemBlock}>
+        <View style={styles.itemRow}>
+          <View style={styles.itemDetails}>
+            <Text style={styles.itemTitle}>{title}</Text>
+            <Text style={styles.itemSub}>
+              {item.sku ? `SKU ${item.sku}` : "Sin SKU"}
+              {level.location?.name
+                ? ` · ${level.location.name}`
+                : !level.location_id
+                  ? " · Sin almacén asignado"
+                  : ""}
+            </Text>
+            <Pressable
+              onPress={() => {
+                setDetailKey("");
+                router.push({
+                  pathname: "/movements",
+                  params: {
+                    inventory_item_id: item.id,
+                    title,
+                  },
+                });
+              }}
+              accessibilityRole="link"
+              accessibilityLabel={`Historial de ${item.title ?? item.sku ?? "artículo"}`}
+              style={styles.inlineLink}
+            >
+              <Text style={styles.linkText}>Historial</Text>
+            </Pressable>
+          </View>
+          <Text style={styles.quantity}>{level.stocked_quantity ?? "—"}</Text>
+          {editable && level.location_id ? (
+            <View style={styles.adjusters}>
+              <Pressable
+                onPress={() => void record(item, level, { type: "baja", quantity: 1 })}
+                disabled={busy || !Number(level.stocked_quantity)}
+                accessibilityRole="button"
+                accessibilityLabel="Registrar baja de una unidad"
+                style={[styles.adjustButton, busy && styles.disabled]}
+              >
+                <Icon name="minus" size={20} color={theme.action} />
+              </Pressable>
+              <Pressable
+                onPress={() => void record(item, level, { type: "alta", quantity: 1 })}
+                disabled={busy}
+                accessibilityRole="button"
+                accessibilityLabel="Registrar alta de una unidad"
+                style={[styles.adjustButton, busy && styles.disabled]}
+              >
+                <Icon name="plus" size={20} color={theme.action} />
+              </Pressable>
+              <Pressable
+                onPress={() => toggle(key)}
+                accessibilityRole="button"
+                accessibilityLabel="Registrar otro movimiento"
+                accessibilityState={{ expanded: open === key }}
+                style={styles.adjustButton}
+              >
+                <Icon name="sliders" size={20} color={theme.action} />
+              </Pressable>
+            </View>
+          ) : null}
+        </View>
+        {open === key ? (
+          <View style={styles.form}>
+            <View
+              style={styles.chips}
+              accessibilityRole="radiogroup"
+              accessibilityLabel="Tipo de movimiento"
+            >
+              {MOVEMENT_TYPE_OPTIONS.map((option) => {
+                const selected = type === option.value;
+                return (
+                  <Pressable
+                    key={option.value}
+                    onPress={() => setType(option.value)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected }}
+                    style={[styles.chip, selected && styles.chipSelected]}
+                  >
+                    <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
+                      {option.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            {help ? <Text style={styles.itemSub}>{help}</Text> : null}
+            <Text style={styles.label}>{type === "ajuste" ? "Stock contado" : "Unidades"}</Text>
+            <TextInput
+              value={quantity}
+              onChangeText={setQuantity}
+              keyboardType="number-pad"
+              inputMode="numeric"
+              accessibilityLabel={type === "ajuste" ? "Stock contado" : "Unidades"}
+              placeholder={type === "ajuste" ? String(level.stocked_quantity ?? 0) : "1"}
+              placeholderTextColor={theme.placeholderText}
+              style={styles.input}
+            />
+            <Text style={styles.label}>
+              {type === "ajuste" ? "Motivo (obligatorio)" : "Motivo (opcional)"}
+            </Text>
+            <TextInput
+              value={reason}
+              onChangeText={setReason}
+              maxLength={300}
+              accessibilityLabel="Motivo"
+              placeholder="Ej.: conteo físico, rotura, compra a proveedor"
+              placeholderTextColor={theme.placeholderText}
+              style={styles.input}
+            />
+            <Pressable
+              onPress={() => void submit(item, level)}
+              disabled={busy}
+              accessibilityRole="button"
+              style={[styles.submit, busy && styles.disabled]}
+            >
+              <Text style={styles.submitText}>{busy ? "Guardando…" : "Registrar movimiento"}</Text>
+            </Pressable>
+          </View>
+        ) : null}
+      </View>
+    );
+  }
+
   return (
     <OperationList
       title="Inventario"
@@ -176,146 +330,67 @@ export default function InventoryScreen() {
       ) : null}
       {items.length ? (
         <Section title={`${items.length} artículos`}>
-          {items.map((item) =>
-            (item.location_levels?.length
-              ? item.location_levels
-              : [{ stocked_quantity: undefined } as Level]
-            ).map((level, index) => {
-              const key = `${item.id}-${level.location_id ?? index}`;
-              const busy = saving === key;
-              const help = MOVEMENT_TYPE_OPTIONS.find((option) => option.value === type)?.help;
-              return (
-                <View key={key} style={styles.itemBlock}>
-                  <View style={styles.itemRow}>
-                    <View style={styles.itemDetails}>
-                      <Text style={styles.itemTitle}>
-                        {(item.sku && names.get(item.sku)) || item.title || item.sku || "Artículo"}
-                      </Text>
-                      <Text style={styles.itemSub}>
-                        {item.sku ? `SKU ${item.sku}` : "Sin SKU"}
-                        {level.location?.name
-                          ? ` · ${level.location.name}`
-                          : !level.location_id
-                            ? " · Sin almacén asignado"
-                            : ""}
-                      </Text>
-                      <Pressable
-                        onPress={() =>
-                          router.push({
-                            pathname: "/movements",
-                            params: {
-                              inventory_item_id: item.id,
-                              title: item.title ?? item.sku ?? "artículo",
-                            },
-                          })
-                        }
-                        accessibilityRole="link"
-                        accessibilityLabel={`Historial de ${item.title ?? item.sku ?? "artículo"}`}
-                        style={styles.inlineLink}
-                      >
-                        <Text style={styles.linkText}>Historial</Text>
-                      </Pressable>
-                    </View>
-                    <Text style={styles.quantity}>{level.stocked_quantity ?? "—"}</Text>
-                    {editable && level.location_id ? (
-                      <View style={styles.adjusters}>
-                        <Pressable
-                          onPress={() => void record(item, level, { type: "baja", quantity: 1 })}
-                          disabled={busy || !Number(level.stocked_quantity)}
-                          accessibilityRole="button"
-                          accessibilityLabel="Registrar baja de una unidad"
-                          style={[styles.adjustButton, busy && styles.disabled]}
-                        >
-                          <Icon name="minus" size={20} color={theme.action} />
-                        </Pressable>
-                        <Pressable
-                          onPress={() => void record(item, level, { type: "alta", quantity: 1 })}
-                          disabled={busy}
-                          accessibilityRole="button"
-                          accessibilityLabel="Registrar alta de una unidad"
-                          style={[styles.adjustButton, busy && styles.disabled]}
-                        >
-                          <Icon name="plus" size={20} color={theme.action} />
-                        </Pressable>
-                        <Pressable
-                          onPress={() => toggle(key)}
-                          accessibilityRole="button"
-                          accessibilityLabel="Registrar otro movimiento"
-                          accessibilityState={{ expanded: open === key }}
-                          style={styles.adjustButton}
-                        >
-                          <Icon name="sliders" size={20} color={theme.action} />
-                        </Pressable>
-                      </View>
-                    ) : null}
-                  </View>
-                  {open === key ? (
-                    <View style={styles.form}>
-                      <View
-                        style={styles.chips}
-                        accessibilityRole="radiogroup"
-                        accessibilityLabel="Tipo de movimiento"
-                      >
-                        {MOVEMENT_TYPE_OPTIONS.map((option) => {
-                          const selected = type === option.value;
-                          return (
-                            <Pressable
-                              key={option.value}
-                              onPress={() => setType(option.value)}
-                              accessibilityRole="radio"
-                              accessibilityState={{ selected }}
-                              style={[styles.chip, selected && styles.chipSelected]}
-                            >
-                              <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
-                                {option.label}
-                              </Text>
-                            </Pressable>
-                          );
-                        })}
-                      </View>
-                      {help ? <Text style={styles.itemSub}>{help}</Text> : null}
-                      <Text style={styles.label}>
-                        {type === "ajuste" ? "Stock contado" : "Unidades"}
-                      </Text>
-                      <TextInput
-                        value={quantity}
-                        onChangeText={setQuantity}
-                        keyboardType="number-pad"
-                        inputMode="numeric"
-                        accessibilityLabel={type === "ajuste" ? "Stock contado" : "Unidades"}
-                        placeholder={type === "ajuste" ? String(level.stocked_quantity ?? 0) : "1"}
-                        placeholderTextColor={theme.placeholderText}
-                        style={styles.input}
-                      />
-                      <Text style={styles.label}>
-                        {type === "ajuste" ? "Motivo (obligatorio)" : "Motivo (opcional)"}
-                      </Text>
-                      <TextInput
-                        value={reason}
-                        onChangeText={setReason}
-                        maxLength={300}
-                        accessibilityLabel="Motivo"
-                        placeholder="Ej.: conteo físico, rotura, compra a proveedor"
-                        placeholderTextColor={theme.placeholderText}
-                        style={styles.input}
-                      />
-                      <Pressable
-                        onPress={() => void submit(item, level)}
-                        disabled={busy}
-                        accessibilityRole="button"
-                        style={[styles.submit, busy && styles.disabled]}
-                      >
-                        <Text style={styles.submitText}>
-                          {busy ? "Guardando…" : "Registrar movimiento"}
-                        </Text>
-                      </Pressable>
-                    </View>
-                  ) : null}
-                </View>
-              );
-            }),
+          <View style={styles.itemBlock}>
+            <SearchField
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Buscar artículo, SKU o almacén"
+            />
+          </View>
+          {visible.length ? (
+            <ResponsiveManagementList
+              caption="Inventario por almacén"
+              rows={visible}
+              rowKey={(row) => row.key}
+              actionLabel={(row) => `Ver inventario de ${row.title}`}
+              onOpen={(row) => {
+                setOpen("");
+                setDetailKey(row.key);
+              }}
+              columns={[
+                { id: "item", label: "Artículo", width: "33%", render: (row) => row.title },
+                { id: "sku", label: "SKU", width: "21%", render: (row) => row.item.sku || "—" },
+                {
+                  id: "location",
+                  label: "Almacén",
+                  width: "24%",
+                  render: (row) => row.level.location?.name || "—",
+                },
+                {
+                  id: "stock",
+                  label: "Existencias",
+                  width: "11%",
+                  render: (row) => row.level.stocked_quantity ?? "—",
+                },
+              ]}
+              renderCompact={() => visible.map(renderLevel)}
+            />
+          ) : (
+            <Text style={styles.itemSub}>No hay artículos que coincidan.</Text>
           )}
         </Section>
+      ) : null}
+      {selected ? (
+        <ManagementPanel
+          wide
+          title={selected.title}
+          onClose={() => {
+            setDetailKey("");
+            setOpen("");
+          }}
+        >
+          {notice ? (
+            <Text accessibilityRole="alert" style={styles.notice}>
+              {notice}
+            </Text>
+          ) : null}
+          {error ? (
+            <Text accessibilityRole="alert" style={styles.itemSub}>
+              {error}
+            </Text>
+          ) : null}
+          {renderLevel(selected)}
+        </ManagementPanel>
       ) : null}
     </OperationList>
   );

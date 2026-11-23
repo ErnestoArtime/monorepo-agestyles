@@ -1,13 +1,7 @@
+import { ManagementPanel, ResponsiveManagementList } from "../../components/management-list";
+import { useResponsive } from "../../hooks/use-responsive";
 import { useRouter, type Href } from "expo-router";
-import {
-  BottomSheet,
-  Button,
-  Card,
-  ConfirmDialog,
-  PillGroup,
-  SearchField,
-  StatusBadge,
-} from "@agestyles/ui-native";
+import { Button, Card, PillGroup, SearchField, StatusBadge } from "@agestyles/ui-native";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import { CardGrid } from "../../components/card-grid";
@@ -64,6 +58,7 @@ const ACTION_COPY: Record<Lifecycle, { title: string; message: string; done: str
 export default function AdminStoresScreen() {
   const theme = useBusinessTheme();
   const styles = createStyles(theme);
+  const { isWideWeb } = useResponsive();
   const { adminRequest } = useAdmin();
   const router = useRouter();
   const [stores, setStores] = useState<Store[]>([]);
@@ -99,6 +94,7 @@ export default function AdminStoresScreen() {
   }, [load]);
 
   const openStore = async (store: Store) => {
+    setError("");
     setOpen(store);
     setMembers([]);
     try {
@@ -169,7 +165,7 @@ export default function AdminStoresScreen() {
       title="Tiendas"
       subtitle="Todas las tiendas del marketplace, su estado y su equipo."
       loading={loading}
-      error={error}
+      error={open && !action ? "" : error}
       empty="No hay tiendas que coincidan."
       isEmpty={!visible.length}
       onRefresh={() => void load()}
@@ -189,35 +185,92 @@ export default function AdminStoresScreen() {
         />
       </View>
       {visible.length ? (
-        <CardGrid>
-          {visible.map((store) => {
-            const status = SELLER_STATUS[store.status] ?? {
-              label: "Estado desconocido",
-              tone: "neutral" as const,
-            };
-            return (
-              <Card
-                key={store.id}
-                onPress={() => void openStore(store)}
-                accessibilityLabel={`${store.name}, ${status.label}`}
-              >
-                <View style={styles.cardTop}>
-                  <Text style={styles.cardTitle}>{store.name}</Text>
-                  <StatusBadge label={status.label} tone={status.tone} />
-                </View>
-                <Text style={styles.muted}>
-                  @{store.handle}
-                  {store.created_at ? ` · desde ${shortDate(store.created_at)}` : ""}
-                </Text>
-              </Card>
-            );
-          })}
-        </CardGrid>
+        <ResponsiveManagementList
+          caption="Tiendas del marketplace"
+          rows={visible}
+          rowKey={(store) => store.id}
+          actionLabel={(store) => `Ver tienda ${store.name}`}
+          onOpen={(store) => void openStore(store)}
+          columns={[
+            {
+              id: "name",
+              label: "Tienda",
+              width: "31%",
+              render: (store) => (
+                <>
+                  {store.name}
+                  <span className="ag-cell-detail">@{store.handle}</span>
+                </>
+              ),
+            },
+            {
+              id: "contact",
+              label: "Contacto",
+              width: "29%",
+              render: (store) => [store.email, store.phone].filter(Boolean).join(" · ") || "—",
+            },
+            {
+              id: "status",
+              label: "Estado",
+              width: "17%",
+              render: (store) => (
+                <StatusBadge
+                  {...(SELLER_STATUS[store.status] ?? {
+                    label: "Estado desconocido",
+                    tone: "neutral",
+                  })}
+                />
+              ),
+            },
+            {
+              id: "date",
+              label: "Alta",
+              width: "12%",
+              render: (store) => shortDate(store.created_at) || "—",
+            },
+          ]}
+          renderCompact={() => (
+            <CardGrid>
+              {visible.map((store) => {
+                const status = SELLER_STATUS[store.status] ?? {
+                  label: "Estado desconocido",
+                  tone: "neutral" as const,
+                };
+                return (
+                  <Card
+                    key={store.id}
+                    onPress={() => void openStore(store)}
+                    accessibilityLabel={`${store.name}, ${status.label}`}
+                  >
+                    <View style={styles.cardTop}>
+                      <Text style={styles.cardTitle}>{store.name}</Text>
+                      <StatusBadge label={status.label} tone={status.tone} />
+                    </View>
+                    <Text style={styles.muted}>
+                      @{store.handle}
+                      {store.created_at ? ` · desde ${shortDate(store.created_at)}` : ""}
+                    </Text>
+                  </Card>
+                );
+              })}
+            </CardGrid>
+          )}
+        />
       ) : null}
 
-      <BottomSheet visible={!!open} onClose={() => setOpen(null)} title={open?.name}>
-        {open ? (
+      {open && !action ? (
+        <ManagementPanel wide={isWideWeb} onClose={() => setOpen(null)} title={open.name}>
           <View style={styles.sheet}>
+            {error ? (
+              <Text accessibilityRole="alert" style={[styles.muted, { color: theme.error }]}>
+                {error}
+              </Text>
+            ) : null}
+            {notice ? (
+              <Text accessibilityLiveRegion="polite" style={styles.notice}>
+                {notice}
+              </Text>
+            ) : null}
             <StatusBadge
               label={SELLER_STATUS[open.status]?.label ?? "Estado desconocido"}
               tone={SELLER_STATUS[open.status]?.tone ?? "neutral"}
@@ -303,18 +356,26 @@ export default function AdminStoresScreen() {
               loading={busy}
             />
           </View>
-        ) : null}
-      </BottomSheet>
+        </ManagementPanel>
+      ) : null}
 
-      <ConfirmDialog
-        visible={!!action}
-        tone="warning"
-        title={action ? ACTION_COPY[action.kind].title : ""}
-        message={action ? `${action.store.name}: ${ACTION_COPY[action.kind].message}` : ""}
-        primary={{ label: "Confirmar", onPress: () => void runAction() }}
-        secondary={{ label: "Cancelar", onPress: () => setAction(null) }}
-        onClose={() => setAction(null)}
-      />
+      {action ? (
+        <ManagementPanel
+          wide={false}
+          title={ACTION_COPY[action.kind].title}
+          onClose={() => setAction(null)}
+        >
+          <View style={styles.sheet}>
+            <Text style={styles.muted}>
+              {action.store.name}: {ACTION_COPY[action.kind].message}
+            </Text>
+            <View style={styles.actions}>
+              <Button title="Cancelar" variant="secondary" onPress={() => setAction(null)} />
+              <Button title="Confirmar" onPress={() => void runAction()} />
+            </View>
+          </View>
+        </ManagementPanel>
+      ) : null}
     </OperationList>
   );
 }
@@ -332,7 +393,7 @@ const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
     },
     cardTitle: { color: theme.text, fontSize: 15, fontWeight: "600", flexShrink: 1, flexGrow: 1 },
     muted: { color: theme.muted, fontSize: 13, lineHeight: 18, marginTop: 4 },
-    sheet: { gap: 10 },
+    sheet: { gap: 10, padding: 16 },
     actions: { flexDirection: "row", gap: 10, flexWrap: "wrap", marginTop: 4 },
     heading: { color: theme.text, fontSize: 16, fontWeight: "700", marginTop: 14 },
     memberRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 6 },
