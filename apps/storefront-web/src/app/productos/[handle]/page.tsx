@@ -51,6 +51,9 @@ export default async function ProductPage({ params }: PageProps) {
         config={apiConfig}
         productId={product.id}
         sellerIds={sellers.map((seller) => seller.id)}
+        title={product.title}
+        price={bestPrice}
+        currency={currency}
       />
       <div className="wrap breadcrumbs">
         <Link href="/">Inicio</Link>

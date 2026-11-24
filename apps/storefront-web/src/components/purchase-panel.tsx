@@ -4,6 +4,7 @@ import { Icon } from "@agestyles/icons";
 import { formatCupEquivalent, rateSourceLine } from "@agestyles/api-client/exchange-rate";
 import { useMemo, useState } from "react";
 import { formatPrice } from "@/lib/catalog-format";
+import { gaEvent } from "@/lib/google-analytics";
 import { trackProductEvent } from "@/lib/product-events";
 import {
   MAX_QUANTITY,
@@ -69,6 +70,18 @@ export function PurchasePanel({
           surface: "vitrina",
         },
       );
+      gaEvent("add_to_cart", {
+        currency: data.currency,
+        value: offer.amount * quantity,
+        items: [
+          {
+            item_id: data.product.id,
+            item_name: data.product.title,
+            price: offer.amount,
+            quantity,
+          },
+        ],
+      });
     }
     const ok = await cart.addOffer(offer.id, quantity);
     setAdded(ok);

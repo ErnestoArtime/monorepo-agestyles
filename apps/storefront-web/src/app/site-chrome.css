@@ -868,3 +868,34 @@
 .legal-page a {
   text-decoration: underline;
 }
+
+/* Cookie banner (AG-59, Fase 4) ------------------------------------------------------------ */
+.cookie-banner {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  z-index: 60;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px 18px;
+  display: grid;
+  gap: 12px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 8px 28px rgb(0 0 0 / 0.18);
+}
+.cookie-banner p {
+  margin: 0;
+  line-height: 1.55;
+}
+.cookie-banner a {
+  text-decoration: underline;
+}
+.cookie-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}

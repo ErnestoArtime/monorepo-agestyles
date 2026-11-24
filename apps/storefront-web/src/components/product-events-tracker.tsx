@@ -2,23 +2,31 @@
 
 import Link from "next/link";
 import { useEffect, useRef, type ReactNode } from "react";
+import { gaEvent } from "@/lib/google-analytics";
 import { trackProductEvent, type ApiConfig } from "@/lib/product-events";
 
 /**
  * Anonymous view events for the public catalog (AG-59). Each tracker
  * fires once per mount; the API also ignores a repeat from the same visit
  * inside a minute. A product page with several sellers fires one
- * `product_view` per seller, so each store's traffic is its own.
+ * `product_view` per seller, so each store's traffic is its own. Google
+ * Analytics gets the same view once (view_item), only when it is loaded.
  */
 
 export function ProductViewTracker({
   config,
   productId,
   sellerIds,
+  title,
+  price,
+  currency,
 }: {
   config: ApiConfig;
   productId: string;
   sellerIds: string[];
+  title?: string;
+  price?: number;
+  currency?: string;
 }) {
   const fired = useRef(false);
   useEffect(() => {
@@ -32,7 +40,12 @@ export function ProductViewTracker({
         surface: "vitrina",
       });
     }
-  }, [config, productId, sellerIds]);
+    gaEvent("view_item", {
+      currency: currency ?? "USD",
+      value: price,
+      items: [{ item_id: productId, item_name: title }],
+    });
+  }, [config, productId, sellerIds, title, price, currency]);
   return null;
 }
 

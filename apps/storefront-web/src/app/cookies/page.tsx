@@ -8,10 +8,11 @@ export const metadata: Metadata = {
 };
 
 /**
- * Cookie policy (AG-59, Fase 1). Only what the apps actually store today:
+ * Cookie policy (AG-59, Fases 1 y 4). Only what the apps actually store today:
  * cart id, an anonymous session id for view/click events, and app
- * preferences. No third-party cookies today; Google Analytics cookies
- * only arrive when GA4 is activated, after consent.
+ * preferences. Google Analytics cookies only arrive when GA4 is activated:
+ * the visitor accepted the statistics cookies and a measurement ID is
+ * configured — today there is no ID, so there are no Google cookies.
  */
 export default function CookiesPage() {
   return (
@@ -43,9 +44,18 @@ export default function CookiesPage() {
 
       <h2>Cookies de terceros</h2>
       <p>
-        Hoy no hay cookies de terceros. Google Analytics está previsto pero aún no activo: cuando se
-        active, sus cookies solo se cargarán si aceptas las cookies de estadísticas, y esta página
-        dirá cuáles son.
+        Hoy no hay cookies de terceros. Google Analytics está instalado pero inactivo: sus cookies (
+        <code>_ga</code>, <code>_ga_*</code>) solo se cargarán si aceptas las cookies de
+        estadísticas en el aviso y hay un identificador de propiedad configurado. Hoy no hay
+        identificador, así que no se carga nada de Google. Si rechazas, no se carga nada y puedes
+        seguir usando la web igual.
+      </p>
+
+      <h2>Cambiar tu elección</h2>
+      <p>
+        Tu elección queda guardada en tu navegador. Para cambiarla, borra los datos guardados de
+        este sitio desde los ajustes de tu navegador — la próxima visita volverá a aparecer el aviso
+        — o escríbenos a <a href="mailto:hola@agestyles.com">hola@agestyles.com</a>.
       </p>
 
       <h2>Cómo borrarlas</h2>

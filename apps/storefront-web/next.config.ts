@@ -28,14 +28,16 @@ const nextConfig: NextConfig = {
           {
             // Next.js emits inline bootstrap scripts and styles, including on cached pages.
             // Observe the stricter policy until those pages can use nonces or hashes.
+            // Google Analytics (AG-59, Fase 4) only loads with consent, and only
+            // then needs its own hosts in this report-only policy.
             key: "Content-Security-Policy-Report-Only",
             value: [
               "default-src 'self'",
-              "script-src 'self'",
+              "script-src 'self' https://www.googletagmanager.com",
               "style-src 'self' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: https:",
-              "connect-src 'self'",
+              "connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com",
             ].join("; "),
           },
           {

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { Icon } from "@agestyles/icons";
 import { useRef } from "react";
 import { formatPrice } from "@/lib/catalog-format";
+import { gaEvent } from "@/lib/google-analytics";
 import { variantLabel } from "@/lib/quick-view-model";
 import { useCart } from "./cart-provider";
 import { useModal } from "./use-modal";
@@ -146,7 +147,24 @@ export function CartDrawer() {
               El envío y el pago se completan en la app de compra, con el carrito que ya armaste.
             </p>
             {checkoutUrl ? (
-              <a className="btn btn-primary" href={checkoutUrl} onClick={handOff}>
+              <a
+                className="btn btn-primary"
+                href={checkoutUrl}
+                onClick={() => {
+                  // Checkout starts in Tienda; GA4 only sees the handoff (AG-59, Fase 4).
+                  gaEvent("begin_checkout", {
+                    currency,
+                    value: subtotal,
+                    items: items.map((item) => ({
+                      item_id: item.product_id,
+                      item_name: item.title,
+                      price: item.unit_price,
+                      quantity: item.quantity,
+                    })),
+                  });
+                  handOff();
+                }}
+              >
                 Ir a pagar <Icon name="arrowRight" size={14} />
               </a>
             ) : null}

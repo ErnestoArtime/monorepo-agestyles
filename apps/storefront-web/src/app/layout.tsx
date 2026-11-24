@@ -4,12 +4,22 @@ import "./seller-pages.css";
 import "./site-chrome.css";
 import { CartDrawer } from "@/components/cart-drawer";
 import { CartProvider } from "@/components/cart-provider";
+import { CookieBanner } from "@/components/cookie-banner";
+import { GoogleAnalytics } from "@/components/google-analytics";
 import { QuickViewProvider } from "@/components/quick-view";
+import { WebVitalsReporter } from "@/components/web-vitals-reporter";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { getMaintenance, getPublicStoreConfig } from "@/lib/catalog";
 
 const siteUrl = process.env.SITE_URL || "https://catalogo.eav-labs.com";
+/**
+ * Search Console verification (AG-59, Fase 3): the code comes from the
+ * GOOGLE_SITE_VERIFICATION variable, which Ernesto sets when he creates the
+ * property in Search Console. No real code is invented here, so without the
+ * variable the tag is simply not rendered.
+ */
+const googleSiteVerification = process.env.GOOGLE_SITE_VERIFICATION || undefined;
 
 export const revalidate = 300;
 
@@ -26,6 +36,7 @@ export const metadata: Metadata = {
     description: "Productos de distintas tiendas en un solo lugar.",
   },
   robots: { index: true, follow: true },
+  ...(googleSiteVerification ? { verification: { google: googleSiteVerification } } : {}),
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -52,6 +63,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html lang="es">
       <body>
+        <GoogleAnalytics />
+        <WebVitalsReporter />
         <CartProvider config={config} buyerAppUrl={buyerAppUrl}>
           <QuickViewProvider buyerAppUrl={buyerAppUrl}>
             <SiteHeader />
@@ -60,6 +73,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           </QuickViewProvider>
           <CartDrawer />
         </CartProvider>
+        <CookieBanner />
       </body>
     </html>
   );

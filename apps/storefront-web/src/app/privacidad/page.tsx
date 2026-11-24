@@ -8,8 +8,10 @@ export const metadata: Metadata = {
 };
 
 /**
- * Privacy policy (AG-59, Fase 1). Honest about what exists today: no Google
- * Analytics yet (planned, not active), anonymous first-party view/click
+ * Privacy policy (AG-59, Fases 1 y 4). Honest about what exists today: Google
+ * Analytics is installed in the code but inactive until the visitor accepts
+ * the statistics cookies and a measurement ID is configured — today there is
+ * no ID, so nothing is sent to Google. Anonymous first-party view/click
  * events, and the data orders and payments need. The legal identity of the
  * controller is not in the repository, so it stays as a visible marker
  * until Ernesto fills it in — it must not be invented.
@@ -52,9 +54,13 @@ export default function PrivacyPage() {
           para que cada tienda sepa qué productos se ven y se pulsan, y se borran a los 90 días.
         </li>
         <li>
-          <strong>Google Analytics.</strong> Previsto, aún no activo: hoy no se envía ningún dato a
-          Google Analytics. Cuando se active, esta página dirá qué se mide y cómo oponerse, y solo
-          se activará tras aceptar las cookies.
+          <strong>Google Analytics.</strong> El código de Google Analytics 4 está instalado en la
+          vitrina y en la Tienda web, pero inactivo por defecto: solo se carga si aceptas las
+          cookies de estadísticas y solo si hay un identificador de propiedad configurado. Hoy no
+          hay identificador, así que no se envía ningún dato a Google. Cuando se active, medirá las
+          páginas visitadas, los productos vistos, los añadidos al carrito y los inicios de compra,
+          con la dirección IP anonimizada; puedes oponerte rechazando las cookies de estadísticas en
+          el aviso o borrando tu elección desde la política de cookies.
         </li>
       </ul>
 
@@ -81,8 +87,8 @@ export default function PrivacyPage() {
 
       <h2>Cambios</h2>
       <p>
-        Si esta política cambia — por ejemplo, cuando se active Google Analytics — la fecha de
-        arriba cambiará y el cambio se reflejará aquí antes de aplicarse.
+        Si esta política cambia — por ejemplo, cuando se configure el identificador de Google
+        Analytics — la fecha de arriba cambiará y el cambio se reflejará aquí antes de aplicarse.
       </p>
     </main>
   );
