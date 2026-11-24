@@ -55,6 +55,9 @@ jobs:
       - name: Install workspace dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Audit workspace dependencies for known vulnerabilities
+        run: pnpm audit --audit-level=high
+
       - name: Lint workspace sources
         run: pnpm lint
 
@@ -219,6 +222,22 @@ jobs:
           DATABASE_URL: postgres://agestyles_lab:0123456789abcdef@127.0.0.1:15472/agestyles_mercur_lab
         run: node apps/commerce-api/scripts/verify-mixed-checkout-buyer-ownership.mjs
 
+      - name: Verify manual payment proofs in the disposable lab
+        env:
+          DATABASE_URL: postgres://agestyles_lab:0123456789abcdef@127.0.0.1:15472/agestyles_mercur_lab
+          REDIS_URL: redis://127.0.0.1:16392
+          JWT_SECRET: lab-ci-secret-please-change
+          COOKIE_SECRET: lab-ci-secret-please-change
+        run: |
+          docker run --rm --network host \
+            --env DATABASE_URL --env REDIS_URL --env JWT_SECRET --env COOKIE_SECRET \
+            agestyles/commerce-api:ci \
+            pnpm exec medusa exec ./src/scripts/verify-manual-payments.ts
+        # NOTE: apps/commerce-api/scripts/verify-price-revision.mjs is NOT wired
+        # into CI by design: its own header says it is a manual laboratory probe
+        # that needs DUAL_AUTH_LAB_* credentials and must never run against a
+        # shared or production environment.
+
       - name: Verify seller fulfillment permissions over HTTP
         env:
           EXPO_PUBLIC_MEDUSA_URL: http://127.0.0.1:19081
@@ -335,6 +354,27 @@ jobs:
             cat /tmp/agestyles-seller-gateway-ci.log
             exit 1
           fi
+
+          # Upload-abuse probe: the gateway caps non-upload bodies at 64 KiB and
+          # /vendor/uploads at 8 MiB; anything larger must be refused with 413
+          # before it reaches the API.
+          head -c 70000 /dev/zero | tr '\0' 'x' > /tmp/agestyles-oversized-body
+          oversized_status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            --request POST http://127.0.0.1:19183/agestyles-seller/vendor/agestyles/inventory-movements \
+            --header 'Origin: https://negocio.eav-labs.com' \
+            --header 'Content-Type: application/json' \
+            --data-binary @/tmp/agestyles-oversized-body)"
+          head -c 8388609 /dev/zero > /tmp/agestyles-oversized-upload
+          oversized_upload_status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            --request POST http://127.0.0.1:19183/agestyles-seller/vendor/uploads \
+            --header 'Origin: https://negocio.eav-labs.com' \
+            --header 'Content-Type: application/octet-stream' \
+            --data-binary @/tmp/agestyles-oversized-upload)"
+          if [[ "${oversized_status}" != "413" || "${oversized_upload_status}" != "413" ]]; then
+            echo "Expected oversized bodies to be refused with 413; got body=${oversized_status}, upload=${oversized_upload_status}." >&2
+            cat /tmp/agestyles-seller-gateway-ci.log
+            exit 1
+          fi
           if [[ "${products_list_status}" != "204" ]]; then
             echo "Expected the product list GET preflight 204 (a POST-only rule must not shadow it); got ${products_list_status}." >&2
             cat /tmp/agestyles-seller-gateway-ci.log
@@ -384,6 +424,52 @@ jobs:
             exit 1
           fi
 
+      - name: Build the SEO storefront
+        run: pnpm nx build @agestyles/storefront-web
+
+      - name: Audit the SEO storefront with Lighthouse (AG-59, Fase 2)
+        env:
+          MEDUSA_BACKEND_URL: http://127.0.0.1:19081
+          MEDUSA_PUBLISHABLE_API_KEY: pk_test_ci
+          SITE_URL: http://127.0.0.1:3000
+          BUYER_APP_URL: https://ci.invalid
+        run: |
+          set -euo pipefail
+          # The disposable API is still running here with the seeded lab data,
+          # so Lighthouse measures the real catalog pages, not empty ones.
+          # This step must stay before "Stop disposable Commerce API smoke test".
+          pnpm --filter @agestyles/storefront-web exec next start --hostname 127.0.0.1 --port 3000 >/tmp/agestyles-storefront-ci.log 2>&1 &
+          server_pid=$!
+          trap 'kill "${server_pid}" 2>/dev/null || true' EXIT
+          ready="000"
+          for attempt in $(seq 1 60); do
+            ready="$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:3000/ || true)"
+            if [[ "${ready}" == "200" ]]; then break; fi
+            sleep 2
+          done
+          if [[ "${ready}" != "200" ]]; then
+            echo "Storefront did not become ready; got ${ready}." >&2
+            cat /tmp/agestyles-storefront-ci.log
+            exit 1
+          fi
+          mkdir -p /tmp/agestyles-lighthouse
+          for page in "" "tiendas" "novedades"; do
+            slug="${page:-inicio}"
+            npx -y lighthouse@12 "http://127.0.0.1:3000/${page}" \
+              --output=json --output=html \
+              --output-path="/tmp/agestyles-lighthouse/${slug}" \
+              --chrome-flags='--headless --no-sandbox --disable-dev-shm-usage' \
+              --preset=desktop
+          done
+          node tools/scripts/check-lighthouse-budgets.mjs /tmp/agestyles-lighthouse
+
+      - name: Upload Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-storefront
+          path: /tmp/agestyles-lighthouse/
+
       - name: Report Commerce API errors as annotations when a check fails
         if: failure()
         run: |
@@ -419,6 +505,3 @@ jobs:
           EXPO_PUBLIC_MEDUSA_URL: https://ci.invalid
           EXPO_PUBLIC_MEDUSA_PUBLISHABLE_API_KEY: pk_ci_placeholder
         run: pnpm --filter @agestyles/business-app exec expo export --platform web --output-dir /tmp/agestyles-ci-business-web
-
-      - name: Build the SEO storefront
-        run: pnpm nx build @agestyles/storefront-web

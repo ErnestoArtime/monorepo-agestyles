@@ -14,7 +14,8 @@ export function CookieBanner() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    setVisible(getAnalyticsConsent() === null);
+    const timer = setTimeout(() => setVisible(getAnalyticsConsent() === null), 0);
+    return () => clearTimeout(timer);
   }, []);
 
   if (!visible) return null;

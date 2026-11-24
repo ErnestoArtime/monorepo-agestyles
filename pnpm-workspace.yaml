@@ -1,9 +1,9 @@
 packages:
-  - 'apps/*'
-  - 'packages/*'
+  - "apps/*"
+  - "packages/*"
 
 onlyBuiltDependencies:
-  - '@swc/core'
+  - "@swc/core"
   - esbuild
   - nx
 
@@ -11,9 +11,13 @@ publicHoistPattern:
   - ts-node
 
 overrides:
-  '@opentelemetry/api': '1.9.1'
+  "@opentelemetry/api": "1.9.1"
+  # Auditoria 2026-11-24 (AG-60): parches de seguridad para vulnerabilidades altas transitivas (expo/metro y expo-router). Sin ellos, el paso nuevo de pnpm audit en CI falla con 5 altas.
+  postcss: "8.5.33"
+  image-size: "2.0.3"
+  decode-uri-component: "0.5.1"
 
 packageExtensions:
-  '@mercurjs/core@2.4.1':
+  "@mercurjs/core@2.4.1":
     dependencies:
-      http-proxy-middleware: '3.0.7'
+      http-proxy-middleware: "3.0.7"
