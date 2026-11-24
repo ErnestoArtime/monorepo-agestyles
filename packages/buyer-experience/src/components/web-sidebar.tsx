@@ -1,38 +1,3 @@
-// web-sidebar.tsx — Sidebar fijo de la Tienda en web ancha (NUEVO)
-// REVISIÓN PRECISA (2026-11-22, commit deb0e37 del monorepo):
-// Archivo nuevo en packages/buyer-experience/src/components/web-sidebar.tsx.
-// Hoy NO existe ningún sidebar en Tienda: en web ancha se usa la barra
-// superior (web-top-bar.tsx) y en móvil/APK el drawer (drawer-content.tsx).
-// Este componente es React Native + Expo Router + StyleSheet + tokens de
-// @agestyles/design-tokens (vía Colors en ../constants/theme.ts), con
-// <Icon name="…"> de @agestyles/icons y SearchField de @agestyles/ui-native.
-// NO es Next.js, NO usa Tailwind ni className, NO importa lucide-react
-// directo (eso solo vive dentro de packages/icons).
-//
-// PENDIENTE: este sidebar NO está conectado todavía. Para conectarlo hay
-// que tocar packages/buyer-experience/src/routes/(drawer)/_layout.tsx:
-// en web ancha, renderizar <WebSidebar /> junto al Drawer en vez de (o
-// debajo de) <WebTopBar />. Ese cambio afecta a la vez a apps/buyer-app
-// y a apps/business-app/app/tienda, porque ambas re-exportan este paquete
-// (config.ts: la Tienda se monta en "/" en buyer-app y en "/tienda" en
-// business-app; buyerHref/buyerPathname ya resuelven ese prefijo).
-// Cambiar el layout es un cambio de UX mayor y queda fuera de este paso.
-//
-// Búsqueda cableada: pasa el texto como parámetro q a la home, que lo lee
-// con useLocalSearchParams y busca en el servidor (query.q).
-// Secciones reales (máx. 5, como pide el reel), verificadas en
-// src/routes/(drawer)/(tabs)/_layout.tsx:
-//   Inicio/Catálogo, Tiendas, Favoritos, Carrito (badge real: suma de
-//   cantidades del carrito, como en web-top-bar.tsx), Cuenta.
-// "Mis pedidos" queda dentro de Cuenta, no como 6ª sección; "Novedades"
-// es un filtro de la home, no una sección; "/ofertas", "/ajustes" y
-// "/soporte" NO existen en el repo, por eso no aparecen.
-// Pie real: Mis pedidos y Notificaciones (rutas que sí existen).
-// Avatar: iniciales de 32 px, como en el reel; no hay foto de avatar
-// del cliente en customer-context (solo first_name/last_name/email).
-// Móvil: en móvil no hay sidebar fijo; el drawer + tab bar se quedan
-// como están, y el drawer lleva su propia búsqueda (drawer-content.tsx).
-
 import { Icon, type IconName } from "@agestyles/icons";
 import { SearchField } from "@agestyles/ui-native";
 import { usePathname, useRouter, type Href } from "expo-router";
@@ -166,6 +131,7 @@ export function WebSidebar() {
         onPress={() => router.push(item.href)}
         accessibilityRole="link"
         accessibilityState={{ selected: active }}
+        aria-current={active ? "page" : undefined}
         accessibilityLabel={
           collapsed ? (badge > 0 ? `${item.label}, ${badge} artículos` : item.label) : undefined
         }

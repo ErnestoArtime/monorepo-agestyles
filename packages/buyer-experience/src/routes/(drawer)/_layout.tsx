@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { View } from "react-native";
 
 import { DrawerContent } from "../../components/drawer-content";
+import { WebSidebar } from "../../components/web-sidebar";
 import { WebTopBar } from "../../components/web-top-bar";
 import { Colors } from "../../constants/theme";
 import { takeHandoffArrival } from "../../context/cart-context";
@@ -53,7 +54,7 @@ export default function DrawerLayout() {
         drawerInactiveTintColor: colors.icon,
         drawerActiveBackgroundColor: colors.surfaceMuted,
         sceneStyle: { backgroundColor: colors.background },
-        // Wide browsers navigate from the top bar; the side menu stays for phones and the APK.
+        // Desktop uses persistent navigation; compact screens keep the drawer.
         swipeEnabled: !isWideWeb,
       }}
     >
@@ -71,7 +72,10 @@ export default function DrawerLayout() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <WebTopBar />
-      <View style={{ flex: 1 }}>{drawer}</View>
+      <View style={{ flex: 1, flexDirection: "row", minHeight: 0 }}>
+        <WebSidebar />
+        <View style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>{drawer}</View>
+      </View>
     </View>
   );
 }
