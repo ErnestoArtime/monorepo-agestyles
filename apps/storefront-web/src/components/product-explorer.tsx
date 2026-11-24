@@ -7,6 +7,7 @@ import { useCallback, useMemo, useState, type MouseEvent } from "react";
 import type { HttpTypes } from "@medusajs/types";
 import type { PublicProductCategory } from "@/lib/catalog";
 import { formatPrice, productPrice } from "@/lib/catalog-format";
+import { trackProductEvent, type ApiConfig } from "@/lib/product-events";
 import { useQuickView, type QuickViewTarget } from "@/components/quick-view";
 
 export function ProductExplorer({
@@ -18,6 +19,9 @@ export function ProductExplorer({
   page = 1,
   totalProducts = products.length,
   totalPages = 1,
+  /** Only the store page passes these: a click on one of its products is that store's. */
+  sellerId,
+  apiConfig = null,
 }: {
   products: HttpTypes.StoreProduct[];
   categories?: PublicProductCategory[];
@@ -27,6 +31,8 @@ export function ProductExplorer({
   page?: number;
   totalProducts?: number;
   totalPages?: number;
+  sellerId?: string;
+  apiConfig?: ApiConfig;
 }) {
   const getPrice = useCallback(
     (product: HttpTypes.StoreProduct) => bestPrices[product.id] || productPrice(product),
@@ -51,9 +57,19 @@ export function ProductExplorer({
     return `/?${params.toString()}#catalogo`;
   };
   // A plain click opens the preview; Ctrl/Cmd/Shift/middle click still follow the link to the page.
-  const preview = (target: QuickViewTarget) => (event: MouseEvent) => {
+  // Either way the click counts when this listing belongs to one store (AG-59);
+  // a modified click also reaches the product page, where the view is recorded.
+  const preview = (target: QuickViewTarget, productId: string) => (event: MouseEvent) => {
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
       return;
+    if (sellerId) {
+      trackProductEvent(apiConfig, {
+        product_id: productId,
+        seller_id: sellerId,
+        type: "product_click",
+        surface: "vitrina",
+      });
+    }
     event.preventDefault();
     quickView.open(target);
   };
@@ -117,7 +133,7 @@ export function ProductExplorer({
                 <Link
                   className="product-image"
                   href={`/productos/${handle}`}
-                  onClick={preview(target)}
+                  onClick={preview(target, product.id)}
                   aria-label={`Vista rápida de ${product.title}`}
                 >
                   {product.thumbnail ? (
@@ -139,7 +155,7 @@ export function ProductExplorer({
                 <Link
                   href={`/productos/${handle}`}
                   className="product-title"
-                  onClick={preview(target)}
+                  onClick={preview(target, product.id)}
                 >
                   {product.title}
                 </Link>

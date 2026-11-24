@@ -4,6 +4,7 @@ import { Icon } from "@agestyles/icons";
 import { formatCupEquivalent, rateSourceLine } from "@agestyles/api-client/exchange-rate";
 import { useMemo, useState } from "react";
 import { formatPrice } from "@/lib/catalog-format";
+import { trackProductEvent } from "@/lib/product-events";
 import {
   MAX_QUANTITY,
   clampQuantity,
@@ -57,6 +58,18 @@ export function PurchasePanel({
 
   async function add() {
     if (!offer) return;
+    // The click itself is the event (AG-59), whether or not the cart accepts it.
+    if (seller) {
+      trackProductEvent(
+        cart.apiUrl ? { apiUrl: cart.apiUrl, publishableKey: cart.publishableKey } : null,
+        {
+          product_id: data.product.id,
+          seller_id: seller.id,
+          type: "add_to_cart_click",
+          surface: "vitrina",
+        },
+      );
+    }
     const ok = await cart.addOffer(offer.id, quantity);
     setAdded(ok);
     if (ok) onAdded?.();

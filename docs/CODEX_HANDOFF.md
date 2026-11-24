@@ -1828,3 +1828,38 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 
 - AG-52 publicado en Tienda desde `0a4e646`, contenedor sano. Chromium contra la web pública verificó menú en 1440 px claro/oscuro, navegación a Tiendas, búsqueda, plegado y página activa; 390 px usa navegación compacta. La prueba local del catálogo encontró restricciones de origen, por lo que la verificación final se ejecutó sobre la URL pública. Copia de reversión de la imagen web en `agestyles/buyer-web:rollback-before-ag52`. Tipado y lint del paquete compartido y exportación web correctos.
 - Las APK y el modo comprador de Negocio recibirán el cambio compartido al recompilar/publicar esas apps. El cambio visible afecta solo al escritorio web.
+
+## Muse · AG-59, páginas legales y eventos de vistas y clics (Fases 1 y 5)
+
+- Rama `muse/legales-eventos-vistas`, desde `main` 836cfef. Sin tocar `main`, sin despliegue.
+- Fase 1: rutas nuevas en la vitrina `apps/storefront-web/src/app/{privacidad,terminos,cookies}/page.tsx`
+  (metadatos + canonical, estilo `.legal-page` en `site-chrome.css`), enlazadas desde `SiteFooter`
+  y desde el pie de Tienda (`packages/buyer-experience/src/components/web-footer.tsx`, columna
+  «Legal» a `catalogo.eav-labs.com`). El texto declara GA4 como previsto pero aún no activo, los
+  eventos anónimos de esta entrega, pedidos y pagos. Contacto `hola@agestyles.com` (ya estaba en
+  el pie). [PENDIENTE] en el texto: identidad legal/domicilio del responsable y política de
+  devoluciones/cancelaciones, que no constan en el repo y no se inventaron.
+- Fase 5: módulo nuevo `packages/product-events` (`agestyles_product_event`: product_id nulo en
+  `store_view`, seller_id, tipo, superficie, session_id anónimo; sin IP ni datos personales),
+  con migración, validación, servicio (deduplicación 60 s por visita) y test de reglas.
+  Ruta pública `POST /store/agestyles/events` con zod, límite en memoria 60/min por IP (429) y
+  revalidación en el servicio. Job diario `agestyles-purge-product-events` (04:30, retención 90 días).
+  Registrado en `medusa-config.ts` y en `build:workspace-modules`; `pnpm-lock.yaml` NO se regeneró
+  (pnpm 9 en el sandbox dio EPERM al renombrar el temporal; el repo usa pnpm 10.34.9) — se
+  regenera en el merge, como pasó con el PR #3.
+- Envío de eventos: vitrina (`ProductViewTracker`/`StoreViewTracker`/`ProductStoreLink`,
+  `ProductExplorer` con `product_click` solo en la página de tienda, `PurchasePanel` con
+  `add_to_cart_click` vía `apiUrl`/`publishableKey` añadidos al contexto del carrito) y Tienda
+  (`packages/buyer-experience/src/lib/product-events.ts` con AsyncStorage; `ProductDetail`
+  registra `product_view` por vendedor al llegar las ofertas y `add_to_cart_click` al pulsar).
+  Cliente compartido en `packages/api-client/src/product-events.ts` (export añadido).
+  Decisiones asumidas en `docs/adr/ADR-006-product-events.md`: vistas totales, retención 90 días,
+  sesión anónima, límite en memoria.
+- Verificación: `node test/product-events.test.ts` ok; esbuild sin errores en todos los archivos
+  tocados (control negativo: esbuild sí falla con sintaxis rota); prettier ok. Typecheck completo
+  no corrió: sin `node_modules`, tsc solo reporta módulos sin resolver. Sin app corriendo, sin
+  migración ejecutada, sin despliegue. No se contaron las vistas rápidas (quick view) ni los
+  clics de portada/Novedades (varios vendedores sin vendedor único); la vista se registra al
+  abrir la ficha completa.
+- Fuera de alcance, como estaba acordado: GA4, Search Console, Lighthouse CI y la UI de
+  Análisis en Negocio (Fase 6).

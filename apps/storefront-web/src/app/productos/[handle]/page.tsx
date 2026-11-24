@@ -2,10 +2,11 @@ import Link from "next/link";
 import { Icon } from "@agestyles/icons";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getQuickViewData } from "@/lib/catalog";
+import { getPublicStoreConfig, getQuickViewData } from "@/lib/catalog";
 import { formatPrice } from "@/lib/catalog-format";
 import { groupBySeller } from "@/lib/quick-view-model";
 import { ProductComparisonBar, ProductComparisonToggle } from "@/components/product-comparison";
+import { ProductStoreLink, ProductViewTracker } from "@/components/product-events-tracker";
 import { ProductGallery } from "@/components/product-gallery";
 import { PurchasePanel } from "@/components/purchase-panel";
 import { formatCupEquivalent } from "@agestyles/api-client/exchange-rate";
@@ -32,6 +33,10 @@ export default async function ProductPage({ params }: PageProps) {
   if (!data) notFound();
   const { product, offers, currency, cupRate } = data;
   const buyerAppUrl = process.env.BUYER_APP_URL || "https://tienda.eav-labs.com";
+  const storeConfig = await getPublicStoreConfig();
+  const apiConfig = storeConfig
+    ? { apiUrl: storeConfig.apiUrl, publishableKey: storeConfig.publishableKey }
+    : null;
   const sellers = groupBySeller(offers);
   const bestPrice = sellers.find((seller) => seller.inStock)?.fromAmount ?? sellers[0]?.fromAmount;
   const images = product.images.length
@@ -42,6 +47,11 @@ export default async function ProductPage({ params }: PageProps) {
 
   return (
     <main className="product-page">
+      <ProductViewTracker
+        config={apiConfig}
+        productId={product.id}
+        sellerIds={sellers.map((seller) => seller.id)}
+      />
       <div className="wrap breadcrumbs">
         <Link href="/">Inicio</Link>
         <span>/</span>
@@ -121,7 +131,14 @@ export default async function ProductPage({ params }: PageProps) {
                 <div className="seller-info">
                   <h3>
                     {seller.handle ? (
-                      <Link href={`/tiendas/${seller.handle}`}>{seller.name}</Link>
+                      <ProductStoreLink
+                        config={apiConfig}
+                        href={`/tiendas/${seller.handle}`}
+                        productId={product.id}
+                        sellerId={seller.id}
+                      >
+                        {seller.name}
+                      </ProductStoreLink>
                     ) : (
                       seller.name
                     )}

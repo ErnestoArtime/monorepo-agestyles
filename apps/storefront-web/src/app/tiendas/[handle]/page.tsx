@@ -3,8 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { ProductExplorer } from "@/components/product-explorer";
+import { StoreViewTracker } from "@/components/product-events-tracker";
 import { StoreInfoCard } from "@/components/store-info-card";
-import { getSellerCatalog, getStoreInfo } from "@/lib/catalog";
+import { getPublicStoreConfig, getSellerCatalog, getStoreInfo } from "@/lib/catalog";
 import { lowestOfferPrices } from "@/lib/catalog-format";
 
 export const revalidate = 300;
@@ -36,10 +37,15 @@ export default async function StorePage({ params }: PageProps) {
 
   const { seller, products, offers, currency } = data;
   const storeInfo = await getStoreInfo(seller.handle);
+  const storeConfig = await getPublicStoreConfig();
+  const apiConfig = storeConfig
+    ? { apiUrl: storeConfig.apiUrl, publishableKey: storeConfig.publishableKey }
+    : null;
   const sortedProducts = [...products].sort((a, b) => a.title.localeCompare(b.title, "es"));
 
   return (
     <main className="seller-store-page">
+      <StoreViewTracker config={apiConfig} sellerId={seller.id} />
       <div className="wrap breadcrumbs">
         <Link href="/">Inicio</Link>
         <span>/</span>
@@ -104,6 +110,8 @@ export default async function StorePage({ params }: PageProps) {
           <ProductExplorer
             products={sortedProducts}
             bestPrices={lowestOfferPrices(offers, currency)}
+            sellerId={seller.id}
+            apiConfig={apiConfig}
           />
         ) : (
           <div className="empty-state">
