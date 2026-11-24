@@ -1923,3 +1923,78 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
   checkout de Tienda porque la marca del traspaso (`cart_handoff_source`) se
   borra al cargar el carrito y no hay forma fiable de distinguir un checkout
   nacido en Tienda de uno que llegó desde la vitrina.
+
+## Muse · AG-60, pasos de CI manuales, auditoría y verificación de AG-59 en el laboratorio
+
+- Ernesto dijo que tomara los pendientes que más se pudieran avanzar y dejara
+  documentado lo hecho. Rama `muse/ci-y-verificacion-lab` desde `main` 6b35352,
+  sin tocar `main`, sin despliegues, sin migraciones ni escrituras en
+  producción. Reclamo en `docs/TABLERO.md` (AG-60 y AG-10) antes de tocar
+  código.
+- CI: los 4 pasos que quedaron para pegar a mano ya están en
+  `.github/workflows/ci.yml` (36 pasos; YAML validado con Python, prettier
+  ok): `pnpm audit --audit-level=high` como paso 04, verificación de
+  comprobantes manuales en el lab desechable como paso 21 (mismo patrón que
+  los pasos vecinos, sin cablear `verify-price-revision.mjs` por diseño),
+  sonda de abuso de subidas (413) dentro del paso de rutas de vendedor
+  (70.000 bytes a inventory-movements y 8.388.609 a `/vendor/uploads`, ambos
+  deben dar 413; la premisa se verificó en `seller-lab-gateway.mjs`) y
+  Lighthouse como pasos 29-30 con artefacto (la compilación de la vitrina se
+  mueve antes de parar la API desechable). Con esto, `docs/ci/lighthouse-manual-apply.md`
+  y el `ci-manual-apply.md` local quedan sustituidos; no se borran en esta rama.
+- Auditoría: `pnpm audit --audit-level=high` falló primero con 5 altas
+  (PostCSS GHSA-6g55-p6wh-862q y GHSA-r28c-9q8g-f849, image-size
+  GHSA-5p2g-fcmc-qvqq y GHSA-w3rx-r6r6-pgpr, decode-uri-component
+  GHSA-qr28-fpjm-wq7f). Se arreglaron con overrides en `pnpm-workspace.yaml`
+  (postcss 8.5.33, image-size 2.0.3, decode-uri-component 0.5.1); la
+  auditoría pasa ahora con 0 altas y 6 moderadas. Corrección: el primer
+  intento puso los overrides en el `package.json` raíz y eso reemplazó el
+  override existente de `@opentelemetry/api`; se revirtió y quedaron en
+  `pnpm-workspace.yaml` junto al existente. El archivo se normalizó a
+  comillas dobles porque prettier lo exige y `format:check` de CI lo
+  comprueba (en `main` ya fallaba). Compatibilidad: image-size 2.x exporta
+  un objeto y Metro llama a `.default`, comprobado con un PNG real del repo.
+- AG-59 verificado en el VPS: `pnpm test` exit 0 (16 proyectos) y `pnpm
+  typecheck` exit 0 (21 proyectos), primera vez que el typecheck completo
+  corre sobre este `main`. El lockfile ya llevaba `@agestyles/product-events`
+  desde 6b35352, así que ese pendiente estaba hecho. Migración de eventos
+  aplicada solo en el lab (`pnpm migrate` con el patrón de CI, 9 migraciones
+  incluida `Migration20261124120000`; copia previa de la base del lab en
+  `/tmp/lab-db-before-ag60-migrate.dump`). Flujo de eventos de extremo a
+  extremo por el gateway del lab: POST → 201 con el evento creado, repetido
+  con la misma sesión → 200 `deduped: true`; la fila de prueba se borró.
+- Hallazgo: el gateway de compradores bloqueaba `POST
+  /store/agestyles/events` con 404 «Route not available in the buyer lab»;
+  sin esa regla ningún evento llegaba a la API, ni en el lab ni en
+  producción. Se añadió la regla en `tools/scripts/buyer-lab-gateway.mjs` y
+  se reinició solo el gateway del lab; el de producción no se tocó (la regla
+  tendrá efecto allí cuando Ernesto lo redepliegue). La ruta exige la clave
+  publicable como todas las rutas de tienda; en Medusa 2.22 la tabla se
+  llama `api_key` y la cabecera lleva el `token`, no el `id` `apk_…`.
+- AG-10: el contenedor `agestyles-buyer-api` corría una imagen del 16 nov,
+  anterior a ec0bd17 (puerto 19080 → 19081). Imagen reconstruida desde el
+  árbol actual (`docker compose -f infra/compose/buyer-web.yaml build
+  commerce-api`, exit 0, `dc0a2895ef03`) y contenedor recreado;
+  `19081/health` 200 desde los 60 s; gateways 19182 y 19183 ya no dan 502.
+  La imagen vieja no se pudo guardar como respaldo (tag y commit fallaron:
+  ya estaba podada del almacén); el retorno es reconstruir desde `b06bc26`.
+- AG-51 revisada contra el código (commits `ff50e36` y `8cbfde3`) y sus
+  tests (3 pass): conforme, sin hallazgos bloqueantes. La corrección es
+  unidireccional por diseño: solo limpia el aviso de Mercur cuando confirma
+  el stock, nunca añade uno nuevo.
+- Lighthouse real en el VPS (vitrina 18084, `lighthouse@12`, preset
+  desktop): inicio 0,97, tiendas 0,93, novedades 0,69 (presupuesto 0,8). El
+  VPS no tenía Chrome; se instaló Chrome 158 con `@puppeteer/browsers` en el
+  home de Ernesto. El comprobador se cambió para saltar el INP sin dato (en
+  headless no existe la auditoría; se mide en campo con web-vitals); la
+  única brecha que queda es novedades, señal real que se deja fallando para
+  que Ernesto decida. Informes en `/tmp/agestyles-lighthouse/` del VPS.
+- Verificación: `pnpm test` y `pnpm typecheck` en verde (arriba); prettier
+  ok en todos los archivos tocados; `pnpm audit` en verde. No verificado:
+  ejecución real de CI (solo corre al abrir el PR), sonda 413 con petición
+  real, app nativa Android, flujo de compra completo. Disco del VPS al 93%
+  (15 G libres) tras construir la imagen de la API.
+- Documento de diseño: `docs/design/AG-60-ci-manual-y-auditoria.md`.
+  Pendientes de Ernesto: revisar y fusionar el PR, redeplegar el gateway de
+  compradores de producción, GA4, Search Console, identidad legal y
+  devoluciones (AG-59).
