@@ -54,6 +54,20 @@ export type StockItem = {
 
 export type Stage = "unprepared" | "preparing" | "ready" | "shipped";
 
+/** One own view/click event of the store (AG-59, Fase 6). */
+export type TrafficEvent = {
+  product_id: string | null;
+  type: "product_view" | "store_view" | "product_click" | "add_to_cart_click";
+  created_at: string | Date;
+};
+
+/** Title and thumbnail for a product with traffic but no sales in the period. */
+export type TrafficProduct = {
+  product_id: string;
+  title: string;
+  thumbnail: string | null;
+};
+
 export type AnalyticsInput = {
   from: Date;
   to: Date;
@@ -71,6 +85,10 @@ export type AnalyticsInput = {
   agents: { id: string; name: string }[];
   /** Only owners and the store's administration see sales agents and commissions. */
   includeAgents: boolean;
+  /** Own view/click events of the store in the period (AG-59, Fase 6). */
+  trafficEvents?: TrafficEvent[];
+  /** Titles for products with traffic but no sales in the period. */
+  trafficProducts?: TrafficProduct[];
   thresholds?: { staleDays?: number; coverDays?: number };
 };
 
@@ -198,6 +216,75 @@ export function buildAnalytics(input: AnalyticsInput) {
         num(line.quantity),
         num(line.unit_price) * num(line.quantity),
       );
+
+  // Traffic (AG-59, Fase 6): own views and clicks of the store in the period.
+  // Views are counted in full (ADR-006); CTR is clicks over product views.
+  // "Orders" per product counts live orders of the period that contain it,
+  // so a product with views but no orders is visible instead of hidden.
+  const trafficEvents = (input.trafficEvents ?? []).filter((event) => {
+    const t = new Date(event.created_at).getTime();
+    return t >= input.from.getTime() && t <= input.to.getTime();
+  });
+  const countTraffic = (type: TrafficEvent["type"]) =>
+    trafficEvents.filter((event) => event.type === type).length;
+  const storeViews = countTraffic("store_view");
+  const productViews = countTraffic("product_view");
+  const productClicks = countTraffic("product_click");
+  const addToCartClicks = countTraffic("add_to_cart_click");
+  const trafficDaily = new Map<string, { views: number; clicks: number }>();
+  for (let t = Date.parse(dayKey(input.from)); t <= input.to.getTime(); t += DAY) {
+    trafficDaily.set(dayKey(new Date(t)), { views: 0, clicks: 0 });
+  }
+  for (const event of trafficEvents) {
+    const entry = trafficDaily.get(dayKey(new Date(event.created_at)));
+    if (!entry) continue;
+    if (event.type === "product_view" || event.type === "store_view") entry.views += 1;
+    if (event.type === "product_click") entry.clicks += 1;
+  }
+  const trafficByProduct = new Map<
+    string,
+    { views: number; clicks: number; add_to_cart: number }
+  >();
+  for (const event of trafficEvents) {
+    if (!event.product_id) continue;
+    const entry = trafficByProduct.get(event.product_id) ?? {
+      views: 0,
+      clicks: 0,
+      add_to_cart: 0,
+    };
+    if (event.type === "product_view") entry.views += 1;
+    if (event.type === "product_click") entry.clicks += 1;
+    if (event.type === "add_to_cart_click") entry.add_to_cart += 1;
+    trafficByProduct.set(event.product_id, entry);
+  }
+  const ordersByProduct = new Map<string, number>();
+  for (const order of input.orders.filter(liveOrder)) {
+    const ids = new Set(
+      (order.items ?? []).map((item) => item.product_id).filter((id): id is string => !!id),
+    );
+    for (const id of ids) ordersByProduct.set(id, (ordersByProduct.get(id) ?? 0) + 1);
+  }
+  const trafficInfo = new Map((input.trafficProducts ?? []).map((item) => [item.product_id, item]));
+  const trafficRate = (views: number, clicks: number) =>
+    views ? round((clicks / views) * 100) : null;
+  const topTraffic = [...trafficByProduct.entries()]
+    .map(([product_id, counts]) => {
+      const sold = products.get(product_id);
+      const info = trafficInfo.get(product_id);
+      return {
+        product_id,
+        title: sold?.title ?? info?.title ?? "Producto",
+        thumbnail: sold?.thumbnail ?? info?.thumbnail ?? null,
+        views: counts.views,
+        clicks: counts.clicks,
+        ctr: trafficRate(counts.views, counts.clicks),
+        add_to_cart: counts.add_to_cart,
+        orders: ordersByProduct.get(product_id) ?? 0,
+        units: sold?.units ?? 0,
+      };
+    })
+    .sort((a, b) => b.views - a.views || b.clicks - a.clicks)
+    .slice(0, 10);
 
   // Rotation and stock cover from the last 90 days of sales.
   const lastSale = new Map<string, number>();
@@ -331,6 +418,15 @@ export function buildAnalytics(input: AnalyticsInput) {
       ...pending,
       oldest: oldest.slice(0, 5),
       manual_payments: input.pendingPayments,
+    },
+    traffic: {
+      store_views: storeViews,
+      product_views: productViews,
+      product_clicks: productClicks,
+      add_to_cart_clicks: addToCartClicks,
+      ctr: trafficRate(productViews, productClicks),
+      daily: [...trafficDaily].map(([date, value]) => ({ date, ...value })),
+      top_products: topTraffic,
     },
     agents,
     thresholds: { stale_days: staleDays, cover_days: coverDays },

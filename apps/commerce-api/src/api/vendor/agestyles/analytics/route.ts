@@ -4,11 +4,14 @@ import {
   AGESTYLES_MANUAL_PAYMENTS_MODULE,
   type ManualPaymentsService,
 } from "@agestyles/manual-payments";
+import { AGESTYLES_PRODUCT_EVENTS_MODULE } from "@agestyles/product-events";
 import {
   buildAnalytics,
   type AnalyticsAgentSale,
   type AnalyticsOrder,
   type StockItem,
+  type TrafficEvent,
+  type TrafficProduct,
 } from "../../../../lib/analytics";
 import {
   commissionsService,
@@ -49,9 +52,11 @@ function parseDate(value: unknown) {
 }
 
 /**
- * «Análisis» of the selected store (AG-39): sales by period against the previous one, best
- * sellers, products without rotation, products running out, open orders by stage and, for
- * the owner and the store's administration, sales agents and commissions. Read only.
+ * «Análisis» of the selected store (AG-39, traffic in AG-59 Fase 6): sales by period against
+ * the previous one, best sellers, products without rotation, products running out, open orders
+ * by stage, the store's own views and clicks per product, and, for the owner and the store's
+ * administration, sales agents and commissions. Read only. The actor is always scoped to the
+ * selected store (resolveCommissionActor): a seller only ever sees their own store's traffic.
  */
 export async function GET(req: Request, res: MedusaResponse) {
   const actor = await resolveCommissionActor(req);
@@ -92,7 +97,15 @@ export async function GET(req: Request, res: MedusaResponse) {
     : [];
 
   const service = commissionsService(req);
-  const [agentSales, agents, stockOffers, pendingPayments] = await Promise.all([
+  // The generated list method is not declared on the service class, so it
+  // is reached through its structural shape (AG-59, Fase 6).
+  const trafficService = req.scope.resolve(AGESTYLES_PRODUCT_EVENTS_MODULE) as unknown as {
+    listProductEvents: (
+      filters: Record<string, unknown>,
+      options?: Record<string, unknown>,
+    ) => Promise<unknown[]>;
+  };
+  const [agentSales, agents, stockOffers, pendingPayments, trafficEvents] = await Promise.all([
     service.listAgentSales(
       { seller_id: sellerId, created_at: { $gte: historyFrom } },
       { take: 20_000, order: { created_at: "ASC" } },
@@ -118,6 +131,16 @@ export async function GET(req: Request, res: MedusaResponse) {
       .listManualPayments({ seller_id: sellerId, status: "pending" })
       .then((rows: unknown[]) => rows.length)
       .catch(() => 0),
+    // Own views and clicks of this store in the period (AG-59, Fase 6). A
+    // failure here must not take down the whole panel: traffic is empty
+    // instead of the sales the store already had.
+    trafficService
+      .listProductEvents(
+        { seller_id: sellerId, created_at: { $gte: from, $lte: to } },
+        { take: 20_000, order: { created_at: "ASC" } },
+      )
+      .then((rows) => rows as unknown as TrafficEvent[])
+      .catch(() => [] as TrafficEvent[]),
   ]);
 
   // Stock of this store's own offers (Mercur keeps one inventory item per offer).
@@ -204,6 +227,18 @@ export async function GET(req: Request, res: MedusaResponse) {
     pendingPayments,
     agents: agents.map((agent) => ({ id: agent.id, name: agent.member_email ?? agent.code })),
     includeAgents: actor.isManager,
+    trafficEvents,
+    trafficProducts: (stockOffers.data as OfferStock[])
+      .map((offer): TrafficProduct | null => {
+        const product_id = offer.product?.id ?? offer.product_id ?? "";
+        if (!product_id) return null;
+        return {
+          product_id,
+          title: offer.product?.title ?? "Producto",
+          thumbnail: offer.product?.thumbnail ?? null,
+        };
+      })
+      .filter((item): item is TrafficProduct => item !== null),
   });
   res.json(result);
 }

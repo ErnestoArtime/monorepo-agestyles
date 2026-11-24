@@ -122,6 +122,57 @@ test("sales, comparison, rotation, cover and agents", () => {
   assert.equal(result.agents[0].commission, 3.5);
 });
 
+test("traffic: views, clicks, CTR, cart clicks and orders per product (AG-59)", () => {
+  const base = {
+    from: daysAgo(29),
+    to: now,
+    now,
+    orders: [
+      order("o1", daysAgo(2), [{ product_id: "p1", title: "Café", quantity: 2, unit_price: 5 }]),
+    ],
+    previousOrders: [],
+    openOrders: [],
+    agentSales: [],
+    previousAgentSales: [],
+    recentSales: [],
+    stock: [],
+    pendingPayments: 0,
+    agents: [],
+    includeAgents: false,
+  };
+  const result = buildAnalytics({
+    ...base,
+    trafficEvents: [
+      { product_id: null, type: "store_view", created_at: daysAgo(2) },
+      { product_id: null, type: "store_view", created_at: daysAgo(1) },
+      { product_id: "p1", type: "product_view", created_at: daysAgo(2) },
+      { product_id: "p1", type: "product_view", created_at: daysAgo(2) },
+      { product_id: "p1", type: "product_view", created_at: daysAgo(40) }, // outside the period
+      { product_id: "p1", type: "product_click", created_at: daysAgo(2) },
+      { product_id: "p1", type: "add_to_cart_click", created_at: daysAgo(2) },
+      { product_id: "p2", type: "product_view", created_at: daysAgo(1) },
+    ],
+    trafficProducts: [{ product_id: "p2", title: "Miel", thumbnail: null }],
+  });
+  assert.equal(result.traffic.store_views, 2);
+  assert.equal(result.traffic.product_views, 3);
+  assert.equal(result.traffic.product_clicks, 1);
+  assert.equal(result.traffic.add_to_cart_clicks, 1);
+  assert.equal(result.traffic.ctr, 33.33);
+  assert.equal(result.traffic.daily.length, 30);
+  assert.equal(result.traffic.top_products[0].product_id, "p1");
+  assert.equal(result.traffic.top_products[0].views, 2);
+  assert.equal(result.traffic.top_products[0].clicks, 1);
+  assert.equal(result.traffic.top_products[0].ctr, 50);
+  assert.equal(result.traffic.top_products[0].add_to_cart, 1);
+  assert.equal(result.traffic.top_products[0].orders, 1);
+  assert.equal(result.traffic.top_products[0].units, 2);
+  // p2 has views but no sales: its title comes from the store's offers.
+  assert.equal(result.traffic.top_products[1].product_id, "p2");
+  assert.equal(result.traffic.top_products[1].title, "Miel");
+  assert.equal(result.traffic.top_products[1].orders, 0);
+});
+
 test("agents are hidden without the right", () => {
   const result = buildAnalytics({
     from: daysAgo(6),

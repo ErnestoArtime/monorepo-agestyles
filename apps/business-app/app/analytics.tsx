@@ -22,6 +22,14 @@ type ProductRow = {
   title: string;
   thumbnail: string | null;
 };
+type TrafficProductRow = ProductRow & {
+  views: number;
+  clicks: number;
+  ctr: number | null;
+  add_to_cart: number;
+  orders: number;
+  units: number;
+};
 type Analytics = {
   from: string;
   to: string;
@@ -44,6 +52,15 @@ type Analytics = {
     shipped: number;
     manual_payments: number;
     oldest: { id: string; display_id: number | null; stage: string; hours: number }[];
+  };
+  traffic: {
+    store_views: number;
+    product_views: number;
+    product_clicks: number;
+    add_to_cart_clicks: number;
+    ctr: number | null;
+    daily: { date: string; views: number; clicks: number }[];
+    top_products: TrafficProductRow[];
   };
   agents:
     { agent_id: string; name: string; count: number; amount: number; commission: number }[] | null;
@@ -74,9 +91,11 @@ const age = (hours: number) =>
   hours < 24 ? `${hours} h` : `${Math.floor(hours / 24)} ${hours < 48 ? "día" : "días"}`;
 
 /**
- * «Análisis» (AG-39): how the store is doing in a period, compared with the previous one,
- * and what needs attention (stock running out, products that do not sell, open orders).
- * Gestores y comisiones only for the owner and the store's administration (server rule).
+ * «Análisis» (AG-39, vistas y clics en AG-59 Fase 6): how the store is doing in a period,
+ * compared with the previous one, and what needs attention (stock running out, products that
+ * do not sell, open orders). Gestores y comisiones only for the owner and the store's
+ * administration (server rule). Traffic is the store's own anonymous views and clicks: the
+ * server only ever returns the selected store's events, never another store's.
  */
 export default function AnalyticsScreen() {
   const theme = useBusinessTheme();
@@ -120,6 +139,10 @@ export default function AnalyticsScreen() {
     () => Math.max(1, ...(data?.sales.daily ?? []).map((day) => day.amount)),
     [data],
   );
+  const maxViews = useMemo(
+    () => Math.max(1, ...(data?.traffic.daily ?? []).map((day) => day.views)),
+    [data],
+  );
   const pendingTotal = data
     ? data.pending_orders.unprepared +
       data.pending_orders.preparing +
@@ -132,7 +155,7 @@ export default function AnalyticsScreen() {
       skeleton="stats"
       backLabel="Más"
       title="Análisis"
-      subtitle="Ventas, productos y pedidos de tu tienda en el período elegido."
+      subtitle="Ventas, vistas y clics de tu tienda en el período elegido."
       loading={loading && !data}
       error={error}
       onRefresh={() => void load()}
@@ -194,6 +217,52 @@ export default function AnalyticsScreen() {
             </View>
           </Section>
 
+          <CardGrid minColumnWidth={200} maxColumns={4}>
+            <Kpi label="Vistas de la tienda" value={String(data.traffic.store_views)} />
+            <Kpi label="Vistas de productos" value={String(data.traffic.product_views)} />
+            <Kpi label="Clics en productos" value={String(data.traffic.product_clicks)} />
+            <Kpi
+              label="CTR (clics / vistas)"
+              value={data.traffic.ctr === null ? "—" : `${data.traffic.ctr} %`}
+              detail={`${data.traffic.add_to_cart_clicks} clics en «Añadir al carrito»`}
+            />
+          </CardGrid>
+
+          <Section title="Vistas por día">
+            <Text style={[styles.pad, styles.muted]}>
+              Vistas de la tienda y de sus productos, en la vitrina y en Tienda. Las vistas se
+              cuentan desde que se publicó esta versión; los días anteriores muestran cero.
+            </Text>
+            <View style={styles.chart} accessibilityLabel="Gráfico de vistas por día">
+              {data.traffic.daily.map((day) => (
+                <View
+                  key={day.date}
+                  style={styles.barSlot}
+                  accessibilityLabel={`${day.date}: ${day.views} vistas`}
+                >
+                  <View
+                    style={[
+                      styles.bar,
+                      {
+                        height: `${Math.max(day.views ? 4 : 1, (day.views / maxViews) * 100)}%`,
+                        backgroundColor: day.views ? theme.action : theme.border,
+                      },
+                    ]}
+                  />
+                </View>
+              ))}
+            </View>
+            <View style={styles.axis}>
+              <Text style={styles.muted}>
+                {data.traffic.daily[0]?.date.slice(5).split("-").reverse().join("/")}
+              </Text>
+              <Text style={styles.muted}>Máximo diario {maxViews} vistas</Text>
+              <Text style={styles.muted}>
+                {data.traffic.daily.at(-1)?.date.slice(5).split("-").reverse().join("/")}
+              </Text>
+            </View>
+          </Section>
+
           <CardGrid minColumnWidth={340}>
             <Section title={`Pedidos por atender (${pendingTotal})`}>
               <View style={styles.stages}>
@@ -236,6 +305,28 @@ export default function AnalyticsScreen() {
                   product={product}
                   lead={`${index + 1}`}
                   detail={`${product.units} uds · ${money(product.amount)}`}
+                />
+              ))}
+            </Section>
+
+            <Section title="Productos más vistos">
+              <Text style={[styles.pad, styles.muted]}>
+                Vistas, clics y pedidos del período. Un producto con muchas vistas y pocos pedidos
+                se ve pero no se compra.
+              </Text>
+              {data.traffic.top_products.length ? null : (
+                <Text style={[styles.pad, styles.muted]}>Sin vistas en este período.</Text>
+              )}
+              {data.traffic.top_products.map((product, index) => (
+                <ProductLine
+                  key={product.product_id}
+                  product={product}
+                  lead={`${index + 1}`}
+                  detail={`${product.views} vistas · ${product.clicks} clics · CTR ${
+                    product.ctr === null ? "—" : `${product.ctr} %`
+                  } · ${product.add_to_cart} al carrito · ${product.orders} ${
+                    product.orders === 1 ? "pedido" : "pedidos"
+                  }`}
                 />
               ))}
             </Section>
