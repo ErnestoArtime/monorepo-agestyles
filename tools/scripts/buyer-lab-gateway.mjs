@@ -85,6 +85,8 @@ const rules = [
   ["GET", /^\/store\/catalog-comparison$/],
   ["GET", /^\/store\/agestyles\/exchange-rate$/],
   ["GET", /^\/store\/agestyles\/(catalog|home|maintenance|shipping-options|store-info)$/],
+  // Anonymous product/store events (AG-59/AG-60): public by design, validated twice in the API.
+  ["POST", /^\/store\/agestyles\/events$/],
   ["GET", /^\/store\/agestyles\/sales-agents\/[a-z0-9]{4,12}$/i],
   ["GET", /^\/store\/products(?:\/prod_[a-z0-9]+)?$/i],
   ["POST", /^\/store\/carts$/],
