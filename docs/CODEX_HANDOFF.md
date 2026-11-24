@@ -1828,3 +1828,98 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 
 - AG-52 publicado en Tienda desde `0a4e646`, contenedor sano. Chromium contra la web pública verificó menú en 1440 px claro/oscuro, navegación a Tiendas, búsqueda, plegado y página activa; 390 px usa navegación compacta. La prueba local del catálogo encontró restricciones de origen, por lo que la verificación final se ejecutó sobre la URL pública. Copia de reversión de la imagen web en `agestyles/buyer-web:rollback-before-ag52`. Tipado y lint del paquete compartido y exportación web correctos.
 - Las APK y el modo comprador de Negocio recibirán el cambio compartido al recompilar/publicar esas apps. El cambio visible afecta solo al escritorio web.
+
+## Muse · AG-59, páginas legales y eventos de vistas y clics (Fases 1 y 5)
+
+- Rama `muse/legales-eventos-vistas`, desde `main` 836cfef. Sin tocar `main`, sin despliegue.
+- Fase 1: rutas nuevas en la vitrina `apps/storefront-web/src/app/{privacidad,terminos,cookies}/page.tsx`
+  (metadatos + canonical, estilo `.legal-page` en `site-chrome.css`), enlazadas desde `SiteFooter`
+  y desde el pie de Tienda (`packages/buyer-experience/src/components/web-footer.tsx`, columna
+  «Legal» a `catalogo.eav-labs.com`). El texto declara GA4 como previsto pero aún no activo, los
+  eventos anónimos de esta entrega, pedidos y pagos. Contacto `hola@agestyles.com` (ya estaba en
+  el pie). [PENDIENTE] en el texto: identidad legal/domicilio del responsable y política de
+  devoluciones/cancelaciones, que no constan en el repo y no se inventaron.
+- Fase 5: módulo nuevo `packages/product-events` (`agestyles_product_event`: product_id nulo en
+  `store_view`, seller_id, tipo, superficie, session_id anónimo; sin IP ni datos personales),
+  con migración, validación, servicio (deduplicación 60 s por visita) y test de reglas.
+  Ruta pública `POST /store/agestyles/events` con zod, límite en memoria 60/min por IP (429) y
+  revalidación en el servicio. Job diario `agestyles-purge-product-events` (04:30, retención 90 días).
+  Registrado en `medusa-config.ts` y en `build:workspace-modules`; `pnpm-lock.yaml` NO se regeneró
+  (pnpm 9 en el sandbox dio EPERM al renombrar el temporal; el repo usa pnpm 10.34.9) — se
+  regenera en el merge, como pasó con el PR #3.
+- Envío de eventos: vitrina (`ProductViewTracker`/`StoreViewTracker`/`ProductStoreLink`,
+  `ProductExplorer` con `product_click` solo en la página de tienda, `PurchasePanel` con
+  `add_to_cart_click` vía `apiUrl`/`publishableKey` añadidos al contexto del carrito) y Tienda
+  (`packages/buyer-experience/src/lib/product-events.ts` con AsyncStorage; `ProductDetail`
+  registra `product_view` por vendedor al llegar las ofertas y `add_to_cart_click` al pulsar).
+  Cliente compartido en `packages/api-client/src/product-events.ts` (export añadido).
+  Decisiones asumidas en `docs/adr/ADR-006-product-events.md`: vistas totales, retención 90 días,
+  sesión anónima, límite en memoria.
+- Verificación: `node test/product-events.test.ts` ok; esbuild sin errores en todos los archivos
+  tocados (control negativo: esbuild sí falla con sintaxis rota); prettier ok. Typecheck completo
+  no corrió: sin `node_modules`, tsc solo reporta módulos sin resolver. Sin app corriendo, sin
+  migración ejecutada, sin despliegue. No se contaron las vistas rápidas (quick view) ni los
+  clics de portada/Novedades (varios vendedores sin vendedor único); la vista se registra al
+  abrir la ficha completa.
+- Fuera de alcance, como estaba acordado: GA4, Search Console, Lighthouse CI y la UI de
+  Análisis en Negocio (Fase 6).
+
+## Muse · AG-59, ampliación del PR #4 a todas las fases
+
+- Ernesto pidió que el PR #4 abarcara todas las fases, no solo la 1 y la 5.
+  Misma rama `muse/legales-eventos-vistas`, sin tocar `main`, sin despliegue.
+  Reclamo actualizado en `docs/TABLERO.md` (AG-59) antes de tocar código.
+- Fase 6: `apps/commerce-api/src/lib/analytics.ts` (`buildAnalytics` acepta
+  `trafficEvents`/`trafficProducts` y devuelve `traffic`: vistas de tienda,
+  vistas de producto, clics, clics en «Añadir al carrito», CTR, serie diaria
+  y 10 productos más vistos con pedidos cruzados con AG-39) y
+  `src/api/vendor/agestyles/analytics/route.ts` (lee los eventos de la tienda
+  en el período, tope 20.000; si falla, el tráfico queda vacío sin tumbar el
+  panel). `apps/business-app/app/analytics.tsx`: KPIs de tráfico, gráfico
+  «Vistas por día» y sección «Productos más vistos», mismos períodos. El
+  aislamiento lo da `resolveCommissionActor`: cada vendedor solo ve su
+  tienda; el superadmin selecciona cada tienda, no hay agregado multi-tienda.
+  Test nuevo en `apps/commerce-api/test/analytics.test.mjs`.
+- Fase 3: `apps/storefront-web/src/app/layout.tsx` añade `verification.google`
+  solo con `GOOGLE_SITE_VERIFICATION`; sin la variable no hay meta tag. Pasos
+  de creación y verificación de la propiedad, en el documento de diseño.
+- Fase 4: GA4 solo con consentimiento y solo con measurement ID. Vitrina:
+  `src/lib/{analytics-consent,google-analytics}.ts`,
+  `src/components/{google-analytics,cookie-banner}.tsx`, montados en el
+  layout; eventos `page_view`, `view_item`, `add_to_cart`, `begin_checkout`
+  (este último solo en «Ir a pagar», para no contar dos veces el mismo
+  checkout en Tienda). CSP de informe en `next.config.ts` con los dominios de
+  Google. Tienda web: `packages/buyer-experience/src/lib/{analytics-consent,
+  google-analytics}.ts` y `src/components/{google-analytics,cookie-banner}.tsx`,
+  montados en `src/routes/_layout.tsx`; `view_item` y `add_to_cart` en
+  `product-detail.tsx`. La app nativa Android queda fuera (necesitaría
+  Firebase). `/privacidad` y `/cookies` ya no dicen que GA4 está «previsto»:
+  dicen que está instalado pero inactivo sin consentimiento ni ID. Variables
+  en los dos `.env.example` (sin valores reales).
+- Fase 2: `apps/storefront-web/src/lib/web-vitals.ts` (PerformanceObserver,
+  sin dependencia nueva: el paquete `web-vitals` exigiría regenerar el
+  lockfile) y `src/components/web-vitals-reporter.tsx` (a GA4 como
+  `web_vitals` cuando está activo; consola en desarrollo). CI: paso nuevo de
+  Lighthouse en `.github/workflows/ci.yml` (la compilación de la vitrina se
+  mueve antes de parar la API desechable, para medir con datos reales) con
+  `tools/scripts/check-lighthouse-budgets.mjs` y artefacto
+  `lighthouse-storefront`; YAML listo para pegar a mano en
+  `docs/ci/lighthouse-manual-apply.md` si el push da 403 en el workflow.
+- Documentación: `docs/design/AG-59-legales-analytics-vistas-clics.md`
+  (proceso completo: estado inicial, fases, decisiones, alternativas,
+  modelo de datos, privacidad, verificación en laboratorio, pendientes
+  externos) y actualización de `docs/adr/ADR-006-product-events.md`.
+- Verificación: `node --test apps/commerce-api/test/analytics.test.mjs` (4
+  pass) y `node packages/product-events/test/product-events.test.ts` ok;
+  esbuild sin errores en los 23 archivos TS/TSX tocados (control negativo:
+  esbuild sí falla con sintaxis rota); prettier ok en todo lo tocado salvo
+  los `.env.example`, que no tienen parser y quedan fuera del `format:check`
+  de CI por extensión; `check-lighthouse-budgets.mjs` probado con informes
+  falsos (falla con un presupuesto incumplido, pasa sin él); YAML de CI
+  validado con Python. Typecheck completo no corrió (sin `node_modules`).
+  Sin app corriendo, sin migración ejecutada, sin despliegue, sin Lighthouse
+  real corrido, sin GA4 con ID real.
+- Decisión registrada: `begin_checkout` no se envía en la pantalla de
+  checkout de Tienda porque la marca del traspaso (`cart_handoff_source`) se
+  borra al cargar el carrito y no hay forma fiable de distinguir un checkout
+  nacido en Tienda de uno que llegó desde la vitrina.

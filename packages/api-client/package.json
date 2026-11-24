@@ -11,6 +11,7 @@
     "./order-tracking": "./src/order-tracking.ts",
     "./exchange-rate": "./src/exchange-rate.ts",
     "./store-info": "./src/store-info.ts",
+    "./product-events": "./src/product-events.ts",
     "./seller-contacts": "./src/seller-contacts.ts",
     "./catalog-comparison": "./src/catalog-comparison.ts",
     "./notifications": "./src/notifications.ts",

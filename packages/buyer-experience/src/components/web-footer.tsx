@@ -13,6 +13,8 @@ import { rateSourceLine } from "@agestyles/api-client/exchange-rate";
 const HOME = "/(drawer)/(tabs)/(home)";
 
 /** Website footer for wide browsers: site map, account links and the Android app. */
+const CATALOG_URL = "https://catalogo.eav-labs.com";
+
 export function WebFooter() {
   const colors = Colors[useColorScheme() ?? "light"];
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -22,6 +24,19 @@ export function WebFooter() {
 
   const link = (label: string, href: Href) => (
     <Pressable key={label} onPress={() => router.push(href)} accessibilityRole="link">
+      {({ hovered }: { hovered?: boolean; pressed: boolean }) => (
+        <Text style={[styles.link, hovered && styles.linkHover]}>{label}</Text>
+      )}
+    </Pressable>
+  );
+
+  /** The legal pages live in the public catalog (AG-59); Tienda links out to them. */
+  const externalLink = (label: string, path: string) => (
+    <Pressable
+      key={label}
+      onPress={() => void Linking.openURL(`${CATALOG_URL}${path}`)}
+      accessibilityRole="link"
+    >
       {({ hovered }: { hovered?: boolean; pressed: boolean }) => (
         <Text style={[styles.link, hovered && styles.linkHover]}>{label}</Text>
       )}
@@ -56,6 +71,12 @@ export function WebFooter() {
           {link("Favoritos", buyerHref("/(drawer)/(tabs)/favorites"))}
           {link("Mis pedidos", buyerHref("/(drawer)/(tabs)/account/orders"))}
           {link("Carrito", buyerHref("/(drawer)/(tabs)/(cart)"))}
+        </View>
+        <View style={styles.column}>
+          <Text style={styles.heading}>Legal</Text>
+          {externalLink("Privacidad", "/privacidad")}
+          {externalLink("Términos", "/terminos")}
+          {externalLink("Cookies", "/cookies")}
         </View>
         {apkUrl ? (
           <View style={styles.column}>

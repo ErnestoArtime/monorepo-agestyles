@@ -8,6 +8,8 @@ import { useEffect, useMemo } from "react";
 
 import { Colors } from "../constants/theme";
 import { CartProvider } from "../context/cart-context";
+import { CookieBanner } from "../components/cookie-banner";
+import { GoogleAnalytics } from "../components/google-analytics";
 import { NotificationsLayer } from "../components/notifications-layer";
 import { CustomerProvider } from "../context/customer-context";
 import { FavoritesProvider } from "../context/favorites-context";
@@ -163,6 +165,8 @@ function RootNavigation() {
                       />
                     </Stack>
                     <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+                    <GoogleAnalytics />
+                    <CookieBanner />
                   </NotificationsLayer>
                 </CustomerProvider>
               </FavoritesProvider>

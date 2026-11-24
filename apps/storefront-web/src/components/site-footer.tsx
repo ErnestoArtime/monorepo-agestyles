@@ -20,6 +20,9 @@ export function SiteFooter({ buyerAppUrl }: { buyerAppUrl: string }) {
         <Link href="/novedades">Novedades</Link>
         <Link href="/tiendas">Tiendas</Link>
         <Link href="/comparar">Comparar productos</Link>
+        <Link href="/privacidad">Privacidad</Link>
+        <Link href="/terminos">Términos</Link>
+        <Link href="/cookies">Cookies</Link>
       </nav>
       <div className="wrap footer-bottom">
         <span>© 2026 AgeStyles</span>

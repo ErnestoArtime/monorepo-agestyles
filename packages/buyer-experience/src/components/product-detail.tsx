@@ -12,6 +12,8 @@ import { formatPrice } from "../lib/format-price";
 import { sdk } from "../config";
 import { formatCupEquivalent, rateSourceLine } from "@agestyles/api-client/exchange-rate";
 import { listProductOffers } from "@agestyles/api-client/offers";
+import { gaEvent } from "../lib/google-analytics";
+import { trackProductEvent } from "../lib/product-events";
 import { Icon } from "@agestyles/icons";
 import {
   BottomSheet,
@@ -23,7 +25,7 @@ import {
 } from "@agestyles/ui-native";
 import type { HttpTypes } from "@medusajs/types";
 import { useRouter, type Href } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Modal,
@@ -72,6 +74,8 @@ export function ProductDetail(
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  /** (product, seller) pairs already reported as views in this mount. */
+  const viewedSellers = useRef(new Set<string>());
 
   const fetchProduct = useCallback(async () => {
     if (!productId || !selectedRegion) return;
@@ -149,6 +153,29 @@ export function ProductDetail(
     };
   }, [product, regionId, variantId]);
 
+  // Anonymous view, once per seller that offers this product (AG-59): each
+  // store's traffic is its own. Fires when the offers arrive, not on every
+  // variant change — the ref keeps a pair from being reported twice.
+  useEffect(() => {
+    if (!product || !offers.length) return;
+    for (const offer of offers) {
+      const key = `${product.id}:${offer.seller.id}`;
+      if (viewedSellers.current.has(key)) continue;
+      viewedSellers.current.add(key);
+      void trackProductEvent({
+        product_id: product.id,
+        seller_id: offer.seller.id,
+        type: "product_view",
+      });
+    }
+    // Google Analytics gets the same view once, only when it is loaded.
+    gaEvent("view_item", {
+      currency: offers[0]?.price?.currency_code,
+      value: offers[0]?.price?.amount,
+      items: [{ item_id: product.id, item_name: product.title }],
+    });
+  }, [product, offers]);
+
   const selectedOffer =
     offers.find((offer) => offer.id === offerId && offer.variant?.id === variantId) ??
     offers.find((offer) => offer.variant?.id === variantId);
@@ -171,6 +198,24 @@ export function ProductDetail(
       });
       return;
     }
+    // The click itself is the event (AG-59), whether or not the cart accepts it.
+    void trackProductEvent({
+      product_id: product?.id ?? productId,
+      seller_id: selectedOffer.seller.id,
+      type: "add_to_cart_click",
+    });
+    gaEvent("add_to_cart", {
+      currency: selectedOffer.price?.currency_code ?? currency,
+      value: (selectedOffer.price?.amount ?? 0) * quantity,
+      items: [
+        {
+          item_id: product?.id ?? productId,
+          item_name: product?.title,
+          price: selectedOffer.price?.amount,
+          quantity,
+        },
+      ],
+    });
     try {
       setAdding(true);
       await addToCart(selectedOffer.id, quantity);

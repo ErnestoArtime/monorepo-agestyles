@@ -1,0 +1,33 @@
+{
+  "description": "AgeStyles module for anonymous product and store view/click events, for per-store analytics (Medusa v2)",
+  "exports": {
+    ".": {
+      "default": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./validation": {
+      "default": "./dist/validation.js",
+      "types": "./dist/validation.d.ts"
+    }
+  },
+  "keywords": [
+    "agestyles",
+    "medusa-module",
+    "analytics",
+    "events"
+  ],
+  "main": "./dist/index.js",
+  "medusaModule": true,
+  "name": "@agestyles/product-events",
+  "peerDependencies": {
+    "@medusajs/framework": "2.22.3"
+  },
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "node test/product-events.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "types": "./dist/index.d.ts",
+  "version": "0.0.0"
+}

@@ -36,6 +36,9 @@ type CartContextValue = {
   clearError: () => void;
   /** «Ir a pagar»: the lines move to Tienda, so this browser forgets its Catálogo cart. */
   handOff: () => void;
+  /** Public Store API access, for anonymous events (AG-59); empty when unconfigured. */
+  apiUrl: string;
+  publishableKey: string;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -195,6 +198,8 @@ export function CartProvider({
         setCart(null);
         setDrawerOpen(false);
       },
+      apiUrl: config?.apiUrl ?? "",
+      publishableKey: config?.publishableKey ?? "",
     }),
     [
       addOffer,
