@@ -1819,3 +1819,12 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - Tienda web desde `68a0503` con el enlace a la APK 1.5.0. Reversión web en `agestyles/buyer-web:rollback-before-ag58-apk`. Las tres webs responden HTTP 200. API de producción sana en `19e4274`; la publicación no necesitó migraciones.
 - Se conservaron las APK anteriores y se archivaron ambos binarios nuevos, sus hashes y los índices de Descargas previo y actualizado en `~/.local/share/agestyles-deploy/apks/`. Descargas usa el sistema existente de archivos copiados al contenedor, por lo que ese archivo permite recuperar la publicación si se recrea. Limpieza limitada a 10 MB de caché antigua de Docker y los árboles Android generados para estos dos builds. Raíz al 99 %, 3,0 GB libres.
 - Sin Android conectado al VPS. Siguiente validación (AG-11): instalación sobre versiones anteriores, sesión tras reiniciar, compra multivendedor con CUP y seguimiento; entrega parcial en Negocio.
+
+## Codex · Seguimiento AG-11, AG-52 y revisión AG-55
+
+- ADB no tiene dispositivos conectados. La instalación y prueba de compra en Android permanece pendiente.
+- AG-55: revisadas las rutas propias y públicas. Edición limitada al propietario o administración de la tienda, datos públicos solo para tiendas abiertas, sincronización del WhatsApp y validación de campos en dominio. Pasó `node --test packages/domain/test/store-info.test.ts`. Lecturas públicas de la ficha oficial y Catálogo responden 200. Pendiente ciclo de edición con datos comerciales reales y su revisión visual completa.
+- AG-52: integrado el menú lateral existente en el layout de Tienda para web ancha. El contenedor del contenido recorta el cajón móvil para evitar que intercepte los clics del menú. La página activa se expone mediante aria-current. Se conserva el componente compartido de Tienda y su uso dentro de Negocio.
+
+- AG-52 publicado en Tienda desde `0a4e646`, contenedor sano. Chromium contra la web pública verificó menú en 1440 px claro/oscuro, navegación a Tiendas, búsqueda, plegado y página activa; 390 px usa navegación compacta. La prueba local del catálogo encontró restricciones de origen, por lo que la verificación final se ejecutó sobre la URL pública. Copia de reversión de la imagen web en `agestyles/buyer-web:rollback-before-ag52`. Tipado y lint del paquete compartido y exportación web correctos.
+- Las APK y el modo comprador de Negocio recibirán el cambio compartido al recompilar/publicar esas apps. El cambio visible afecta solo al escritorio web.
