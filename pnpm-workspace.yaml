@@ -7,9 +7,6 @@ onlyBuiltDependencies:
   - esbuild
   - nx
 
-publicHoistPattern:
-  - ts-node
-
 overrides:
   "@opentelemetry/api": "1.9.1"
   # Auditoria 2026-11-24 (AG-60): parches de seguridad para vulnerabilidades altas transitivas (expo/metro y expo-router). Sin ellos, el paso nuevo de pnpm audit en CI falla con 5 altas.
@@ -21,3 +18,8 @@ packageExtensions:
   "@mercurjs/core@2.4.1":
     dependencies:
       http-proxy-middleware: "3.0.7"
+patchedDependencies:
+  metro@0.83.3: patches/metro@0.83.3.patch
+
+publicHoistPattern:
+  - ts-node
