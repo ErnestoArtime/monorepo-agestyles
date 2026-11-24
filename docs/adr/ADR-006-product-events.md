@@ -51,6 +51,19 @@ y la fecha del servidor. Una ficha con varios vendedores registra una
 - La purga depende del job programado de Medusa; si el planificador no
   corre, los eventos se acumulan hasta que se ejecute.
 
+## Actualización (24 nov 2026): ampliación del PR #4 a todas las fases
+
+Lo que esta ADR dejaba fuera ya está hecho en la misma rama
+(`muse/legales-eventos-vistas`, PR #4): Fase 3 (meta tag de verificación en
+el layout de la vitrina, sin código real), Fase 4 (GA4 solo con
+consentimiento y solo con measurement ID, con banner de cookies en vitrina
+y Tienda web; la app nativa Android queda fuera) y Fase 6 (agregación en
+`/vendor/agestyles/analytics` y sección «Vistas y clics» en Negocio). El
+proceso completo está en
+`docs/design/AG-59-legales-analytics-vistas-clics.md`. Las decisiones de
+esta ADR (vistas totales, retención 90 días, sesión anónima, límite en
+memoria) siguen vigentes y se recogen también allí.
+
 ## Alternativas descartadas
 
 - **Solo Google Analytics:** no atribuye por vendedor sin trabajo manual por

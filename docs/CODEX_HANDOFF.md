@@ -1863,3 +1863,63 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
   abrir la ficha completa.
 - Fuera de alcance, como estaba acordado: GA4, Search Console, Lighthouse CI y la UI de
   Análisis en Negocio (Fase 6).
+
+## Muse · AG-59, ampliación del PR #4 a todas las fases
+
+- Ernesto pidió que el PR #4 abarcara todas las fases, no solo la 1 y la 5.
+  Misma rama `muse/legales-eventos-vistas`, sin tocar `main`, sin despliegue.
+  Reclamo actualizado en `docs/TABLERO.md` (AG-59) antes de tocar código.
+- Fase 6: `apps/commerce-api/src/lib/analytics.ts` (`buildAnalytics` acepta
+  `trafficEvents`/`trafficProducts` y devuelve `traffic`: vistas de tienda,
+  vistas de producto, clics, clics en «Añadir al carrito», CTR, serie diaria
+  y 10 productos más vistos con pedidos cruzados con AG-39) y
+  `src/api/vendor/agestyles/analytics/route.ts` (lee los eventos de la tienda
+  en el período, tope 20.000; si falla, el tráfico queda vacío sin tumbar el
+  panel). `apps/business-app/app/analytics.tsx`: KPIs de tráfico, gráfico
+  «Vistas por día» y sección «Productos más vistos», mismos períodos. El
+  aislamiento lo da `resolveCommissionActor`: cada vendedor solo ve su
+  tienda; el superadmin selecciona cada tienda, no hay agregado multi-tienda.
+  Test nuevo en `apps/commerce-api/test/analytics.test.mjs`.
+- Fase 3: `apps/storefront-web/src/app/layout.tsx` añade `verification.google`
+  solo con `GOOGLE_SITE_VERIFICATION`; sin la variable no hay meta tag. Pasos
+  de creación y verificación de la propiedad, en el documento de diseño.
+- Fase 4: GA4 solo con consentimiento y solo con measurement ID. Vitrina:
+  `src/lib/{analytics-consent,google-analytics}.ts`,
+  `src/components/{google-analytics,cookie-banner}.tsx`, montados en el
+  layout; eventos `page_view`, `view_item`, `add_to_cart`, `begin_checkout`
+  (este último solo en «Ir a pagar», para no contar dos veces el mismo
+  checkout en Tienda). CSP de informe en `next.config.ts` con los dominios de
+  Google. Tienda web: `packages/buyer-experience/src/lib/{analytics-consent,
+  google-analytics}.ts` y `src/components/{google-analytics,cookie-banner}.tsx`,
+  montados en `src/routes/_layout.tsx`; `view_item` y `add_to_cart` en
+  `product-detail.tsx`. La app nativa Android queda fuera (necesitaría
+  Firebase). `/privacidad` y `/cookies` ya no dicen que GA4 está «previsto»:
+  dicen que está instalado pero inactivo sin consentimiento ni ID. Variables
+  en los dos `.env.example` (sin valores reales).
+- Fase 2: `apps/storefront-web/src/lib/web-vitals.ts` (PerformanceObserver,
+  sin dependencia nueva: el paquete `web-vitals` exigiría regenerar el
+  lockfile) y `src/components/web-vitals-reporter.tsx` (a GA4 como
+  `web_vitals` cuando está activo; consola en desarrollo). CI: paso nuevo de
+  Lighthouse en `.github/workflows/ci.yml` (la compilación de la vitrina se
+  mueve antes de parar la API desechable, para medir con datos reales) con
+  `tools/scripts/check-lighthouse-budgets.mjs` y artefacto
+  `lighthouse-storefront`; YAML listo para pegar a mano en
+  `docs/ci/lighthouse-manual-apply.md` si el push da 403 en el workflow.
+- Documentación: `docs/design/AG-59-legales-analytics-vistas-clics.md`
+  (proceso completo: estado inicial, fases, decisiones, alternativas,
+  modelo de datos, privacidad, verificación en laboratorio, pendientes
+  externos) y actualización de `docs/adr/ADR-006-product-events.md`.
+- Verificación: `node --test apps/commerce-api/test/analytics.test.mjs` (4
+  pass) y `node packages/product-events/test/product-events.test.ts` ok;
+  esbuild sin errores en los 23 archivos TS/TSX tocados (control negativo:
+  esbuild sí falla con sintaxis rota); prettier ok en todo lo tocado salvo
+  los `.env.example`, que no tienen parser y quedan fuera del `format:check`
+  de CI por extensión; `check-lighthouse-budgets.mjs` probado con informes
+  falsos (falla con un presupuesto incumplido, pasa sin él); YAML de CI
+  validado con Python. Typecheck completo no corrió (sin `node_modules`).
+  Sin app corriendo, sin migración ejecutada, sin despliegue, sin Lighthouse
+  real corrido, sin GA4 con ID real.
+- Decisión registrada: `begin_checkout` no se envía en la pantalla de
+  checkout de Tienda porque la marca del traspaso (`cart_handoff_source`) se
+  borra al cargar el carrito y no hay forma fiable de distinguir un checkout
+  nacido en Tienda de uno que llegó desde la vitrina.
