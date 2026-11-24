@@ -54,12 +54,18 @@ for (const file of reports) {
     "interaction-to-next-paint",
   ]) {
     const numericValue = report.audits?.[auditId]?.numericValue;
-    const ok = typeof numericValue === "number" && numericValue <= BUDGETS[auditId];
+    // INP needs real user interaction: a headless synthetic run never
+    // produces the audit (Lighthouse 12 has no interaction-to-next-paint
+    // value without input), so a missing value is skipped, not a breach.
+    // INP is measured in the field by the web-vitals reporter (Fase 2).
+    const skipped = auditId === "interaction-to-next-paint" && typeof numericValue !== "number";
+    const ok = skipped || (typeof numericValue === "number" && numericValue <= BUDGETS[auditId]);
     checks.push({
       label: auditId,
       value: numericValue ?? null,
       budget: `<= ${BUDGETS[auditId]}`,
       ok,
+      skipped,
     });
     if (!ok) failed = true;
   }
@@ -67,7 +73,9 @@ for (const file of reports) {
   for (const check of checks) {
     const shown =
       typeof check.value === "number" ? Math.round(check.value * 100) / 100 : "sin dato";
-    console.log(`  ${check.ok ? "ok  " : "FAIL"} ${check.label}: ${shown} (${check.budget})`);
+    const status = check.skipped ? "skip" : check.ok ? "ok  " : "FAIL";
+    const note = check.skipped ? " (se mide en campo con web-vitals)" : "";
+    console.log(`  ${status} ${check.label}: ${shown} (${check.budget})${note}`);
   }
 }
 
