@@ -80,7 +80,7 @@ class ProductEventsService extends MedusaService({ ProductEvent }) {
     )) as unknown as ProductEventRecord[];
     const old = page.filter((event) => new Date(event.created_at).getTime() < before.getTime());
     if (!old.length) return 0;
-    await this.softDeleteProductEvents(old.map((event) => event.id));
+    await this.deleteProductEvents(old.map((event) => event.id));
     return old.length;
   }
 }

@@ -1998,3 +1998,9 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
   Pendientes de Ernesto: revisar y fusionar el PR, redeplegar el gateway de
   compradores de producción, GA4, Search Console, identidad legal y
   devoluciones (AG-59).
+
+## Codex · AG-61, retención de eventos y CI
+
+- Detectado que `purgeOlderThan` usaba borrado lógico, dejando los eventos antiguos en la base pese a la retención de 90 días. Cambiado a `deleteProductEvents`, siguiendo el módulo de notificaciones. Compilación y validación del paquete pasaron. Una prueba focalizada con registros vencido y vigente confirmó que solo se envía el vencido al borrado físico.
+- La ejecución de CI de `d03af77` superó el paso Lighthouse. La medición previa de novedades 0,69 en el VPS no implica que el CI haya fallado en la misma condición; no se cambió el presupuesto.
+- Gateway de compradores recreado en producción con la regla de eventos. La API desplegada aún responde 404 a la ruta: falta desplegar la imagen con AG-59 y ejecutar su migración, junto a los frontends.
