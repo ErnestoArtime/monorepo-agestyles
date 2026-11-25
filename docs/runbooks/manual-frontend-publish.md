@@ -10,9 +10,9 @@ En **Settings → Secrets and variables → Actions → Variables**, define esto
 
 | Variable | Uso |
 |---|---|
-| `AGESTYLES_BUYER_MEDUSA_URL` | `https://descargas.eav-labs.com/agestyles-lab` — gateway/Store API de compradores. |
-| `AGESTYLES_BUSINESS_MEDUSA_URL` | `https://descargas.eav-labs.com/agestyles-seller` — gateway del portal de negocio. |
-| `AGESTYLES_STOREFRONT_MEDUSA_URL` | `https://descargas.eav-labs.com/agestyles-lab` — API Medusa usada por Next.js. |
+| `AGESTYLES_BUYER_MEDUSA_URL` | `https://agestyles-api.eav-labs.com` — gateway/Store API de compradores. |
+| `AGESTYLES_BUSINESS_MEDUSA_URL` | `https://agestyles-api.eav-labs.com/negocio` — gateway del portal de negocio. |
+| `AGESTYLES_STOREFRONT_MEDUSA_URL` | `https://agestyles-api.eav-labs.com` — API Medusa usada por Next.js. |
 | `AGESTYLES_MEDUSA_PUBLISHABLE_KEY` | Clave publicable `pk_…` para los tres sitios. Cópiala de `EXPO_PUBLIC_MEDUSA_PUBLISHABLE_API_KEY` en `apps/buyer-app/.env.local`. |
 | `AGESTYLES_BUYER_APP_URL` | `https://tienda.eav-labs.com` — destino de los enlaces de compra del catálogo. |
 | `AGESTYLES_STOREFRONT_SITE_URL` | `https://catalogo.eav-labs.com` — dominio canónico de Next.js. |

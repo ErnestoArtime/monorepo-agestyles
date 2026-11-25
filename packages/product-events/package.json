@@ -25,7 +25,7 @@
   "private": true,
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "test": "node test/product-events.test.ts",
+    "test": "pnpm build && node test/product-events.test.ts && node test/purge.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "types": "./dist/index.d.ts",
