@@ -2013,3 +2013,10 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 
 - Actualizado `STATUS_PLAN_MAESTRO.md` con el piloto web de AG-11, la publicación de AG-61, las APK de AG-58 y las carencias para cerrar el piloto. Alineado el estado de AG-61 en el tablero.
 - Comprobaciones de solo lectura: `git ls-remote` y API de GitHub Actions confirmaron `4003fad` con CI verde y publicación de imagen de `1dc0feb` en verde; las tres portadas y el legado devolvieron HTTP 200, privacidad de Catálogo HTTP 404; `docker inspect` confirmó la API saludable y el digest esperado; la API pública devolvió 970 CUP/USD de elTOQUE el 25 nov; `df -h /` mostró 11 GiB libres y 95 % de ocupación.
+
+## Codex · AG-57, entrega parcial por HTTP
+
+- Ampliado el verificador de checkout multivendedor (`ec94f64`). Crea un pedido de tres unidades y entrega 1 y luego 2 mediante preparación, listo, despacho y entrega. Comprueba cantidades y estados de la línea y del pedido en el seguimiento del comprador, propiedad del pedido, almacén de la tienda y rechazo de cantidades adicionales.
+- La primera ejecución detectó que el resumen daba el pedido por enviado al entregar una sola unidad. Corregido en `965e036` para decidir según las cantidades enviadas de todas las líneas, con formato en `73a12df`. Pasaron las pruebas de Negocio (9) y dominio. [La comprobación HTTP de GitHub Actions](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/45566224944) pasó contra PostgreSQL y Redis desechables.
+- La preparación local se interrumpió por presión de memoria y se eliminaron los contenedores temporales. La API de producción seguía saludable. La corrección está en `main` y queda pendiente de despliegue.
+- APK Tienda 1.5.0 y Negocio 1.3.0 descargadas desde sus URL públicas y SHA-256 comparado con publicación. Sigue pendiente ejecución en Android: `adb` sin dispositivos y emulador sin AVD. AG-12 sigue abierto: laboratorio saludable, sin peticiones de pedidos en los logs de 24 horas y sin configuración de credenciales originales de Kickz localizada.
