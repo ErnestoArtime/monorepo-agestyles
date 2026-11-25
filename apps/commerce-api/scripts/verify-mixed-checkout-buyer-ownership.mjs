@@ -131,7 +131,7 @@ for (const offer of [offerA, offerB]) {
     {
       method: "POST",
       token: ownerToken,
-      body: { offer_id: offer.id, quantity: 1 },
+      body: { offer_id: offer.id, quantity: offer.id === offerA.id ? 3 : 1 },
     },
     200,
   );
@@ -275,18 +275,50 @@ const fulfillmentItems = (sellerOrderDetail?.items ?? []).map(({ id, quantity })
   id,
   quantity,
 }));
-assert(fulfillmentItems.length, "The A2 seller order needs at least one line item");
 const fulfillmentPath = `/vendor/agestyles/orders/${sellerOrder.id}/fulfillments`;
-const fulfillmentResult = await expectStatus(
-  fulfillmentPath,
-  {
-    method: "POST",
-    headers: { ...sellerHeaders, "x-publishable-api-key": key },
-    body: { location_id: stockLocations[0].id, items: fulfillmentItems },
-  },
-  201,
-);
-assert(fulfillmentResult?.fulfillment?.id, "The owner must create a fulfillment");
+assert.equal(fulfillmentItems.length, 1, "The A2 fixture must contain one order line");
+const [line] = fulfillmentItems;
+assert.equal(Number(line.quantity), 3, "The A2 fixture must contain three units");
+
+async function deliverUnits(quantity) {
+  const { fulfillment } = await expectStatus(
+    fulfillmentPath,
+    {
+      method: "POST",
+      headers: sellerHeaders,
+      body: { location_id: stockLocations[0].id, items: [{ id: line.id, quantity }] },
+    },
+    201,
+  );
+  assert(fulfillment?.id, "The owner must create a fulfillment");
+  for (const action of ["ready", "dispatch", "deliver"]) {
+    await expectStatus(
+      fulfillmentPath,
+      { method: "POST", headers: sellerHeaders, body: { action, fulfillment_id: fulfillment.id } },
+      200,
+    );
+  }
+}
+
+async function expectDeliveredUnits(quantity) {
+  const { tracking } = await expectStatus(
+    `/store/orders/${sellerOrder.id}/tracking`,
+    { token: ownerToken },
+    200,
+  );
+  const trackingLine = tracking.lines.find((item) => item.line_item_id === line.id);
+  const expectedStage = quantity === 3 ? "delivered" : "partially_shipped";
+  assert.equal(trackingLine?.quantity, 3);
+  assert.equal(trackingLine.delivered_quantity, quantity);
+  assert.equal(trackingLine.status, expectedStage);
+  assert.equal(tracking.status, expectedStage);
+}
+
+await deliverUnits(1);
+await expectDeliveredUnits(1);
+await deliverUnits(2);
+await expectDeliveredUnits(3);
+
 const { token: otherSellerToken } = await expectStatus(
   "/auth/member/emailpass",
   {
@@ -339,5 +371,5 @@ const foreignSellerFulfillment = await request(
 assert.equal(foreignSellerFulfillment.status, 403, "Another seller must not fulfill this order");
 
 console.log(
-  "PASS: two-seller checkout creates isolated child orders; buyer tracking is owned; seller fulfillment is location-scoped and cannot be repeated",
+  "PASS: two-seller checkout creates isolated child orders; buyer tracking is owned; partial and final delivery reflect buyer line quantities; fulfillment is location-scoped and cannot exceed the order",
 );
