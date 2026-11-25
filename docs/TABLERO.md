@@ -8,7 +8,7 @@ Fuente única de tareas y progreso para **todas** las personas y agentes que tra
 
 Este objetivo abarca el ecosistema completo: API y módulos propios, Catálogo público, Tienda web y app Buyer, panel web y app Negocio, infraestructura de publicación y preparación de las apps Android/iOS. Claude y Codex avanzan mediante las tareas de este tablero; cada integración que afecte producción, datos o reglas comerciales requiere revisión cruzada y autorización del usuario para desplegar.
 
-Hoy (17 nov 2026) Tienda, Catálogo y Negocio ya usan la API de producción (`https://agestyles-api.eav-labs.com`) con 31 productos de la tienda oficial. Lo que falta para el objetivo: seguridad operativa (copias y restauración), paridad con el legado, QA real y la decisión de corte del legado.
+Hoy (25 nov 2026) Tienda, Catálogo y Negocio usan la API de producción (`https://agestyles-api.eav-labs.com`) con la tienda oficial y cinco tiendas de demostración públicas; la tasa CUP se actualiza sola desde elTOQUE (AG-54) y las APK Tienda 1.5.0 y Negocio 1.3.0 están publicadas. Lo que falta para el objetivo: copias y restauración (AG-02, aplazada), recorrido real en Android (AG-11), publicar las páginas legales y los eventos de AG-59 (bloqueado por la identidad legal y la política de devoluciones), paridad con el legado y la decisión de corte. Estado por fase en [`STATUS_PLAN_MAESTRO.md`](./STATUS_PLAN_MAESTRO.md); siguientes pasos y revisión de ramas en [`reviews/2026-11-25-estado-y-siguientes-pasos.md`](./reviews/2026-11-25-estado-y-siguientes-pasos.md).
 
 ## Documentos y para qué sirve cada uno
 
