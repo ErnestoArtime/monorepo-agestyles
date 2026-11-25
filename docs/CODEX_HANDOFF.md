@@ -2064,3 +2064,11 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - **AG-52 (`0a4e646`): conforme.** Cambio mínimo: `WebSidebar` montado en el layout solo en web ancha, contenedor con `overflow: hidden`/`minWidth: 0` y `aria-current`. El cajón móvil mantiene su comportamiento. Ya verificado en producción por Codex. Pendiente: modo comprador de Negocio con su próxima publicación.
 - **AG-56 (`b8b1ce1`): conforme tras lectura de código.** Búsqueda por términos, ordenación por nombre/alta, filtros, 20 por página con reinicio a la primera al cambiar búsqueda, filtro u orden; la página se acota a la última disponible. Tabla semántica solo en web ancha con tarjetas en el resto; no se tocan endpoints ni acciones. No pude ejecutar el typecheck de `business-app` en este worktree (falta `expo-secure-store` en la instalación local; no es del cambio). Verificación visual ya hecha por Codex en Chromium y producción.
 - Nada desplegado ni escrito en producción.
+
+## 2026-11-25 · Claude · Despliegue de la API de producción con AG-62 y AG-57 (autorizado por el usuario)
+
+- Imagen: `e1905b3` (run 45572104045), digest `sha256:2d34262cf5f1322e92e64a950f040de6e36d88f56c845177e9d764af69822da7` (obtenido al descargar el tag anónimamente). Anterior para rollback: `sha256:bb917a773647…` (sigue en local).
+- Antes: copia `before-e1905b3.dump` (índice verificado con `pg_restore --list`, 1555 entradas, sin ensayo de restauración) y `compose.env.before` en `~/.local/share/agestyles-deploy/ag62-20261125/` (modo 600). Solo se cambió la línea `AGESTYLES_PRODUCTION_IMAGE` de `compose.env`.
+- `pnpm migrate`: sin migraciones del proyecto; solo ejecutó los dos scripts de migración del propio Medusa (`create-super-admin-role`, `migrate-rbac-role-assignments`) que figuraban pendientes. `up -d --wait commerce-api` → healthy; gateways de vendedor, comprador y admin recreados.
+- Comprobado: `127.0.0.1:19085/health` 200; imagen en ejecución con el digest nuevo y `healthy`; Tienda y Negocio 200; sin errores en los logs de los primeros 3 min; rutas `store` exigen clave publicable (400 sin ella, como antes).
+- **No verificado:** comportamiento funcional de AG-62 (doble aceptación de cotización) y AG-57 (entrega parcial → `partially_shipped`) con datos reales; no se probó con pedidos históricos.
