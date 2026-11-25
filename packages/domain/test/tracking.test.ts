@@ -77,7 +77,7 @@ const delivered = buildOrderTracking({
     delivered_at: "2026-11-12T12:00:00.000Z",
   })),
 })
-assert.equal(delivered.status, "shipped", "one line is still pending")
+assert.equal(delivered.status, "partially_shipped", "one unit still needs to ship")
 assert.equal(
   delivered.lines.find((line) => line.line_item_id === "line_b")?.status,
   "delivered",

@@ -142,7 +142,6 @@ export function buildOrderTracking(order: TrackingOrder): OrderTracking {
   );
 
   let anyShipment = false;
-  let anyDelivered = false;
   let allLinesDelivered = order.items.length > 0;
 
   for (const fulfillment of order.fulfillments ?? []) {
@@ -181,7 +180,6 @@ export function buildOrderTracking(order: TrackingOrder): OrderTracking {
         line.delivered_quantity = Math.min(line.quantity, line.delivered_quantity + quantity);
       }
       anyShipment = true;
-      if (deliveredAt) anyDelivered = true;
     }
   }
 
@@ -206,7 +204,6 @@ export function buildOrderTracking(order: TrackingOrder): OrderTracking {
 
   let status: OrderTracking["status"] = "not_fulfilled";
   if (allLinesDelivered) status = "delivered";
-  else if (anyDelivered) status = "shipped";
   else if (anyShipment) {
     status = [...lines.values()].every((line) => line.shipped_quantity >= line.quantity)
       ? "shipped"
