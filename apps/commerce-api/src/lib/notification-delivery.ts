@@ -5,6 +5,7 @@ import {
   ExpoRequestError,
   decodeTicketRef,
   encodeTicketRef,
+  eventAllowsEmail,
   isQuietHour,
   nextAllowedPushTime,
   quietHoursFromEnv,
@@ -218,6 +219,10 @@ async function deliverEmail(
     const notification = notifications.get(delivery.notification_id);
     if (!notification) {
       await skip(container, delivery, "notification_missing", summary);
+      continue;
+    }
+    if (!eventAllowsEmail(notification.event_code)) {
+      await skip(container, delivery, "email_event_disabled", summary);
       continue;
     }
     if (!emailEnabled()) {

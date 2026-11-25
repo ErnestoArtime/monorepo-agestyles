@@ -85,7 +85,7 @@ export const EVENTS = {
   order_preparing: {
     recipient: "customer",
     group: "orders",
-    channels: ["push", "email"],
+    channels: ["push"],
     render: (p) => ({
       title: "Pedido en preparación",
       body: `${store(p)} está preparando tu pedido.`,
@@ -95,7 +95,7 @@ export const EVENTS = {
   order_ready: {
     recipient: "customer",
     group: "orders",
-    channels: ["push", "email"],
+    channels: ["push"],
     render: (p) => ({
       title: "Pedido listo",
       body: `Tu pedido de ${storeLower(p)} está listo.`,
@@ -105,7 +105,7 @@ export const EVENTS = {
   order_dispatched: {
     recipient: "customer",
     group: "orders",
-    channels: ["push", "email"],
+    channels: ["push"],
     render: (p) => ({
       title: "Pedido despachado",
       body: `Tu pedido de ${storeLower(p)} va en camino.`,
@@ -115,7 +115,7 @@ export const EVENTS = {
   order_delivered: {
     recipient: "customer",
     group: "orders",
-    channels: ["push", "email"],
+    channels: ["push"],
     render: (p) => ({
       title: "Pedido entregado",
       body: `Tu pedido de ${storeLower(p)} se ha entregado.`,
@@ -135,7 +135,7 @@ export const EVENTS = {
   payment_verified: {
     recipient: "customer",
     group: "payments",
-    channels: ["push", "email"],
+    channels: ["push"],
     render: (p) => ({
       title: "Pago verificado",
       body: `${store(p)} ha verificado tu comprobante de pago.`,
@@ -156,7 +156,7 @@ export const EVENTS = {
     recipient: "member",
     group: "orders",
     audience: "orders",
-    channels: ["push", "email"],
+    channels: ["push"],
     render: (p) => ({
       title: "Pedido nuevo",
       body: `Ha entrado un pedido nuevo en ${storeLower(p)}.`,
@@ -170,7 +170,7 @@ export const EVENTS = {
     recipient: "member",
     group: "payments",
     audience: "orders",
-    channels: ["push", "email"],
+    channels: ["push"],
     render: (p) => ({
       title: "Comprobante de pago",
       body: "Un cliente ha enviado un comprobante de pago para revisar.",
@@ -184,7 +184,7 @@ export const EVENTS = {
     recipient: "member",
     group: "inventory",
     audience: "inventory",
-    channels: ["push", "email"],
+    channels: ["push"],
     render: (p) => {
       const available = Number(p.available);
       const units = Number.isFinite(available)
@@ -201,7 +201,7 @@ export const EVENTS = {
     recipient: "member",
     group: "catalog",
     audience: "managers",
-    channels: ["push", "email"],
+    channels: ["push"],
     render: (p) => ({
       title: "Producto aprobado",
       body: `${quoted(p.product)} ya está publicado.`,
@@ -212,7 +212,7 @@ export const EVENTS = {
     recipient: "member",
     group: "catalog",
     audience: "managers",
-    channels: ["push", "email"],
+    channels: ["push"],
     render: (p) => ({
       title: "Producto rechazado",
       body: `${quoted(p.product)} no se ha publicado. Revisa los comentarios y corrígelo.`,
@@ -223,7 +223,7 @@ export const EVENTS = {
     recipient: "member",
     group: "catalog",
     audience: "managers",
-    channels: ["push", "email"],
+    channels: ["push"],
     render: (p) => ({
       title: "Cambios solicitados",
       body: `${quoted(p.product)} necesita cambios antes de publicarse.`,
@@ -234,7 +234,7 @@ export const EVENTS = {
     recipient: "member",
     group: "commissions",
     audience: "managers",
-    channels: ["push", "email"],
+    channels: ["push"],
     render: () => ({
       title: "Retiro solicitado",
       body: "Un gestor ha solicitado un retiro de comisiones.",
@@ -245,7 +245,7 @@ export const EVENTS = {
     recipient: "member",
     group: "commissions",
     audience: "member",
-    channels: ["push", "email"],
+    channels: ["push"],
     render: () => ({
       title: "Retiro entregado",
       body: "Tu retiro de comisiones se ha marcado como entregado.",
@@ -256,7 +256,7 @@ export const EVENTS = {
     recipient: "member",
     group: "commissions",
     audience: "member",
-    channels: ["push", "email"],
+    channels: ["push"],
     render: () => ({
       title: "Retiro rechazado",
       body: "Tu solicitud de retiro de comisiones se ha rechazado.",
@@ -267,7 +267,7 @@ export const EVENTS = {
     recipient: "member",
     group: "orders",
     audience: "orders",
-    channels: ["push", "email"],
+    channels: ["push"],
     render: (p) => ({
       title: "Pedido cancelado",
       body: `Se ha cancelado un pedido de ${storeLower(p)}. No lo prepares.`,
@@ -281,7 +281,7 @@ export const EVENTS = {
     recipient: "member",
     group: "payments",
     audience: "orders",
-    channels: ["push", "email"],
+    channels: ["push"],
     render: (p) => ({
       title: "Pago verificado",
       body: "AgeStyles ha verificado el pago de un pedido. Ya puedes prepararlo.",
@@ -295,7 +295,7 @@ export const EVENTS = {
     recipient: "member",
     group: "payments",
     audience: "orders",
-    channels: ["push", "email"],
+    channels: ["push"],
     render: (p) => ({
       title: "Pago rechazado",
       body: "AgeStyles ha rechazado el comprobante de pago de un pedido. Espera a que el cliente lo corrija.",
@@ -309,7 +309,7 @@ export const EVENTS = {
     recipient: "member",
     group: "account",
     audience: "managers",
-    channels: ["push", "email"],
+    channels: ["push"],
     render: (p) => ({
       title: "Tienda aprobada",
       body: `${store(p)} ya está aprobada y puede vender en AgeStyles.`,
@@ -320,7 +320,7 @@ export const EVENTS = {
     recipient: "member",
     group: "account",
     audience: "managers",
-    channels: ["push", "email"],
+    channels: ["push"],
     render: (p) => ({
       title: "Tienda suspendida",
       body: `${store(p)} está suspendida y sus productos no se muestran. Contacta con AgeStyles.`,
@@ -331,7 +331,7 @@ export const EVENTS = {
     recipient: "member",
     group: "catalog",
     audience: "managers",
-    channels: ["push", "email"],
+    channels: ["push"],
     render: (p) => {
       const name = text(p.category) || text(p.request) || "la categoría";
       const outcome = text(p.outcome);
@@ -356,7 +356,7 @@ export const EVENTS = {
     recipient: "member",
     group: "commissions",
     audience: "member",
-    channels: ["push", "email"],
+    channels: ["push"],
     render: (p) => ({
       title: "Comisión generada",
       body: `Una compra online con tu código de gestor te genera ${text(p.amount) ? `${text(p.amount)} de comisión` : "comisión"}.`,
@@ -366,7 +366,7 @@ export const EVENTS = {
   admin_store_registered: {
     recipient: "user",
     group: "marketplace",
-    channels: ["email"],
+    channels: [],
     render: (p) => ({
       title: "Tienda nueva por aprobar",
       body: `${store(p)} se ha registrado y espera aprobación.`,
@@ -376,7 +376,7 @@ export const EVENTS = {
   admin_product_review: {
     recipient: "user",
     group: "marketplace",
-    channels: ["email"],
+    channels: [],
     render: (p) => ({
       title: "Producto por revisar",
       body: `${store(p)} ha enviado ${text(p.product) ? `«${text(p.product)}»` : "un producto"} para revisar.`,
@@ -386,7 +386,7 @@ export const EVENTS = {
   admin_payment_proof: {
     recipient: "user",
     group: "marketplace",
-    channels: ["email"],
+    channels: [],
     render: () => ({
       title: "Comprobante por verificar",
       body: "Un cliente ha enviado un comprobante de pago. Verifícalo o recházalo.",
@@ -396,7 +396,7 @@ export const EVENTS = {
   admin_category_request: {
     recipient: "user",
     group: "marketplace",
-    channels: ["email"],
+    channels: [],
     render: (p) => ({
       title: "Solicitud de categoría",
       body: `${store(p)} pide la categoría «${text(p.request) || "nueva"}».`,
@@ -410,6 +410,13 @@ export const EVENT_CODES = Object.keys(EVENTS) as EventCode[];
 
 export function isEventCode(value: unknown): value is EventCode {
   return typeof value === "string" && Object.prototype.hasOwnProperty.call(EVENTS, value);
+}
+
+/** The delivery worker must enforce today's policy on rows queued under older rules. */
+export function eventAllowsEmail(code: string): boolean {
+  if (!isEventCode(code)) return false;
+  const definition: EventDefinition = EVENTS[code];
+  return definition.channels.includes("email");
 }
 
 /** What the apps show when they meet a code they do not know: never the raw code. */

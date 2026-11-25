@@ -2091,3 +2091,9 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 
 - AG-65, revisión de correos. Ernesto confirmó que recibió en Gmail el primer envío real. Se usó el formulario de recuperación de Tienda con Playwright. La ruta pública respondió 201 y mostró la confirmación genérica. Medusa registró una notificación reciente `password-reset` en estado `success` con ID externo de Resend. No se abrió el enlace ni se cambió la contraseña.
 - Resend aceptó 32 de 32 muestras al buzón autorizado, numeradas y con datos ficticios. Cubren los eventos con canal correo, resultados alternativos de categorías, recuperación de Negocio sin enlace y una propuesta de invitación en español sin enlace activo. Las muestras se enviaron por el módulo de notificaciones sin ejecutar pedidos, pagos, comisiones, inventario ni invitaciones reales. Pendiente revisar en Gmail y decidir cambios de plantilla.
+
+## Codex · AG-66, conservar correo para casos esenciales
+
+- Ernesto confirmó la recepción del correo de recuperación de Tienda y pidió reducir el volumen. Correo opcional para comprador en pedido recibido, cancelado y comprobante de pago rechazado. Se mantiene desactivado por defecto. Recuperación e invitaciones siguen fuera de esta política de eventos.
+- Encolado respeta los canales por evento. El trabajador vuelve a aplicar la política antes de enviar correos pendientes y omite los que quedaron fuera con `email_event_disabled`. Comprador y Negocio mantienen push según preferencias y dispositivo. Administración conserva su bandeja. Las preferencias antiguas pueden seguir apareciendo en clientes publicados, pero no reactivan eventos excluidos.
+- Pasaron reglas de notificaciones, compilación del módulo y tipado de la API. Sin correos de muestra ni despliegue en este turno.

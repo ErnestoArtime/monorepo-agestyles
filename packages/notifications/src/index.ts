@@ -34,6 +34,7 @@ export {
   RETRY_DELAYS_MS,
   SELLER_ROLES,
   dedupeKey,
+  eventAllowsEmail,
   isEventCode,
   isQuietHour,
   memberReceives,

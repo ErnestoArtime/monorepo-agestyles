@@ -14,6 +14,7 @@ import {
   quietHoursFromEnv,
   parsePreferencesInput,
   preferencesMatrix,
+  eventAllowsEmail,
   renderEmail,
   renderNotification,
   renderPasswordResetEmail,
@@ -104,6 +105,20 @@ assert.deepEqual(
   ["push"],
   "preferences are per group",
 );
+assert.deepEqual(EVENT_CODES.filter(eventAllowsEmail), [
+  "order_placed",
+  "order_canceled",
+  "payment_rejected",
+]);
+assert.deepEqual(
+  resolveDeliveryChannels(EVENTS.order_dispatched, [
+    { group: "orders", channel: "email", enabled: true },
+  ]),
+  ["push"],
+  "Existing email preferences cannot re-enable a routine order status email",
+);
+assert.equal(eventAllowsEmail("unknown_event"), false);
+
 const mandatory = { ...EVENTS.order_placed, mandatory: true };
 assert.deepEqual(
   resolveDeliveryChannels(mandatory, [{ group: "orders", channel: "push", enabled: false }]),
