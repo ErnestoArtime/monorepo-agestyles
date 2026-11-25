@@ -2020,3 +2020,9 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - La primera ejecución detectó que el resumen daba el pedido por enviado al entregar una sola unidad. Corregido en `965e036` para decidir según las cantidades enviadas de todas las líneas, con formato en `73a12df`. Pasaron las pruebas de Negocio (9) y dominio. [La comprobación HTTP de GitHub Actions](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/45566224944) pasó contra PostgreSQL y Redis desechables.
 - La preparación local se interrumpió por presión de memoria y se eliminaron los contenedores temporales. La API de producción seguía saludable. La corrección está en `main` y queda pendiente de despliegue.
 - APK Tienda 1.5.0 y Negocio 1.3.0 descargadas desde sus URL públicas y SHA-256 comparado con publicación. Sigue pendiente ejecución en Android: `adb` sin dispositivos y emulador sin AVD. AG-12 sigue abierto: laboratorio saludable, sin peticiones de pedidos en los logs de 24 horas y sin configuración de credenciales originales de Kickz localizada.
+
+## Codex · AG-62, aceptación simultánea de cotizaciones
+
+- Corregida la liberación del bloqueo por carrito en `213c502`. Medusa gestiona el bloqueo con `locking.execute`; se relee y valida la cotización dentro del bloqueo. La ruta envía la respuesta una vez concluida la operación.
+- El verificador HTTP lanza dos aceptaciones simultáneas con claves distintas. Ambas devuelven el mismo grupo y los mismos dos pedidos. También sigue pasando la entrega parcial y completa de AG-57.
+- [CI de `213c502`](https://github.com/ErnestoArtime/monorepo-agestyles/actions/runs/45568991877) completo en verde. El registro del job contiene la ejecución de checkout y ya no contiene la excepción de `release` ni el error de cabeceras enviadas dos veces. Tipado local de la API correcto. Pendientes revisión cruzada y despliegue de la API.
