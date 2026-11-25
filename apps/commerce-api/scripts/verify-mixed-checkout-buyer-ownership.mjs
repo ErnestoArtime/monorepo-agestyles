@@ -207,15 +207,24 @@ assert.deepEqual(
   [sellerA.id, sellerB.id].sort(),
   "The quote must include both sellers",
 );
-const { order_group_id: groupId, orders } = await expectStatus(
-  `/store/order-quotes/${quote.id}/accept`,
-  {
-    method: "POST",
-    token: ownerToken,
-    idempotencyKey: randomUUID(),
-    body: { revision: quote.revision },
-  },
-  200,
+const acceptQuote = () =>
+  expectStatus(
+    `/store/order-quotes/${quote.id}/accept`,
+    {
+      method: "POST",
+      token: ownerToken,
+      idempotencyKey: randomUUID(),
+      body: { revision: quote.revision },
+    },
+    200,
+  );
+const [accepted, concurrentAcceptance] = await Promise.all([acceptQuote(), acceptQuote()]);
+const { order_group_id: groupId, orders } = accepted;
+assert.equal(concurrentAcceptance.order_group_id, groupId);
+assert.deepEqual(
+  concurrentAcceptance.orders.map(({ id }) => id).sort(),
+  orders.map(({ id }) => id).sort(),
+  "Concurrent acceptance must return the same child orders",
 );
 assert(
   groupId && orders?.length === 2,
