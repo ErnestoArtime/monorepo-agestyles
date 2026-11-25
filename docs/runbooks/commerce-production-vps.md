@@ -47,7 +47,8 @@ Variables del entorno privado de la API (`api.env`):
 
 | Variable | Para qué | Notas |
 |---|---|---|
-| `SENDGRID_API_KEY` y `SENDGRID_FROM_EMAIL` | Correo transaccional con el proveedor oficial `@medusajs/notification-sendgrid` | Van juntas: con solo una la API no arranca. El remitente debe estar verificado en SendGrid (idealmente con SPF/DKIM del dominio). Mercur usa el mismo proveedor para las invitaciones de tienda. |
+| `RESEND_API_KEY` y `RESEND_FROM_EMAIL` | Correo transaccional de AgeStyles, recuperación de contraseña e invitaciones de Mercur | Tras verificar el envío en Resend, definir `RESEND_FROM_EMAIL="AgeStyles <no-reply@agestyles.eav-labs.com>"` en el entorno privado. Una clave sola no activa el envío. Usar una clave restringida a envío del dominio. |
+| `SENDGRID_API_KEY` y `SENDGRID_FROM_EMAIL` | Proveedor alternativo de correo | Se usa al configurar ambas variables si Resend está desactivado. El remitente debe estar verificado en SendGrid. |
 | `AGESTYLES_STORE_WEB_URL` | Enlace de «Elegir una contraseña nueva» y botón de los correos a clientes | `https://tienda.eav-labs.com`, sin barra final. Sin ella no se envía el correo de restablecimiento. |
 | `AGESTYLES_BUSINESS_WEB_URL` | Lo mismo para miembros de tienda | `https://negocio.eav-labs.com`. |
 | `EXPO_ACCESS_TOKEN` | Seguridad ampliada del servicio de push de Expo | Opcional. |

@@ -422,4 +422,7 @@ export async function preferencesResponse(scope: Scope, recipient: Recipient, up
 }
 
 export const emailEnabled = () =>
-  Boolean(process.env.SENDGRID_API_KEY?.trim() && process.env.SENDGRID_FROM_EMAIL?.trim());
+  Boolean(
+    (process.env.RESEND_API_KEY?.trim() && process.env.RESEND_FROM_EMAIL?.trim()) ||
+    (process.env.SENDGRID_API_KEY?.trim() && process.env.SENDGRID_FROM_EMAIL?.trim()),
+  );

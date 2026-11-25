@@ -37,12 +37,14 @@ async function sendPasswordResetEmail({ event, container }: SubscriberArgs<Passw
     return;
   }
   const url = `${base}/reset-password?${new URLSearchParams({ token, email }).toString()}`;
+  const idempotencyKey = `password-reset:${createHash("sha256").update(token).digest("hex").slice(0, 32)}`;
   await container.resolve(Modules.NOTIFICATION).createNotifications({
     to: email,
     channel: "email",
     template: "password-reset",
     trigger_type: "auth.password_reset",
-    idempotency_key: `password-reset:${createHash("sha256").update(token).digest("hex").slice(0, 32)}`,
+    idempotency_key: idempotencyKey,
+    provider_data: { idempotency_key: idempotencyKey },
     data: { actor_type: actorType },
     content: renderPasswordResetEmail(url),
   });

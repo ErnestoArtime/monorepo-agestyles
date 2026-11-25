@@ -146,11 +146,25 @@ function localMediaModule() {
   };
 }
 
-/**
- * Transactional email (AG-19): SendGrid's official provider, enabled only when both variables
- * are set. Without it the delivery queue marks email deliveries as skipped.
- */
 function notificationModule() {
+  const resendFrom = process.env.RESEND_FROM_EMAIL?.trim();
+  if (resendFrom) {
+    const apiKey = process.env.RESEND_API_KEY?.trim();
+    if (!apiKey) throw new Error("RESEND_FROM_EMAIL requires RESEND_API_KEY.");
+    return {
+      resolve: "@medusajs/medusa/notification",
+      options: {
+        providers: [
+          {
+            resolve: "./src/modules/resend-notification",
+            id: "resend",
+            options: { channels: ["email"], apiKey, from: resendFrom },
+          },
+        ],
+      },
+    };
+  }
+
   const { SENDGRID_API_KEY, SENDGRID_FROM_EMAIL } = process.env;
   if (!SENDGRID_API_KEY?.trim() && !SENDGRID_FROM_EMAIL?.trim()) return null;
   if (!SENDGRID_API_KEY?.trim() || !SENDGRID_FROM_EMAIL?.trim()) {

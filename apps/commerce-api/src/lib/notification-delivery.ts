@@ -239,6 +239,7 @@ async function deliverEmail(
         resource_id: notification.id,
         receiver_id: notification.recipient_id,
         idempotency_key: `agestyles-delivery:${delivery.id}`,
+        provider_data: { idempotency_key: `agestyles-delivery:${delivery.id}` },
         data: { notification_id: notification.id },
         // The stored text is authoritative: it already carries the store and the stage.
         content: renderEmail({
