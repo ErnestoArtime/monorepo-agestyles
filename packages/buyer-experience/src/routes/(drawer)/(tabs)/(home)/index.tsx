@@ -269,7 +269,10 @@ export default function HomeScreen() {
     };
   }, [selectedRegion, reloadKey, homeSellerId]);
 
-  const products = useMemo(() => items.map(cardAsProduct), [items]);
+  const products = useMemo(
+    () => items.map((card) => cardAsProduct(card, !homeSellerId)),
+    [items, homeSellerId],
+  );
   const directOffers = useMemo(
     () => new Map(items.map((card) => [card.id, card.direct_offer_id ?? undefined])),
     [items],

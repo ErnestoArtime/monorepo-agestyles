@@ -15,7 +15,7 @@ import { CustomerProvider } from "../context/customer-context";
 import { FavoritesProvider } from "../context/favorites-context";
 import { RegionProvider } from "../context/region-context";
 import { ThemePreferenceProvider } from "../context/theme-preference";
-import { UiThemeProvider } from "@agestyles/ui-native";
+import { ToastProvider, UiThemeProvider } from "@agestyles/ui-native";
 import { useColorScheme } from "../hooks/use-color-scheme";
 import { useResponsive } from "../hooks/use-responsive";
 import { webContentStyle, webPageHeaderOption } from "../components/web-page-header";
@@ -58,121 +58,123 @@ function RootNavigation() {
   return (
     <UiThemeProvider scheme={colorScheme === "dark" ? "dark" : "light"}>
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <ThemeProvider value={navigationTheme}>
-          <RegionProvider>
-            <CartProvider>
-              <FavoritesProvider>
-                <CustomerProvider>
-                  <NotificationsLayer>
-                    <Stack
-                      screenOptions={{
-                        // Wide browsers: a page heading under the website top bar, not a second app bar.
-                        ...webPageHeaderOption(isWideWeb),
-                        // In a browser the bar above the page belongs to the browser; Android Chrome still
-                        // reports a top safe-area inset, which doubled the header height (AG-24).
-                        ...(Platform.OS === "web" ? { headerStatusBarHeight: 0 } : {}),
-                        headerShown: false,
-                        headerStyle: { backgroundColor: colors.cardBackground },
-                        headerTintColor: colors.text,
-                        headerTitleStyle: { color: colors.text },
-                        headerShadowVisible: false,
-                        contentStyle: { backgroundColor: colors.background },
-                      }}
-                    >
-                      <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
-                      <Stack.Screen
-                        name="checkout"
-                        options={{
-                          headerShown: true,
-                          ...(isWideWeb
-                            ? {
-                                contentStyle: [
-                                  { backgroundColor: colors.background },
-                                  webContentStyle,
-                                ],
-                              }
-                            : {}),
-                          title: "Finalizar compra",
-                          presentation: "card",
-                          headerBackButtonDisplayMode: "minimal",
+        <ToastProvider bottomOffset={84}>
+          <ThemeProvider value={navigationTheme}>
+            <RegionProvider>
+              <CartProvider>
+                <FavoritesProvider>
+                  <CustomerProvider>
+                    <NotificationsLayer>
+                      <Stack
+                        screenOptions={{
+                          // Wide browsers: a page heading under the website top bar, not a second app bar.
+                          ...webPageHeaderOption(isWideWeb),
+                          // In a browser the bar above the page belongs to the browser; Android Chrome still
+                          // reports a top safe-area inset, which doubled the header height (AG-24).
+                          ...(Platform.OS === "web" ? { headerStatusBarHeight: 0 } : {}),
+                          headerShown: false,
+                          headerStyle: { backgroundColor: colors.cardBackground },
+                          headerTintColor: colors.text,
+                          headerTitleStyle: { color: colors.text },
+                          headerShadowVisible: false,
+                          contentStyle: { backgroundColor: colors.background },
                         }}
-                      />
-                      <Stack.Screen
-                        name="notifications"
-                        options={{
-                          headerShown: true,
-                          ...(isWideWeb
-                            ? {
-                                contentStyle: [
-                                  { backgroundColor: colors.background },
-                                  webContentStyle,
-                                ],
-                              }
-                            : {}),
-                          title: "Notificaciones",
-                          headerBackButtonDisplayMode: "minimal",
-                        }}
-                      />
-                      <Stack.Screen
-                        name="notification-preferences"
-                        options={{
-                          headerShown: true,
-                          ...(isWideWeb
-                            ? {
-                                contentStyle: [
-                                  { backgroundColor: colors.background },
-                                  webContentStyle,
-                                ],
-                              }
-                            : {}),
-                          title: "Avisos",
-                          headerBackButtonDisplayMode: "minimal",
-                        }}
-                      />
-                      <Stack.Screen
-                        name="reset-password"
-                        options={{
-                          headerShown: true,
-                          ...(isWideWeb
-                            ? {
-                                contentStyle: [
-                                  { backgroundColor: colors.background },
-                                  webContentStyle,
-                                ],
-                              }
-                            : {}),
-                          title: "Nueva contraseña",
-                          headerBackButtonDisplayMode: "minimal",
-                        }}
-                      />
-                      <Stack.Screen
-                        name="order-confirmation/[id]"
-                        options={{
-                          headerShown: true,
-                          ...(isWideWeb
-                            ? {
-                                contentStyle: [
-                                  { backgroundColor: colors.background },
-                                  webContentStyle,
-                                ],
-                              }
-                            : {}),
-                          title: "Compra confirmada",
-                          headerLeft: () => null,
-                          gestureEnabled: false,
-                          headerBackVisible: false,
-                        }}
-                      />
-                    </Stack>
-                    <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-                    <GoogleAnalytics />
-                    <CookieBanner />
-                  </NotificationsLayer>
-                </CustomerProvider>
-              </FavoritesProvider>
-            </CartProvider>
-          </RegionProvider>
-        </ThemeProvider>
+                      >
+                        <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
+                        <Stack.Screen
+                          name="checkout"
+                          options={{
+                            headerShown: true,
+                            ...(isWideWeb
+                              ? {
+                                  contentStyle: [
+                                    { backgroundColor: colors.background },
+                                    webContentStyle,
+                                  ],
+                                }
+                              : {}),
+                            title: "Finalizar compra",
+                            presentation: "card",
+                            headerBackButtonDisplayMode: "minimal",
+                          }}
+                        />
+                        <Stack.Screen
+                          name="notifications"
+                          options={{
+                            headerShown: true,
+                            ...(isWideWeb
+                              ? {
+                                  contentStyle: [
+                                    { backgroundColor: colors.background },
+                                    webContentStyle,
+                                  ],
+                                }
+                              : {}),
+                            title: "Notificaciones",
+                            headerBackButtonDisplayMode: "minimal",
+                          }}
+                        />
+                        <Stack.Screen
+                          name="notification-preferences"
+                          options={{
+                            headerShown: true,
+                            ...(isWideWeb
+                              ? {
+                                  contentStyle: [
+                                    { backgroundColor: colors.background },
+                                    webContentStyle,
+                                  ],
+                                }
+                              : {}),
+                            title: "Avisos",
+                            headerBackButtonDisplayMode: "minimal",
+                          }}
+                        />
+                        <Stack.Screen
+                          name="reset-password"
+                          options={{
+                            headerShown: true,
+                            ...(isWideWeb
+                              ? {
+                                  contentStyle: [
+                                    { backgroundColor: colors.background },
+                                    webContentStyle,
+                                  ],
+                                }
+                              : {}),
+                            title: "Nueva contraseña",
+                            headerBackButtonDisplayMode: "minimal",
+                          }}
+                        />
+                        <Stack.Screen
+                          name="order-confirmation/[id]"
+                          options={{
+                            headerShown: true,
+                            ...(isWideWeb
+                              ? {
+                                  contentStyle: [
+                                    { backgroundColor: colors.background },
+                                    webContentStyle,
+                                  ],
+                                }
+                              : {}),
+                            title: "Compra confirmada",
+                            headerLeft: () => null,
+                            gestureEnabled: false,
+                            headerBackVisible: false,
+                          }}
+                        />
+                      </Stack>
+                      <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+                      <GoogleAnalytics />
+                      <CookieBanner />
+                    </NotificationsLayer>
+                  </CustomerProvider>
+                </FavoritesProvider>
+              </CartProvider>
+            </RegionProvider>
+          </ThemeProvider>
+        </ToastProvider>
         <MaintenanceGate />
       </GestureHandlerRootView>
     </UiThemeProvider>

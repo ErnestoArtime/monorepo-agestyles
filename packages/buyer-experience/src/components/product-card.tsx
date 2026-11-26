@@ -69,6 +69,9 @@ export const ProductCard = React.memo(function ProductCard({
         title={product.title ?? "Producto"}
         price={amount === undefined ? "Consultar precio" : formatPrice(amount, currency)}
         secondaryPrice={formatCupEquivalent(amount, currency, cupRate)}
+        store={
+          typeof product.metadata?.store_label === "string" ? product.metadata.store_label : null
+        }
         imageUrl={imageUrl}
         onPress={open}
         accessory={

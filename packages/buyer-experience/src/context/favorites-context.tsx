@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useToast } from "@agestyles/ui-native";
 import React, {
   createContext,
   ReactNode,
@@ -21,6 +22,7 @@ interface FavoritesContextValue {
 const FavoritesContext = createContext<FavoritesContextValue | undefined>(undefined);
 
 export function FavoritesProvider({ children }: { children: ReactNode }) {
+  const toast = useToast();
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const favoriteIdsRef = useRef<string[]>([]);
   const [ready, setReady] = useState(false);
@@ -61,23 +63,28 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
     [favoriteIds],
   );
 
-  const toggleFavorite = useCallback(async (productId: string) => {
-    const current = favoriteIdsRef.current;
-    const next = current.includes(productId)
-      ? current.filter((id) => id !== productId)
-      : [...current, productId];
-    favoriteIdsRef.current = next;
-    setFavoriteIds(next);
-    try {
-      await AsyncStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(next));
-    } catch (error) {
-      if (favoriteIdsRef.current === next) {
-        favoriteIdsRef.current = current;
-        setFavoriteIds(current);
+  const toggleFavorite = useCallback(
+    async (productId: string) => {
+      const current = favoriteIdsRef.current;
+      const next = current.includes(productId)
+        ? current.filter((id) => id !== productId)
+        : [...current, productId];
+      favoriteIdsRef.current = next;
+      setFavoriteIds(next);
+      toast.show(current.includes(productId) ? "Quitado de favoritos" : "Añadido a favoritos");
+      try {
+        await AsyncStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(next));
+      } catch (error) {
+        toast.show("No se pudo guardar el cambio en favoritos", "error");
+        if (favoriteIdsRef.current === next) {
+          favoriteIdsRef.current = current;
+          setFavoriteIds(current);
+        }
+        throw error;
       }
-      throw error;
-    }
-  }, []);
+    },
+    [toast],
+  );
 
   return (
     <FavoritesContext.Provider value={{ favoriteIds, isFavorite, toggleFavorite, ready }}>

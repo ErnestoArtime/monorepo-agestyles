@@ -1,7 +1,7 @@
 import { ProductImageSlider } from "./product-image-slider";
 import { ProductSkeleton } from "./product-skeleton";
 import { ShareButton } from "./share-button";
-import { Toast } from "./ui/toast";
+import { useToast } from "@agestyles/ui-native";
 import { WebFooter } from "./web-footer";
 import { ProductExtras, StoreLink } from "./product-extras";
 import { CONTENT_MAX, useResponsive } from "../hooks/use-responsive";
@@ -73,7 +73,11 @@ export function ProductDetail(
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  // The shared toast (bottom of the screen, above the tab bar), like every other action.
+  const globalToast = useToast();
+  const setToast = (next: { message: string; type: "success" | "error" } | null) => {
+    if (next) globalToast.show(next.message, next.type);
+  };
   /** (product, seller) pairs already reported as views in this mount. */
   const viewedSellers = useRef(new Set<string>());
 
@@ -219,7 +223,6 @@ export function ProductDetail(
     try {
       setAdding(true);
       await addToCart(selectedOffer.id, quantity);
-      setToast({ message: "Producto añadido al carrito", type: "success" });
     } catch {
       setToast({ message: "No se pudo añadir el producto al carrito", type: "error" });
     } finally {
@@ -369,14 +372,7 @@ export function ProductDetail(
       />
     ) : null;
 
-  const toastView = (
-    <Toast
-      message={toast?.message ?? ""}
-      visible={!!toast}
-      onHide={() => setToast(null)}
-      type={toast?.type ?? "success"}
-    />
-  );
+  const toastView = null;
 
   if (props.layout === "sheet") {
     const onClose = props.onClose;

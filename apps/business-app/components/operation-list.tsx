@@ -60,9 +60,10 @@ export function OperationList({
       }
     >
       {/* Phones and narrow browsers already show the page name in the app header (and the menu
-          reaches every section), so the big title only appears with the website layout. */}
+          reaches every section), so the big title and its description only appear with the
+          website layout. */}
       {isWideWeb ? <Text style={styles.title}>{title}</Text> : null}
-      {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+      {isWideWeb && subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       {firstLoad || (loading && nothingRendered) ? (
         <View style={styles.placeholder} accessibilityLabel="Cargando">
           {skeleton === "cards" ? (

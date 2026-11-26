@@ -1,4 +1,5 @@
 import { createBuyerCartFeature } from "@agestyles/features-buyer/cart";
+import { useToast } from "@agestyles/ui-native";
 import {
   handoffLines,
   parseHandoffCartId,
@@ -76,6 +77,7 @@ export async function takeHandoffArrival(): Promise<boolean> {
 void adoptHandoffCart();
 
 export function CartProvider({ children }: { children: ReactNode }) {
+  const toast = useToast();
   const [cart, setCart] = useState<HttpTypes.StoreCart | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -170,8 +172,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       const updatedCart = await cartFeature().addOffer(currentCart.id, offerId, quantity);
       setCart(updatedCart);
+      toast.show(quantity > 1 ? `${quantity} unidades añadidas al carrito` : "Añadido al carrito");
     } catch (err) {
       setError("No se pudo añadir el producto al carrito. Inténtalo de nuevo.");
+      toast.show("No se pudo añadir al carrito", "error");
       throw err;
     } finally {
       setLoading(false);
@@ -204,8 +208,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       const updatedCart = await cartFeature().removeItem(cart.id, itemId);
       setCart(updatedCart);
+      toast.show("Quitado del carrito");
     } catch (err) {
       setError("No se pudo quitar el producto del carrito. Inténtalo de nuevo.");
+      toast.show("No se pudo quitar del carrito", "error");
       throw err;
     } finally {
       setLoading(false);

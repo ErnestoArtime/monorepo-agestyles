@@ -1,4 +1,5 @@
 import { ManagementPanel, ResponsiveManagementList } from "../../components/management-list";
+import { useNotice } from "../../hooks/use-notice";
 import { useResponsive } from "../../hooks/use-responsive";
 import { useRouter, type Href } from "expo-router";
 import { Button, Card, PillGroup, SearchField, StatusBadge } from "@agestyles/ui-native";
@@ -64,7 +65,7 @@ export default function AdminStoresScreen() {
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useNotice();
   const [filter, setFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState<Store | null>(null);

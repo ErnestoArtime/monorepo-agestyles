@@ -1,4 +1,5 @@
 import { mediaVariant } from "@agestyles/api-client/media";
+import { useNotice } from "../hooks/use-notice";
 import { Button } from "@agestyles/ui-native";
 import { Icon } from "@agestyles/icons";
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
@@ -37,7 +38,7 @@ export default function StoreProfileScreen() {
   const [banner, setBanner] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useNotice();
   const [busy, setBusy] = useState<"" | "logo" | "banner" | "save">("");
 
   const load = useCallback(async () => {

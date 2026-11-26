@@ -1,4 +1,5 @@
 import { Button, StatusBadge } from "@agestyles/ui-native";
+import { useNotice } from "../hooks/use-notice";
 import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import { CategoryPicker, categoryPath, type CategoryNode } from "../components/category-picker";
@@ -43,7 +44,7 @@ export default function CategoryRequestsScreen() {
   const [canEdit, setCanEdit] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useNotice();
   const [sending, setSending] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");

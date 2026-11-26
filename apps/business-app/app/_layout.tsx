@@ -9,7 +9,7 @@ import { AdminProvider, useAdmin } from "../context/admin-context";
 import { BusinessProvider, useBusiness } from "../context/business-context";
 import { useResponsive } from "../hooks/use-responsive";
 import { useBusinessTheme } from "../hooks/use-business-theme";
-import { UiThemeProvider } from "@agestyles/ui-native";
+import { ToastProvider, UiThemeProvider } from "@agestyles/ui-native";
 
 const AUTH_PATHS = ["/forgot-password", "/reset-password", "/aceptar-invitacion"];
 
@@ -93,9 +93,11 @@ export default function RootLayout() {
         <BusinessProvider>
           <NotificationsShell>
             <StatusBar style={theme.statusBarStyle} />
-            <MobileMenuProvider>
-              <Shell />
-            </MobileMenuProvider>
+            <ToastProvider bottomOffset={76}>
+              <MobileMenuProvider>
+                <Shell />
+              </MobileMenuProvider>
+            </ToastProvider>
           </NotificationsShell>
         </BusinessProvider>
       </AdminProvider>

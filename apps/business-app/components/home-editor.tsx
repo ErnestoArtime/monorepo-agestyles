@@ -1,4 +1,5 @@
 import { mediaVariant } from "@agestyles/api-client/media";
+import { useNotice } from "../hooks/use-notice";
 import { Button, PillGroup } from "@agestyles/ui-native";
 import { Icon } from "@agestyles/icons";
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
@@ -124,7 +125,7 @@ export function HomeEditor({
   const [sellers, setSellers] = useState<Named[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useNotice();
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<Banner | null>(null);

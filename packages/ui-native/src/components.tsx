@@ -3,11 +3,14 @@ import React from "react";
 import {
   ActivityIndicator,
   Image,
+  Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Switch,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
   type StyleProp,
   type SwitchProps,
@@ -122,6 +125,47 @@ export function Button({
   );
 }
 
+/**
+ * A row of chips. In a wide browser they wrap; on phones and small screens they stay on one
+ * line and scroll sideways, so a filter bar never grows into several rows.
+ */
+export function ChipRow({
+  children,
+  accessibilityRole,
+  accessibilityLabel,
+}: {
+  children: React.ReactNode;
+  accessibilityRole?: "radiogroup" | "tablist" | "none";
+  accessibilityLabel?: string;
+}) {
+  const { width } = useWindowDimensions();
+  const wide = Platform.OS === "web" && width >= 900;
+  if (wide) {
+    return (
+      <View
+        style={styles.pills}
+        accessibilityRole={accessibilityRole}
+        accessibilityLabel={accessibilityLabel}
+      >
+        {children}
+      </View>
+    );
+  }
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+      style={styles.chipScroll}
+      contentContainerStyle={styles.chipScrollContent}
+      accessibilityRole={accessibilityRole}
+      accessibilityLabel={accessibilityLabel}
+    >
+      {children}
+    </ScrollView>
+  );
+}
+
 /** Single-choice pills (variant options, filters); the selected one is filled. */
 export function PillGroup<T extends string>({
   options,
@@ -136,11 +180,7 @@ export function PillGroup<T extends string>({
 }) {
   const { color } = useUiTheme();
   return (
-    <View
-      style={styles.pills}
-      accessibilityRole="radiogroup"
-      accessibilityLabel={accessibilityLabel}
-    >
+    <ChipRow accessibilityRole="radiogroup" accessibilityLabel={accessibilityLabel}>
       {options.map((option) => {
         const selected = option.value === value;
         return (
@@ -171,7 +211,7 @@ export function PillGroup<T extends string>({
           </Pressable>
         );
       })}
-    </View>
+    </ChipRow>
   );
 }
 
@@ -316,11 +356,14 @@ export function ProductTile({
   title,
   price,
   secondaryPrice,
+  store,
   imageUrl,
   onPress,
   badge,
   accessory,
 }: {
+  /** Name of the store that sells it (or «N tiendas»), shown under the title. */
+  store?: string | null;
   title: string;
   price: string;
   secondaryPrice?: string | null;
@@ -349,6 +392,14 @@ export function ProductTile({
       <Text numberOfLines={2} style={[styles.tileTitle, { color: color.text }]}>
         {title}
       </Text>
+      {store ? (
+        <View style={styles.tileStore}>
+          <Icon name="store" size={12} color={color.muted} />
+          <Text numberOfLines={1} style={[styles.tileStoreText, { color: color.muted }]}>
+            {store}
+          </Text>
+        </View>
+      ) : null}
       <Text style={[styles.tilePrice, { color: color.text }]}>{price}</Text>
       {secondaryPrice ? (
         <Text style={[styles.tileSecondary, { color: color.muted }]}>{secondaryPrice}</Text>
@@ -383,6 +434,8 @@ const styles = StyleSheet.create({
   },
   buttonText: { fontSize: 16, fontWeight: "600" },
   pills: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  chipScroll: { flexGrow: 0 },
+  chipScrollContent: { flexDirection: "row", gap: 8, paddingRight: 8 },
   pill: {
     minHeight: 40,
     paddingHorizontal: 16,
@@ -428,6 +481,8 @@ const styles = StyleSheet.create({
   tileBadge: { position: "absolute", left: 8, top: 8 },
   tileAccessory: { position: "absolute", right: 8, top: 8 },
   tileTitle: { fontSize: 14, lineHeight: 19 },
+  tileStore: { flexDirection: "row", alignItems: "center", gap: 4 },
+  tileStoreText: { flexShrink: 1, fontSize: 12 },
   tilePrice: { fontSize: 15, fontWeight: "700" },
   tileSecondary: { fontSize: 12 },
 });

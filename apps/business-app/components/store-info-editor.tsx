@@ -9,6 +9,7 @@ import {
   type SocialKey,
   type StoreInfo,
 } from "@agestyles/api-client/store-info";
+import { useNotice } from "../hooks/use-notice";
 import { AppSwitch, Button } from "@agestyles/ui-native";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text, TextInput, View, type KeyboardTypeOptions } from "react-native";
@@ -182,7 +183,7 @@ export function StoreInfoEditor({ title, subtitle, backLabel, load, save }: Stor
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useNotice();
   const [dirty, setDirty] = useState(false);
 
   const refresh = useCallback(async () => {

@@ -1,4 +1,5 @@
 import { mediaVariant } from "@agestyles/api-client/media";
+import { useNotice } from "../hooks/use-notice";
 import { Button } from "@agestyles/ui-native";
 import { Icon } from "@agestyles/icons";
 import { useRouter } from "expo-router";
@@ -37,7 +38,7 @@ export default function StoreSectionsScreen() {
   const [canEdit, setCanEdit] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useNotice();
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<StoreSection | null>(null);

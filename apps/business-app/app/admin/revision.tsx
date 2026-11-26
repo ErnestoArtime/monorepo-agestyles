@@ -1,4 +1,5 @@
 import { mediaVariant } from "@agestyles/api-client/media";
+import { useNotice } from "../../hooks/use-notice";
 import { Button } from "@agestyles/ui-native";
 import { Icon } from "@agestyles/icons";
 import { useCallback, useEffect, useState } from "react";
@@ -32,7 +33,7 @@ export default function AdminReviewScreen() {
   const [changes, setChanges] = useState<ProductChange[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useNotice();
   const [declining, setDeclining] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState("");

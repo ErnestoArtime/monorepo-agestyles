@@ -96,7 +96,14 @@ export function fetchHome(regionId: string, sellerId?: string | null) {
 }
 
 /** The product cards render Store API products; a catalog card carries what they need. */
-export function cardAsProduct(card: CatalogCard): HttpTypes.StoreProduct {
+/** «Tienda X», or the number of stores when several sell the product; null when unknown. */
+export function storeLabel(sellers: { name: string }[] | undefined): string | null {
+  if (!sellers?.length) return null;
+  return sellers.length === 1 ? sellers[0].name : `${sellers.length} tiendas`;
+}
+
+/** `showStore` is false inside a store's own page, where its name would repeat on every card. */
+export function cardAsProduct(card: CatalogCard, showStore = true): HttpTypes.StoreProduct {
   return {
     id: card.id,
     title: card.title,
@@ -104,6 +111,8 @@ export function cardAsProduct(card: CatalogCard): HttpTypes.StoreProduct {
     thumbnail: card.thumbnail,
     created_at: card.created_at,
     categories: card.categories,
+    // Shown under the title in the grids, so a product always says whose it is.
+    metadata: { store_label: showStore ? storeLabel(card.sellers) : null },
     variants: [
       { calculated_price: { calculated_amount: card.price, currency_code: card.currency_code } },
     ],

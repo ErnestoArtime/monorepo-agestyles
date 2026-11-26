@@ -1,4 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useNotice } from "../../hooks/use-notice";
 import { ManagementPager, ManagementPanel } from "../../components/management-list";
 import { Button, ConfirmDialog, PillGroup, SearchField } from "@agestyles/ui-native";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -58,7 +59,7 @@ export default function AdminOrdersScreen() {
   const [payments, setPayments] = useState<ManualPayment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useNotice();
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState("");
   const [offset, setOffset] = useState(0);

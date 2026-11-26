@@ -2155,3 +2155,14 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - 2026-11-26 · Claude · AG-69, aviso de cookies de Tienda web: se salía por la derecha en móvil (`width: 100%` más los márgenes `left`/`right` de 16 px). Ahora ocupa el ancho menos los márgenes y se centra con márgenes automáticos. Medido con Chromium: móvil 16→374 px de 390; escritorio 360→1080 px de 1440. Sin publicar.
 
 - 2026-11-26 · Claude · AG-69, interruptores: Ernesto no quiso el azul pálido que elegí. Nuevo `AppSwitch` en `@agestyles/ui-native` (pista `success`, pulgar `onSuccess` si está activo y `muted` si no, también `activeThumbColor` para react-native-web) usado en Avisos, Información de la tienda, Mi cuenta y la entrega del pago; antes cada pantalla tenía su color por defecto. Capturas de Chromium en móvil claro y oscuro (Información de la tienda); no se vio en Android real. Sin publicar.
+
+## 2026-11-26 · Claude · AG-69, segunda ronda tras revisar las capturas con Ernesto
+
+- **Subtítulos:** `OperationList` ya no muestra título ni descripción en móvil (solo en web ancha).
+- **Inventario:** la fila pasa a columna: nombre y existencias arriba; «Historial» a la izquierda y −, +, ajustar a la derecha. El nombre ya no se parte en tres líneas.
+- **Chips:** nuevo `ChipRow` en `@agestyles/ui-native`; `PillGroup` (casi todos los filtros de Negocio y Tienda) y los chips de Inventario y de venta de gestor se ven en una línea con desplazamiento lateral en móvil y pantallas pequeñas; en web ancha siguen envolviendo.
+- **Tienda del producto:** `CatalogCard.sellers` llega ya en el catálogo; `cardAsProduct` lo pone en `metadata.store_label` («Tienda X» o «N tiendas») y `ProductTile` lo muestra bajo el título con un icono. No se muestra dentro de la página de una tienda (se repetiría). No se ha tocado Favoritos (sus productos vienen de otra consulta sin tiendas).
+- **Toasts:** nuevo `ToastProvider`/`useToast` en `@agestyles/ui-native`, montado en Tienda y en Negocio. Tienda avisa al añadir y quitar favoritos y del carrito (la ficha ya no usa su `Toast` local); Negocio: `useNotice` (hook nuevo) convierte las 17 líneas de confirmación existentes («Perfil guardado…», «Movimiento registrado…», etc.) también en toast. Los mensajes que empiezan por «No » salen como informativos.
+- **Comprobado:** tipado de Negocio y Tienda sin errores; ESLint sin errores en lo tocado; capturas de Chromium en móvil oscuro: Inventario, Pedidos, Productos, Tiendas (admin), inicio, tienda, ficha y el toast de favoritos. **No comprobado:** Android real y los toasts de Negocio en acción (no se ejecutaron acciones con datos de prueba), ni que el toast no tape el botón principal en pantallas con barra inferior propia (ficha de producto, carrito).
+- **No existe «favoritos de tiendas»:** solo hay favoritos de productos; Ernesto mencionó añadir una tienda a favoritos y queda por decidir si se quiere esa función.
+- Sin publicar.

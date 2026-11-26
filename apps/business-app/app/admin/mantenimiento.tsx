@@ -1,4 +1,5 @@
 import { Button } from "@agestyles/ui-native";
+import { useNotice } from "../../hooks/use-notice";
 import { Icon } from "@agestyles/icons";
 import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
@@ -28,7 +29,7 @@ export default function MaintenanceScreen() {
   const [draft, setDraft] = useState<Maintenance | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useNotice();
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {

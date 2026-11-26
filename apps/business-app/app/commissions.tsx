@@ -1,4 +1,5 @@
 import { useRouter } from "expo-router";
+import { useNotice } from "../hooks/use-notice";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Platform, Pressable, Share, StyleSheet, Text, TextInput, View } from "react-native";
 import { OperationList, Section } from "../components/operation-list";
@@ -71,7 +72,7 @@ export default function CommissionsScreen() {
   const { request, requestText, seller } = useBusiness();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useNotice();
   const [busy, setBusy] = useState("");
   const [isManager, setIsManager] = useState(false);
   const [ownAgentId, setOwnAgentId] = useState<string | null>(null);

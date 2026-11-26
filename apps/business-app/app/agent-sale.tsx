@@ -1,3 +1,4 @@
+import { ChipRow } from "@agestyles/ui-native";
 import { Icon } from "@agestyles/icons";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -243,7 +244,7 @@ export default function AgentSaleScreen() {
             })}
           </View>
           {locations.length > 1 ? (
-            <View style={styles.chips} accessibilityRole="radiogroup" accessibilityLabel="Almacén">
+            <ChipRow accessibilityRole="radiogroup" accessibilityLabel="Almacén">
               {locations.map((location) => {
                 const selected = locationId === location.id;
                 return (
@@ -260,7 +261,7 @@ export default function AgentSaleScreen() {
                   </Pressable>
                 );
               })}
-            </View>
+            </ChipRow>
           ) : null}
           <TextInput
             value={note}

@@ -1,4 +1,5 @@
 import { mediaVariant } from "@agestyles/api-client/media";
+import { useNotice } from "../../hooks/use-notice";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CardGrid } from "../../components/card-grid";
 import { useResponsive } from "../../hooks/use-responsive";
@@ -73,7 +74,7 @@ export default function ProductsScreen() {
   const [items, setItems] = useState<SellerProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useNotice();
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [title, setTitle] = useState("");

@@ -1,4 +1,5 @@
 import { Button, PillGroup, StatusBadge } from "@agestyles/ui-native";
+import { useNotice } from "../../hooks/use-notice";
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { CategoryPicker, categoryPath, type CategoryNode } from "../../components/category-picker";
@@ -42,7 +43,7 @@ export default function AdminCategoriesScreen() {
   const [categories, setCategories] = useState<CategoryNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useNotice();
   const [open, setOpen] = useState<string | null>(null);
   const [action, setAction] = useState<Action>("approve");
   const [name, setName] = useState("");

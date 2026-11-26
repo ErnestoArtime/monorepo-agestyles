@@ -1,4 +1,5 @@
 import { ManagementPanel } from "../../components/management-list";
+import { useNotice } from "../../hooks/use-notice";
 import { Icon } from "@agestyles/icons";
 import { Button, PillGroup, SearchField, StatusBadge } from "@agestyles/ui-native";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -108,7 +109,7 @@ export default function AdminUsersScreen() {
   const wide = Platform.OS === "web" && width >= 750;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useNotice();
   const [people, setPeople] = useState<Person[]>([]);
   const [invites, setInvites] = useState<Invite[]>([]);
   const [stores, setStores] = useState<Store[]>([]);

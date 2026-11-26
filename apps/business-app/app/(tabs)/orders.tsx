@@ -1,4 +1,5 @@
 import { ManagementPager, ManagementPanel } from "../../components/management-list";
+import { useNotice } from "../../hooks/use-notice";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { OrderDirectory } from "../../components/order-directory";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -49,7 +50,7 @@ export default function OrdersScreen() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [fulfilling, setFulfilling] = useState(false);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useNotice();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [locations, setLocations] = useState<StockLocation[]>([]);
   const [locationId, setLocationId] = useState("");

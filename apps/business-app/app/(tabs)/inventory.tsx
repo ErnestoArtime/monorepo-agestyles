@@ -1,5 +1,6 @@
 import { ManagementPanel, ResponsiveManagementList } from "../../components/management-list";
-import { SearchField } from "@agestyles/ui-native";
+import { useNotice } from "../../hooks/use-notice";
+import { ChipRow, SearchField } from "@agestyles/ui-native";
 import { Icon } from "@agestyles/icons";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
@@ -38,7 +39,7 @@ export default function InventoryScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState("");
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useNotice();
   const [open, setOpen] = useState("");
   const [detailKey, setDetailKey] = useState("");
   const [query, setQuery] = useState("");
@@ -179,16 +180,21 @@ export default function InventoryScreen() {
     return (
       <View key={key} style={styles.itemBlock}>
         <View style={styles.itemRow}>
-          <View style={styles.itemDetails}>
-            <Text style={styles.itemTitle}>{title}</Text>
-            <Text style={styles.itemSub}>
-              {item.sku ? `SKU ${item.sku}` : "Sin SKU"}
-              {level.location?.name
-                ? ` · ${level.location.name}`
-                : !level.location_id
-                  ? " · Sin almacén asignado"
-                  : ""}
-            </Text>
+          <View style={styles.itemTop}>
+            <View style={styles.itemDetails}>
+              <Text style={styles.itemTitle}>{title}</Text>
+              <Text style={styles.itemSub}>
+                {item.sku ? `SKU ${item.sku}` : "Sin SKU"}
+                {level.location?.name
+                  ? ` · ${level.location.name}`
+                  : !level.location_id
+                    ? " · Sin almacén asignado"
+                    : ""}
+              </Text>
+            </View>
+            <Text style={styles.quantity}>{level.stocked_quantity ?? "—"}</Text>
+          </View>
+          <View style={styles.itemBottom}>
             <Pressable
               onPress={() => {
                 setDetailKey("");
@@ -206,47 +212,42 @@ export default function InventoryScreen() {
             >
               <Text style={styles.linkText}>Historial</Text>
             </Pressable>
+            {editable && level.location_id ? (
+              <View style={styles.adjusters}>
+                <Pressable
+                  onPress={() => void record(item, level, { type: "baja", quantity: 1 })}
+                  disabled={busy || !Number(level.stocked_quantity)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Registrar baja de una unidad"
+                  style={[styles.adjustButton, busy && styles.disabled]}
+                >
+                  <Icon name="minus" size={20} color={theme.action} />
+                </Pressable>
+                <Pressable
+                  onPress={() => void record(item, level, { type: "alta", quantity: 1 })}
+                  disabled={busy}
+                  accessibilityRole="button"
+                  accessibilityLabel="Registrar alta de una unidad"
+                  style={[styles.adjustButton, busy && styles.disabled]}
+                >
+                  <Icon name="plus" size={20} color={theme.action} />
+                </Pressable>
+                <Pressable
+                  onPress={() => toggle(key)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Registrar otro movimiento"
+                  accessibilityState={{ expanded: open === key }}
+                  style={styles.adjustButton}
+                >
+                  <Icon name="sliders" size={20} color={theme.action} />
+                </Pressable>
+              </View>
+            ) : null}
           </View>
-          <Text style={styles.quantity}>{level.stocked_quantity ?? "—"}</Text>
-          {editable && level.location_id ? (
-            <View style={styles.adjusters}>
-              <Pressable
-                onPress={() => void record(item, level, { type: "baja", quantity: 1 })}
-                disabled={busy || !Number(level.stocked_quantity)}
-                accessibilityRole="button"
-                accessibilityLabel="Registrar baja de una unidad"
-                style={[styles.adjustButton, busy && styles.disabled]}
-              >
-                <Icon name="minus" size={20} color={theme.action} />
-              </Pressable>
-              <Pressable
-                onPress={() => void record(item, level, { type: "alta", quantity: 1 })}
-                disabled={busy}
-                accessibilityRole="button"
-                accessibilityLabel="Registrar alta de una unidad"
-                style={[styles.adjustButton, busy && styles.disabled]}
-              >
-                <Icon name="plus" size={20} color={theme.action} />
-              </Pressable>
-              <Pressable
-                onPress={() => toggle(key)}
-                accessibilityRole="button"
-                accessibilityLabel="Registrar otro movimiento"
-                accessibilityState={{ expanded: open === key }}
-                style={styles.adjustButton}
-              >
-                <Icon name="sliders" size={20} color={theme.action} />
-              </Pressable>
-            </View>
-          ) : null}
         </View>
         {open === key ? (
           <View style={styles.form}>
-            <View
-              style={styles.chips}
-              accessibilityRole="radiogroup"
-              accessibilityLabel="Tipo de movimiento"
-            >
+            <ChipRow accessibilityLabel="Tipo de movimiento">
               {MOVEMENT_TYPE_OPTIONS.map((option) => {
                 const selected = type === option.value;
                 return (
@@ -263,7 +264,7 @@ export default function InventoryScreen() {
                   </Pressable>
                 );
               })}
-            </View>
+            </ChipRow>
             {help ? <Text style={styles.itemSub}>{help}</Text> : null}
             <Text style={styles.label}>{type === "ajuste" ? "Stock contado" : "Unidades"}</Text>
             <TextInput
@@ -406,17 +407,18 @@ const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
       marginBottom: 8,
     },
     linkText: { color: theme.action, fontSize: 14, fontWeight: "500" },
-    inlineLink: { minHeight: 32, justifyContent: "center", alignSelf: "flex-start" },
+    inlineLink: { minHeight: 44, justifyContent: "center" },
     itemBlock: {
       borderBottomColor: theme.border,
       borderBottomWidth: StyleSheet.hairlineWidth,
     },
-    itemRow: {
-      minHeight: 72,
-      paddingHorizontal: 14,
-      paddingVertical: 8,
+    // Name and stock on top, actions underneath: the buttons no longer squeeze the name.
+    itemRow: { paddingHorizontal: 14, paddingVertical: 10, gap: 6 },
+    itemTop: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
+    itemBottom: {
       flexDirection: "row",
       alignItems: "center",
+      justifyContent: "space-between",
       gap: 12,
     },
     itemDetails: { flex: 1 },

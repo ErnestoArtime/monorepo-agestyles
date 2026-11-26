@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNotice } from "../../hooks/use-notice";
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Icon } from "@agestyles/icons";
 import { OperationList, Section } from "../../components/operation-list";
@@ -49,7 +50,7 @@ export default function TeamScreen() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useNotice();
 
   const canManageMembers = Boolean(member?.is_owner || member?.permissions?.members === "manage");
   const membersPath = useMemo(
