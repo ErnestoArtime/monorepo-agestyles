@@ -199,7 +199,7 @@ function FavoriteProducts() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  tabs: { flexGrow: 0, flexShrink: 0, paddingTop: 12, paddingBottom: 4 },
+  tabs: { flexGrow: 0, flexShrink: 0, paddingTop: 12, paddingBottom: 4, paddingHorizontal: 16 },
   list: { paddingHorizontal: 10, paddingBottom: 24 },
   emptyList: { flexGrow: 1, paddingHorizontal: 20, paddingBottom: 24 },
   row: { justifyContent: "flex-start" },
