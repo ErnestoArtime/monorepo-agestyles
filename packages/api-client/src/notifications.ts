@@ -12,7 +12,7 @@ export type Fetcher = <T>(
 ) => Promise<T>;
 
 export type NotificationGroup =
-  "orders" | "payments" | "inventory" | "commissions" | "catalog" | "account";
+  "orders" | "payments" | "inventory" | "commissions" | "catalog" | "account" | "following";
 export type NotificationChannel = "push" | "email";
 
 /** Where tapping a notification should lead; the app maps `screen` to its own routes. */
@@ -128,6 +128,7 @@ export const GROUP_LABELS: Record<NotificationGroup, string> = {
   commissions: "Comisiones",
   catalog: "Catálogo y publicación",
   account: "Cuenta",
+  following: "Tiendas que sigues",
 };
 
 export const GROUP_HINTS: Record<NotificationGroup, string> = {
@@ -137,6 +138,7 @@ export const GROUP_HINTS: Record<NotificationGroup, string> = {
   commissions: "Solicitudes y entregas de retiros de comisión.",
   catalog: "Productos aprobados, rechazados o con cambios pedidos.",
   account: "Seguridad de tu cuenta.",
+  following: "Productos nuevos de las tiendas con el aviso activado.",
 };
 
 export const CHANNEL_LABELS: Record<NotificationChannel, string> = {
@@ -206,7 +208,7 @@ export function formatNotificationTime(iso: string, now: Date = new Date()): str
 /** Settings rows grouped for display, in a stable order, ignoring unknown groups. */
 export function groupPreferences(
   rows: PreferenceRow[],
-): { group: NotificationGroup; push: boolean; email: boolean }[] {
+): { group: NotificationGroup; push: boolean; email: boolean; channels: NotificationChannel[] }[] {
   const order = Object.keys(GROUP_LABELS) as NotificationGroup[];
   return order
     .filter((group) => rows.some((row) => row.group === group))
@@ -214,5 +216,9 @@ export function groupPreferences(
       group,
       push: rows.find((row) => row.group === group && row.channel === "push")?.enabled ?? false,
       email: rows.find((row) => row.group === group && row.channel === "email")?.enabled ?? false,
+      // Only the channels the server offers for the group (a push-only group has no email switch).
+      channels: (["push", "email"] as const).filter((channel) =>
+        rows.some((row) => row.group === group && row.channel === channel),
+      ),
     }));
 }

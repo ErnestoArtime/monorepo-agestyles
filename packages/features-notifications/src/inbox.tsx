@@ -22,6 +22,7 @@ const GROUP_ICONS: Record<NotificationGroup, IconName> = {
   commissions: "tag",
   catalog: "boxes",
   account: "shieldCheck",
+  following: "store",
 };
 
 /**

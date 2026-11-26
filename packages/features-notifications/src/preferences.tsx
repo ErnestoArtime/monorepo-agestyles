@@ -136,7 +136,7 @@ export function NotificationPreferences({ app }: { app: AppName }) {
               <Text style={[styles.cardText, { color: color.muted }]}>
                 {GROUP_HINTS[entry.group]}
               </Text>
-              {(["push", "email"] as const).map((channel) => (
+              {entry.channels.map((channel) => (
                 <View key={channel} style={styles.switchRow}>
                   <Text style={[styles.switchLabel, { color: color.text }]}>
                     {CHANNEL_LABELS[channel]}

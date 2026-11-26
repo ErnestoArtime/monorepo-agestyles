@@ -108,9 +108,14 @@ assert.deepEqual(
     { group: "orders", channel: "email", enabled: false },
   ]),
   [
-    { group: "orders", push: true, email: false },
-    { group: "payments", push: false, email: true },
+    { group: "orders", push: true, email: false, channels: ["push", "email"] },
+    { group: "payments", push: false, email: true, channels: ["email"] },
   ],
 );
+// AG-70: a push-only group offers no email switch
+assert.deepEqual(groupPreferences([{ group: "following", channel: "push", enabled: true }]), [
+  { group: "following", push: true, email: false, channels: ["push"] },
+]);
+assert.equal(groupLabel("following"), "Tiendas que sigues");
 
 console.log("api-client notifications: ok");

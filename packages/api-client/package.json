@@ -15,11 +15,12 @@
     "./seller-contacts": "./src/seller-contacts.ts",
     "./catalog-comparison": "./src/catalog-comparison.ts",
     "./notifications": "./src/notifications.ts",
+    "./store-follows": "./src/store-follows.ts",
     "./media": "./src/media.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "node test/notifications.test.ts"
+    "test": "node test/notifications.test.ts && node test/store-follows.test.ts"
   },
   "dependencies": {
     "@agestyles/domain": "workspace:*",
