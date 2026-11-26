@@ -20,6 +20,8 @@ export const GROUPS = [
   "catalog",
   "account",
   "marketplace",
+  /** Alerts from stores a customer follows (AG-70). */
+  "following",
 ] as const;
 export type NotificationGroup = (typeof GROUPS)[number];
 
@@ -363,6 +365,23 @@ export const EVENTS = {
       target: { screen: "commissions" },
     }),
   },
+  /** AG-70: a followed store published a product; only for followers who turned the alert on. */
+  followed_store_new_product: {
+    recipient: "customer",
+    group: "following",
+    channels: ["push"],
+    render: (p) => {
+      const productId = text(p.product_id);
+      const name = text(p.store);
+      return {
+        title: name ? `Producto nuevo de ${name}` : "Producto nuevo de una tienda que sigues",
+        body: text(p.product)
+          ? `${quoted(p.product)} ya está disponible.`
+          : "Ya hay un producto nuevo.",
+        target: productId ? { screen: "product", params: { id: productId } } : { screen: "stores" },
+      };
+    },
+  },
   admin_store_registered: {
     recipient: "user",
     group: "marketplace",
@@ -505,6 +524,26 @@ export function resolveDeliveryChannels(
   return CHANNELS.filter((channel) => channelEnabled(definition, channel, preferences));
 }
 
+/**
+ * Channels the settings screen offers for a group: the ones some event of that group can use,
+ * so a push-only group (AG-70) shows no useless email switch. A group whose events use no
+ * external channel (the administration's `marketplace`) keeps the legacy full list.
+ */
+function offeredChannels(
+  recipientType: RecipientType,
+  group: NotificationGroup,
+): DeliveryChannel[] {
+  const offered = CHANNELS.filter((channel) =>
+    Object.values(EVENTS).some(
+      (definition: EventDefinition) =>
+        definition.recipient === recipientType &&
+        definition.group === group &&
+        definition.channels.includes(channel),
+    ),
+  );
+  return offered.length > 0 ? offered : [...CHANNELS];
+}
+
 /** The settings screen: every group the recipient can receive, with each channel resolved. */
 export function preferencesMatrix(
   recipientType: RecipientType,
@@ -519,7 +558,7 @@ export function preferencesMatrix(
       ),
   );
   return groups.flatMap((group) =>
-    CHANNELS.map((channel) => {
+    offeredChannels(recipientType, group).map((channel) => {
       const row = stored.find((item) => item.group === group && item.channel === channel);
       return { group, channel, enabled: row ? row.enabled : DEFAULT_CHANNEL_ENABLED[channel] };
     }),

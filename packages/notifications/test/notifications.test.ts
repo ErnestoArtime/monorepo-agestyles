@@ -156,7 +156,10 @@ invalid(
 const customerMatrix = preferencesMatrix("customer", [
   { group: "orders", channel: "email", enabled: true },
 ]);
-assert.deepEqual([...new Set(customerMatrix.map((row) => row.group))], ["orders", "payments"]);
+assert.deepEqual(
+  [...new Set(customerMatrix.map((row) => row.group))],
+  ["orders", "payments", "following"],
+);
 assert.equal(
   customerMatrix.find((row) => row.group === "orders" && row.channel === "email")?.enabled,
   true,
@@ -168,6 +171,50 @@ assert.equal(
 assert.equal(
   customerMatrix.find((row) => row.group === "payments" && row.channel === "email")?.enabled,
   false,
+);
+// AG-70: «following» is push-only, so no email switch is offered; it is on until the customer turns it off
+assert.deepEqual(
+  customerMatrix.filter((row) => row.group === "following"),
+  [{ group: "following", channel: "push", enabled: true }],
+);
+assert.deepEqual(
+  preferencesMatrix("customer", [{ group: "following", channel: "push", enabled: false }]).find(
+    (row) => row.group === "following",
+  ),
+  { group: "following", channel: "push", enabled: false },
+);
+assert.deepEqual(
+  EVENTS.followed_store_new_product.channels,
+  ["push"],
+  "new-product alerts are push only",
+);
+assert.deepEqual(
+  resolveDeliveryChannels(EVENTS.followed_store_new_product, [
+    { group: "following", channel: "push", enabled: false },
+  ]),
+  [],
+  "the customer can turn the group off",
+);
+assert.deepEqual(resolveDeliveryChannels(EVENTS.followed_store_new_product, []), ["push"]);
+assert.equal(eventAllowsEmail("followed_store_new_product"), false);
+{
+  const rendered = renderNotification("followed_store_new_product", {
+    store: "Tienda Sol",
+    product: "Lámpara",
+    product_id: "prod_1",
+  });
+  assert.equal(rendered.title, "Producto nuevo de Tienda Sol");
+  assert.equal(rendered.body, "«Lámpara» ya está disponible.");
+  assert.deepEqual(rendered.target, { screen: "product", params: { id: "prod_1" } });
+  assert.equal(
+    renderNotification("followed_store_new_product", {}).title,
+    "Producto nuevo de una tienda que sigues",
+  );
+}
+// One alert per product and customer, however many times the product is published
+assert.equal(
+  dedupeKey("followed_store_new_product", "prod_1", "cus_1"),
+  "followed_store_new_product:prod_1:cus_1",
 );
 assert.deepEqual(
   [...new Set(preferencesMatrix("member", []).map((row) => row.group))],

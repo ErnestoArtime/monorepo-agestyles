@@ -13,6 +13,7 @@ const NotificationPreference = model
       "catalog",
       "account",
       "marketplace",
+      "following",
     ]),
     channel: model.enum(["push", "email"]),
     enabled: model.boolean(),

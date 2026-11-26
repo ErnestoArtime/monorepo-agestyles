@@ -15,6 +15,7 @@ const Notification = model
       "catalog",
       "account",
       "marketplace",
+      "following",
     ]),
     title: model.text(),
     body: model.text(),
