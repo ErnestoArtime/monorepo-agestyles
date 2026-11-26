@@ -91,7 +91,20 @@ export class ExpoPushClient {
     } catch {
       throw new ExpoRequestError("network_error");
     }
-    if (!response.ok) throw new ExpoRequestError(`http_${response.status}`);
+    if (!response.ok) {
+      if (url === this.sendUrl && response.status === 400) {
+        const body = (await response.json().catch(() => null)) as {
+          errors?: { code?: string }[];
+        } | null;
+        if (
+          Array.isArray(body?.errors) &&
+          body.errors.some((error) => error?.code === "PUSH_TOO_MANY_EXPERIENCE_IDS")
+        ) {
+          throw new ExpoRequestError("PUSH_TOO_MANY_EXPERIENCE_IDS");
+        }
+      }
+      throw new ExpoRequestError(`http_${response.status}`);
+    }
     try {
       return await response.json();
     } catch {
@@ -103,7 +116,13 @@ export class ExpoPushClient {
   async send(messages: PushMessage[]): Promise<PushResult[]> {
     const results: PushResult[] = [];
     for (let start = 0; start < messages.length; start += SEND_BATCH) {
-      const batch = messages.slice(start, start + SEND_BATCH);
+      results.push(...(await this.sendBatch(messages.slice(start, start + SEND_BATCH))));
+    }
+    return results;
+  }
+
+  private async sendBatch(batch: PushMessage[]): Promise<PushResult[]> {
+    try {
       const body = (await this.post(
         this.sendUrl,
         batch.map((message) => ({
@@ -118,16 +137,38 @@ export class ExpoPushClient {
       if (!Array.isArray(body.data) || body.data.length !== batch.length) {
         throw new ExpoRequestError("invalid_response");
       }
-      for (const ticket of body.data) {
+      return body.data.map((ticket) => {
         if (ticket.status === "ok" && typeof ticket.id === "string") {
-          results.push({ ok: true, ticketId: ticket.id });
-        } else {
-          const code = ticket.details?.error ?? "ProviderError";
-          results.push({ ok: false, code, action: classifyPushError(code) });
+          return { ok: true, ticketId: ticket.id };
+        }
+        const code = ticket.details?.error ?? "ProviderError";
+        return { ok: false, code, action: classifyPushError(code) };
+      });
+    } catch (error) {
+      if (
+        !(error instanceof ExpoRequestError) ||
+        error.message !== "PUSH_TOO_MANY_EXPERIENCE_IDS" ||
+        batch.length < 2
+      ) {
+        throw error;
+      }
+      // Expo rejected the entire request. Retry smaller batches in the same
+      // order so each ticket still maps to its original device.
+      const middle = Math.ceil(batch.length / 2);
+      const outcomes: PushResult[] = [];
+      for (const part of [batch.slice(0, middle), batch.slice(middle)]) {
+        try {
+          outcomes.push(...(await this.sendBatch(part)));
+        } catch (failure) {
+          if (!(failure instanceof ExpoRequestError)) throw failure;
+          // Keep tickets already issued to the other half of the batch.
+          outcomes.push(
+            ...part.map(() => ({ ok: false, code: failure.message, action: "retry" }) as const),
+          );
         }
       }
+      return outcomes;
     }
-    return results;
   }
 
   /** Receipt outcome by ticket id; tickets Expo no longer knows are absent from the map. */

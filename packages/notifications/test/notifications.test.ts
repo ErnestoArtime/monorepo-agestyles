@@ -335,6 +335,41 @@ assert.deepEqual(sent[7], { ok: false, code: "DeviceNotRegistered", action: "rev
 assert.deepEqual(sent[9], { ok: false, code: "MessageRateExceeded", action: "retry" });
 assert.equal(sent[0].ok, true);
 
+const mixedBatchSizes: number[] = [];
+let rejectSecondToken = false;
+const mixedClient = new ExpoPushClient({
+  fetch: async (_url, init) => {
+    const batch = JSON.parse(init.body) as { to: string }[];
+    mixedBatchSizes.push(batch.length);
+    if (batch.length > 1) {
+      return {
+        ok: false,
+        status: 400,
+        json: async () => ({ errors: [{ code: "PUSH_TOO_MANY_EXPERIENCE_IDS" }] }),
+      };
+    }
+    if (rejectSecondToken && batch[0].to === messages[1].to) {
+      return { ok: false, status: 503, json: async () => ({}) };
+    }
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ data: [{ status: "ok", id: `ticket-${batch[0].to}` }] }),
+    };
+  },
+});
+assert.deepEqual(await mixedClient.send(messages.slice(0, 2)), [
+  { ok: true, ticketId: `ticket-${messages[0].to}` },
+  { ok: true, ticketId: `ticket-${messages[1].to}` },
+]);
+assert.deepEqual(mixedBatchSizes, [2, 1, 1]);
+
+rejectSecondToken = true;
+assert.deepEqual(await mixedClient.send(messages.slice(0, 2)), [
+  { ok: true, ticketId: `ticket-${messages[0].to}` },
+  { ok: false, action: "retry", code: "http_503" },
+]);
+
 const brokenClient = new ExpoPushClient({ fetch: fakeFetch(() => ({}), 503) });
 await assert.rejects(
   () => brokenClient.send([messages[0]]),
