@@ -58,11 +58,25 @@ Variables del entorno privado de la API (`api.env`):
 
 Requisitos para que llegue el push al móvil (no se pueden hacer desde el repositorio):
 
-1. Cuenta Expo/EAS y un `extra.eas.projectId` en `app.json` de Tienda y de Negocio. Sin él la app muestra «aún no disponible» en Avisos.
-2. Android: proyecto Firebase con clave de cuenta de servicio FCM v1 subida a EAS y `google-services.json` referenciado en `android.googleServicesFile`.
+1. Vincular Tienda y Negocio con sus proyectos Expo/EAS. En Firebase, registrar una aplicación Android para `com.eavlabs.agestyles.buyerlab` y otra para `com.eavlabs.agestyles.businesslab`. Conservan los identificadores de las APK instaladas.
+2. Activar Firebase Cloud Messaging v1 y cargar la credencial de envío en **Credentials** de Expo para cada aplicación. El archivo de cuenta de servicio se gestiona allí de forma privada. Para compilar localmente, suministrar el UUID del proyecto Expo y el archivo cliente `google-services.json` correspondiente mediante estas variables:
+
+   | App | UUID público de Expo | Ruta al archivo cliente Android |
+   | --- | --- | --- |
+   | Tienda | `AGESTYLES_BUYER_EAS_PROJECT_ID` | `AGESTYLES_BUYER_GOOGLE_SERVICES_FILE` |
+   | Negocio | `AGESTYLES_BUSINESS_EAS_PROJECT_ID` | `AGESTYLES_BUSINESS_GOOGLE_SERVICES_FILE` |
+
+   Los dos valores de una app se definen juntos. La configuración de Expo comprueba que el archivo contiene el identificador Android esperado. Las variables se suministran en el entorno de compilación. El archivo de cuenta de servicio de Firebase no se suministra a la compilación.
 3. iOS: Apple Developer Program (la clave APNs la gestiona EAS).
 4. Una development build o build de producción: el push remoto de Android no funciona en Expo Go.
 5. Probar en un móvil real conectado desde Cuba antes de prometerlo: depende de FCM y de los servicios de Google del dispositivo.
+
+Validación Android (AG-68):
+
+1. Generar las APK firmadas con los identificadores anteriores y un `versionCode` superior al publicado. Instalar ambas en un Android con Google Play Services e iniciar sesión en cuentas de prueba. En **Preferencias de avisos**, activar los avisos en el móvil y comprobar que la app indica que el dispositivo está registrado.
+2. Usar un despacho de prueba para Tienda y un aviso de stock bajo para Negocio. Verificar el aviso en la barra de Android con la app en segundo plano y la misma entrada en la bandeja. Tocar el push y comprobar que abre la pantalla correspondiente. En la API, correlacionar el `notification_id` y confirmar que no se creó entrega de correo.
+3. Consultar el ticket y el recibo de Expo. El ticket confirma recepción por Expo, el recibo informa del envío a FCM y el Android confirma que el aviso se mostró. Evitar exponer los tokens en capturas o registros.
+
 
 Operación:
 

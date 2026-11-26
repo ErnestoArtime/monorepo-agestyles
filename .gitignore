@@ -13,3 +13,7 @@ coverage/
 .env
 .env.*
 !.env.example
+
+# Android Firebase configuration stays outside source control and API images.
+google-services.json
+*-firebase-adminsdk-*.json

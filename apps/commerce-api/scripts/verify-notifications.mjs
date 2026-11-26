@@ -500,9 +500,17 @@ try {
     assert.equal(message.sound, "default");
     assert(!/\d+[.,]\d{2}/.test(message.body), "Push text carries no amounts");
   }
+  const memberPush = received.find(
+    ({ title, to }) => title === "Pedido nuevo" && to === memberToken,
+  );
+  assert(memberPush, "The store owner's device receives the new-order push");
+  const memberInbox = await storeInbox(headersA);
   assert(
-    received.some(({ title, to }) => title === "Pedido nuevo" && to === memberToken),
-    "The store owner's device receives the new-order push",
+    memberInbox.notifications.some(
+      ({ id, event_code }) =>
+        id === memberPush.data.notification_id && event_code === "seller_order_placed",
+    ),
+    "The seller push points to the same notice in the seller inbox",
   );
   assert(
     !received.some(
@@ -593,6 +601,10 @@ try {
     { timeoutMs: 150_000 },
   );
   assert(stagePush.some(({ to }) => to === tokenOk));
+  assert(
+    stagePush.some(({ to, data }) => to === tokenOk && data.notification_id === delivered.id),
+    "The delivery push points to the same notice in the buyer inbox",
+  );
   assert(
     !stagePush.some(({ to }) => to === tokenGone),
     "A device Expo reports as unregistered is revoked and no longer receives pushes",
