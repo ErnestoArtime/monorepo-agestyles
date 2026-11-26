@@ -115,6 +115,9 @@ const rules = [
   ["POST", /^\/store\/agestyles\/devices$/],
   ["DELETE", /^\/store\/agestyles\/devices\/adevice_[a-z0-9]+$/i],
   ["GET POST", /^\/store\/agestyles\/notification-preferences$/],
+  // Followed stores (AG-70): list, follow, unfollow and the new-product alert of the signed-in customer.
+  ["GET POST", /^\/store\/agestyles\/store-follows$/],
+  ["POST DELETE", /^\/store\/agestyles\/store-follows\/sel_[a-z0-9]+$/i],
   ["POST", /^\/store\/order-quotes$/],
   ["POST", /^\/store\/order-quotes\/[a-z0-9_-]+\/accept$/i],
 ];
