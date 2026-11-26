@@ -22,6 +22,7 @@ import { SearchField } from "@agestyles/ui-native";
 import { usePathname, useRouter, type Href } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BrandLockup } from "./brand-lockup";
 import { useAdmin } from "../context/admin-context";
 import { useBusiness } from "../context/business-context";
@@ -43,15 +44,29 @@ type Item = {
  * click away instead of behind the tab bar and «Más». Permissions decide what is listed;
  * the server still enforces them.
  */
-export function WebSidebar() {
+export function WebSidebar({
+  variant = "side",
+  onNavigate,
+}: {
+  /** `drawer`: the same menu inside the phone's slide-in panel (no collapsing, closes on use). */
+  variant?: "side" | "drawer";
+  onNavigate?: () => void;
+} = {}) {
   const theme = useBusinessTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const pathname = usePathname();
   const { seller, sellers, member, logout } = useBusiness();
   const unread = useOptionalNotifications()?.unreadCount ?? 0;
   const { admin } = useAdmin();
-  const [collapsed, setCollapsed] = useState(false);
+  const isDrawer = variant === "drawer";
+  const [collapsedState, setCollapsed] = useState(false);
+  const collapsed = isDrawer ? false : collapsedState;
+  const go = (href: Href | string) => {
+    onNavigate?.();
+    router.push(href as Href);
+  };
   const [query, setQuery] = useState("");
 
   // Atajo web: Ctrl/Cmd+K o "/" enfoca la búsqueda, Esc la suelta.
@@ -81,7 +96,7 @@ export function WebSidebar() {
     // La búsqueda pasa el texto por ruta: Productos lee q con
     // useLocalSearchParams y filtra por título o SKU.
     if (!query.trim()) return;
-    router.push({ pathname: "/(tabs)/products", params: { q: query.trim() } } as Href);
+    go({ pathname: "/(tabs)/products", params: { q: query.trim() } } as unknown as Href);
   };
 
   const storeGroups: { title?: string; items: Item[] }[] = [
@@ -310,25 +325,31 @@ export function WebSidebar() {
 
   return (
     <View
-      style={[styles.sidebar, collapsed && styles.sidebarCollapsed]}
+      style={[
+        styles.sidebar,
+        collapsed && styles.sidebarCollapsed,
+        isDrawer && [styles.sidebarDrawer, { paddingTop: insets.top + 12 }],
+      ]}
       role="navigation"
       accessibilityLabel="Menú de Negocio"
     >
       <View style={styles.top}>
         {collapsed ? null : <BrandLockup />}
-        <Pressable
-          onPress={() => setCollapsed((v) => !v)}
-          accessibilityRole="button"
-          accessibilityLabel={collapsed ? "Expandir menú" : "Colapsar menú"}
-          style={({ hovered }: { hovered?: boolean }) => [
-            styles.collapseButton,
-            hovered && { backgroundColor: theme.quietSurface },
-          ]}
-        >
-          {/* No hay chevronLeft en @agestyles/icons: se usan arrowLeft/arrowRight. */}
-          <Icon name={collapsed ? "arrowRight" : "arrowLeft"} size={18} color={theme.muted} />
-        </Pressable>
-        {collapsed ? null : <NotificationBell onPress={() => router.push("/notifications")} />}
+        {isDrawer ? null : (
+          <Pressable
+            onPress={() => setCollapsed((v) => !v)}
+            accessibilityRole="button"
+            accessibilityLabel={collapsed ? "Expandir menú" : "Colapsar menú"}
+            style={({ hovered }: { hovered?: boolean }) => [
+              styles.collapseButton,
+              hovered && { backgroundColor: theme.quietSurface },
+            ]}
+          >
+            {/* No hay chevronLeft en @agestyles/icons: se usan arrowLeft/arrowRight. */}
+            <Icon name={collapsed ? "arrowRight" : "arrowLeft"} size={18} color={theme.muted} />
+          </Pressable>
+        )}
+        {collapsed ? null : <NotificationBell onPress={() => go("/notifications")} />}
       </View>
       {collapsed ? null : (
         <View style={styles.searchWrap}>
@@ -344,7 +365,7 @@ export function WebSidebar() {
       )}
       {seller && !collapsed ? (
         <Pressable
-          onPress={() => router.push("/(tabs)/more" as Href)}
+          onPress={() => go("/(tabs)/more")}
           accessibilityRole="button"
           accessibilityLabel={
             sellers.length > 1 ? `Tienda ${seller?.name ?? ""}, cambiar de tienda` : "Tu tienda"
@@ -416,7 +437,7 @@ export function WebSidebar() {
                         return (
                           <Pressable
                             key={item.href}
-                            onPress={() => router.push(item.href as Href)}
+                            onPress={() => go(item.href)}
                             accessibilityRole="link"
                             accessibilityState={{ selected: active }}
                             accessibilityLabel={
@@ -489,7 +510,7 @@ export function WebSidebar() {
           )}
         </View>
         <Pressable
-          onPress={() => router.push("/tienda" as Href)}
+          onPress={() => go("/tienda")}
           accessibilityRole="link"
           accessibilityLabel={collapsed ? "Comprar en AgeStyles" : undefined}
           style={[styles.item, collapsed && styles.itemCollapsed]}
@@ -499,6 +520,7 @@ export function WebSidebar() {
         </Pressable>
         <Pressable
           onPress={async () => {
+            onNavigate?.();
             await logout();
             router.replace("/");
           }}
@@ -543,6 +565,7 @@ const createStyles = (theme: BusinessTheme) =>
       paddingBottom: 12,
     },
     sidebarCollapsed: { width: 72, paddingHorizontal: 8 },
+    sidebarDrawer: { width: "100%", flex: 1, borderRightWidth: 0 },
     collapseButton: {
       width: 36,
       height: 36,

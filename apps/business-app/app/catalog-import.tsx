@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import { useBusiness } from "../context/business-context";
 import { hasPermission, Section } from "../components/operation-list";
 import { useBusinessTheme } from "../hooks/use-business-theme";
+import { useResponsive } from "../hooks/use-responsive";
 import { parseCatalogCsv, type CatalogCsvRow } from "../lib/catalog-csv";
 import { loadOfferSkus, withOfferSkus } from "../lib/offer-skus";
 
@@ -28,6 +29,7 @@ const CSV_TEMPLATE =
 
 export default function CatalogImportScreen() {
   const theme = useBusinessTheme();
+  const { isWideWeb } = useResponsive();
   const styles = createStyles(theme);
   const { request, seller, member } = useBusiness();
   const canEdit = hasPermission(member, "products", "edit");
@@ -224,10 +226,15 @@ export default function CatalogImportScreen() {
 
   return (
     <ScrollView style={styles.page} contentContainerStyle={styles.content}>
-      <Pressable onPress={() => router.back()} accessibilityRole="button">
-        <Text style={styles.back}>‹ Volver a productos</Text>
-      </Pressable>
-      <Text style={styles.title}>Importar catálogo por CSV</Text>
+      {/* Phones show «Importar catálogo» in the app header; the title is for wide browsers. */}
+      {isWideWeb ? (
+        <>
+          <Pressable onPress={() => router.back()} accessibilityRole="button">
+            <Text style={styles.back}>‹ Volver a productos</Text>
+          </Pressable>
+          <Text style={styles.title}>Importar catálogo por CSV</Text>
+        </>
+      ) : null}
       <Text style={styles.subtitle}>
         Pega el contenido del archivo. Usa una fila por producto; cada alta debe incluir un SKU
         único.

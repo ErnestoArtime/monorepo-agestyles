@@ -26,6 +26,7 @@ import {
 } from "../lib/codifiers";
 import { useBusiness } from "../context/business-context";
 import { useBusinessTheme } from "../hooks/use-business-theme";
+import { useResponsive } from "../hooks/use-responsive";
 
 /** Prepared photo: resized and compressed on the device, then uploaded right away. */
 type Photo = { uri: string; width: number; height: number };
@@ -78,6 +79,7 @@ async function preparePhoto(asset: ImagePicker.ImagePickerAsset, maxEdge: number
 /** Product creation with photos (AG-26). The product goes to AgeStyles for review. */
 export default function NewProductScreen() {
   const theme = useBusinessTheme();
+  const { isWideWeb } = useResponsive();
   const styles = createStyles(theme);
   const router = useRouter();
   const { request, upload, member, seller } = useBusiness();
@@ -384,19 +386,24 @@ export default function NewProductScreen() {
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Pressable
-          onPress={() => router.back()}
-          accessibilityRole="button"
-          accessibilityLabel="Volver a productos"
-          style={styles.back}
-        >
-          <Icon name="arrowLeft" size={18} color={theme.action} />
-          <Text style={styles.link}>Productos</Text>
-        </Pressable>
-        <LargeTitle
-          title="Nuevo producto"
-          subtitle="Una buena portada y una descripción con datos reales venden más."
-        />
+        {/* Phones show «Nuevo producto» in the app header; the page title is for wide browsers. */}
+        {isWideWeb ? (
+          <>
+            <Pressable
+              onPress={() => router.back()}
+              accessibilityRole="button"
+              accessibilityLabel="Volver a productos"
+              style={styles.back}
+            >
+              <Icon name="arrowLeft" size={18} color={theme.action} />
+              <Text style={styles.link}>Productos</Text>
+            </Pressable>
+            <LargeTitle
+              title="Nuevo producto"
+              subtitle="Una buena portada y una descripción con datos reales venden más."
+            />
+          </>
+        ) : null}
         {error ? (
           <View accessibilityRole="alert" style={styles.errorBox}>
             <Icon name="alert" size={18} color={theme.error} />

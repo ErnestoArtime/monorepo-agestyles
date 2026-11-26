@@ -2,6 +2,7 @@ import { NotificationBell } from "@agestyles/features-notifications";
 import { Tabs, useRouter } from "expo-router";
 import { Icon, IconName } from "@agestyles/icons";
 import { Platform, View } from "react-native";
+import { MenuButton } from "../../components/mobile-menu";
 import { hasPermission } from "../../components/operation-list";
 import { useBusiness } from "../../context/business-context";
 import { useBusinessTheme } from "../../hooks/use-business-theme";
@@ -36,7 +37,8 @@ export default function BusinessTabs() {
         headerShown: !isWideWeb,
         headerStyle: { backgroundColor: theme.surface },
         headerTitleStyle: { color: theme.text, fontWeight: "600" },
-        headerTintColor: theme.action,
+        headerTintColor: theme.text,
+        headerLeft: () => <MenuButton />,
         headerRight: () => (
           <View style={{ marginRight: 8 }}>
             <NotificationBell onPress={() => router.push("/notifications")} />

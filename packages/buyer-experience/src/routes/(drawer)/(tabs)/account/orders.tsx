@@ -1,7 +1,7 @@
 import { Button } from "../../../../components/ui/button";
 import { Colors } from "../../../../constants/theme";
 import { useCustomer } from "../../../../context/customer-context";
-import { LargeTitle, SkeletonRows } from "@agestyles/ui-native";
+import { SkeletonRows } from "@agestyles/ui-native";
 import { sdk } from "../../../../config";
 import { listBuyerOrderGroups } from "@agestyles/api-client/buyer-orders";
 import type { BuyerOrderGroup } from "@agestyles/api-client/buyer-orders";
@@ -47,7 +47,6 @@ export default function OrdersScreen() {
         contentContainerStyle={[styles.content, { backgroundColor: colors.background }]}
         accessibilityLabel="Cargando tus compras"
       >
-        <LargeTitle title="Mis pedidos" />
         <SkeletonRows rows={4} />
       </ScrollView>
     );
@@ -79,7 +78,6 @@ export default function OrdersScreen() {
         />
       }
     >
-      <LargeTitle title="Mis pedidos" />
       {error ? (
         <View style={styles.section}>
           <Text accessibilityRole="alert" style={{ color: colors.error }}>

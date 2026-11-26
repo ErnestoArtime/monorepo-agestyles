@@ -8,7 +8,7 @@ export default function NotificationPreferencesScreen() {
   const { seller } = useBusiness();
   if (!seller) return <Redirect href="/" />;
   return (
-    <ScreenFrame backLabel="Más">
+    <ScreenFrame title="Avisos">
       <ScrollView keyboardShouldPersistTaps="handled">
         <NotificationPreferences app="business" />
       </ScrollView>

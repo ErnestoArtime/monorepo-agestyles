@@ -8,7 +8,7 @@ import {
   type NotificationTarget,
 } from "@agestyles/api-client/notifications";
 import { Icon, type IconName } from "@agestyles/icons";
-import { Button, LargeTitle, useUiTheme } from "@agestyles/ui-native";
+import { Button, useUiTheme } from "@agestyles/ui-native";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { useNotifications } from "./provider";
@@ -156,7 +156,6 @@ export function NotificationInbox({
       contentContainerStyle={items.length === 0 ? styles.emptyContainer : styles.list}
       ListHeaderComponent={
         <View>
-          <LargeTitle title="Avisos" subtitle="Novedades de tus pedidos y de tu cuenta." />
           {unreadCount > 0 ? (
             <Button
               title="Marcar todo como leído"

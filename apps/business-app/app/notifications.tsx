@@ -9,7 +9,7 @@ export default function NotificationsScreen() {
   const { seller } = useBusiness();
   if (!seller) return <Redirect href="/" />;
   return (
-    <ScreenFrame backLabel="Más">
+    <ScreenFrame title="Notificaciones">
       <NotificationInbox
         onOpenTarget={(target) => {
           const route = routeForTarget(target);

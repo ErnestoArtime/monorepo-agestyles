@@ -64,7 +64,7 @@ export default function AccountLayout() {
       <Stack.Screen
         name="orders"
         options={{
-          title: "Mis compras",
+          title: "Mis pedidos",
           // Reached from the side menu: the menu button, not a way back to Cuenta.
           ...(isWideWeb ? {} : { headerLeft: () => <MenuButton /> }),
         }}

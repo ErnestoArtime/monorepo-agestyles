@@ -2,7 +2,6 @@ import { Children, ReactNode, useEffect, useState } from "react";
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Icon } from "@agestyles/icons";
 import { SkeletonCards, SkeletonRows, SkeletonStats } from "@agestyles/ui-native";
-import { useRouter } from "expo-router";
 import { useBusinessTheme, type BusinessTheme } from "../hooks/use-business-theme";
 import { CONTENT_MAX, useResponsive } from "../hooks/use-responsive";
 export { hasPermission } from "../lib/permissions";
@@ -15,15 +14,14 @@ export function OperationList({
   empty,
   isEmpty,
   onRefresh,
-  backLabel,
   skeleton = "rows",
   children,
 }: {
   /** Shape of the placeholder shown while the first data is loading (AG-48). */
   skeleton?: "rows" | "cards" | "stats";
   /**
-   * Secondary screens (opened from «Más») show «← backLabel» above the title on phones;
-   * a wide browser already reaches every section from the side menu.
+   * Kept for the callers that still pass it: phones now have the app header with the menu, so
+   * the «← back» link above the title is gone.
    */
   backLabel?: string;
   title: string;
@@ -39,7 +37,6 @@ export function OperationList({
   const theme = useBusinessTheme();
   const styles = createStyles(theme);
   const { isWideWeb } = useResponsive();
-  const router = useRouter();
   // The first load shows the placeholder instead of the content, so a section that is
   // already on screen does not announce «no hay…» before the data arrives (AG-48).
   const [loaded, setLoaded] = useState(!loading);
@@ -62,20 +59,10 @@ export function OperationList({
         ) : undefined
       }
     >
-      {backLabel && !isWideWeb ? (
-        <Pressable
-          onPress={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)/more"))}
-          accessibilityRole="button"
-          accessibilityLabel={`Volver: ${backLabel}`}
-          hitSlop={6}
-          style={({ pressed }) => [styles.back, pressed && { opacity: 0.6 }]}
-        >
-          <Icon name="arrowLeft" size={18} color={theme.action} />
-          <Text style={styles.backText}>{backLabel}</Text>
-        </Pressable>
-      ) : null}
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.subtitle}>{subtitle}</Text>
+      {/* Phones and narrow browsers already show the page name in the app header (and the menu
+          reaches every section), so the big title only appears with the website layout. */}
+      {isWideWeb ? <Text style={styles.title}>{title}</Text> : null}
+      {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       {firstLoad || (loading && nothingRendered) ? (
         <View style={styles.placeholder} accessibilityLabel="Cargando">
           {skeleton === "cards" ? (

@@ -20,7 +20,7 @@ export default function AdminNotificationsScreen() {
       enabled={Boolean(admin)}
       identity={admin?.id ?? ""}
     >
-      <ScreenFrame backLabel="Volver">
+      <ScreenFrame title="Avisos de administración">
         <NotificationInbox
           onOpenTarget={(target) => {
             const route = routeForTarget(target);

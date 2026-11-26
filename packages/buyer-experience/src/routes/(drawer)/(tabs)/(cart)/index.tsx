@@ -5,7 +5,7 @@ import { useCupRate } from "../../../../hooks/use-cup-rate";
 import { formatPrice } from "../../../../lib/format-price";
 import { formatCupEquivalent, rateSourceLine } from "@agestyles/api-client/exchange-rate";
 import { Icon } from "@agestyles/icons";
-import { Button, KeyValueRow, LargeTitle, useUiTheme } from "@agestyles/ui-native";
+import { Button, KeyValueRow, useUiTheme } from "@agestyles/ui-native";
 import { useRouter } from "expo-router";
 import React from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
@@ -50,10 +50,12 @@ export default function CartScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         ListHeaderComponent={
-          <LargeTitle
-            title="Carrito"
-            subtitle={`${units} ${units === 1 ? "artículo" : "artículos"}`}
-          />
+          // The header already says «Carrito»; only the count is new information.
+          <Text
+            style={{ color: color.muted, fontSize: 14, paddingHorizontal: 4, paddingBottom: 8 }}
+          >
+            {`${units} ${units === 1 ? "artículo" : "artículos"}`}
+          </Text>
         }
         renderItem={({ item }) => (
           <CartItem

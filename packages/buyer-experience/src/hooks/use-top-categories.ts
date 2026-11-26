@@ -7,7 +7,9 @@ type Category = {
   parent_category_id?: string | null;
 };
 
-export type TopCategory = Category & { ids: string[] };
+export type SubCategory = Category & { ids: string[] };
+/** A main category with its direct subcategories, each carrying the ids of its own subtree. */
+export type TopCategory = Category & { ids: string[]; children: SubCategory[] };
 
 /** Top-level categories, each carrying its own id and those of all its subcategories. */
 export function useTopCategories(): TopCategory[] {
@@ -43,6 +45,13 @@ export function useTopCategories(): TopCategory[] {
     return categories
       .filter((category) => !category.parent_category_id)
       .sort((a, b) => a.name.localeCompare(b.name, "es"))
-      .map((category) => ({ ...category, ids: descendants(category.id) }));
+      .map((category) => ({
+        ...category,
+        ids: descendants(category.id),
+        children: categories
+          .filter((child) => child.parent_category_id === category.id)
+          .sort((a, b) => a.name.localeCompare(b.name, "es"))
+          .map((child) => ({ ...child, ids: descendants(child.id) })),
+      }));
   }, [categories]);
 }

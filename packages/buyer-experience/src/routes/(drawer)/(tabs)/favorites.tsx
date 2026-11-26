@@ -96,12 +96,15 @@ export default function FavoritesScreen() {
         columnWrapperStyle={[styles.row, isWideWeb && styles.wide]}
         contentContainerStyle={products.length ? styles.list : styles.emptyList}
         ListHeaderComponent={
-          <View style={[styles.heading, isWideWeb && styles.wide]}>
-            <Text style={[styles.title, { color: colors.text }]}>Tus favoritos</Text>
-            <Text style={[styles.subtitle, { color: colors.icon }]}>
-              Productos que guardaste para volver a verlos.
-            </Text>
-          </View>
+          // Phones show «Favoritos» in the app header; the website layout has no header there.
+          isWideWeb ? (
+            <View style={[styles.heading, styles.wide]}>
+              <Text style={[styles.title, { color: colors.text }]}>Tus favoritos</Text>
+              <Text style={[styles.subtitle, { color: colors.icon }]}>
+                Productos que guardaste para volver a verlos.
+              </Text>
+            </View>
+          ) : null
         }
         ListEmptyComponent={
           <View style={[styles.emptyState, isWideWeb && styles.wide]}>

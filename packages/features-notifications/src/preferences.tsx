@@ -10,7 +10,7 @@ import {
   type PreferenceRow,
 } from "@agestyles/api-client/notifications";
 import { Icon } from "@agestyles/icons";
-import { Button, Card, LargeTitle, useUiTheme } from "@agestyles/ui-native";
+import { Button, Card, useUiTheme } from "@agestyles/ui-native";
 import React, { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Linking, StyleSheet, Switch, Text, View } from "react-native";
 import { useNotifications } from "./provider";
@@ -75,10 +75,9 @@ export function NotificationPreferences({ app }: { app: AppName }) {
 
   return (
     <View style={styles.container}>
-      <LargeTitle
-        title="Preferencias de avisos"
-        subtitle="Elige cómo quieres enterarte de las novedades."
-      />
+      <Text style={[styles.intro, { color: color.muted }]}>
+        Elige cómo quieres enterarte de las novedades.
+      </Text>
 
       <Card style={styles.card}>
         <View style={styles.pushHead}>
@@ -145,8 +144,11 @@ export function NotificationPreferences({ app }: { app: AppName }) {
                   <Switch
                     value={entry[channel]}
                     onValueChange={(value) => void toggle(entry.group, channel, value)}
+                    // The thumb must stand out from its track in both themes: it is the part
+                    // that shows the state (a dark thumb on a dark track vanished in dark mode).
                     trackColor={{ false: color.border, true: color.action }}
-                    thumbColor={color.surface}
+                    thumbColor={entry[channel] ? color.onAction : color.muted}
+                    ios_backgroundColor={color.border}
                     accessibilityLabel={`${GROUP_LABELS[entry.group]}: ${CHANNEL_LABELS[channel].toLowerCase()}`}
                   />
                 </View>
@@ -166,6 +168,7 @@ export function NotificationPreferences({ app }: { app: AppName }) {
 
 const styles = StyleSheet.create({
   container: { paddingHorizontal: 16, paddingBottom: 32, gap: 12 },
+  intro: { fontSize: 14, lineHeight: 20 },
   card: { gap: 10 },
   pushHead: { flexDirection: "row", alignItems: "center", gap: 8 },
   cardTitle: { fontSize: 15, fontWeight: "600" },

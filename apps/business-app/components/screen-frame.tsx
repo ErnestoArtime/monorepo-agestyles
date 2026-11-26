@@ -1,36 +1,28 @@
-import { Icon } from "@agestyles/icons";
-import { useRouter } from "expo-router";
 import type { ReactNode } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useBusinessTheme } from "../hooks/use-business-theme";
 import { CONTENT_MAX, useResponsive } from "../hooks/use-responsive";
 
-/** Safe-area page with an accessible back button, for stack screens outside the tabs. */
-export function ScreenFrame({ backLabel, children }: { backLabel: string; children: ReactNode }) {
+/**
+ * Page for the stack screens outside the tabs. Phones get the app header from the root layout
+ * (menu button, page name, bell), so the page only keeps its content; a wide browser has no
+ * header, so it shows the page title above the content, next to the side menu.
+ */
+export function ScreenFrame({ title, children }: { title: string; children: ReactNode }) {
   const theme = useBusinessTheme();
-  const router = useRouter();
   const styles = createStyles(theme);
   const { isWideWeb } = useResponsive();
-  const wide = isWideWeb ? styles.wide : null;
   return (
-    <SafeAreaView edges={["top"]} style={styles.page}>
-      {/* The side menu already reaches every section in a wide browser. */}
-      {isWideWeb ? null : (
-        <View style={[styles.header, wide]}>
-          <Pressable
-            onPress={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)"))}
-            accessibilityRole="button"
-            accessibilityLabel={`Volver: ${backLabel}`}
-            hitSlop={6}
-            style={({ pressed }) => [styles.back, pressed && { opacity: 0.6 }]}
-          >
-            <Icon name="arrowLeft" size={18} color={theme.action} />
-            <Text style={styles.backText}>{backLabel}</Text>
-          </Pressable>
-        </View>
-      )}
-      <View style={[styles.body, wide, isWideWeb && styles.bodyWide]}>{children}</View>
+    <SafeAreaView edges={isWideWeb ? ["top"] : []} style={styles.page}>
+      <View style={[styles.body, isWideWeb && styles.wide, isWideWeb && styles.bodyWide]}>
+        {isWideWeb ? (
+          <Text accessibilityRole="header" style={styles.title}>
+            {title}
+          </Text>
+        ) : null}
+        {children}
+      </View>
     </SafeAreaView>
   );
 }
@@ -39,15 +31,7 @@ const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
   StyleSheet.create({
     page: { flex: 1, backgroundColor: theme.background },
     wide: { width: "100%", maxWidth: CONTENT_MAX, alignSelf: "center", paddingHorizontal: 24 },
-    header: { paddingHorizontal: 16, paddingTop: 6 },
-    back: {
-      minHeight: 44,
-      alignSelf: "flex-start",
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 8,
-    },
-    backText: { color: theme.action, fontSize: 15, fontWeight: "500" },
+    title: { color: theme.text, fontSize: 28, fontWeight: "700", marginBottom: 12 },
     body: { flex: 1 },
     bodyWide: { paddingTop: 40 },
   });

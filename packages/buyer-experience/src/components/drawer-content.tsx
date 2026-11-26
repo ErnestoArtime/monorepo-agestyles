@@ -28,6 +28,14 @@ export function DrawerContent(props: DrawerContentComponentProps) {
   // Búsqueda del drawer (móvil): la home lee q con useLocalSearchParams
   // y busca en el servidor, igual que la búsqueda del sidebar web.
   const [query, setQuery] = useState("");
+  // Main categories open in place (several at once) without closing the menu.
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const toggleCategory = (id: string) =>
+    setExpanded((current) => {
+      const next = new Set(current);
+      if (!next.delete(id)) next.add(id);
+      return next;
+    });
 
   function go(href: Href) {
     props.navigation.closeDrawer();
@@ -106,18 +114,69 @@ export function DrawerContent(props: DrawerContentComponentProps) {
         {topCategories.length ? (
           <View style={styles.section} accessibilityLabel="Categorías de productos">
             <Text style={styles.heading}>Categorías</Text>
-            {topCategories.map((category) =>
-              item(category.name, () =>
+            {topCategories.map((category) => {
+              const hasChildren = category.children.length > 0;
+              const isOpen = expanded.has(category.id);
+              const filterBy = (target: { name: string; ids: string[] }) =>
                 go({
                   pathname: buyerPath(HOME),
-                  params: {
-                    filtro: "categoria",
-                    nombre: category.name,
-                    ids: category.ids.join(","),
-                  },
-                }),
-              ),
-            )}
+                  params: { filtro: "categoria", nombre: target.name, ids: target.ids.join(",") },
+                });
+              return (
+                <View key={category.id}>
+                  <View style={styles.categoryRow}>
+                    <Pressable
+                      onPress={() => filterBy(category)}
+                      accessibilityRole="link"
+                      accessibilityLabel={`${category.name}, ver todo`}
+                      style={({ pressed }) => [
+                        styles.categoryName,
+                        pressed && { backgroundColor: colors.surfaceMuted },
+                      ]}
+                    >
+                      <Text style={styles.itemText}>{category.name}</Text>
+                    </Pressable>
+                    {hasChildren ? (
+                      // Opens the group inside the menu: the menu stays open to pick a subcategory.
+                      <Pressable
+                        onPress={() => toggleCategory(category.id)}
+                        accessibilityRole="button"
+                        accessibilityState={{ expanded: isOpen }}
+                        accessibilityLabel={`${category.name}: ${isOpen ? "plegar" : "desplegar"} subcategorías`}
+                        hitSlop={4}
+                        style={({ pressed }) => [
+                          styles.chevron,
+                          pressed && { backgroundColor: colors.surfaceMuted },
+                        ]}
+                      >
+                        <Icon
+                          name={isOpen ? "chevronUp" : "chevronDown"}
+                          size={18}
+                          color={colors.icon}
+                        />
+                      </Pressable>
+                    ) : null}
+                  </View>
+                  {hasChildren && isOpen ? (
+                    <View style={styles.children}>
+                      {category.children.map((child) => (
+                        <Pressable
+                          key={child.id}
+                          onPress={() => filterBy(child)}
+                          accessibilityRole="link"
+                          style={({ pressed }) => [
+                            styles.item,
+                            pressed && { backgroundColor: colors.surfaceMuted },
+                          ]}
+                        >
+                          <Text style={styles.childText}>{child.name}</Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  ) : null}
+                </View>
+              );
+            })}
           </View>
         ) : null}
 
@@ -203,6 +262,28 @@ const createStyles = (colors: (typeof Colors)[keyof typeof Colors]) =>
       borderRadius: 10,
     },
     itemText: { color: colors.text, fontSize: 15 },
+    categoryRow: { flexDirection: "row", alignItems: "center" },
+    categoryName: {
+      flex: 1,
+      minHeight: 44,
+      justifyContent: "center",
+      paddingHorizontal: 8,
+      borderRadius: 10,
+    },
+    chevron: {
+      width: 44,
+      height: 44,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: 10,
+    },
+    children: {
+      marginLeft: 16,
+      paddingLeft: 8,
+      borderLeftWidth: StyleSheet.hairlineWidth,
+      borderLeftColor: colors.border,
+    },
+    childText: { color: colors.text, fontSize: 14 },
     segment: {
       flexDirection: "row",
       alignSelf: "flex-start",
