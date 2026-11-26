@@ -1,0 +1,33 @@
+{
+  "name": "@agestyles/store-follows",
+  "version": "0.0.0",
+  "private": true,
+  "description": "AgeStyles module for customers following stores, with an opt-in alert for new products (Medusa v2, AG-70)",
+  "keywords": [
+    "agestyles",
+    "medusa-module",
+    "favorites",
+    "stores"
+  ],
+  "medusaModule": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./rules": {
+      "types": "./dist/rules.d.ts",
+      "default": "./dist/rules.js"
+    }
+  },
+  "peerDependencies": {
+    "@medusajs/framework": "2.22.3"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "node test/store-follows.test.ts"
+  }
+}

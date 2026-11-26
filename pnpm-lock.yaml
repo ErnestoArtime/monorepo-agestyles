@@ -320,6 +320,9 @@ importers:
       '@agestyles/sales-commissions':
         specifier: workspace:*
         version: link:../../packages/sales-commissions
+      '@agestyles/store-follows':
+        specifier: workspace:*
+        version: link:../../packages/store-follows
       '@medusajs/cli':
         specifier: 2.22.3
         version: 2.22.3(@types/node@26.6.6)
@@ -610,6 +613,12 @@ importers:
         version: 2.22.3(@medusajs/cli@2.22.3(@types/node@26.6.6))(@types/node@26.6.6)(ioredis@5.11.1)(vite@7.3.8(@types/node@26.6.6)(jiti@1.21.7)(lightningcss@1.33.0)(terser@5.51.2)(yaml@2.9.0))(zod@4.6.6)
 
   packages/sales-commissions:
+    dependencies:
+      '@medusajs/framework':
+        specifier: 2.22.3
+        version: 2.22.3(@medusajs/cli@2.22.3(@types/node@26.6.6))(@types/node@26.6.6)(ioredis@5.11.1)(vite@7.3.8(@types/node@26.6.6)(jiti@1.21.7)(lightningcss@1.33.0)(terser@5.51.2)(yaml@2.9.0))(zod@4.6.6)
+
+  packages/store-follows:
     dependencies:
       '@medusajs/framework':
         specifier: 2.22.3
