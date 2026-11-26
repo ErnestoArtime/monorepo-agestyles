@@ -6,7 +6,9 @@ import { routeForTarget } from "../lib/notifications";
 
 export default function NotificationsScreen() {
   const router = useRouter();
-  const { seller } = useBusiness();
+  const { seller, ready } = useBusiness();
+  // Wait for the stored session to be read: a page reload must not bounce to the start screen.
+  if (!ready) return null;
   if (!seller) return <Redirect href="/" />;
   return (
     <ScreenFrame title="Notificaciones">
