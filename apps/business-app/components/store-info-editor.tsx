@@ -9,9 +9,9 @@ import {
   type SocialKey,
   type StoreInfo,
 } from "@agestyles/api-client/store-info";
-import { Button } from "@agestyles/ui-native";
+import { AppSwitch, Button } from "@agestyles/ui-native";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { StyleSheet, Switch, Text, TextInput, View, type KeyboardTypeOptions } from "react-native";
+import { StyleSheet, Text, TextInput, View, type KeyboardTypeOptions } from "react-native";
 import { OperationList, Section } from "./operation-list";
 import { useBusinessTheme, type BusinessTheme } from "../hooks/use-business-theme";
 import { useResponsive } from "../hooks/use-responsive";
@@ -162,7 +162,7 @@ function ToggleRow({
         <Text style={styles.label}>{label}</Text>
         {detail ? <Text style={styles.hint}>{detail}</Text> : null}
       </View>
-      <Switch
+      <AppSwitch
         value={value}
         onValueChange={onValueChange}
         disabled={!editable}
@@ -445,7 +445,7 @@ export function StoreInfoEditor({ title, subtitle, backLabel, load, save }: Stor
             {draft.hours.map((day, index) => (
               <View key={day.day} style={styles.dayRow}>
                 <Text style={styles.dayName}>{DAYS[index]}</Text>
-                <Switch
+                <AppSwitch
                   value={!day.closed}
                   onValueChange={(open) => setDay(index, { closed: !open })}
                   disabled={!common.editable}

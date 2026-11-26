@@ -10,9 +10,9 @@ import {
   type PreferenceRow,
 } from "@agestyles/api-client/notifications";
 import { Icon } from "@agestyles/icons";
-import { Button, Card, useUiTheme } from "@agestyles/ui-native";
+import { AppSwitch, Button, Card, useUiTheme } from "@agestyles/ui-native";
 import React, { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Linking, StyleSheet, Switch, Text, View } from "react-native";
+import { ActivityIndicator, Linking, StyleSheet, Text, View } from "react-native";
 import { useNotifications } from "./provider";
 import { usePushRegistration, type AppName, type PushStatus } from "./push";
 
@@ -141,14 +141,9 @@ export function NotificationPreferences({ app }: { app: AppName }) {
                   <Text style={[styles.switchLabel, { color: color.text }]}>
                     {CHANNEL_LABELS[channel]}
                   </Text>
-                  <Switch
+                  <AppSwitch
                     value={entry[channel]}
                     onValueChange={(value) => void toggle(entry.group, channel, value)}
-                    // The thumb must stand out from its track in both themes: it is the part
-                    // that shows the state (a dark thumb on a dark track vanished in dark mode).
-                    trackColor={{ false: color.border, true: color.action }}
-                    thumbColor={entry[channel] ? color.onAction : color.muted}
-                    ios_backgroundColor={color.border}
                     accessibilityLabel={`${GROUP_LABELS[entry.group]}: ${CHANNEL_LABELS[channel].toLowerCase()}`}
                   />
                 </View>

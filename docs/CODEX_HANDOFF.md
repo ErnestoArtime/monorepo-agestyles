@@ -2153,3 +2153,5 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - Sin publicar ni desplegar. `apps/*/eas.json` siguen sin versionar (de Codex).
 
 - 2026-11-26 · Claude · AG-69, aviso de cookies de Tienda web: se salía por la derecha en móvil (`width: 100%` más los márgenes `left`/`right` de 16 px). Ahora ocupa el ancho menos los márgenes y se centra con márgenes automáticos. Medido con Chromium: móvil 16→374 px de 390; escritorio 360→1080 px de 1440. Sin publicar.
+
+- 2026-11-26 · Claude · AG-69, interruptores: Ernesto no quiso el azul pálido que elegí. Nuevo `AppSwitch` en `@agestyles/ui-native` (pista `success`, pulgar `onSuccess` si está activo y `muted` si no, también `activeThumbColor` para react-native-web) usado en Avisos, Información de la tienda, Mi cuenta y la entrega del pago; antes cada pantalla tenía su color por defecto. Capturas de Chromium en móvil claro y oscuro (Información de la tienda); no se vio en Android real. Sin publicar.

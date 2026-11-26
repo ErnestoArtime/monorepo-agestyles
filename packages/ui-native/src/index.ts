@@ -1,5 +1,6 @@
 export { UiThemeProvider, useUiTheme, type UiTheme } from "./theme";
 export {
+  AppSwitch,
   Button,
   Card,
   KeyValueRow,

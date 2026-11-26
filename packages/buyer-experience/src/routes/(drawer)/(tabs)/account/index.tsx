@@ -2,19 +2,10 @@ import { Icon, type IconName } from "@agestyles/icons";
 import { listBuyerOrderGroups, type BuyerOrderGroup } from "@agestyles/api-client/buyer-orders";
 import { unreadLabel } from "@agestyles/api-client/notifications";
 import { useOptionalNotifications } from "@agestyles/features-notifications";
-import { SkeletonBlock, SkeletonCards, SkeletonRows } from "@agestyles/ui-native";
+import { AppSwitch, SkeletonBlock, SkeletonCards, SkeletonRows } from "@agestyles/ui-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import {
-  Alert,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  View,
-} from "react-native";
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { FormField } from "../../../../components/account/form-field";
 import { OrderGroupRow } from "../../../../components/account/order-group-row";
 import { AddressForm } from "../../../../components/checkout/address-form";
@@ -600,7 +591,7 @@ function AddressesSection({
           />
           <View style={styles.switchRow}>
             <Text style={[styles.body, styles.flex]}>Usar como dirección principal</Text>
-            <Switch value={isDefault} onValueChange={setIsDefault} />
+            <AppSwitch value={isDefault} onValueChange={setIsDefault} />
           </View>
           {error ? (
             <Text accessibilityRole="alert" style={styles.error}>

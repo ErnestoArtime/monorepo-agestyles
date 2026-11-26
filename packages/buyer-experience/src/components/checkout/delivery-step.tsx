@@ -1,4 +1,5 @@
 import { AddressForm } from "./address-form";
+import { AppSwitch } from "@agestyles/ui-native";
 import { addressSummary, type SavedAddress } from "../../lib/addresses";
 import { Button } from "../ui/button";
 import { Colors } from "../../constants/theme";
@@ -12,7 +13,6 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   TextInput,
   View,
@@ -184,7 +184,7 @@ export function DeliveryStep({
               <Text style={[styles.switchLabel, { color: colors.text }]}>
                 Guardar esta dirección en mi cuenta
               </Text>
-              <Switch value={Boolean(saveAddress)} onValueChange={onSaveAddressChange} />
+              <AppSwitch value={Boolean(saveAddress)} onValueChange={onSaveAddressChange} />
             </View>
           ) : null}
 
@@ -192,7 +192,7 @@ export function DeliveryStep({
             <Text style={[styles.switchLabel, { color: colors.text }]}>
               Usar misma dirección para facturación
             </Text>
-            <Switch value={useSameForBilling} onValueChange={onUseSameForBillingChange} />
+            <AppSwitch value={useSameForBilling} onValueChange={onUseSameForBillingChange} />
           </View>
 
           {!useSameForBilling && (

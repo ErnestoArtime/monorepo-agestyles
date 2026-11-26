@@ -5,10 +5,12 @@ import {
   Image,
   Pressable,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View,
   type StyleProp,
+  type SwitchProps,
   type TextInputProps,
   type ViewStyle,
 } from "react-native";
@@ -429,3 +431,21 @@ const styles = StyleSheet.create({
   tilePrice: { fontSize: 15, fontWeight: "700" },
   tileSecondary: { fontSize: 12 },
 });
+
+/**
+ * On/off switch with the app palette in both themes. The thumb always stands out from its track
+ * (the platform default vanished in dark mode, and each screen picked its own colours).
+ */
+export function AppSwitch(props: Omit<SwitchProps, "trackColor" | "thumbColor">) {
+  const { color } = useUiTheme();
+  return (
+    <Switch
+      {...props}
+      trackColor={{ false: color.border, true: color.success }}
+      thumbColor={props.value ? color.onSuccess : color.muted}
+      ios_backgroundColor={color.border}
+      // react-native-web ignores `thumbColor` while the switch is on and takes this instead.
+      {...({ activeThumbColor: color.onSuccess } as object)}
+    />
+  );
+}
