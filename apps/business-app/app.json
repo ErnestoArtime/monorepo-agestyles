@@ -2,7 +2,7 @@
   "expo": {
     "name": "AgeStyles Negocio",
     "slug": "agestyles-business-lab",
-    "version": "1.3.1",
+    "version": "1.3.2",
     "orientation": "portrait",
     "scheme": "agestyles-business-lab",
     "userInterfaceStyle": "automatic",
@@ -12,7 +12,7 @@
     },
     "android": {
       "package": "com.eavlabs.agestyles.businesslab",
-      "versionCode": 6,
+      "versionCode": 7,
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": true,
       "adaptiveIcon": {
