@@ -1,3 +1,4 @@
+import { mayEmail } from "../lib/email-throttle";
 import { withNotificationRetries } from "../lib/notifications";
 import { createHash } from "node:crypto";
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework";
@@ -28,7 +29,8 @@ function resetBaseUrl(actorType: string): string | null {
  */
 async function sendPasswordResetEmail({ event, container }: SubscriberArgs<PasswordResetEvent>) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER);
-  const { entity_id: email, actor_type: actorType, token } = event.data;
+  const { entity_id: rawEmail, actor_type: actorType, token } = event.data;
+  const email = rawEmail?.trim().toLowerCase();
   const base = resetBaseUrl(actorType);
   if (!base || !email || !token) {
     logger.warn(
@@ -36,9 +38,14 @@ async function sendPasswordResetEmail({ event, container }: SubscriberArgs<Passw
     );
     return;
   }
+  const notifications = container.resolve(Modules.NOTIFICATION);
+  if (!(await mayEmail(notifications, email, "password-reset"))) {
+    logger.warn(`Password reset email held back for one address: too many in the last hour.`);
+    return;
+  }
   const url = `${base}/reset-password?${new URLSearchParams({ token, email }).toString()}`;
   const idempotencyKey = `password-reset:${createHash("sha256").update(token).digest("hex").slice(0, 32)}`;
-  await container.resolve(Modules.NOTIFICATION).createNotifications({
+  await notifications.createNotifications({
     to: email,
     channel: "email",
     template: "password-reset",

@@ -694,3 +694,20 @@ export function renderPasswordResetEmail(resetUrl: string): EmailContent {
     button: { label: "Elegir una contraseña nueva", url: resetUrl },
   });
 }
+
+/** Invitation to join a store's team in Negocio (the link opens `/aceptar-invitacion`). */
+export function renderMemberInviteEmail(input: {
+  storeName: string | null;
+  acceptUrl: string;
+}): EmailContent {
+  const store = input.storeName?.trim() || "una tienda";
+  return renderEmail({
+    subject: `Te han invitado a ${store} en AgeStyles`,
+    heading: `Te han invitado a ${store}`,
+    paragraphs: [
+      `Te han invitado a formar parte del equipo de ${store} en AgeStyles. Acepta la invitación con este mismo correo para empezar a gestionar la tienda.`,
+      "La invitación caduca pronto. Si no la esperabas, ignora este mensaje: no se creará ninguna cuenta.",
+    ],
+    button: { label: "Aceptar la invitación", url: input.acceptUrl },
+  });
+}

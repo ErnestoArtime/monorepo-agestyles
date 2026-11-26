@@ -46,6 +46,7 @@ export {
   renderEmail,
   renderEventEmail,
   renderNotification,
+  renderMemberInviteEmail,
   renderPasswordResetEmail,
   resolveDeliveryChannels,
   retryDelayMs,

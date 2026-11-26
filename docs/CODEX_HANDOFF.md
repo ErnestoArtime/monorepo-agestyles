@@ -2108,3 +2108,9 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - Huecos que siguen abiertos (sin tarea asignada): invitaciones de equipo en español con enlace a Negocio, restablecimiento para superadministradores (el gateway de administración no permite la ruta), límite por correo en el restablecimiento y plan de cambio de proveedor. La bienvenida y la verificación de correo quedan descartadas por la decisión de AG-66 de reducir el volumen, salvo que Ernesto indique lo contrario.
 - Aviso: el 25 nov la clave de Resend se pegó en el chat; conviene rotarla (solo cambia `api.env` y se reinicia la API).
 - Cambios de esta entrada: solo `docs/TABLERO.md` (AG-19, AG-65, AG-66) y este archivo. Nada desplegado.
+
+## 2026-11-26 · Claude · AG-67, invitaciones de equipo, límite por dirección y cambio de proveedor
+
+- Nuevo subscriber `send-member-invite-email.ts` (`member_invite.created` → correo en español con enlace a Negocio), plantilla `renderMemberInviteEmail`, `src/lib/email-throttle.ts` (3 restablecimientos por hora y 5 invitaciones por día por dirección, fallo de consulta = enviar) aplicado al restablecimiento. Pruebas nuevas: plantilla (notificaciones) y `email-throttle.test.mjs`; tipado de la API limpio.
+- **Corrección de lo que dije el 25 nov:** los superadministradores sí pueden restablecer hoy: una sola identidad por correo en Medusa 2.22.3, con `member` y `user` en `app_metadata`; el restablecimiento de Negocio cambia esa contraseña. No se tocó el gateway de administración. Detalle en `docs/design/AG-67-correo-invitaciones-y-limites.md`.
+- Sin desplegar ni escribir en producción. Para revisar: `created_at` en `listNotifications` y `seller.name` en la consulta de `member_invite` solo están probados con fakes y por tipos.

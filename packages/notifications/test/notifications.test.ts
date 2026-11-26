@@ -17,6 +17,7 @@ import {
   eventAllowsEmail,
   renderEmail,
   renderNotification,
+  renderMemberInviteEmail,
   renderPasswordResetEmail,
   resolveDeliveryChannels,
   retryDelayMs,
@@ -268,6 +269,21 @@ assert.ok(
 const reset = renderPasswordResetEmail("https://tienda.eav-labs.com/reset-password?token=t");
 assert.equal(reset.subject, "Restablece tu contraseña de AgeStyles");
 assert.ok(reset.html.includes('lang="es"'));
+
+const invite = renderMemberInviteEmail({
+  storeName: "Bazar <YM>",
+  acceptUrl: "https://negocio.eav-labs.com/aceptar-invitacion?token=t",
+});
+assert.equal(invite.subject, "Te han invitado a Bazar <YM> en AgeStyles");
+assert.ok(
+  invite.html.includes("Bazar &lt;YM&gt;") && !invite.html.includes("<YM>"),
+  "store name escaped",
+);
+assert.ok(invite.html.includes("aceptar-invitacion?token=t"));
+assert.equal(
+  renderMemberInviteEmail({ storeName: null, acceptUrl: "http://x" }).html.includes("<a "),
+  false,
+);
 
 console.log("notifications rules: ok");
 
