@@ -9,7 +9,9 @@ import {
   type CatalogFilters,
 } from "../../../../components/filter-panel";
 import { ProductDetail } from "../../../../components/product-detail";
+import { FollowStoreButton, StoreAlertSwitch } from "../../../../components/follow-store-button";
 import { StoreInfoPanel } from "../../../../components/store-info-panel";
+import { useFollows } from "../../../../context/follows-context";
 import { HomeCarousel, openBannerLink } from "../../../../components/home-carousel";
 import { FeaturedRow } from "../../../../components/featured-row";
 import { PillGroup, SearchField } from "@agestyles/ui-native";
@@ -53,6 +55,7 @@ export default function HomeScreen() {
   const { selectedRegion, loading: regionLoading, error: regionError, reloadRegions } = useRegion();
   const router = useRouter();
   const { isWideWeb, columns } = useResponsive();
+  const follows = useFollows();
   // Quick view: a bottom sheet on phones, a centred dialog in a wide browser; both link to the page.
   const openProduct = (product: HttpTypes.StoreProduct) => setSheetProductId(product.id);
 
@@ -452,8 +455,24 @@ export default function HomeScreen() {
                               {storeProfile.description}
                             </Text>
                           ) : null}
+                          <View style={styles.storeFollow}>
+                            <FollowStoreButton
+                              store={{
+                                id: storeProfile.id,
+                                name: storeProfile.name,
+                                logo: storeProfile.logo,
+                              }}
+                            />
+                          </View>
                         </View>
                       </View>
+                      {follows.isFollowing(storeProfile.id) ? (
+                        <View style={[styles.storeAlert, { borderColor: colors.border }]}>
+                          <StoreAlertSwitch
+                            store={{ id: storeProfile.id, name: storeProfile.name }}
+                          />
+                        </View>
+                      ) : null}
                     </View>
                     <StoreInfoPanel sellerId={storeProfile.id} />
                   </>
@@ -788,6 +807,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   storeText: { flex: 1, gap: 4 },
+  storeFollow: { marginTop: 6 },
+  storeAlert: {
+    marginHorizontal: 16,
+    marginBottom: 14,
+    paddingTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
   storeDescription: { fontSize: 14, lineHeight: 20 },
   moreLoading: {
     flexDirection: "row",

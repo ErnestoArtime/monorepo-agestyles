@@ -4,6 +4,7 @@ import { ShareButton } from "./share-button";
 import { useToast } from "@agestyles/ui-native";
 import { RateInfo } from "./rate-info";
 import { WebFooter } from "./web-footer";
+import { FollowStoreButton } from "./follow-store-button";
 import { ProductExtras, StoreLink } from "./product-extras";
 import { CONTENT_MAX, useResponsive } from "../hooks/use-responsive";
 import { useCart } from "../context/cart-context";
@@ -323,17 +324,21 @@ export function ProductDetail(
             );
           })}
           {selectedOffer ? (
-            <StoreLink
-              seller={selectedOffer.seller}
-              label={`Ver la tienda ${selectedOffer.seller.name}`}
-              onBeforeOpen={closeSheet}
-            />
+            <>
+              <StoreLink
+                seller={selectedOffer.seller}
+                label={`Ver la tienda ${selectedOffer.seller.name}`}
+                onBeforeOpen={closeSheet}
+              />
+              <FollowStoreButton store={selectedOffer.seller} />
+            </>
           ) : null}
         </View>
       ) : selectedOffer ? (
         <View style={styles.soldByRow}>
           <Text style={[styles.soldBy, { color: color.muted }]}>Vendido por</Text>
           <StoreLink seller={selectedOffer.seller} onBeforeOpen={closeSheet} />
+          <FollowStoreButton store={selectedOffer.seller} />
         </View>
       ) : null}
       {/* Comparing is hidden while the catalog has few products with technical features. */}

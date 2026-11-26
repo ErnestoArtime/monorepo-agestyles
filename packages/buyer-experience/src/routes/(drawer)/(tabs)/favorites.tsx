@@ -1,3 +1,4 @@
+import { FollowedStores } from "../../../components/followed-stores";
 import { ProductCard } from "../../../components/product-card";
 import { ProductDetail } from "../../../components/product-detail";
 import { CONTENT_MAX, useResponsive } from "../../../hooks/use-responsive";
@@ -7,6 +8,7 @@ import { useRegion } from "../../../context/region-context";
 import { useColorScheme } from "../../../hooks/use-color-scheme";
 import { buyerPath, sdk } from "../../../config";
 import { Icon } from "@agestyles/icons";
+import { PillGroup } from "@agestyles/ui-native";
 import { useRouter } from "expo-router";
 import { listStoreProducts } from "@agestyles/api-client/store";
 import type { HttpTypes } from "@medusajs/types";
@@ -22,7 +24,32 @@ import {
 
 const PAGE_SIZE = 100;
 
+type FavoritesTab = "productos" | "tiendas";
+
+/** Favoritos: the saved products and, in the second tab, the stores the customer follows (AG-70). */
 export default function FavoritesScreen() {
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? "light"];
+  const [tab, setTab] = useState<FavoritesTab>("productos");
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={styles.tabs}>
+        <PillGroup<FavoritesTab>
+          accessibilityLabel="Tipo de favoritos"
+          value={tab}
+          onChange={setTab}
+          options={[
+            { value: "productos", label: "Productos" },
+            { value: "tiendas", label: "Tiendas" },
+          ]}
+        />
+      </View>
+      {tab === "productos" ? <FavoriteProducts /> : <FollowedStores />}
+    </View>
+  );
+}
+
+function FavoriteProducts() {
   const router = useRouter();
   const { columns, isWideWeb } = useResponsive();
   const colorScheme = useColorScheme();
@@ -172,6 +199,7 @@ export default function FavoritesScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  tabs: { flexGrow: 0, flexShrink: 0, paddingTop: 12, paddingBottom: 4 },
   list: { paddingHorizontal: 10, paddingBottom: 24 },
   emptyList: { flexGrow: 1, paddingHorizontal: 20, paddingBottom: 24 },
   row: { justifyContent: "flex-start" },

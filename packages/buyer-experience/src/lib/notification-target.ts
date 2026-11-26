@@ -18,6 +18,17 @@ export function openNotificationTarget(
     });
     return;
   }
+  if (target?.screen === "product" && target.params?.id) {
+    router.push({
+      pathname: buyerPath("/(drawer)/(tabs)/(home)/product/[id]"),
+      params: { id: target.params.id },
+    });
+    return;
+  }
+  if (target?.screen === "stores") {
+    router.push(buyerHref("/(drawer)/(tabs)/stores"));
+    return;
+  }
   if (target?.screen === "orders") {
     router.push(buyerHref("/(drawer)/(tabs)/account/orders"));
     return;
