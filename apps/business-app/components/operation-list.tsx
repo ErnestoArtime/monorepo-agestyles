@@ -15,6 +15,7 @@ export function OperationList({
   isEmpty,
   onRefresh,
   skeleton = "rows",
+  footer,
   children,
 }: {
   /** Shape of the placeholder shown while the first data is loading (AG-48). */
@@ -32,6 +33,8 @@ export function OperationList({
   /** Whether the screen has no records; defaults to "no rendered children". */
   isEmpty?: boolean;
   onRefresh?: () => void;
+  /** Main action kept at the bottom of the screen, above the tab bar, on phones. */
+  footer?: ReactNode;
   children?: ReactNode;
 }) {
   const theme = useBusinessTheme();
@@ -50,44 +53,47 @@ export function OperationList({
   const showEmpty = isEmpty ?? nothingRendered;
 
   return (
-    <ScrollView
-      style={styles.page}
-      contentContainerStyle={[styles.content, isWideWeb && styles.contentWide]}
-      refreshControl={
-        onRefresh ? (
-          <RefreshControl refreshing={loading} onRefresh={onRefresh} tintColor={theme.action} />
-        ) : undefined
-      }
-    >
-      {/* Phones and narrow browsers already show the page name in the app header (and the menu
+    <View style={styles.frame}>
+      <ScrollView
+        style={styles.page}
+        contentContainerStyle={[styles.content, isWideWeb && styles.contentWide]}
+        refreshControl={
+          onRefresh ? (
+            <RefreshControl refreshing={loading} onRefresh={onRefresh} tintColor={theme.action} />
+          ) : undefined
+        }
+      >
+        {/* Phones and narrow browsers already show the page name in the app header (and the menu
           reaches every section), so the big title and its description only appear with the
           website layout. */}
-      {isWideWeb ? <Text style={styles.title}>{title}</Text> : null}
-      {isWideWeb && subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-      {firstLoad || (loading && nothingRendered) ? (
-        <View style={styles.placeholder} accessibilityLabel="Cargando">
-          {skeleton === "cards" ? (
-            <SkeletonCards />
-          ) : skeleton === "stats" ? (
-            <SkeletonStats />
-          ) : (
-            <SkeletonRows />
-          )}
-        </View>
-      ) : null}
-      {error ? (
-        <View style={styles.message}>
-          <Icon name="alert" color={theme.error} />
-          <Text style={styles.error}>{error}</Text>
-        </View>
-      ) : null}
-      {!loading && !error && !firstLoad && showEmpty && empty ? (
-        <View style={styles.message}>
-          <Text style={styles.empty}>{empty}</Text>
-        </View>
-      ) : null}
-      {firstLoad ? null : children}
-    </ScrollView>
+        {isWideWeb ? <Text style={styles.title}>{title}</Text> : null}
+        {isWideWeb && subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+        {firstLoad || (loading && nothingRendered) ? (
+          <View style={styles.placeholder} accessibilityLabel="Cargando">
+            {skeleton === "cards" ? (
+              <SkeletonCards />
+            ) : skeleton === "stats" ? (
+              <SkeletonStats />
+            ) : (
+              <SkeletonRows />
+            )}
+          </View>
+        ) : null}
+        {error ? (
+          <View style={styles.message}>
+            <Icon name="alert" color={theme.error} />
+            <Text style={styles.error}>{error}</Text>
+          </View>
+        ) : null}
+        {!loading && !error && !firstLoad && showEmpty && empty ? (
+          <View style={styles.message}>
+            <Text style={styles.empty}>{empty}</Text>
+          </View>
+        ) : null}
+        {firstLoad ? null : children}
+      </ScrollView>
+      {footer && !isWideWeb ? <View style={styles.footer}>{footer}</View> : null}
+    </View>
   );
 }
 
@@ -157,6 +163,15 @@ const createStyles = (theme: BusinessTheme) =>
       minHeight: 32,
     },
     backText: { color: theme.action, fontSize: 15, fontWeight: "600" },
+    frame: { flex: 1, backgroundColor: theme.background },
+    footer: {
+      paddingHorizontal: 16,
+      paddingTop: 10,
+      paddingBottom: 10,
+      backgroundColor: theme.surface,
+      borderTopColor: theme.border,
+      borderTopWidth: StyleSheet.hairlineWidth,
+    },
     page: { flex: 1, backgroundColor: theme.background },
     content: { padding: 20, paddingBottom: 42 },
     // Web layout: a centred page with room around it, like a back office.

@@ -6,6 +6,7 @@ import { formatPrice } from "../../../../lib/format-price";
 import { formatCupEquivalent, rateSourceLine } from "@agestyles/api-client/exchange-rate";
 import { Icon } from "@agestyles/icons";
 import { Button, KeyValueRow, useUiTheme } from "@agestyles/ui-native";
+import { RateInfo } from "../../../../components/rate-info";
 import { useRouter } from "expo-router";
 import React from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
@@ -82,9 +83,7 @@ export default function CartScreen() {
             {cup} · referencia, se cobra en USD
           </Text>
         ) : null}
-        {cupSource ? (
-          <Text style={[styles.cupSource, { color: color.muted }]}>{cupSource}</Text>
-        ) : null}
+        {cupSource ? <RateInfo text={cupSource} /> : null}
         <View style={styles.actions}>
           <Button
             title="Seguir comprando"

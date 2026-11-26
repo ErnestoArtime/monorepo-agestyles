@@ -330,14 +330,17 @@ export default function InventoryScreen() {
         </Text>
       ) : null}
       {items.length ? (
+        // The search sits above the list, like the one in Productos, not inside its frame.
+        <View style={styles.search}>
+          <SearchField
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Buscar artículo, SKU o almacén"
+          />
+        </View>
+      ) : null}
+      {items.length ? (
         <Section title={`${items.length} artículos`}>
-          <View style={styles.itemBlock}>
-            <SearchField
-              value={query}
-              onChangeText={setQuery}
-              placeholder="Buscar artículo, SKU o almacén"
-            />
-          </View>
           {visible.length ? (
             <ResponsiveManagementList
               caption="Inventario por almacén"
@@ -408,6 +411,7 @@ const createStyles = (theme: ReturnType<typeof useBusinessTheme>) =>
     },
     linkText: { color: theme.action, fontSize: 14, fontWeight: "500" },
     inlineLink: { minHeight: 44, justifyContent: "center" },
+    search: { marginBottom: 14 },
     itemBlock: {
       borderBottomColor: theme.border,
       borderBottomWidth: StyleSheet.hairlineWidth,

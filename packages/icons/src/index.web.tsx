@@ -11,6 +11,7 @@ import ChevronDown from "lucide-react/icons/chevron-down";
 import ChevronRight from "lucide-react/icons/chevron-right";
 import ChevronUp from "lucide-react/icons/chevron-up";
 import CircleHelp from "lucide-react/icons/circle-question-mark";
+import Info from "lucide-react/icons/info";
 import CircleUserRound from "lucide-react/icons/circle-user-round";
 import Code2 from "lucide-react/icons/code-xml";
 import CreditCard from "lucide-react/icons/credit-card";
@@ -62,6 +63,7 @@ const glyphs = {
   chevronRight: ChevronRight,
   chevronUp: ChevronUp,
   help: CircleHelp,
+  info: Info,
   userCircle: CircleUserRound,
   code: Code2,
   creditCard: CreditCard,

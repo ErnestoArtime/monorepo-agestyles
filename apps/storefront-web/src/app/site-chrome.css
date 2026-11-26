@@ -405,6 +405,31 @@
   color: var(--muted);
   font-size: 12px;
 }
+.purchase-info {
+  margin-top: 4px;
+}
+.purchase-info summary {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line, currentColor);
+  border-radius: 50%;
+  color: var(--muted);
+  font:
+    italic 700 12px/1 Georgia,
+    serif;
+  cursor: pointer;
+  list-style: none;
+}
+.purchase-info summary::-webkit-details-marker {
+  display: none;
+}
+.purchase-info summary:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
 .purchase-price .purchase-source {
   display: block;
   margin-top: 1px;

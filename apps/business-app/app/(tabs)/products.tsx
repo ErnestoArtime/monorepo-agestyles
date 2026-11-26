@@ -383,6 +383,12 @@ export default function ProductsScreen() {
       empty="Esta tienda todavía no tiene productos visibles."
       isEmpty={!items.length}
       onRefresh={() => void load()}
+      // On phones «Nuevo producto» stays at the bottom, above the tab bar, always within reach.
+      footer={
+        canEdit ? (
+          <Button icon="plus" title="Nuevo producto" onPress={() => router.push("/product-new")} />
+        ) : undefined
+      }
     >
       {notice && !openItem ? (
         <Text accessibilityRole="alert" style={styles.notice}>
@@ -392,12 +398,14 @@ export default function ProductsScreen() {
       {canEdit ? (
         // In a wide browser both actions sit side by side at their natural width, like a web page.
         <View style={isWideWeb ? styles.actionsWide : null}>
-          <Button
-            icon="plus"
-            title="Nuevo producto"
-            onPress={() => router.push("/product-new")}
-            style={styles.importButton}
-          />
+          {isWideWeb ? (
+            <Button
+              icon="plus"
+              title="Nuevo producto"
+              onPress={() => router.push("/product-new")}
+              style={styles.importButton}
+            />
+          ) : null}
           <Button
             icon="list"
             variant="secondary"

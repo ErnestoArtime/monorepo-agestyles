@@ -2,6 +2,7 @@ import { ProductImageSlider } from "./product-image-slider";
 import { ProductSkeleton } from "./product-skeleton";
 import { ShareButton } from "./share-button";
 import { useToast } from "@agestyles/ui-native";
+import { RateInfo } from "./rate-info";
 import { WebFooter } from "./web-footer";
 import { ProductExtras, StoreLink } from "./product-extras";
 import { CONTENT_MAX, useResponsive } from "../hooks/use-responsive";
@@ -260,9 +261,7 @@ export function ProductDetail(
             </Text>
           )}
           {cup ? <Text style={[styles.cup, { color: color.muted }]}>{cup}</Text> : null}
-          {cupSource ? (
-            <Text style={[styles.cupSource, { color: color.muted }]}>{cupSource}</Text>
-          ) : null}
+          {cupSource ? <RateInfo text={cupSource} /> : null}
         </View>
       </View>
       {offersLoading ? (
