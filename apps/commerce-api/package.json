@@ -11,7 +11,7 @@
     "build:workspace-modules": "pnpm --filter @agestyles/quotations build && pnpm --filter @agestyles/catalog-pim build && pnpm --filter @agestyles/manual-payments build && pnpm --filter @agestyles/inventory-movements build && pnpm --filter @agestyles/sales-commissions build && pnpm --filter @agestyles/ai-studio build && pnpm --filter @agestyles/notifications build && pnpm --filter @agestyles/category-requests build && pnpm --filter @agestyles/store-follows build && pnpm --filter @agestyles/product-events build",
     "build": "pnpm build:workspace-modules && medusa build",
     "typecheck": "pnpm build:workspace-modules && tsc --noEmit",
-    "test": "node --test test/*.test.mjs",
+    "test": "pnpm build:workspace-modules && node --test test/*.test.mjs",
     "migrate": "medusa db:migrate",
     "start": "medusa start --host 127.0.0.1 --port 19081",
     "seed": "medusa exec ./src/scripts/seed.ts",
