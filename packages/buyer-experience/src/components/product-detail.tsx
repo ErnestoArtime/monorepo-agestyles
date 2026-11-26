@@ -260,8 +260,13 @@ export function ProductDetail(
               {price === undefined ? "—" : formatPrice(price, currency)}
             </Text>
           )}
-          {cup ? <Text style={[styles.cup, { color: color.muted }]}>{cup}</Text> : null}
-          {cupSource ? <RateInfo text={cupSource} /> : null}
+          {cup && cupSource ? (
+            <RateInfo text={cupSource}>
+              <Text style={[styles.cup, { color: color.muted }]}>{cup}</Text>
+            </RateInfo>
+          ) : cup ? (
+            <Text style={[styles.cup, { color: color.muted }]}>{cup}</Text>
+          ) : null}
         </View>
       </View>
       {offersLoading ? (

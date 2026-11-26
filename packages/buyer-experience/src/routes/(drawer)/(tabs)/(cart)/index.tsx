@@ -79,11 +79,18 @@ export default function CartScreen() {
         ) : null}
         <KeyValueRow label="Total" value={formatPrice(cart.total, currency)} emphasis />
         {cup ? (
-          <Text style={[styles.cup, { color: color.muted }]}>
-            {cup} · referencia, se cobra en USD
-          </Text>
+          cupSource ? (
+            <RateInfo text={cupSource}>
+              <Text style={[styles.cup, { color: color.muted }]}>
+                {cup} · referencia, se cobra en USD
+              </Text>
+            </RateInfo>
+          ) : (
+            <Text style={[styles.cup, { color: color.muted }]}>
+              {cup} · referencia, se cobra en USD
+            </Text>
+          )
         ) : null}
-        {cupSource ? <RateInfo text={cupSource} /> : null}
         <View style={styles.actions}>
           <Button
             title="Seguir comprando"

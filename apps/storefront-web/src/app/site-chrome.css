@@ -406,6 +406,11 @@
   font-size: 12px;
 }
 .purchase-info {
+  display: inline;
+  margin-left: 6px;
+}
+.purchase-info .purchase-source {
+  display: block;
   margin-top: 4px;
 }
 .purchase-info summary {

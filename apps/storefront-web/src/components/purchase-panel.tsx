@@ -94,12 +94,16 @@ export function PurchasePanel({
         {offer ? (
           <>
             <strong>{formatPrice(offer.amount, offer.currency)}</strong>
-            {cup ? <span>{cup} · referencia, se cobra en USD</span> : null}
-            {cupSource ? (
-              <details className="purchase-info">
-                <summary aria-label="Información sobre la tasa de cambio">i</summary>
-                <small className="purchase-source">{cupSource}</small>
-              </details>
+            {cup ? (
+              <span>
+                {cup} · referencia, se cobra en USD
+                {cupSource ? (
+                  <details className="purchase-info">
+                    <summary aria-label="Información sobre la tasa de cambio">i</summary>
+                    <small className="purchase-source">{cupSource}</small>
+                  </details>
+                ) : null}
+              </span>
             ) : null}
           </>
         ) : null}
