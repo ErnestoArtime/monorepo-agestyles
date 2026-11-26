@@ -1,7 +1,7 @@
 import { Migration } from "@medusajs/framework/mikro-orm/migrations";
 
 /** AG-70: customers following stores. Additive: one new table, nothing else is touched. */
-export class Migration20261126120000 extends Migration {
+export class Migration20261126120100 extends Migration {
   override async up(): Promise<void> {
     this.addSql(
       `create table if not exists "agestyles_store_follow" ("id" text not null, "customer_id" text not null, "seller_id" text not null, "notify_new_products" boolean not null default false, "created_at" timestamptz not null default now(), "updated_at" timestamptz not null default now(), "deleted_at" timestamptz null, constraint "agestyles_store_follow_pkey" primary key ("id"));`,

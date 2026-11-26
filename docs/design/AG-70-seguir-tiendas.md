@@ -25,7 +25,7 @@ Tabla nueva `agestyles_store_follow`: `id` (`sfol_…`), `customer_id`, `seller_
 
 Dos migraciones, **aditivas** (no borran ni cambian datos):
 
-- `packages/store-follows/src/migrations/Migration20261126120000.ts`: crea la tabla.
+- `packages/store-follows/src/migrations/Migration20261126120100.ts`: crea la tabla.
 - `packages/notifications/src/migrations/Migration20261126120000.ts`: amplía la restricción `group` de `agestyles_notification` y `agestyles_notification_preference` con `following`.
 
 **Hay que migrar antes de desplegar la API** (`pnpm migrate` / `medusa db:migrate`). Sin la segunda migración, guardar la preferencia del grupo nuevo o crear un aviso falla por la restricción. Con la API vieja y la tabla creada no pasa nada. No se ha desplegado ni migrado nada.
