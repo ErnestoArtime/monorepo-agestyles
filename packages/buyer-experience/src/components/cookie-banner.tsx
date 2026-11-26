@@ -65,9 +65,11 @@ const createStyles = (colors: (typeof Colors)[keyof typeof Colors]) =>
       right: 16,
       bottom: 16,
       zIndex: 60,
+      // `left`/`right` already size the banner to the screen; a width of 100% on top of the
+      // 16 px offsets pushed it past the right edge on phones. Auto margins centre it on desktop.
       maxWidth: 720,
-      alignSelf: "center",
-      width: "100%",
+      marginLeft: "auto" as unknown as number,
+      marginRight: "auto" as unknown as number,
       padding: 16,
       gap: 10,
       backgroundColor: colors.cardBackground,

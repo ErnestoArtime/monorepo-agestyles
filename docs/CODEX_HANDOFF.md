@@ -2151,3 +2151,5 @@ El commit `6d90e8b` corrigió el tipo de error de autorización: `MedusaError.Ty
 - **Icono de Negocio:** nuevo `assets/images/icon.png` (lazo de Tienda con «Negocio» debajo; fuente en `agestyles-negocio-icon.svg`) y `icon` + `adaptiveIcon` en `app.json`. Hasta ahora la APK de Negocio usaba el icono por defecto de Expo.
 - **Comprobado:** tipado sin errores en Negocio, Tienda y `features-notifications`; ESLint limpio en lo tocado; capturas con Chromium a 390 px en tema oscuro sobre datos de prueba. **No comprobado:** Android real, las pantallas de Administración y el modo comprador dentro de Negocio en móvil, ni la web ancha tras el cambio (las condiciones `isWideWeb` conservan el título, pero no se capturó).
 - Sin publicar ni desplegar. `apps/*/eas.json` siguen sin versionar (de Codex).
+
+- 2026-11-26 · Claude · AG-69, aviso de cookies de Tienda web: se salía por la derecha en móvil (`width: 100%` más los márgenes `left`/`right` de 16 px). Ahora ocupa el ancho menos los márgenes y se centra con márgenes automáticos. Medido con Chromium: móvil 16→374 px de 390; escritorio 360→1080 px de 1440. Sin publicar.
